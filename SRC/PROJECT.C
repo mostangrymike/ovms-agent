@@ -264,6 +264,7 @@ int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,
                   const char *new_text)
+                 
 {
     FILE *file;
     char *original;
@@ -272,6 +273,10 @@ int project_patch(const agent_state *state,
     long length;
     size_t old_length;
     size_t new_length;
+char *line_start;
+char *line_end;
+size_t before_length;
+size_t after_length;
     size_t prefix_length;
     size_t updated_length;
     char *match;
@@ -377,10 +382,43 @@ int project_patch(const agent_state *state,
     (void)strcpy(updated + prefix_length + new_length,
                  match + old_length);
 
-    (void)printf("File: %s\n", path);
-    (void)printf("Replace: %s\n", old_text);
-    (void)printf("With:    %s\n", new_text);
-    (void)fputs("Apply patch [y/N]? ", stdout);
+    line_start = match;
+
+while (line_start > original &&
+       line_start[-1] != '\n') {
+    --line_start;
+}
+
+line_end = match + old_length;
+
+while (*line_end != '\0' &&
+       *line_end != '\n') {
+    ++line_end;
+}
+
+before_length = (size_t)(match - line_start);
+after_length =
+    (size_t)(line_end - (match + old_length));
+
+(void)printf("File: %s\n", path);
+(void)puts("");
+(void)printf("Current:  %.*s%s%.*s\n",
+             (int)before_length,
+             line_start,
+             old_text,
+             (int)after_length,
+             match + old_length);
+
+(void)printf("Proposed: %.*s%s%.*s\n",
+             (int)before_length,
+             line_start,
+             new_text,
+             (int)after_length,
+             match + old_length);
+
+(void)puts("");
+(void)fputs("Apply patch [y/N]? ", stdout);
+
     (void)fflush(stdout);
 
     if (fgets(answer, sizeof(answer), stdin) == NULL ||

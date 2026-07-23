@@ -18,6 +18,7 @@ static void command_help(agent_state *state, const char *arguments);
 static void command_version(agent_state *state, const char *arguments);
 static void command_root(agent_state *state, const char *arguments);
 static void command_status(agent_state *state, const char *arguments);
+static char *command_next_argument(char **cursor);
 static void command_list(agent_state *state, const char *arguments);
 static void command_read(agent_state *state, const char *arguments);
 static void command_gitstatus(agent_state *state,  const char *arguments);
@@ -37,7 +38,7 @@ static const command_entry command_table[] = {
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
-    { "PATCH", "Replace one exact token: PATCH file old new", command_patch },
+    { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
     { NULL, NULL, NULL }
@@ -172,28 +173,97 @@ static void command_read(agent_state *state, const char *arguments)
     project_read(state, arguments);
 }
 
+static char *command_next_argument(char **cursor)
+{
+    char *start;
+    char *end;
+
+    if (cursor == NULL || *cursor == NULL) {
+        return NULL;
+    }
+
+    start = util_skip_space(*cursor);
+
+    if (start == NULL || *start == '\0') {
+        *cursor = start;
+        return NULL;
+    }
+
+    if (*start == '"') {
+        ++start;
+        end = start;
+
+        while (*end != '\0' && *end != '"') {
+            ++end;
+        }
+
+        if (*end != '"') {
+            return NULL;
+        }
+
+        *end = '\0';
+        *cursor = end + 1;
+        return start;
+    }
+
+    end = start;
+
+    while (*end != '\0' &&
+           *end != ' ' &&
+           *end != '\t') {
+        ++end;
+    }
+
+    if (*end != '\0') {
+        *end = '\0';
+        *cursor = end + 1;
+    } else {
+        *cursor = end;
+    }
+
+    return start;
+}
+
 static void command_patch(agent_state *state,
                           const char *arguments)
 {
-    char path[256];
-    char old_text[256];
-    char new_text[256];
-    int fields;
+    char work[OVMS_AGENT_INPUT_SIZE];
+    char *cursor;
+    char *path;
+    char *old_text;
+    char *new_text;
+    char *extra;
 
     if (arguments == NULL || *arguments == '\0') {
-        (void)puts("Usage: PATCH file old_text new_text");
+        (void)puts(
+            "Usage: PATCH file \"old text\" \"new text\""
+        );
         return;
     }
 
-    fields = sscanf(arguments,
-                    "%255s %255s %255s",
-                    path,
-                    old_text,
-                    new_text);
+    if (strlen(arguments) >= sizeof(work)) {
+        (void)puts("Patch arguments are too long.");
+        return;
+    }
 
-    if (fields != 3) {
-        (void)puts("Usage: PATCH file old_text new_text");
-        (void)puts("This version does not support spaces in text.");
+    (void)strcpy(work, arguments);
+    cursor = work;
+
+    path = command_next_argument(&cursor);
+    old_text = command_next_argument(&cursor);
+    new_text = command_next_argument(&cursor);
+    extra = command_next_argument(&cursor);
+
+    if (path == NULL ||
+        old_text == NULL ||
+        new_text == NULL ||
+        extra != NULL) {
+        (void)puts(
+            "Usage: PATCH file \"old text\" \"new text\""
+        );
+        (void)puts(
+            "Quotes are required when text contains spaces."
+        );
         return;
     }
 
