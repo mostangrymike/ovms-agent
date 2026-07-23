@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include "project.h"
 
 #define READ_BUFFER_SIZE 1024
@@ -144,7 +144,6 @@ void project_list(const agent_state *state, int show_all)
 }
 
 
-#include <stdlib.h>
 
 void project_git_status(const agent_state *state)
 {
@@ -260,4 +259,168 @@ void project_read(const agent_state *state, const char *path)
         (void)printf("Warning: unable to close file: %s\n",
                      strerror(errno));
     }
+}
+int project_patch(const agent_state *state,
+                  const char *path,
+                  const char *old_text,
+                  const char *new_text)
+{
+    FILE *file;
+    char *original;
+    char *updated;
+    char answer[32];
+    long length;
+    size_t old_length;
+    size_t new_length;
+    size_t prefix_length;
+    size_t updated_length;
+    char *match;
+    char *second_match;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!path_is_safe(path)) {
+        (void)puts("Unsafe or invalid project-relative path.");
+        return 0;
+    }
+
+    if (old_text == NULL || *old_text == '\0') {
+        (void)puts("Original text cannot be empty.");
+        return 0;
+    }
+
+    if (new_text == NULL) {
+        (void)puts("Replacement text is invalid.");
+        return 0;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to open %s: %s\n",
+                     path,
+                     strerror(errno));
+        return 0;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)puts("Unable to determine file size.");
+        (void)fclose(file);
+        return 0;
+    }
+
+    length = ftell(file);
+
+    if (length < 0L) {
+        (void)puts("Unable to determine file size.");
+        (void)fclose(file);
+        return 0;
+    }
+
+    if (fseek(file, 0L, SEEK_SET) != 0) {
+        (void)puts("Unable to rewind file.");
+        (void)fclose(file);
+        return 0;
+    }
+
+    original = malloc((size_t)length + 1U);
+
+    if (original == NULL) {
+        (void)puts("Insufficient memory.");
+        (void)fclose(file);
+        return 0;
+    }
+
+    length = (long)fread(original, 1U, (size_t)length, file);
+    original[length] = '\0';
+    (void)fclose(file);
+
+    match = strstr(original, old_text);
+
+    if (match == NULL) {
+        (void)printf("Text not found in %s.\n", path);
+        free(original);
+        return 0;
+    }
+
+    second_match = strstr(match + strlen(old_text), old_text);
+
+    if (second_match != NULL) {
+        (void)puts("Patch refused: original text occurs more than once.");
+        free(original);
+        return 0;
+    }
+
+    old_length = strlen(old_text);
+    new_length = strlen(new_text);
+    prefix_length = (size_t)(match - original);
+    updated_length =
+        strlen(original) - old_length + new_length;
+
+    updated = malloc(updated_length + 1U);
+
+    if (updated == NULL) {
+        (void)puts("Insufficient memory.");
+        free(original);
+        return 0;
+    }
+
+    (void)memcpy(updated, original, prefix_length);
+    (void)memcpy(updated + prefix_length,
+                 new_text,
+                 new_length);
+    (void)strcpy(updated + prefix_length + new_length,
+                 match + old_length);
+
+    (void)printf("File: %s\n", path);
+    (void)printf("Replace: %s\n", old_text);
+    (void)printf("With:    %s\n", new_text);
+    (void)fputs("Apply patch [y/N]? ", stdout);
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL ||
+        (answer[0] != 'Y' && answer[0] != 'y')) {
+        (void)puts("Patch cancelled.");
+        free(updated);
+        free(original);
+        return 0;
+    }
+
+    file = fopen(path, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to write %s: %s\n",
+                     path,
+                     strerror(errno));
+        free(updated);
+        free(original);
+        return 0;
+    }
+
+    if (fwrite(updated, 1U, updated_length, file) != updated_length) {
+        (void)puts("Unable to write complete replacement file.");
+        (void)fclose(file);
+        free(updated);
+        free(original);
+        return 0;
+    }
+
+    if (fclose(file) != 0) {
+        (void)printf("Unable to close replacement file: %s\n",
+                     strerror(errno));
+        free(updated);
+        free(original);
+        return 0;
+    }
+
+    free(updated);
+    free(original);
+
+    (void)puts("Patch applied. A new OpenVMS file version was created.");
+    return 1;
 }

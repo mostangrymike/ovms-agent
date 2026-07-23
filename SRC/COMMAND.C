@@ -24,6 +24,7 @@ static void command_gitstatus(agent_state *state,  const char *arguments);
 static void command_gitdiff(agent_state *state, const char *arguments);
 static void command_build(agent_state *state, const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
+static void command_patch(agent_state *state, const char *arguments);
 
 static const command_entry command_table[] = {
     { "HELP",    "Display command help", command_help },
@@ -36,6 +37,7 @@ static const command_entry command_table[] = {
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
+    { "PATCH", "Replace one exact token: PATCH file old new", command_patch },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
     { NULL, NULL, NULL }
@@ -168,6 +170,37 @@ static void command_read(agent_state *state, const char *arguments)
     }
 
     project_read(state, arguments);
+}
+
+static void command_patch(agent_state *state,
+                          const char *arguments)
+{
+    char path[256];
+    char old_text[256];
+    char new_text[256];
+    int fields;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: PATCH file old_text new_text");
+        return;
+    }
+
+    fields = sscanf(arguments,
+                    "%255s %255s %255s",
+                    path,
+                    old_text,
+                    new_text);
+
+    if (fields != 3) {
+        (void)puts("Usage: PATCH file old_text new_text");
+        (void)puts("This version does not support spaces in text.");
+        return;
+    }
+
+    (void)project_patch(state,
+                        path,
+                        old_text,
+                        new_text);
 }
 
 static void command_quit(agent_state *state, const char *arguments)
