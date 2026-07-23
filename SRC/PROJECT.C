@@ -75,6 +75,41 @@ static int hide_default_entry(const char *name)
     return 0;
 }
 
+static int text_contains_ignore_case(const char *text,
+                                     const char *pattern)
+{
+    const unsigned char *start;
+
+    if (text == NULL ||
+        pattern == NULL ||
+        *pattern == '\0') {
+        return 0;
+    }
+
+    for (start = (const unsigned char *)text;
+         *start != (unsigned char)'\0';
+         ++start) {
+        const unsigned char *left;
+        const unsigned char *right;
+
+        left = start;
+        right = (const unsigned char *)pattern;
+
+        while (*left != (unsigned char)'\0' &&
+               *right != (unsigned char)'\0' &&
+               tolower((int)*left) == tolower((int)*right)) {
+            ++left;
+            ++right;
+        }
+
+        if (*right == (unsigned char)'\0') {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 void project_show_root(const agent_state *state)
 {
     if (state == NULL ||
@@ -106,6 +141,73 @@ void project_show_status(const agent_state *state)
         state->write_enabled ? "enabled" : "disabled");
     (void)printf("DCL execution: %s\n",
         state->dcl_enabled ? "enabled" : "disabled");
+}
+
+void project_search(const agent_state *state,
+                    const char *path,
+                    const char *pattern)
+{
+    FILE *file;
+    char buffer[1024];
+    unsigned long line_number;
+    unsigned long matches;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!path_is_safe(path)) {
+        (void)puts("Unsafe or invalid project-relative path.");
+        return;
+    }
+
+    if (pattern == NULL || *pattern == '\0') {
+        (void)puts("Search text cannot be empty.");
+        return;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to search %s: %s\n",
+                     path,
+                     strerror(errno));
+        return;
+    }
+
+    line_number = 1UL;
+    matches = 0UL;
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        if (text_contains_ignore_case(buffer, pattern)) {
+            (void)printf("%6lu  %s", line_number, buffer);
+
+            if (strchr(buffer, '\n') == NULL) {
+                (void)putchar('\n');
+            }
+
+            ++matches;
+        }
+
+        ++line_number;
+    }
+
+    if (ferror(file)) {
+        (void)printf("Search failed: %s\n", strerror(errno));
+    }
+
+    if (fclose(file) != 0) {
+        (void)printf("Unable to close %s: %s\n",
+                     path,
+                     strerror(errno));
+    }
+
+    (void)printf("%lu matching line%s.\n",
+                 matches,
+                 matches == 1UL ? "" : "s");
 }
 
 void project_list(const agent_state *state, int show_all)

@@ -10,6 +10,9 @@ void project_read(const agent_state *state, const char *path);
 void project_git_status(const agent_state *state);
 void project_git_diff(const agent_state *state);
 void project_build(const agent_state *state);
+void project_search(const agent_state *state,
+                    const char *path,
+                    const char *pattern);
 #endif
 int project_patch(const agent_state *state,
                   const char *path,

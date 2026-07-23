@@ -26,6 +26,7 @@ static void command_gitdiff(agent_state *state, const char *arguments);
 static void command_build(agent_state *state, const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
 static void command_patch(agent_state *state, const char *arguments);
+static void command_search(agent_state *state, const char *arguments);
 
 static const command_entry command_table[] = {
     { "HELP",    "Display command help", command_help },
@@ -38,6 +39,7 @@ static const command_entry command_table[] = {
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
+    { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
@@ -104,6 +106,42 @@ static void command_build(agent_state *state,
 {
     (void)arguments;
     project_build(state);
+}
+
+static void command_search(agent_state *state,
+                           const char *arguments)
+{
+    char work[OVMS_AGENT_INPUT_SIZE];
+    char *cursor;
+    char *path;
+    char *pattern;
+    char *extra;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: SEARCH file \"text\"");
+        return;
+    }
+
+    if (strlen(arguments) >= sizeof(work)) {
+        (void)puts("Search arguments are too long.");
+        return;
+    }
+
+    (void)strcpy(work, arguments);
+    cursor = work;
+
+    path = command_next_argument(&cursor);
+    pattern = command_next_argument(&cursor);
+    extra = command_next_argument(&cursor);
+
+    if (path == NULL ||
+        pattern == NULL ||
+        extra != NULL) {
+        (void)puts("Usage: SEARCH file \"text\"");
+        return;
+    }
+
+    project_search(state, path, pattern);
 }
 
 static void command_gitdiff(agent_state *state,
