@@ -1,0 +1,65 @@
+$!===========================================================
+$! BUILD.COM - Build OVMS Agent
+$!===========================================================
+$ SET NOON
+$
+$ SAVED_DEFAULT = F$ENVIRONMENT("DEFAULT")
+$ PROCEDURE = F$ENVIRONMENT("PROCEDURE")
+$ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
+                 F$PARSE(PROCEDURE,,,"DIRECTORY")
+$
+$ SET DEFAULT 'PROJECT_DIR'
+$
+$ WRITE SYS$OUTPUT "Building OVMS Agent..."
+$ WRITE SYS$OUTPUT "Project directory: ''PROJECT_DIR'"
+$
+$ IF F$SEARCH("[.BUILD]000000.DIR") .EQS. ""
+$ THEN
+$     CREATE/DIRECTORY [.BUILD]
+$ ENDIF
+$
+$ CC/OBJECT=[.BUILD]MAIN.OBJ -
+     /STANDARD=C99 -
+     /WARNINGS=ENABLE=ALL -
+     /INCLUDE_DIRECTORY=([.SRC]) -
+     [.SRC]MAIN.C
+$
+$ COMPILE_STATUS = $STATUS
+$ IF .NOT. COMPILE_STATUS
+$ THEN
+$     WRITE SYS$ERROR "Compilation failed."
+$     FINAL_STATUS = COMPILE_STATUS
+$     GOTO FINISH
+$ ENDIF
+$
+$ LINK/EXECUTABLE=[.BUILD]OVMS_AGENT.EXE -
+     [.BUILD]MAIN.OBJ
+$
+$ LINK_STATUS = $STATUS
+$ IF .NOT. LINK_STATUS
+$ THEN
+$     WRITE SYS$ERROR "Link failed."
+$     FINAL_STATUS = LINK_STATUS
+$     GOTO FINISH
+$ ENDIF
+$
+$ COPY/LOG [.BUILD]OVMS_AGENT.EXE []OVMS_AGENT.EXE
+$ COPY_STATUS = $STATUS
+$ IF .NOT. COPY_STATUS
+$ THEN
+$     WRITE SYS$ERROR "Unable to copy executable."
+$     FINAL_STATUS = COPY_STATUS
+$     GOTO FINISH
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT ""
+$ WRITE SYS$OUTPUT "Build completed successfully."
+$ WRITE SYS$OUTPUT "Run with:"
+$ WRITE SYS$OUTPUT "$ RUN OVMS_AGENT"
+$ WRITE SYS$OUTPUT ""
+$
+$ FINAL_STATUS = 1
+$
+$ FINISH:
+$ SET DEFAULT 'SAVED_DEFAULT'
+$ EXIT 'FINAL_STATUS'
