@@ -21,6 +21,7 @@ static void command_status(agent_state *state, const char *arguments);
 static void command_list(agent_state *state, const char *arguments);
 static void command_read(agent_state *state, const char *arguments);
 static void command_gitstatus(agent_state *state,  const char *arguments);
+static void command_gitdiff(agent_state *state, const char *arguments);
 static void command_build(agent_state *state, const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
 
@@ -34,6 +35,7 @@ static const command_entry command_table[] = {
     { "READ",    "Read a project-relative text file", command_read },
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
+    { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
     { NULL, NULL, NULL }
@@ -99,6 +101,13 @@ static void command_build(agent_state *state,
 {
     (void)arguments;
     project_build(state);
+}
+
+static void command_gitdiff(agent_state *state,
+                            const char *arguments)
+{
+    (void)arguments;
+    project_git_diff(state);
 }
 
 static void command_help(agent_state *state, const char *arguments)

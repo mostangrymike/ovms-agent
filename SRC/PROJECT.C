@@ -162,6 +162,30 @@ void project_git_status(const agent_state *state)
     }
 }
 
+void project_git_diff(const agent_state *state)
+{
+    int status;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    (void)puts("Git diff:");
+    (void)puts("");
+
+    status = system("git diff --");
+
+    if ((status & 1) == 0) {
+        (void)printf(
+            "Git diff failed with OpenVMS status %d.\n",
+            status
+        );
+    }
+}
+
 void project_build(const agent_state *state)
 {
     int status;
