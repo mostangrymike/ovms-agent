@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "agent.h"
 
@@ -14,10 +15,20 @@ int agent_initialize(agent_state *state)
     state->running = 1;
     state->project_root = getenv("OVMS_AGENT_ROOT");
     api_key = getenv("OPENAI_API_KEY");
+
     state->api_key_defined =
         api_key != NULL && *api_key != '\0';
     state->write_enabled = 0;
     state->dcl_enabled = 0;
+
+    if (state->project_root != NULL &&
+        *state->project_root != '\0') {
+        if (chdir(state->project_root) != 0) {
+            (void)fprintf(stderr,
+                "Unable to set project root as current directory.\n");
+            return 0;
+        }
+    }
 
     (void)puts("OVMS Agent");
     (void)puts("Native agentic programming assistant for OpenVMS");

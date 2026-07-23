@@ -1,7 +1,7 @@
 #ifndef OVMS_AGENT_AGENT_H
 #define OVMS_AGENT_AGENT_H
 
-#define OVMS_AGENT_VERSION "0.2.0"
+#define OVMS_AGENT_VERSION "0.3.0"
 #define OVMS_AGENT_INPUT_SIZE 1024
 
 typedef struct agent_state {
