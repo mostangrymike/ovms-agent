@@ -1,0 +1,10 @@
+BUILD/
+*.OBJ
+*.EXE
+*.LIS
+*.MAP
+*.LOG
+*.DSF
+*.OPT
+*.ANA
+*.TMP
