@@ -21,6 +21,7 @@ static void command_status(agent_state *state, const char *arguments);
 static void command_list(agent_state *state, const char *arguments);
 static void command_read(agent_state *state, const char *arguments);
 static void command_gitstatus(agent_state *state,  const char *arguments);
+static void command_build(agent_state *state, const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
 
 static const command_entry command_table[] = {
@@ -31,6 +32,7 @@ static const command_entry command_table[] = {
     { "LIST",    "List project files; LIST/ALL shows all versions",
       command_list },
     { "READ",    "Read a project-relative text file", command_read },
+    { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
@@ -90,6 +92,13 @@ void command_execute(agent_state *state, char *input)
 
     (void)printf("Unknown command: %s\n", command);
     (void)puts("Enter HELP for available commands.");
+}
+
+static void command_build(agent_state *state,
+                          const char *arguments)
+{
+    (void)arguments;
+    project_build(state);
 }
 
 static void command_help(agent_state *state, const char *arguments)

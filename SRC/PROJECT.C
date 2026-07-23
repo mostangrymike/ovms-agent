@@ -162,6 +162,34 @@ void project_git_status(const agent_state *state)
     }
 }
 
+void project_build(const agent_state *state)
+{
+    int status;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    (void)puts("Building project...");
+    (void)puts("");
+
+    status = system("@BUILD.COM");
+
+    (void)puts("");
+
+    if ((status & 1) != 0) {
+        (void)puts("Build completed successfully.");
+    } else {
+        (void)printf(
+            "Build failed with OpenVMS status %d.\n",
+            status
+        );
+    }
+}
+
 void project_read(const agent_state *state, const char *path)
 {
     FILE *file;
