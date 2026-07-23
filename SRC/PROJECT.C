@@ -143,6 +143,25 @@ void project_list(const agent_state *state, int show_all)
     }
 }
 
+
+#include <stdlib.h>
+
+void project_git_status(const agent_state *state)
+{
+    int status;
+
+    (void)state;
+
+    puts("Git status:");
+    puts("");
+
+    status = system("git status --short");
+
+    if ((status & 1) == 0) {
+        (void)printf("Git failed with OpenVMS status %d\n", status);
+    }
+}
+
 void project_read(const agent_state *state, const char *path)
 {
     FILE *file;

@@ -20,6 +20,7 @@ static void command_root(agent_state *state, const char *arguments);
 static void command_status(agent_state *state, const char *arguments);
 static void command_list(agent_state *state, const char *arguments);
 static void command_read(agent_state *state, const char *arguments);
+static void command_gitstatus(agent_state *state,  const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
 
 static const command_entry command_table[] = {
@@ -30,6 +31,7 @@ static const command_entry command_table[] = {
     { "LIST",    "List project files; LIST/ALL shows all versions",
       command_list },
     { "READ",    "Read a project-relative text file", command_read },
+    { "GITSTATUS", "Display Git status", command_gitstatus },
     { "QUIT",    "Exit OVMS Agent", command_quit },
     { "EXIT",    "Exit OVMS Agent", command_quit },
     { NULL, NULL, NULL }
@@ -125,6 +127,13 @@ static void command_status(agent_state *state, const char *arguments)
 {
     (void)arguments;
     project_show_status(state);
+}
+
+static void command_gitstatus(agent_state *state,
+                              const char *arguments)
+{
+    (void)arguments;
+    project_git_status(state);
 }
 
 static void command_list(agent_state *state, const char *arguments)
