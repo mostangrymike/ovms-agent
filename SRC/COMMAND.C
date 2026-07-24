@@ -33,6 +33,10 @@ static void command_patch(agent_state *state, const char *arguments);
 static void command_search(agent_state *state, const char *arguments);
 static void command_tree(agent_state *state, const char *arguments);
 static void command_ask(agent_state *state, const char *arguments);
+static void command_chat(agent_state *state,
+                         const char *arguments);
+static void command_chat_reset(agent_state *state,
+                               const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -47,6 +51,8 @@ static const command_entry command_table[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
+{ "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
+{ "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -115,6 +121,20 @@ void command_execute(agent_state *state, char *input)
      {
          edit_run(state, arguments);
      }
+
+static void command_chat(agent_state *state,
+                         const char *arguments)
+{
+    openai_chat(state, arguments);
+}
+
+static void command_chat_reset(agent_state *state,
+                               const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_chat_reset();
+}
 
 static void command_ask(agent_state *state,
                         const char *arguments)

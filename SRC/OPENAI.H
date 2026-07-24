@@ -4,6 +4,8 @@
 #include "agent.h"
 
 void openai_ask(agent_state *state, const char *prompt);
+void openai_chat(agent_state *state, const char *prompt);
+void openai_chat_reset(void);
+int openai_chat_active(void);
 
 #endif
-
