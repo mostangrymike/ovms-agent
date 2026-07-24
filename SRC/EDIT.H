@@ -6,4 +6,3 @@
 void edit_run(agent_state *state, const char *path);
 
 #endif
-

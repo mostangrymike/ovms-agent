@@ -74,9 +74,24 @@ static int edit_buffer_reserve(edit_buffer *buffer, size_t needed)
     return 1;
 }
 
-static int edit_buffer_append(edit_buffer *buffer, const char *text)
+static char *edit_copy_line(const char *text)
 {
     size_t length;
+    char *copy;
+
+    length = strlen(text);
+    copy = malloc(length + 1U);
+
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    (void)memcpy(copy, text, length + 1U);
+    return copy;
+}
+
+static int edit_buffer_append(edit_buffer *buffer, const char *text)
+{
     char *copy;
 
     if (buffer->count >= EDIT_MAX_LINES) {
@@ -87,15 +102,104 @@ static int edit_buffer_append(edit_buffer *buffer, const char *text)
         return 0;
     }
 
-    length = strlen(text);
-    copy = malloc(length + 1U);
+    copy = edit_copy_line(text);
 
     if (copy == NULL) {
         return 0;
     }
 
-    (void)memcpy(copy, text, length + 1U);
     buffer->lines[buffer->count++] = copy;
+    return 1;
+}
+
+static int edit_buffer_insert(edit_buffer *buffer,
+                              size_t before_line,
+                              const char *text)
+{
+    char *copy;
+    size_t index;
+
+    if (before_line < 1U || before_line > buffer->count + 1U) {
+        return 0;
+    }
+
+    if (buffer->count >= EDIT_MAX_LINES) {
+        return 0;
+    }
+
+    if (!edit_buffer_reserve(buffer, buffer->count + 1U)) {
+        return 0;
+    }
+
+    copy = edit_copy_line(text);
+
+    if (copy == NULL) {
+        return 0;
+    }
+
+    index = before_line - 1U;
+
+    if (index < buffer->count) {
+        (void)memmove(&buffer->lines[index + 1U],
+                      &buffer->lines[index],
+                      (buffer->count - index) *
+                          sizeof(*buffer->lines));
+    }
+
+    buffer->lines[index] = copy;
+    ++buffer->count;
+    return 1;
+}
+
+static int edit_buffer_delete(edit_buffer *buffer,
+                              size_t first,
+                              size_t last)
+{
+    size_t index;
+    size_t remove_count;
+
+    if (first < 1U ||
+        last < first ||
+        last > buffer->count) {
+        return 0;
+    }
+
+    for (index = first - 1U; index < last; ++index) {
+        free(buffer->lines[index]);
+    }
+
+    remove_count = last - first + 1U;
+
+    if (last < buffer->count) {
+        (void)memmove(&buffer->lines[first - 1U],
+                      &buffer->lines[last],
+                      (buffer->count - last) *
+                          sizeof(*buffer->lines));
+    }
+
+    buffer->count -= remove_count;
+    return 1;
+}
+
+static int edit_buffer_replace(edit_buffer *buffer,
+                               size_t line_number,
+                               const char *text)
+{
+    char *copy;
+
+    if (line_number < 1U ||
+        line_number > buffer->count) {
+        return 0;
+    }
+
+    copy = edit_copy_line(text);
+
+    if (copy == NULL) {
+        return 0;
+    }
+
+    free(buffer->lines[line_number - 1U]);
+    buffer->lines[line_number - 1U] = copy;
     return 1;
 }
 
@@ -222,6 +326,10 @@ static void edit_help(void)
     (void)puts("Editor commands:");
     (void)puts("  p [first [last]]  Print lines");
     (void)puts("  a                 Append lines; end with a single .");
+    (void)puts("  i <line>          Insert before line; end with a single .");
+    (void)puts("  d <line>          Delete one line");
+    (void)puts("  d <first> <last>  Delete a line range");
+    (void)puts("  r <line>          Replace one line");
     (void)puts("  w                 Write a new OpenVMS file version");
     (void)puts("  q                 Quit; refuses if modified");
     (void)puts("  q!                Quit and discard changes");
@@ -255,6 +363,72 @@ static int edit_append_mode(edit_buffer *buffer)
 
         buffer->modified = 1;
     }
+}
+
+static int edit_insert_mode(edit_buffer *buffer, size_t before_line)
+{
+    char line[EDIT_LINE_SIZE];
+    size_t current_line;
+
+    if (before_line < 1U ||
+        before_line > buffer->count + 1U) {
+        (void)puts("Invalid insertion line.");
+        return 0;
+    }
+
+    current_line = before_line;
+    (void)puts("Enter text. A single period ends insert mode.");
+
+    for (;;) {
+        (void)fputs("INSERT> ", stdout);
+        (void)fflush(stdout);
+
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            return 0;
+        }
+
+        if (strcmp(line, ".\n") == 0 ||
+            strcmp(line, ".\r\n") == 0 ||
+            strcmp(line, ".") == 0) {
+            return 1;
+        }
+
+        if (!edit_buffer_insert(buffer, current_line, line)) {
+            (void)puts("Unable to insert line.");
+            return 0;
+        }
+
+        ++current_line;
+        buffer->modified = 1;
+    }
+}
+
+static int edit_replace_mode(edit_buffer *buffer, size_t line_number)
+{
+    char line[EDIT_LINE_SIZE];
+
+    if (line_number < 1U ||
+        line_number > buffer->count) {
+        (void)puts("Invalid replacement line.");
+        return 0;
+    }
+
+    (void)printf("Replace line %lu:\n",
+                 (unsigned long)line_number);
+    (void)fputs("REPLACE> ", stdout);
+    (void)fflush(stdout);
+
+    if (fgets(line, sizeof(line), stdin) == NULL) {
+        return 0;
+    }
+
+    if (!edit_buffer_replace(buffer, line_number, line)) {
+        (void)puts("Unable to replace line.");
+        return 0;
+    }
+
+    buffer->modified = 1;
+    return 1;
 }
 
 void edit_run(agent_state *state, const char *path)
@@ -336,6 +510,55 @@ void edit_run(agent_state *state, const char *path)
             continue;
         }
 
+        if (op == 'i' || op == 'I') {
+            first = 0UL;
+            fields = sscanf(command + 1, "%lu", &first);
+
+            if (fields != 1) {
+                (void)puts("Usage: I line");
+                continue;
+            }
+
+            (void)edit_insert_mode(&buffer, (size_t)first);
+            continue;
+        }
+
+        if (op == 'd' || op == 'D') {
+            first = 0UL;
+            last = 0UL;
+            fields = sscanf(command + 1, "%lu %lu", &first, &last);
+
+            if (fields == 1) {
+                last = first;
+            } else if (fields != 2) {
+                (void)puts("Usage: D line | D first last");
+                continue;
+            }
+
+            if (!edit_buffer_delete(&buffer,
+                                    (size_t)first,
+                                    (size_t)last)) {
+                (void)puts("Invalid delete range.");
+                continue;
+            }
+
+            buffer.modified = 1;
+            continue;
+        }
+
+        if (op == 'r' || op == 'R') {
+            first = 0UL;
+            fields = sscanf(command + 1, "%lu", &first);
+
+            if (fields != 1) {
+                (void)puts("Usage: R line");
+                continue;
+            }
+
+            (void)edit_replace_mode(&buffer, (size_t)first);
+            continue;
+        }
+
         if (op == 'w' || op == 'W') {
             (void)edit_write(path, &buffer);
             continue;
@@ -359,4 +582,3 @@ void edit_run(agent_state *state, const char *path)
 
     edit_buffer_free(&buffer);
 }
-
