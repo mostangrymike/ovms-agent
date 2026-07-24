@@ -39,6 +39,8 @@ static void command_chat_reset(agent_state *state,
                                const char *arguments);
 static void command_review(agent_state *state,
                            const char *arguments);
+static void command_agent(agent_state *state,
+                          const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -56,6 +58,7 @@ static const command_entry command_table[] = {
 { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
 { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
 { "REVIEW", "Review source with OpenAI: REVIEW file", command_review },
+{ "AGENT", "Run read-only AI agent: AGENT goal", command_agent },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -124,6 +127,13 @@ void command_execute(agent_state *state, char *input)
      {
          edit_run(state, arguments);
      }
+
+static void command_agent(agent_state *state,
+                          const char *arguments)
+{
+    openai_agent(state, arguments);
+}
+
 
 static void command_chat(agent_state *state,
                          const char *arguments)

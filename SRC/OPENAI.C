@@ -804,6 +804,473 @@ static char *openai_read_text_file(const char *path)
     return data;
 }
 
+
+#define OPENAI_AGENT_MAX_TURNS 4
+
+static int write_read_file_tool(FILE *file)
+{
+    return fputs(
+        "\"tools\":[{"
+        "\"type\":\"function\","
+        "\"name\":\"read_file\","
+        "\"description\":\"Read one project-relative text file. "
+        "Use Unix-style paths such as SRC/MAIN.C.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "}]",
+        file
+    ) != EOF;
+}
+
+static int write_agent_request(const char *model,
+                               const char *instructions,
+                               const char *user_prompt,
+                               const char *previous_id,
+                               const char *call_id,
+                               const char *tool_output)
+{
+    FILE *file;
+    int success;
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputc('"', file) == EOF) {
+        success = 0;
+    }
+
+    if (success &&
+        previous_id != NULL &&
+        *previous_id != '\0') {
+        if (fputs(",\"previous_response_id\":\"", file) == EOF ||
+            !json_write_escaped(file, previous_id) ||
+            fputc('"', file) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success && call_id != NULL && tool_output != NULL) {
+        if (fputs(",\"input\":[{\"type\":\"function_call_output\","
+                  "\"call_id\":\"", file) == EOF ||
+            !json_write_escaped(file, call_id) ||
+            fputs("\",\"output\":\"", file) == EOF ||
+            !json_write_escaped(file, tool_output) ||
+            fputs("\"}],", file) == EOF ||
+            !write_read_file_tool(file)) {
+            success = 0;
+        }
+    } else if (success) {
+        if (fputs(",\"input\":\"", file) == EOF ||
+            !json_write_escaped(file, user_prompt) ||
+            fputs("\",", file) == EOF ||
+            !write_read_file_tool(file)) {
+            success = 0;
+        }
+    }
+
+    if (success && fputs("}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write complete agent request.");
+        return 0;
+    }
+
+    return 1;
+}
+
+static int perform_openai_request(void)
+{
+    int status;
+
+    status = system(
+        "curl --silent --show-error "
+        "--output " OPENAI_RESPONSE_FILE " "
+        "--header @" OPENAI_HEADERS_FILE " "
+        "--data-binary @" OPENAI_REQUEST_FILE " "
+        "https://api.openai.com/v1/responses"
+    );
+
+    return (status & 1) != 0;
+}
+
+static char *extract_top_level_id(const char *json)
+{
+    const char *value;
+
+    value = find_string_value(json, "id");
+
+    if (value == NULL) {
+        return NULL;
+    }
+
+    return json_decode_string(value, NULL);
+}
+
+static const char *find_function_call_object(const char *json)
+{
+    const char *position;
+
+    for (position = json;
+         position != NULL && *position != '\0';
+         ++position) {
+        const char *value;
+
+        if (*position == '"' &&
+            json_key_matches(position, "type", &value) &&
+            *value == '"') {
+            char *decoded;
+            int match;
+
+            decoded = json_decode_string(value, NULL);
+
+            if (decoded == NULL) {
+                continue;
+            }
+
+            match = strcmp(decoded, "function_call") == 0;
+            free(decoded);
+
+            if (match) {
+                return position;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static int extract_function_call(const char *json,
+                                 char **name,
+                                 char **call_id,
+                                 char **arguments)
+{
+    const char *object;
+    const char *value;
+
+    *name = NULL;
+    *call_id = NULL;
+    *arguments = NULL;
+
+    object = find_function_call_object(json);
+
+    if (object == NULL) {
+        return 0;
+    }
+
+    value = find_string_value(object, "name");
+
+    if (value != NULL) {
+        *name = json_decode_string(value, NULL);
+    }
+
+    value = find_string_value(object, "call_id");
+
+    if (value != NULL) {
+        *call_id = json_decode_string(value, NULL);
+    }
+
+    value = find_string_value(object, "arguments");
+
+    if (value != NULL) {
+        *arguments = json_decode_string(value, NULL);
+    }
+
+    if (*name == NULL ||
+        *call_id == NULL ||
+        *arguments == NULL) {
+        free(*name);
+        free(*call_id);
+        free(*arguments);
+        *name = NULL;
+        *call_id = NULL;
+        *arguments = NULL;
+        return 0;
+    }
+
+    return 1;
+}
+
+static char *extract_path_argument(const char *arguments)
+{
+    const char *value;
+
+    value = find_string_value(arguments, "path");
+
+    if (value == NULL) {
+        return NULL;
+    }
+
+    return json_decode_string(value, NULL);
+}
+
+static char *make_tool_error(const char *message,
+                             const char *path)
+{
+    size_t size;
+    char *result;
+
+    size = strlen(message) + 1U;
+
+    if (path != NULL) {
+        size += strlen(path) + 2U;
+    }
+
+    result = malloc(size);
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    (void)strcpy(result, message);
+
+    if (path != NULL) {
+        (void)strcat(result, ": ");
+        (void)strcat(result, path);
+    }
+
+    return result;
+}
+
+static char *execute_read_file_tool(const char *arguments)
+{
+    char *path;
+    char *output;
+
+    path = extract_path_argument(arguments);
+
+    if (path == NULL) {
+        return make_tool_error(
+            "read_file arguments did not contain a valid path",
+            NULL
+        );
+    }
+
+    if (!openai_path_is_safe(path)) {
+        output = make_tool_error(
+            "Unsafe or invalid project-relative path",
+            path
+        );
+        free(path);
+        return output;
+    }
+
+    output = openai_read_text_file(path);
+
+    if (output == NULL) {
+        output = make_tool_error("Unable to read file", path);
+    }
+
+    free(path);
+    return output;
+}
+
+static int display_output_text_from_json(const char *json)
+{
+    const char *object_start;
+    const char *text_value;
+    char *decoded;
+
+    object_start = find_output_text_object(json);
+
+    if (object_start == NULL) {
+        return 0;
+    }
+
+    text_value = find_string_value(object_start, "text");
+
+    if (text_value == NULL) {
+        return 0;
+    }
+
+    decoded = json_decode_string(text_value, NULL);
+
+    if (decoded == NULL) {
+        return 0;
+    }
+
+    (void)puts("");
+    (void)puts(decoded);
+    free(decoded);
+    return 1;
+}
+
+void openai_agent(agent_state *state, const char *goal)
+{
+    static const char instructions[] =
+        "You are a careful OpenVMS C code analyst operating inside a "
+        "project sandbox. You have one read-only tool named read_file. "
+        "Use it when source context is needed. Never claim to have read a "
+        "file unless the tool returned it. Do not request paths outside the "
+        "project. Provide a concise, concrete answer after inspecting the "
+        "necessary files.";
+    const char *api_key;
+    const char *model;
+    char *previous_id;
+    char *tool_output;
+    char *call_id;
+    unsigned int turn;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (goal == NULL || *goal == '\0') {
+        (void)puts("Usage: AGENT goal");
+        return;
+    }
+
+    api_key = getenv("OPENAI_API_KEY");
+    model = getenv("OVMS_AGENT_MODEL");
+
+    if (api_key == NULL || *api_key == '\0') {
+        (void)puts("OPENAI_API_KEY is not defined.");
+        return;
+    }
+
+    if (model == NULL || *model == '\0') {
+        (void)puts("OVMS_AGENT_MODEL is not defined.");
+        return;
+    }
+
+    if (!write_headers(api_key)) {
+        return;
+    }
+
+    previous_id = NULL;
+    tool_output = NULL;
+    call_id = NULL;
+
+    (void)puts("Starting read-only agent...");
+
+    for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
+        char *json;
+        char *response_id;
+        char *name;
+        char *new_call_id;
+        char *arguments;
+
+        if (!write_agent_request(model,
+                                 instructions,
+                                 goal,
+                                 previous_id,
+                                 call_id,
+                                 tool_output)) {
+            break;
+        }
+
+        free(call_id);
+        call_id = NULL;
+        free(tool_output);
+        tool_output = NULL;
+
+        if (!perform_openai_request()) {
+            (void)puts("OpenAI request failed.");
+            break;
+        }
+
+        json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+
+        if (json == NULL) {
+            (void)puts("Unable to read OpenAI response.");
+            break;
+        }
+
+        response_id = extract_top_level_id(json);
+
+        if (response_id == NULL) {
+            (void)puts("Response did not contain an id.");
+            free(json);
+            break;
+        }
+
+        free(previous_id);
+        previous_id = response_id;
+
+        if (display_output_text_from_json(json)) {
+            free(json);
+            remove_temporary_files();
+            free(previous_id);
+            return;
+        }
+
+        name = NULL;
+        new_call_id = NULL;
+        arguments = NULL;
+
+        if (!extract_function_call(json,
+                                   &name,
+                                   &new_call_id,
+                                   &arguments)) {
+            (void)puts(
+                "Response contained neither output text nor a function call."
+            );
+            free(json);
+            break;
+        }
+
+        free(json);
+
+        if (strcmp(name, "read_file") != 0) {
+            tool_output = make_tool_error(
+                "Unsupported tool requested",
+                name
+            );
+        } else {
+            tool_output = execute_read_file_tool(arguments);
+        }
+
+        free(name);
+        free(arguments);
+
+        if (tool_output == NULL) {
+            free(new_call_id);
+            (void)puts("Unable to produce tool output.");
+            break;
+        }
+
+        call_id = new_call_id;
+        (void)puts("Tool executed: read_file");
+    }
+
+    (void)puts(
+        "Agent stopped before producing a final answer "
+        "(tool-turn limit or error)."
+    );
+
+    remove_temporary_files();
+    free(previous_id);
+    free(call_id);
+    free(tool_output);
+}
+
 void openai_review_file(agent_state *state, const char *path)
 {
     static const char introduction[] =
