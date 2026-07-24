@@ -5,6 +5,7 @@
 #include "project.h"
 #include "util.h"
 #include "edit.h"
+#include "openai.h"
 
 typedef void (*command_handler)(agent_state *state,
                                 const char *arguments);
@@ -31,6 +32,8 @@ static void command_quit(agent_state *state, const char *arguments);
 static void command_patch(agent_state *state, const char *arguments);
 static void command_search(agent_state *state, const char *arguments);
 static void command_tree(agent_state *state, const char *arguments);
+static void command_ask(agent_state *state, const char *arguments);
+
 
 static const command_entry command_table[] = {
     { "HELP",    "Display command help", command_help },
@@ -44,6 +47,7 @@ static const command_entry command_table[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
+    { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
     { "QUIT",    "Exit OVMS Agent", command_quit },
@@ -111,6 +115,12 @@ void command_execute(agent_state *state, char *input)
      {
          edit_run(state, arguments);
      }
+
+static void command_ask(agent_state *state,
+                        const char *arguments)
+{
+    openai_ask(state, arguments);
+}
 
 static void command_build(agent_state *state,
                           const char *arguments)
