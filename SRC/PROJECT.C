@@ -210,10 +210,11 @@ void project_search(const agent_state *state,
                  matches == 1UL ? "" : "s");
 }
 
-void project_list(const agent_state *state, int show_all)
+void project_list(const agent_state *state, const char *path, int show_all)
 {
     DIR *directory;
     struct dirent *entry;
+    const char *target;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -222,16 +223,26 @@ void project_list(const agent_state *state, int show_all)
         return;
     }
 
-    directory = opendir(state->project_root);
+    target = path;
+
+if (target == NULL || *target == '\0') {
+    target = ".";
+} else if (!path_is_safe(target)) {
+    (void)puts("Unsafe or invalid project-relative path.");
+    return;
+}
+
+directory = opendir(target);
+
 
     if (directory == NULL) {
-        (void)printf("Unable to open project root: %s\n",
-                     state->project_root);
-        (void)printf("Reason: %s\n", strerror(errno));
+        (void)printf("Unable to open directory %s: %s\n",
+                     target,
+                     strerror(errno));
         return;
     }
 
-    (void)printf("Directory: %s\n\n", state->project_root);
+    (void)printf("Directory: %s\n\n", target);
 
     while ((entry = readdir(directory)) != NULL) {
         if (show_all || !hide_default_entry(entry->d_name)) {

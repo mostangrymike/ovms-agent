@@ -33,8 +33,7 @@ static const command_entry command_table[] = {
     { "VERSION", "Display agent version", command_version },
     { "ROOT",    "Display the project root", command_root },
     { "STATUS",  "Display agent status", command_status },
-    { "LIST",    "List project files; LIST/ALL shows all versions",
-      command_list },
+    { "LIST", "List a directory: LIST [path]", command_list },
     { "READ",    "Read a project-relative text file", command_read },
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
@@ -93,7 +92,7 @@ void command_execute(agent_state *state, char *input)
     }
 
     if (strcmp(command, "LIST/ALL") == 0) {
-        project_list(state, 1);
+        project_list(state, arguments,  1);
         return;
     }
 
@@ -195,10 +194,10 @@ static void command_gitstatus(agent_state *state,
     project_git_status(state);
 }
 
-static void command_list(agent_state *state, const char *arguments)
+static void command_list(agent_state *state,
+                         const char *arguments)
 {
-    (void)arguments;
-    project_list(state, 0);
+    project_list(state, arguments, 0);
 }
 
 static void command_read(agent_state *state, const char *arguments)
