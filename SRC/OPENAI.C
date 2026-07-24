@@ -2186,6 +2186,7 @@ static int openai_confirm_restore(const char *path)
 static int openai_restore_previous_version(const char *path)
 {
     char previous_path[1024];
+    char destination_path[1024];
     unsigned char buffer[8192];
     FILE *source;
     FILE *destination;
@@ -2210,6 +2211,23 @@ static int openai_restore_previous_version(const char *path)
         return 0;
     }
 
+    /*
+     * A trailing semicolon requests a new highest OpenVMS file version.
+     * Without it, RMS may try to reuse the source version number.
+     */
+    written = snprintf(
+        destination_path,
+        sizeof(destination_path),
+        "%s;",
+        path
+    );
+
+    if (written < 0 ||
+        (size_t)written >= sizeof(destination_path)) {
+        (void)puts("Restore destination path is too long.");
+        return 0;
+    }
+
     source = fopen(previous_path, "rb");
 
     if (source == NULL) {
@@ -2221,16 +2239,12 @@ static int openai_restore_previous_version(const char *path)
         return 0;
     }
 
-    /*
-     * On OpenVMS, opening the unversioned destination for writing
-     * creates a new latest file version.
-     */
-    destination = fopen(path, "wb");
+    destination = fopen(destination_path, "wb");
 
     if (destination == NULL) {
         (void)printf(
-            "Unable to create restored version of %s: %s\n",
-            path,
+            "Unable to create restored version %s: %s\n",
+            destination_path,
             strerror(errno)
         );
         (void)fclose(source);
@@ -2244,8 +2258,8 @@ static int openai_restore_previous_version(const char *path)
                 source)) > 0U) {
         if (fwrite(buffer, 1U, count, destination) != count) {
             (void)printf(
-                "Unable to write restored version of %s: %s\n",
-                path,
+                "Unable to write restored version %s: %s\n",
+                destination_path,
                 strerror(errno)
             );
             (void)fclose(source);
@@ -2277,8 +2291,8 @@ static int openai_restore_previous_version(const char *path)
 
     if (fclose(destination) != 0) {
         (void)printf(
-            "Unable to close restored version of %s: %s\n",
-            path,
+            "Unable to close restored version %s: %s\n",
+            destination_path,
             strerror(errno)
         );
         return 0;
@@ -2288,7 +2302,7 @@ static int openai_restore_previous_version(const char *path)
         "Previous file contents restored as a new OpenVMS version."
     );
     return 1;
-} 
+}
 static void openai_agent_mode(agent_state *state,
                               const char *goal,
                               int allow_write,
@@ -2543,6 +2557,11 @@ static void openai_agent_mode(agent_state *state,
                 if (build_after_write) {
                     char *build_output;
                     int build_status;
+                    const char *rollback_summary;
+
+                    rollback_summary =
+                        "Rollback status: not needed because the build "
+                        "succeeded.";
 
                     (void)puts("Patch applied. Running controlled build...");
                     build_output = execute_run_build_tool(&build_status);
@@ -2559,16 +2578,29 @@ static void openai_agent_mode(agent_state *state,
                         if (openai_confirm_restore(display_path)) {
                             if (openai_restore_previous_version(
                                     display_path)) {
+                                rollback_summary =
+                                    "Rollback status: successful. The build "
+                                    "failed, but the previous source contents "
+                                    "were restored as the latest OpenVMS file "
+                                    "version.";
                                 (void)puts(
                                     "Rollback complete. The prior contents "
                                     "are now the latest file version."
                                 );
                             } else {
+                                rollback_summary =
+                                    "Rollback status: requested but failed. "
+                                    "The build failed and the patched source "
+                                    "may still be the latest version.";
                                 (void)puts(
                                     "Rollback was requested but failed."
                                 );
                             }
                         } else {
+                            rollback_summary =
+                                "Rollback status: declined. The build failed "
+                                "and the patched source remains the latest "
+                                "version.";
                             (void)puts(
                                 "Rollback declined. The patched version "
                                 "remains current."
@@ -2584,13 +2616,18 @@ static void openai_agent_mode(agent_state *state,
                             "\n\nAnalyze the following OpenVMS build result. "
                             "State whether it succeeded. If it failed, identify "
                             "the first actionable compiler or linker diagnostic "
-                            "and recommend the smallest next edit. Do not claim "
-                            "to have made another edit.\n\n";
+                            "and recommend the smallest next edit. Also report "
+                            "the rollback status exactly as supplied below. "
+                            "Do not claim to have made another edit.\n\n";
+                        static const char rollback_label[] =
+                            "\n\n";
                         size_t prompt_size;
                         char *summary_prompt;
 
                         prompt_size = strlen(prefix) + strlen(goal) +
-                                      strlen(middle) + strlen(build_output) + 1U;
+                                      strlen(middle) + strlen(build_output) +
+                                      strlen(rollback_label) +
+                                      strlen(rollback_summary) + 1U;
                         summary_prompt = malloc(prompt_size);
 
                         if (summary_prompt != NULL) {
@@ -2598,6 +2635,8 @@ static void openai_agent_mode(agent_state *state,
                             (void)strcat(summary_prompt, goal);
                             (void)strcat(summary_prompt, middle);
                             (void)strcat(summary_prompt, build_output);
+                            (void)strcat(summary_prompt, rollback_label);
+                            (void)strcat(summary_prompt, rollback_summary);
                             openai_send(state, summary_prompt, 0);
                             free(summary_prompt);
                         } else {
@@ -2847,6 +2886,86 @@ void openai_agent_build(agent_state *state, const char *goal)
     free(json);
     remove_temporary_files();
     (void)putchar('\n');
+}
+
+
+
+void openai_agent_retry(agent_state *state, const char *goal)
+{
+    static const char introduction[] =
+        "This is a fresh supervised repair attempt after a previous patch "
+        "failed to build and was rolled back. Use the prior build diagnostics "
+        "below as evidence. Inspect the current restored source before "
+        "proposing one new smallest exact patch. Do not repeat the failed "
+        "edit. Apply at most one replace_text operation and then run the "
+        "controlled build.\n\nUser goal:\n";
+    static const char log_label[] =
+        "\n\nPrevious failed build log:\n";
+    char *build_log;
+    char *combined_goal;
+    size_t combined_size;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (goal == NULL || *goal == '\0') {
+        (void)puts("Usage: AGENT/RETRY goal");
+        return;
+    }
+
+    if (openai_path_is_sensitive(goal)) {
+        (void)puts(
+            "Request denied because it references a sensitive path."
+        );
+        return;
+    }
+
+    build_log = read_entire_file(OPENAI_BUILD_LOG_FILE, NULL);
+
+    if (build_log == NULL) {
+        (void)puts(
+            "No readable prior build log is available. Run AGENT/FIX "
+            "and allow a controlled build before using AGENT/RETRY."
+        );
+        return;
+    }
+
+    combined_size =
+        strlen(introduction) +
+        strlen(goal) +
+        strlen(log_label) +
+        strlen(build_log) +
+        1U;
+
+    combined_goal = malloc(combined_size);
+
+    if (combined_goal == NULL) {
+        (void)puts("Insufficient memory for retry prompt.");
+        free(build_log);
+        return;
+    }
+
+    (void)strcpy(combined_goal, introduction);
+    (void)strcat(combined_goal, goal);
+    (void)strcat(combined_goal, log_label);
+    (void)strcat(combined_goal, build_log);
+
+    (void)puts(
+        "Starting fresh supervised retry using the previous build log..."
+    );
+
+    /*
+     * A retry is still one patch and one controlled build. The existing
+     * supervised mode enforces local confirmation, rollback, and termination.
+     */
+    openai_agent_mode(state, combined_goal, 1, 1);
+
+    free(combined_goal);
+    free(build_log);
 }
 
 

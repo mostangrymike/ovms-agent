@@ -11,6 +11,7 @@ void openai_review_file(agent_state *state, const char *path);
 void openai_agent(agent_state *state, const char *goal);
 void openai_agent_write(agent_state *state, const char *goal);
 void openai_agent_fix(agent_state *state, const char *goal);
+void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
 
 #endif
