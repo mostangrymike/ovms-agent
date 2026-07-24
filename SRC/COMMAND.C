@@ -41,6 +41,11 @@ static void command_review(agent_state *state,
                            const char *arguments);
 static void command_agent(agent_state *state,
                           const char *arguments);
+static void command_agent_write(agent_state *state,
+                                const char *arguments);
+static void command_agent_build(agent_state *state,
+                                const char *arguments);
+
 
 
 static const command_entry command_table[] = {
@@ -59,6 +64,8 @@ static const command_entry command_table[] = {
 { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
 { "REVIEW", "Review source with OpenAI: REVIEW file", command_review },
 { "AGENT", "Run read-only AI agent: AGENT goal", command_agent },
+{ "AGENT/WRITE", "Run guarded write agent: AGENT/WRITE goal", command_agent_write },
+{ "AGENT/BUILD", "Run controlled build analysis: AGENT/BUILD goal", command_agent_build },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -121,6 +128,20 @@ void command_execute(agent_state *state, char *input)
     (void)printf("Unknown command: %s\n", command);
     (void)puts("Enter HELP for available commands.");
 }
+
+static void command_agent_build(agent_state *state,
+                                const char *arguments)
+{
+    openai_agent_build(state, arguments);
+}
+
+
+static void command_agent_write(agent_state *state,
+                                const char *arguments)
+{
+    openai_agent_write(state, arguments);
+}
+
 
      static void command_edit(agent_state *state,
                               const char *arguments)

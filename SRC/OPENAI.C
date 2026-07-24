@@ -11,10 +11,14 @@
 #define OPENAI_REQUEST_FILE  "OVMS_AGENT_REQUEST.JSON"
 #define OPENAI_RESPONSE_FILE "OVMS_AGENT_RESPONSE.JSON"
 #define OPENAI_HEADERS_FILE  "OVMS_AGENT_HEADERS.TXT"
+#define OPENAI_BUILD_LOG_FILE "OVMS_AGENT_BUILD.LOG"
+#define OPENAI_BUILD_OUTPUT_LIMIT 65536
 #define OPENAI_RESPONSE_ID_SIZE 128
 
-static int openai_path_is_sensitive(const char *path);
 static char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
+
+/* Forward declarations used before their definitions. */
+static int openai_path_is_sensitive(const char *path);
 
 static int json_write_escaped(FILE *file, const char *text)
 {
@@ -1042,6 +1046,123 @@ static int write_agent_tools_with_replace(FILE *file)
     ) != EOF;
 }
 
+static int write_build_agent_tools(FILE *file)
+{
+    return fputs(
+        "\"tools\":[{"
+        "\"type\":\"function\","
+        "\"name\":\"run_build\","
+        "\"description\":\"Run the fixed project BUILD.COM command procedure "
+        "and return its captured output and OpenVMS completion status. "
+        "This tool accepts no command text.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{},"
+        "\"required\":[],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "}]",
+        file
+    ) != EOF;
+}
+
+static int write_build_agent_initial_request(
+    const char *model,
+    const char *instructions,
+    const char *user_prompt)
+{
+    FILE *file;
+    int success;
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputs("\",\"input\":\"", file) == EOF ||
+        !json_write_escaped(file, user_prompt) ||
+        fputs("\",", file) == EOF ||
+        !write_build_agent_tools(file) ||
+        fputs(",\"tool_choice\":{" 
+              "\"type\":\"function\","
+              "\"name\":\"run_build\""
+              "},\"store\":true}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write initial build-agent request.");
+        return 0;
+    }
+
+    return 1;
+}
+
+static int write_build_agent_followup_request(
+    const char *model,
+    const char *instructions,
+    const char *context_items,
+    const char *call_id,
+    const char *tool_output)
+{
+    FILE *file;
+    int success;
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputs("\",\"input\":[", file) == EOF ||
+        fputs(context_items, file) == EOF ||
+        fputs(",{\"type\":\"function_call_output\","
+              "\"call_id\":\"", file) == EOF ||
+        !json_write_escaped(file, call_id) ||
+        fputs("\",\"output\":\"", file) == EOF ||
+        !json_write_escaped(file, tool_output) ||
+        fputs("\"}],", file) == EOF ||
+        !write_build_agent_tools(file) ||
+        fputs(",\"store\":true}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write build-agent follow-up request.");
+        return 0;
+    }
+
+    return 1;
+}
+
 static int write_agent_request_mode(const char *model,
                                     const char *instructions,
                                     const char *user_prompt,
@@ -1107,23 +1228,19 @@ static int write_agent_request_mode(const char *model,
         }
     }
 
-if (success &&
-    allow_write &&
-    previous_id != NULL &&
-    *previous_id != '\0') {
-
-    if (fputs(
-            ",\"tool_choice\":{"
-            "\"type\":\"function\","
-            "\"name\":\"replace_text\""
-            "}",
-            file
-        ) == EOF) {
-        success = 0;
+    if (success &&
+        allow_write &&
+        previous_id != NULL &&
+        *previous_id != '\0') {
+        if (fputs(",\"tool_choice\":{" 
+                  "\"type\":\"function\","
+                  "\"name\":\"replace_text\""
+                  "}", file) == EOF) {
+            success = 0;
+        }
     }
-}
- 
-   if (success && fputs("}\n", file) == EOF) {
+
+    if (success && fputs("}\n", file) == EOF) {
         success = 0;
     }
 
@@ -1856,6 +1973,164 @@ static openai_replace_result execute_replace_text_tool(
     return OPENAI_REPLACE_DECLINED;
 }
 
+static char *extract_output_items_json(const char *json)
+{
+    const char *key;
+    const char *position;
+    const char *array_start;
+    const char *array_end;
+    int depth;
+    int in_string;
+    int escaped;
+    size_t length;
+    char *result;
+
+    if (json == NULL) {
+        return NULL;
+    }
+
+    key = strstr(json, "\"output\"");
+    if (key == NULL) {
+        return NULL;
+    }
+
+    position = strchr(key, ':');
+    if (position == NULL) {
+        return NULL;
+    }
+
+    position = skip_space(position + 1);
+    if (*position != '[') {
+        return NULL;
+    }
+
+    array_start = position + 1;
+    position = array_start;
+    array_end = NULL;
+    depth = 1;
+    in_string = 0;
+    escaped = 0;
+
+    while (*position != '\0') {
+        char ch;
+
+        ch = *position;
+
+        if (in_string) {
+            if (escaped) {
+                escaped = 0;
+            } else if (ch == '\\') {
+                escaped = 1;
+            } else if (ch == '"') {
+                in_string = 0;
+            }
+        } else if (ch == '"') {
+            in_string = 1;
+        } else if (ch == '[') {
+            ++depth;
+        } else if (ch == ']') {
+            --depth;
+            if (depth == 0) {
+                array_end = position;
+                break;
+            }
+        }
+
+        ++position;
+    }
+
+    if (array_end == NULL) {
+        return NULL;
+    }
+
+    length = (size_t)(array_end - array_start);
+    result = malloc(length + 1U);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    (void)memcpy(result, array_start, length);
+    result[length] = '\0';
+    return result;
+}
+
+static char *execute_run_build_tool(int *build_status)
+{
+    char command[256];
+    char *output;
+    size_t length;
+    int status;
+    int written;
+
+    if (build_status == NULL) {
+        return openai_duplicate_text("Build status pointer was NULL.");
+    }
+
+    /* Fixed command only; no user or model text is interpolated. */
+    written = snprintf(command,
+                       sizeof(command),
+                       "@BUILD.COM/OUTPUT=%s",
+                       OPENAI_BUILD_LOG_FILE);
+
+    if (written < 0 || (size_t)written >= sizeof(command)) {
+        return openai_duplicate_text(
+            "Unable to construct fixed BUILD.COM invocation."
+        );
+    }
+
+    (void)remove(OPENAI_BUILD_LOG_FILE);
+    status = system(command);
+    *build_status = status;
+
+    output = read_entire_file(OPENAI_BUILD_LOG_FILE, &length);
+
+    if (output == NULL) {
+        char fallback[256];
+
+        (void)snprintf(
+            fallback,
+            sizeof(fallback),
+            "BUILD.COM returned OpenVMS status %d, but the build log "
+            "could not be read.",
+            status
+        );
+        return openai_duplicate_text(fallback);
+    }
+
+    if (length > OPENAI_BUILD_OUTPUT_LIMIT) {
+        output[OPENAI_BUILD_OUTPUT_LIMIT] = '\0';
+    }
+
+    {
+        char header[256];
+        size_t result_size;
+        char *result;
+
+        (void)snprintf(
+            header,
+            sizeof(header),
+            "OpenVMS build status: %d (%s)\n\n",
+            status,
+            (status & 1) != 0 ? "success" : "failure"
+        );
+
+        result_size = strlen(header) + strlen(output) + 1U;
+        result = malloc(result_size);
+
+        if (result == NULL) {
+            free(output);
+            return openai_duplicate_text(
+                "Insufficient memory to return build output."
+            );
+        }
+
+        (void)strcpy(result, header);
+        (void)strcat(result, output);
+        free(output);
+        return result;
+    }
+}
+
 static int display_output_text_from_json(const char *json)
 {
     const char *object_start;
@@ -1907,9 +2182,10 @@ static void openai_agent_mode(agent_state *state,
         "not list the project first. Do not search a file after reading it "
         "unless the requested text was not present. Before calling "
         "replace_text, ensure old_text is exact and unique. Make one smallest "
-        "possible edit. Do not ask for confirmation in ordinary text. Confirmation is handled locally by replace_text."
-        "Once you know the exact edit, call replace_text immediately.  Never modify "
-        "sensitive files or request paths outside the project. Do not request "
+        "possible edit. Do not ask for confirmation in ordinary text. "
+        "Confirmation is handled locally by replace_text; call it immediately "
+        "once the exact edit is known. Never modify sensitive files or request "
+        "paths outside the project. Do not request "
         "a second patch in the same run.";
 
     const char *api_key;
@@ -2182,6 +2458,171 @@ void openai_agent_write(agent_state *state, const char *goal)
 {
     openai_agent_mode(state, goal, 1);
 }
+
+void openai_agent_build(agent_state *state, const char *goal)
+{
+    static const char instructions[] =
+        "You are a careful OpenVMS build analyst. Use the fixed run_build "
+        "tool exactly once. After receiving the build output, summarize "
+        "whether the build succeeded. If it failed, identify the first "
+        "actionable compiler or linker diagnostic and recommend the smallest "
+        "next edit. Do not request arbitrary commands and do not claim success "
+        "unless the returned OpenVMS status is odd.";
+
+    const char *api_key;
+    const char *model;
+    char *json;
+    char *name;
+    char *call_id;
+    char *arguments;
+    char *context_items;
+    char *tool_output;
+    int build_status;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (goal == NULL || *goal == '\0') {
+        (void)puts("Usage: AGENT/BUILD goal");
+        return;
+    }
+
+    api_key = getenv("OPENAI_API_KEY");
+    model = getenv("OVMS_AGENT_MODEL");
+
+    if (api_key == NULL || *api_key == '\0') {
+        (void)puts("OPENAI_API_KEY is not defined.");
+        return;
+    }
+
+    if (model == NULL || *model == '\0') {
+        (void)puts("OVMS_AGENT_MODEL is not defined.");
+        return;
+    }
+
+    if (!write_headers(api_key)) {
+        return;
+    }
+
+    (void)puts("Starting controlled build agent...");
+
+    if (!write_build_agent_initial_request(model,
+                                           instructions,
+                                           goal)) {
+        remove_temporary_files();
+        return;
+    }
+
+    if (!perform_openai_request()) {
+        (void)puts("Initial OpenAI request failed.");
+        remove_temporary_files();
+        return;
+    }
+
+    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    if (json == NULL) {
+        (void)puts("Unable to read initial OpenAI response.");
+        remove_temporary_files();
+        return;
+    }
+
+    if (display_api_error_from_json(json)) {
+        free(json);
+        remove_temporary_files();
+        return;
+    }
+
+    name = NULL;
+    call_id = NULL;
+    arguments = NULL;
+
+    if (!extract_function_call(json, &name, &call_id, &arguments)) {
+        (void)puts("Initial response did not contain a function call.");
+        free(json);
+        remove_temporary_files();
+        return;
+    }
+
+    if (strcmp(name, "run_build") != 0) {
+        (void)printf("Unsupported build tool requested: %s\n", name);
+        free(name);
+        free(call_id);
+        free(arguments);
+        free(json);
+        remove_temporary_files();
+        return;
+    }
+
+    context_items = extract_output_items_json(json);
+    free(name);
+    free(arguments);
+    free(json);
+
+    if (context_items == NULL) {
+        (void)puts("Unable to preserve initial response output items.");
+        free(call_id);
+        remove_temporary_files();
+        return;
+    }
+
+    tool_output = execute_run_build_tool(&build_status);
+    if (tool_output == NULL) {
+        (void)puts("Unable to capture build output.");
+        free(context_items);
+        free(call_id);
+        remove_temporary_files();
+        return;
+    }
+
+    (void)printf("Tool executed: run_build [%s, status %d]\n",
+                 (build_status & 1) != 0 ? "success" : "failure",
+                 build_status);
+
+    if (!write_build_agent_followup_request(model,
+                                            instructions,
+                                            context_items,
+                                            call_id,
+                                            tool_output)) {
+        free(tool_output);
+        free(context_items);
+        free(call_id);
+        remove_temporary_files();
+        return;
+    }
+
+    free(tool_output);
+    free(context_items);
+    free(call_id);
+
+    if (!perform_openai_request()) {
+        (void)puts("Follow-up OpenAI request failed.");
+        remove_temporary_files();
+        return;
+    }
+
+    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    if (json == NULL) {
+        (void)puts("Unable to read follow-up response.");
+        remove_temporary_files();
+        return;
+    }
+
+    if (!display_output_text_from_json(json)) {
+        if (!display_api_error_from_json(json)) {
+            (void)puts("Follow-up response contained no readable output.");
+            display_raw_response();
+        }
+    }
+
+    free(json);
+    remove_temporary_files();
+    (void)putchar('\n');
+}
+
 
 void openai_review_file(agent_state *state, const char *path)
 {
