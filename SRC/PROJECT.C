@@ -8,7 +8,7 @@
 
 #define READ_BUFFER_SIZE 1024
 #define NORMALIZED_PATH_SIZE 1024
-
+#define TREE_MAX_DEPTH 16
 
 static int path_is_safe(const char *path);
 static int normalize_project_path(const char *input,
@@ -117,6 +117,113 @@ static int normalize_project_path(const char *input,
 
     output[used] = '\0';
     return 1;
+}
+
+static void tree_indent(unsigned int depth)
+{
+    unsigned int index;
+
+    for (index = 0U; index < depth; ++index) {
+        (void)fputs("  ", stdout);
+    }
+}
+
+static int tree_join_path(const char *parent,
+                          const char *child,
+                          char *output,
+                          size_t output_size)
+{
+    int written;
+
+    if (parent == NULL ||
+        child == NULL ||
+        output == NULL ||
+        output_size == 0U) {
+        return 0;
+    }
+
+    if (strcmp(parent, ".") == 0) {
+        written = snprintf(output,
+                           output_size,
+                           "%s",
+                           child);
+    } else {
+        written = snprintf(output,
+                           output_size,
+                           "%s/%s",
+                           parent,
+                           child);
+    }
+
+    return written >= 0 &&
+           (size_t)written < output_size;
+}
+
+static void project_tree_walk(const char *path,
+                              unsigned int depth)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    if (depth > TREE_MAX_DEPTH) {
+        tree_indent(depth);
+        (void)puts("[maximum depth reached]");
+        return;
+    }
+
+    directory = opendir(path);
+
+    if (directory == NULL) {
+        tree_indent(depth);
+        (void)printf("[unable to open %s: %s]\n",
+                     path,
+                     strerror(errno));
+        return;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        char child_path[NORMALIZED_PATH_SIZE];
+        DIR *child_directory;
+        int is_directory;
+
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0 ||
+            strncmp(entry->d_name, ".git", 4U) == 0) {
+            continue;
+        }
+
+        if (!tree_join_path(path,
+                            entry->d_name,
+                            child_path,
+                            sizeof(child_path))) {
+            tree_indent(depth);
+            (void)puts("[path too long]");
+            continue;
+        }
+
+        child_directory = opendir(child_path);
+        is_directory = child_directory != NULL;
+
+        if (child_directory != NULL) {
+            (void)closedir(child_directory);
+        }
+
+        tree_indent(depth);
+        (void)printf("%s%s\n",
+                     entry->d_name,
+                     is_directory ? "/" : "");
+
+        if (is_directory) {
+            project_tree_walk(child_path, depth + 1U);
+        }
+    }
+
+    if (closedir(directory) != 0) {
+        tree_indent(depth);
+        (void)printf("[unable to close %s: %s]\n",
+                     path,
+                     strerror(errno));
+    }
 }
 
 static int path_is_safe(const char *path)
@@ -317,6 +424,29 @@ file = fopen(normalized, "r");
     (void)printf("%lu matching line%s.\n",
                  matches,
                  matches == 1UL ? "" : "s");
+}
+
+void project_tree(const agent_state *state,
+                  const char *path)
+{
+    char normalized[NORMALIZED_PATH_SIZE];
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!normalize_project_path(path,
+                                normalized,
+                                sizeof(normalized))) {
+        (void)puts("Unsafe or invalid project-relative path.");
+        return;
+    }
+
+    (void)printf("%s/\n", normalized);
+    project_tree_walk(normalized, 1U);
 }
 
 void project_list(const agent_state *state, const char *path, int show_all)

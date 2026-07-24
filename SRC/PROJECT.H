@@ -15,6 +15,8 @@ void project_build(const agent_state *state);
 void project_search(const agent_state *state,
                     const char *path,
                     const char *pattern);
+void project_tree(const agent_state *state,
+                  const char *path);
 #endif
 int project_patch(const agent_state *state,
                   const char *path,

@@ -27,6 +27,7 @@ static void command_build(agent_state *state, const char *arguments);
 static void command_quit(agent_state *state, const char *arguments);
 static void command_patch(agent_state *state, const char *arguments);
 static void command_search(agent_state *state, const char *arguments);
+static void command_tree(agent_state *state, const char *arguments);
 
 static const command_entry command_table[] = {
     { "HELP",    "Display command help", command_help },
@@ -34,6 +35,7 @@ static const command_entry command_table[] = {
     { "ROOT",    "Display the project root", command_root },
     { "STATUS",  "Display agent status", command_status },
     { "LIST", "List a directory: LIST [path]", command_list },
+    { "TREE", "Display directory tree: TREE [path]", command_tree },
     { "READ",    "Read a project-relative text file", command_read },
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
@@ -105,6 +107,12 @@ static void command_build(agent_state *state,
 {
     (void)arguments;
     project_build(state);
+}
+
+static void command_tree(agent_state *state,
+                         const char *arguments)
+{
+    project_tree(state, arguments);
 }
 
 static void command_search(agent_state *state,
