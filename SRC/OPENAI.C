@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -808,6 +809,7 @@ static char *openai_read_text_file(const char *path)
 #define OPENAI_AGENT_MAX_TURNS 6
 #define OPENAI_AGENT_CACHE_SIZE 8
 #define OPENAI_SEARCH_OUTPUT_LIMIT 32768
+#define OPENAI_LIST_OUTPUT_LIMIT 32768
 
 typedef struct openai_file_cache_entry {
     char *path;
@@ -820,9 +822,22 @@ static int write_agent_tools(FILE *file)
         "\"tools\":["
         "{"
         "\"type\":\"function\","
+        "\"name\":\"list_directory\","
+        "\"description\":\"List entries in one project-relative directory. Use dot for the project root.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
         "\"name\":\"read_file\","
-        "\"description\":\"Read one project-relative text file. "
-        "Use Unix-style paths such as SRC/MAIN.C.\","
+        "\"description\":\"Read one project-relative text file. Use Unix-style paths such as SRC/MAIN.C.\","
         "\"parameters\":{"
         "\"type\":\"object\","
         "\"properties\":{"
@@ -836,8 +851,7 @@ static int write_agent_tools(FILE *file)
         "{"
         "\"type\":\"function\","
         "\"name\":\"search_file\","
-        "\"description\":\"Search one project-relative text file for a "
-        "literal string and return matching lines with line numbers.\","
+        "\"description\":\"Search one project-relative text file for a literal string and return matching lines with line numbers.\","
         "\"parameters\":{"
         "\"type\":\"object\","
         "\"properties\":{"
@@ -853,7 +867,6 @@ static int write_agent_tools(FILE *file)
         file
     ) != EOF;
 }
-
 static int write_agent_request(const char *model,
                                const char *instructions,
                                const char *user_prompt,
@@ -1231,6 +1244,138 @@ static char *execute_read_file_tool(
     return output;
 }
 
+static int openai_join_path(const char *parent,
+                            const char *child,
+                            char *output,
+                            size_t output_size)
+{
+    int written;
+
+    if (parent == NULL || child == NULL ||
+        output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    if (*parent == '\0' || strcmp(parent, ".") == 0) {
+        written = snprintf(output, output_size, "%s", child);
+    } else {
+        written = snprintf(output, output_size, "%s/%s", parent, child);
+    }
+
+    return written >= 0 && (size_t)written < output_size;
+}
+
+static char *execute_list_directory_tool(const char *arguments,
+                                         char **display_path)
+{
+    char *path;
+    const char *target;
+    DIR *directory;
+    struct dirent *entry;
+    char *output;
+    size_t used;
+    unsigned long count;
+
+    *display_path = NULL;
+    path = extract_string_argument(arguments, "path");
+
+    if (path == NULL) {
+        return make_tool_error(
+            "list_directory arguments did not contain a valid path",
+            NULL
+        );
+    }
+
+    target = *path == '\0' ? "." : path;
+    *display_path = openai_duplicate_text(target);
+
+    if (strcmp(target, ".") != 0 &&
+        !openai_path_is_safe(target)) {
+        output = make_tool_error(
+            "Unsafe or invalid project-relative path",
+            target
+        );
+        free(path);
+        return output;
+    }
+
+    directory = opendir(target);
+
+    if (directory == NULL) {
+        output = make_tool_error("Unable to open directory", target);
+        free(path);
+        return output;
+    }
+
+    output = malloc(OPENAI_LIST_OUTPUT_LIMIT);
+
+    if (output == NULL) {
+        (void)closedir(directory);
+        free(path);
+        return make_tool_error(
+            "Insufficient memory for directory listing",
+            target
+        );
+    }
+
+    output[0] = '\0';
+    used = 0U;
+    count = 0UL;
+
+    while ((entry = readdir(directory)) != NULL) {
+        char child_path[1024];
+        DIR *child_directory;
+        int is_directory;
+        int written;
+
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0 ||
+            strncmp(entry->d_name, ".git", 4U) == 0) {
+            continue;
+        }
+
+        if (!openai_join_path(target,
+                              entry->d_name,
+                              child_path,
+                              sizeof(child_path))) {
+            continue;
+        }
+
+        child_directory = opendir(child_path);
+        is_directory = child_directory != NULL;
+
+        if (child_directory != NULL) {
+            (void)closedir(child_directory);
+        }
+
+        written = snprintf(output + used,
+                           OPENAI_LIST_OUTPUT_LIMIT - used,
+                           "%s%s\n",
+                           entry->d_name,
+                           is_directory ? "/" : "");
+
+        if (written < 0 ||
+            (size_t)written >= OPENAI_LIST_OUTPUT_LIMIT - used) {
+            (void)snprintf(output + used,
+                           OPENAI_LIST_OUTPUT_LIMIT - used,
+                           "[directory listing truncated]\n");
+            break;
+        }
+
+        used += (size_t)written;
+        ++count;
+    }
+
+    (void)closedir(directory);
+    free(path);
+
+    if (count == 0UL && output[0] == '\0') {
+        (void)strcpy(output, "[empty directory]");
+    }
+
+    return output;
+}
+
 static char *execute_search_file_tool(const char *arguments,
                                       char **display_path,
                                       char **display_pattern)
@@ -1376,12 +1521,13 @@ void openai_agent(agent_state *state, const char *goal)
 {
     static const char instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
-        "project sandbox. You have two read-only tools: search_file and "
-        "read_file. Use search_file to locate relevant lines, then read_file "
-        "for full context. Avoid requesting the same file repeatedly. Never "
-        "claim to have inspected content unless a tool returned it. Do not "
-        "request paths outside the project. Provide a concise, concrete "
-        "answer after inspecting the necessary files.";
+        "project sandbox. You have three read-only tools: list_directory, "
+        "search_file, and read_file. Use list_directory to discover project "
+        "structure, search_file to locate relevant lines, and read_file for "
+        "full context. Avoid requesting the same file repeatedly. Never claim "
+        "to have inspected content unless a tool returned it. Do not request "
+        "paths outside the project. Provide a concise, concrete answer after "
+        "inspecting the necessary files.";
     const char *api_key;
     const char *model;
     char *previous_id;
@@ -1495,7 +1641,20 @@ void openai_agent(agent_state *state, const char *goal)
 
         free(json);
 
-        if (strcmp(name, "read_file") == 0) {
+        if (strcmp(name, "list_directory") == 0) {
+            char *display_path;
+
+            display_path = NULL;
+            tool_output = execute_list_directory_tool(
+                arguments,
+                &display_path
+            );
+
+            (void)printf("Tool executed: list_directory %s\n",
+                         display_path != NULL ?
+                             display_path : "");
+            free(display_path);
+        } else if (strcmp(name, "read_file") == 0) {
             int cache_hit;
             char *display_path;
 
