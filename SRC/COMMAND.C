@@ -4,6 +4,7 @@
 #include "command.h"
 #include "project.h"
 #include "util.h"
+#include "edit.h"
 
 typedef void (*command_handler)(agent_state *state,
                                 const char *arguments);
@@ -21,6 +22,7 @@ static void command_root(agent_state *state, const char *arguments);
 static void command_status(agent_state *state, const char *arguments);
 static char *command_next_argument(char **cursor);
 static void command_list(agent_state *state, const char *arguments);
+static void command_edit(agent_state *state, const char *arguments);
 static void command_read(agent_state *state, const char *arguments);
 static void command_gitstatus(agent_state *state,  const char *arguments);
 static void command_gitdiff(agent_state *state, const char *arguments);
@@ -41,6 +43,7 @@ static const command_entry command_table[] = {
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
+    { "EDIT", "Edit a file: EDIT file", command_edit },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
     { "QUIT",    "Exit OVMS Agent", command_quit },
@@ -102,6 +105,12 @@ void command_execute(agent_state *state, char *input)
     (void)printf("Unknown command: %s\n", command);
     (void)puts("Enter HELP for available commands.");
 }
+
+     static void command_edit(agent_state *state,
+                              const char *arguments)
+     {
+         edit_run(state, arguments);
+     }
 
 static void command_build(agent_state *state,
                           const char *arguments)
@@ -353,22 +362,32 @@ static char *command_next_argument(char **cursor)
         return NULL;
     }
 
-    if (*start == '"') {
-        ++start;
-        end = start;
+    if ((unsigned char)*start == 34U) {
+    ++start;
+    end = start;
 
-        while (*end != '\0' && *end != '"') {
-            ++end;
+    while (*end != '\0') {
+        if ((unsigned char)*end == 92U &&
+            end[1] != '\0') {
+            end += 2;
+            continue;
         }
 
-        if (*end != '"') {
-            return NULL;
+        if ((unsigned char)*end == 34U) {
+            break;
         }
 
-        *end = '\0';
-        *cursor = end + 1;
-        return start;
+        ++end;
     }
+
+    if ((unsigned char)*end != 34U) {
+        return NULL;
+    }
+
+    *end = '\0';
+    *cursor = end + 1;
+    return start;
+}
 
     end = start;
 
