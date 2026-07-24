@@ -805,12 +805,20 @@ static char *openai_read_text_file(const char *path)
 }
 
 
-#define OPENAI_AGENT_MAX_TURNS 4
+#define OPENAI_AGENT_MAX_TURNS 6
+#define OPENAI_AGENT_CACHE_SIZE 8
+#define OPENAI_SEARCH_OUTPUT_LIMIT 32768
 
-static int write_read_file_tool(FILE *file)
+typedef struct openai_file_cache_entry {
+    char *path;
+    char *content;
+} openai_file_cache_entry;
+
+static int write_agent_tools(FILE *file)
 {
     return fputs(
-        "\"tools\":[{"
+        "\"tools\":["
+        "{"
         "\"type\":\"function\","
         "\"name\":\"read_file\","
         "\"description\":\"Read one project-relative text file. "
@@ -824,7 +832,24 @@ static int write_read_file_tool(FILE *file)
         "\"additionalProperties\":false"
         "},"
         "\"strict\":true"
-        "}]",
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"search_file\","
+        "\"description\":\"Search one project-relative text file for a "
+        "literal string and return matching lines with line numbers.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"pattern\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"pattern\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "}"
+        "]",
         file
     ) != EOF;
 }
@@ -875,14 +900,14 @@ static int write_agent_request(const char *model,
             fputs("\",\"output\":\"", file) == EOF ||
             !json_write_escaped(file, tool_output) ||
             fputs("\"}],", file) == EOF ||
-            !write_read_file_tool(file)) {
+            !write_agent_tools(file)) {
             success = 0;
         }
     } else if (success) {
         if (fputs(",\"input\":\"", file) == EOF ||
             !json_write_escaped(file, user_prompt) ||
             fputs("\",", file) == EOF ||
-            !write_read_file_tool(file)) {
+            !write_agent_tools(file)) {
             success = 0;
         }
     }
@@ -1056,11 +1081,115 @@ static char *make_tool_error(const char *message,
     return result;
 }
 
-static char *execute_read_file_tool(const char *arguments)
+static char *extract_string_argument(const char *arguments,
+                                     const char *name)
+{
+    const char *value;
+
+    value = find_string_value(arguments, name);
+
+    if (value == NULL) {
+        return NULL;
+    }
+
+    return json_decode_string(value, NULL);
+}
+
+static void openai_cache_init(openai_file_cache_entry *cache)
+{
+    unsigned int index;
+
+    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+        cache[index].path = NULL;
+        cache[index].content = NULL;
+    }
+}
+
+static void openai_cache_free(openai_file_cache_entry *cache)
+{
+    unsigned int index;
+
+    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+        free(cache[index].path);
+        free(cache[index].content);
+    }
+}
+
+static const char *openai_cache_lookup(
+    const openai_file_cache_entry *cache,
+    const char *path)
+{
+    unsigned int index;
+
+    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+        if (cache[index].path != NULL &&
+            strcmp(cache[index].path, path) == 0) {
+            return cache[index].content;
+        }
+    }
+
+    return NULL;
+}
+
+static int openai_cache_store(openai_file_cache_entry *cache,
+                              const char *path,
+                              const char *content)
+{
+    unsigned int index;
+    char *path_copy;
+    char *content_copy;
+
+    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+        if (cache[index].path == NULL) {
+            break;
+        }
+    }
+
+    if (index == OPENAI_AGENT_CACHE_SIZE) {
+        return 0;
+    }
+
+    path_copy = malloc(strlen(path) + 1U);
+    content_copy = malloc(strlen(content) + 1U);
+
+    if (path_copy == NULL || content_copy == NULL) {
+        free(path_copy);
+        free(content_copy);
+        return 0;
+    }
+
+    (void)strcpy(path_copy, path);
+    (void)strcpy(content_copy, content);
+    cache[index].path = path_copy;
+    cache[index].content = content_copy;
+    return 1;
+}
+
+static char *openai_duplicate_text(const char *text)
+{
+    char *copy;
+
+    copy = malloc(strlen(text) + 1U);
+
+    if (copy != NULL) {
+        (void)strcpy(copy, text);
+    }
+
+    return copy;
+}
+
+static char *execute_read_file_tool(
+    const char *arguments,
+    openai_file_cache_entry *cache,
+    int *cache_hit,
+    char **display_path)
 {
     char *path;
     char *output;
+    const char *cached;
 
+    *cache_hit = 0;
+    *display_path = NULL;
     path = extract_path_argument(arguments);
 
     if (path == NULL) {
@@ -1069,6 +1198,8 @@ static char *execute_read_file_tool(const char *arguments)
             NULL
         );
     }
+
+    *display_path = openai_duplicate_text(path);
 
     if (!openai_path_is_safe(path)) {
         output = make_tool_error(
@@ -1079,13 +1210,135 @@ static char *execute_read_file_tool(const char *arguments)
         return output;
     }
 
+    cached = openai_cache_lookup(cache, path);
+
+    if (cached != NULL) {
+        *cache_hit = 1;
+        output = openai_duplicate_text(cached);
+        free(path);
+        return output;
+    }
+
     output = openai_read_text_file(path);
 
     if (output == NULL) {
         output = make_tool_error("Unable to read file", path);
+    } else {
+        (void)openai_cache_store(cache, path, output);
     }
 
     free(path);
+    return output;
+}
+
+static char *execute_search_file_tool(const char *arguments,
+                                      char **display_path,
+                                      char **display_pattern)
+{
+    char *path;
+    char *pattern;
+    FILE *file;
+    char line[2048];
+    unsigned long line_number;
+    unsigned long matches;
+    size_t used;
+    char *output;
+
+    *display_path = NULL;
+    *display_pattern = NULL;
+
+    path = extract_string_argument(arguments, "path");
+    pattern = extract_string_argument(arguments, "pattern");
+
+    if (path == NULL || pattern == NULL || *pattern == '\0') {
+        free(path);
+        free(pattern);
+        return make_tool_error(
+            "search_file requires valid path and pattern arguments",
+            NULL
+        );
+    }
+
+    *display_path = openai_duplicate_text(path);
+    *display_pattern = openai_duplicate_text(pattern);
+
+    if (!openai_path_is_safe(path)) {
+        output = make_tool_error(
+            "Unsafe or invalid project-relative path",
+            path
+        );
+        free(path);
+        free(pattern);
+        return output;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        output = make_tool_error("Unable to search file", path);
+        free(path);
+        free(pattern);
+        return output;
+    }
+
+    output = malloc(OPENAI_SEARCH_OUTPUT_LIMIT);
+
+    if (output == NULL) {
+        (void)fclose(file);
+        free(path);
+        free(pattern);
+        return make_tool_error("Insufficient memory for search", path);
+    }
+
+    output[0] = '\0';
+    used = 0U;
+    line_number = 1UL;
+    matches = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (strstr(line, pattern) != NULL) {
+            int written;
+
+            written = snprintf(output + used,
+                               OPENAI_SEARCH_OUTPUT_LIMIT - used,
+                               "%lu: %s",
+                               line_number,
+                               line);
+
+            if (written < 0 ||
+                (size_t)written >=
+                    OPENAI_SEARCH_OUTPUT_LIMIT - used) {
+                (void)snprintf(
+                    output + used,
+                    OPENAI_SEARCH_OUTPUT_LIMIT - used,
+                    "\n[search output truncated]\n"
+                );
+                break;
+            }
+
+            used += (size_t)written;
+
+            if (used > 0U &&
+                output[used - 1U] != '\n' &&
+                used + 1U < OPENAI_SEARCH_OUTPUT_LIMIT) {
+                output[used++] = '\n';
+                output[used] = '\0';
+            }
+
+            ++matches;
+        }
+
+        ++line_number;
+    }
+
+    (void)fclose(file);
+
+    if (matches == 0UL) {
+        (void)strcpy(output, "No matching lines.");
+    }
+
+    free(path);
+    free(pattern);
     return output;
 }
 
@@ -1123,17 +1376,19 @@ void openai_agent(agent_state *state, const char *goal)
 {
     static const char instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
-        "project sandbox. You have one read-only tool named read_file. "
-        "Use it when source context is needed. Never claim to have read a "
-        "file unless the tool returned it. Do not request paths outside the "
-        "project. Provide a concise, concrete answer after inspecting the "
-        "necessary files.";
+        "project sandbox. You have two read-only tools: search_file and "
+        "read_file. Use search_file to locate relevant lines, then read_file "
+        "for full context. Avoid requesting the same file repeatedly. Never "
+        "claim to have inspected content unless a tool returned it. Do not "
+        "request paths outside the project. Provide a concise, concrete "
+        "answer after inspecting the necessary files.";
     const char *api_key;
     const char *model;
     char *previous_id;
     char *tool_output;
     char *call_id;
     unsigned int turn;
+    openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -1167,6 +1422,7 @@ void openai_agent(agent_state *state, const char *goal)
     previous_id = NULL;
     tool_output = NULL;
     call_id = NULL;
+    openai_cache_init(cache);
 
     (void)puts("Starting read-only agent...");
 
@@ -1218,6 +1474,7 @@ void openai_agent(agent_state *state, const char *goal)
             free(json);
             remove_temporary_files();
             free(previous_id);
+            openai_cache_free(cache);
             return;
         }
 
@@ -1238,13 +1495,46 @@ void openai_agent(agent_state *state, const char *goal)
 
         free(json);
 
-        if (strcmp(name, "read_file") != 0) {
+        if (strcmp(name, "read_file") == 0) {
+            int cache_hit;
+            char *display_path;
+
+            display_path = NULL;
+            tool_output = execute_read_file_tool(
+                arguments,
+                cache,
+                &cache_hit,
+                &display_path
+            );
+
+            (void)printf("Tool executed: read_file %s%s\n",
+                         display_path != NULL ? display_path : "",
+                         cache_hit ? " [cache]" : "");
+            free(display_path);
+        } else if (strcmp(name, "search_file") == 0) {
+            char *display_path;
+            char *display_pattern;
+
+            display_path = NULL;
+            display_pattern = NULL;
+            tool_output = execute_search_file_tool(
+                arguments,
+                &display_path,
+                &display_pattern
+            );
+
+            (void)printf("Tool executed: search_file %s \"%s\"\n",
+                         display_path != NULL ? display_path : "",
+                         display_pattern != NULL ?
+                             display_pattern : "");
+            free(display_path);
+            free(display_pattern);
+        } else {
             tool_output = make_tool_error(
                 "Unsupported tool requested",
                 name
             );
-        } else {
-            tool_output = execute_read_file_tool(arguments);
+            (void)printf("Unsupported tool requested: %s\n", name);
         }
 
         free(name);
@@ -1257,7 +1547,6 @@ void openai_agent(agent_state *state, const char *goal)
         }
 
         call_id = new_call_id;
-        (void)puts("Tool executed: read_file");
     }
 
     (void)puts(
@@ -1269,6 +1558,7 @@ void openai_agent(agent_state *state, const char *goal)
     free(previous_id);
     free(call_id);
     free(tool_output);
+    openai_cache_free(cache);
 }
 
 void openai_review_file(agent_state *state, const char *path)
