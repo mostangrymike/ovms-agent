@@ -748,7 +748,12 @@ static int write_request(const char *model,
         }
     }
 
-    if (success && fputs("}\n", file) == EOF) {
+    if (success &&
+        fputs(
+            ",\"parallel_tool_calls\":false"
+            "}\n",
+            file
+        ) == EOF) {
         success = 0;
     }
 
@@ -1549,6 +1554,7 @@ static char *openai_read_text_file(const char *path)
 #define OPENAI_SEARCH_OUTPUT_LIMIT 32768
 #define OPENAI_LIST_OUTPUT_LIMIT 32768
 #define OPENAI_CREATE_MAX_BYTES 65536U
+#define OPENAI_RANGE_OUTPUT_LIMIT 65536U
 
 typedef struct openai_file_cache_entry {
     char *path;
@@ -1601,6 +1607,22 @@ static int write_agent_tools(FILE *file)
         "},"
         "{"
         "\"type\":\"function\","
+        "\"name\":\"read_file_range\","
+        "\"description\":\"Read an inclusive line range from one project-relative text file. Use this for large files.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"start_line\":{\"type\":\"integer\",\"minimum\":1},"
+        "\"end_line\":{\"type\":\"integer\",\"minimum\":1}"
+        "},"
+        "\"required\":[\"path\",\"start_line\",\"end_line\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
         "\"name\":\"search_file\","
         "\"description\":\"Search one project-relative text file for a literal string and return matching lines with line numbers.\","
         "\"parameters\":{"
@@ -1643,6 +1665,22 @@ static int write_agent_tools_with_replace(FILE *file)
         "\"type\":\"object\","
         "\"properties\":{\"path\":{\"type\":\"string\"}},"
         "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"read_file_range\","
+        "\"description\":\"Read an inclusive line range from one project-relative text file. Use this for large files.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"start_line\":{\"type\":\"integer\",\"minimum\":1},"
+        "\"end_line\":{\"type\":\"integer\",\"minimum\":1}"
+        "},"
+        "\"required\":[\"path\",\"start_line\",\"end_line\"],"
         "\"additionalProperties\":false"
         "},"
         "\"strict\":true"
@@ -1707,6 +1745,22 @@ static int write_agent_tools_with_create(FILE *file)
         "\"type\":\"object\","
         "\"properties\":{\"path\":{\"type\":\"string\"}},"
         "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"read_file_range\","
+        "\"description\":\"Read an inclusive line range from one project-relative text file. Use this for large files.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"start_line\":{\"type\":\"integer\",\"minimum\":1},"
+        "\"end_line\":{\"type\":\"integer\",\"minimum\":1}"
+        "},"
+        "\"required\":[\"path\",\"start_line\",\"end_line\"],"
         "\"additionalProperties\":false"
         "},"
         "\"strict\":true"
@@ -1826,7 +1880,12 @@ static int write_create_agent_request(
         }
     }
 
-    if (success && fputs("}\n", file) == EOF) {
+    if (success &&
+        fputs(
+            ",\"parallel_tool_calls\":false"
+            "}\n",
+            file
+        ) == EOF) {
         success = 0;
     }
 
@@ -1893,7 +1952,8 @@ static int write_build_agent_initial_request(
         fputs(",\"tool_choice\":{" 
               "\"type\":\"function\","
               "\"name\":\"run_build\""
-              "},\"store\":true}\n", file) == EOF) {
+              "},\"store\":true,"
+              "\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 
@@ -1943,7 +2003,8 @@ static int write_build_agent_followup_request(
         !json_write_escaped(file, tool_output) ||
         fputs("\"}],", file) == EOF ||
         !write_build_agent_tools(file) ||
-        fputs(",\"store\":true}\n", file) == EOF) {
+        fputs(",\"store\":true,"
+              "\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 
@@ -2036,7 +2097,12 @@ static int write_agent_request_mode(const char *model,
         }
     }
 
-    if (success && fputs("}\n", file) == EOF) {
+    if (success &&
+        fputs(
+            ",\"parallel_tool_calls\":false"
+            "}\n",
+            file
+        ) == EOF) {
         success = 0;
     }
 
@@ -2110,7 +2176,12 @@ static int write_agent_request(const char *model,
         }
     }
 
-    if (success && fputs("}\n", file) == EOF) {
+    if (success &&
+        fputs(
+            ",\"parallel_tool_calls\":false"
+            "}\n",
+            file
+        ) == EOF) {
         success = 0;
     }
 
@@ -2374,6 +2445,199 @@ static char *openai_duplicate_text(const char *text)
     }
 
     return copy;
+}
+
+static int extract_integer_argument(const char *arguments,
+                                    const char *name,
+                                    long *value_out)
+{
+    const char *position;
+    const char *value_start;
+    char *end_pointer;
+    long parsed_value;
+
+    if (arguments == NULL ||
+        name == NULL ||
+        value_out == NULL) {
+        return 0;
+    }
+
+    for (position = arguments;
+         *position != '\0';
+         ++position) {
+        if (*position == '"' &&
+            json_key_matches(position, name, &value_start)) {
+            value_start = skip_space(value_start);
+            parsed_value = strtol(
+                value_start,
+                &end_pointer,
+                10
+            );
+
+            if (end_pointer == value_start) {
+                return 0;
+            }
+
+            *value_out = parsed_value;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static char *execute_read_file_range_tool(
+    const char *arguments,
+    char **display_path,
+    long *display_start,
+    long *display_end)
+{
+    char *path;
+    FILE *file;
+    char line[2048];
+    char *output;
+    size_t used;
+    unsigned long line_number;
+    long start_line;
+    long end_line;
+
+    *display_path = NULL;
+    *display_start = 0L;
+    *display_end = 0L;
+
+    path = extract_string_argument(arguments, "path");
+
+    if (path == NULL ||
+        !extract_integer_argument(
+            arguments,
+            "start_line",
+            &start_line) ||
+        !extract_integer_argument(
+            arguments,
+            "end_line",
+            &end_line)) {
+        free(path);
+        return make_tool_error(
+            "read_file_range requires path, start_line, and end_line",
+            NULL
+        );
+    }
+
+    *display_path = openai_duplicate_text(path);
+    *display_start = start_line;
+    *display_end = end_line;
+
+    if (!openai_path_is_safe(path)) {
+        char *error;
+
+        error = make_tool_error(
+            "Unsafe or invalid project-relative path",
+            path
+        );
+        free(path);
+        return error;
+    }
+
+    if (openai_path_is_sensitive(path)) {
+        char *error;
+
+        error = make_tool_error(
+            "Access denied for sensitive path",
+            path
+        );
+        free(path);
+        return error;
+    }
+
+    if (start_line < 1L ||
+        end_line < start_line ||
+        end_line - start_line > 2000L) {
+        free(path);
+        return make_tool_error(
+            "Invalid line range; maximum span is 2001 lines",
+            NULL
+        );
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        char *error;
+
+        error = make_tool_error("Unable to read file", path);
+        free(path);
+        return error;
+    }
+
+    output = malloc(OPENAI_RANGE_OUTPUT_LIMIT);
+
+    if (output == NULL) {
+        (void)fclose(file);
+        free(path);
+        return make_tool_error(
+            "Insufficient memory for ranged read",
+            NULL
+        );
+    }
+
+    output[0] = '\0';
+    used = 0U;
+    line_number = 1UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        int written;
+
+        if ((long)line_number < start_line) {
+            ++line_number;
+            continue;
+        }
+
+        if ((long)line_number > end_line) {
+            break;
+        }
+
+        written = snprintf(
+            output + used,
+            OPENAI_RANGE_OUTPUT_LIMIT - used,
+            "%6lu  %s",
+            line_number,
+            line
+        );
+
+        if (written < 0 ||
+            (size_t)written >=
+                OPENAI_RANGE_OUTPUT_LIMIT - used) {
+            (void)snprintf(
+                output + used,
+                OPENAI_RANGE_OUTPUT_LIMIT - used,
+                "[ranged read truncated]\n"
+            );
+            break;
+        }
+
+        used += (size_t)written;
+
+        if (used > 0U &&
+            output[used - 1U] != '\n' &&
+            used + 1U < OPENAI_RANGE_OUTPUT_LIMIT) {
+            output[used++] = '\n';
+            output[used] = '\0';
+        }
+
+        ++line_number;
+    }
+
+    (void)fclose(file);
+    free(path);
+
+    if (output[0] == '\0') {
+        (void)strcpy(
+            output,
+            "[requested range contains no lines]"
+        );
+    }
+
+    return output;
 }
 
 static char *execute_read_file_tool(
@@ -3246,8 +3510,9 @@ static void openai_agent_mode(agent_state *state,
 {
     static const char read_only_instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
-        "project sandbox. You have three read-only tools: list_directory, "
-        "search_file, and read_file. Sensitive credential and generated "
+        "project sandbox. You have four read-only tools: list_directory, "
+        "search_file, read_file, and read_file_range. Use ranged reads "
+        "for files too large to read whole. Sensitive credential and generated "
         "transport files are blocked. Use the fewest tool calls necessary. "
         "Never claim to have inspected content unless a tool returned it. "
         "Do not request paths outside the project. Produce a concise final "
@@ -3255,8 +3520,9 @@ static void openai_agent_mode(agent_state *state,
 
     static const char write_instructions[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
-        "sandbox. You may inspect with list_directory, search_file, and "
-        "read_file. You may propose exact edits only through replace_text. "
+        "sandbox. You may inspect with list_directory, search_file, read_file, "
+        "and read_file_range. Use ranged reads for large files. You may "
+        "propose exact edits only through replace_text. "
         "When the user names a specific file, read that file directly and do "
         "not list the project first. Do not search a file after reading it "
         "unless the requested text was not present. Before calling "
@@ -3454,6 +3720,30 @@ static void openai_agent_mode(agent_state *state,
             (void)printf("Tool executed: read_file %s%s\n",
                          display_path != NULL ? display_path : "",
                          cache_hit ? " [cache]" : "");
+            free(display_path);
+        } else if (strcmp(name, "read_file_range") == 0) {
+            char *display_path;
+            long display_start;
+            long display_end;
+
+            display_path = NULL;
+            display_start = 0L;
+            display_end = 0L;
+
+            tool_output = execute_read_file_range_tool(
+                arguments,
+                &display_path,
+                &display_start,
+                &display_end
+            );
+
+            (void)printf(
+                "Tool executed: read_file_range %s %ld-%ld\n",
+                display_path != NULL ? display_path : "",
+                display_start,
+                display_end
+            );
+
             free(display_path);
         } else if (strcmp(name, "search_file") == 0) {
             char *display_path;
@@ -3722,7 +4012,8 @@ void openai_agent_create(agent_state *state, const char *goal)
     static const char instructions[] =
         "You are a careful OpenVMS C project agent operating inside a "
         "project sandbox. You may inspect existing files with list_directory, "
-        "search_file, and read_file. You may create exactly one new text file "
+        "search_file, read_file, and read_file_range. Use ranged reads for "
+        "large files. You may create exactly one new text file "
         "through create_file. Never overwrite an existing file. When the user "
         "names a destination path, inspect only the source context needed to "
         "produce the new file. Keep content at or below 65536 bytes. Do not "
@@ -3893,6 +4184,30 @@ void openai_agent_create(agent_state *state, const char *goal)
                 display_path != NULL ? display_path : "",
                 cache_hit ? " [cache]" : ""
             );
+            free(display_path);
+        } else if (strcmp(name, "read_file_range") == 0) {
+            char *display_path;
+            long display_start;
+            long display_end;
+
+            display_path = NULL;
+            display_start = 0L;
+            display_end = 0L;
+
+            tool_output = execute_read_file_range_tool(
+                arguments,
+                &display_path,
+                &display_start,
+                &display_end
+            );
+
+            (void)printf(
+                "Tool executed: read_file_range %s %ld-%ld\n",
+                display_path != NULL ? display_path : "",
+                display_start,
+                display_end
+            );
+
             free(display_path);
         } else if (strcmp(name, "search_file") == 0) {
             char *display_path;
@@ -4567,6 +4882,40 @@ static unsigned int openai_run_selftest(agent_state *state)
     free(name);
     free(call_id);
     free(arguments);
+
+    {
+        char *range_output;
+        char *range_path;
+        long range_start;
+        long range_end;
+
+        range_path = NULL;
+        range_start = 0L;
+        range_end = 0L;
+
+        range_output = execute_read_file_range_tool(
+            "{\"path\":\"SRC/MAIN.C\","
+            "\"start_line\":1,"
+            "\"end_line\":3}",
+            &range_path,
+            &range_start,
+            &range_end
+        );
+
+        openai_selftest_report(
+            "ranged source read",
+            range_output != NULL &&
+            range_path != NULL &&
+            strcmp(range_path, "SRC/MAIN.C") == 0 &&
+            range_start == 1L &&
+            range_end == 3L,
+            &passed_count,
+            &failed_count
+        );
+
+        free(range_output);
+        free(range_path);
+    }
 
     build_file = fopen("BUILD.COM", "r");
 
