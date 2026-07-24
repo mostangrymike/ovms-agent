@@ -2893,17 +2893,18 @@ void openai_agent_build(agent_state *state, const char *goal)
 void openai_agent_retry(agent_state *state, const char *goal)
 {
     static const char introduction[] =
-        "This is a fresh supervised repair attempt after a previous patch "
-        "failed to build and was rolled back. Use the prior build diagnostics "
-        "below as evidence. Inspect the current restored source before "
-        "proposing one new smallest exact patch. Do not repeat the failed "
-        "edit. Apply at most one replace_text operation and then run the "
-        "controlled build.\n\nUser goal:\n";
+        "The current project build has just failed. This is a fresh "
+        "supervised repair attempt. Use the current build diagnostics below "
+        "as evidence. Inspect the current source before proposing one new "
+        "smallest exact patch. Apply at most one replace_text operation and "
+        "then run the controlled build. Do not propose unrelated cleanup."
+        "\n\nUser goal:\n";
     static const char log_label[] =
-        "\n\nPrevious failed build log:\n";
-    char *build_log;
+        "\n\nCurrent failed build result:\n";
+    char *build_output;
     char *combined_goal;
     size_t combined_size;
+    int build_status;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -2924,13 +2925,27 @@ void openai_agent_retry(agent_state *state, const char *goal)
         return;
     }
 
-    build_log = read_entire_file(OPENAI_BUILD_LOG_FILE, NULL);
+    (void)puts("Checking the current project build before retrying...");
 
-    if (build_log == NULL) {
+    build_output = execute_run_build_tool(&build_status);
+
+    if (build_output == NULL) {
+        (void)puts("Unable to capture the current build result.");
+        return;
+    }
+
+    (void)printf(
+        "Tool executed: run_build [%s, status %d]\n",
+        (build_status & 1) != 0 ? "success" : "failure",
+        build_status
+    );
+
+    if ((build_status & 1) != 0) {
         (void)puts(
-            "No readable prior build log is available. Run AGENT/FIX "
-            "and allow a controlled build before using AGENT/RETRY."
+            "Current build succeeds. The previous failure has already "
+            "been resolved or rolled back; no repair is required."
         );
+        free(build_output);
         return;
     }
 
@@ -2938,36 +2953,35 @@ void openai_agent_retry(agent_state *state, const char *goal)
         strlen(introduction) +
         strlen(goal) +
         strlen(log_label) +
-        strlen(build_log) +
+        strlen(build_output) +
         1U;
 
     combined_goal = malloc(combined_size);
 
     if (combined_goal == NULL) {
         (void)puts("Insufficient memory for retry prompt.");
-        free(build_log);
+        free(build_output);
         return;
     }
 
     (void)strcpy(combined_goal, introduction);
     (void)strcat(combined_goal, goal);
     (void)strcat(combined_goal, log_label);
-    (void)strcat(combined_goal, build_log);
+    (void)strcat(combined_goal, build_output);
 
     (void)puts(
-        "Starting fresh supervised retry using the previous build log..."
+        "Current build still fails. Starting a fresh supervised retry..."
     );
 
     /*
-     * A retry is still one patch and one controlled build. The existing
-     * supervised mode enforces local confirmation, rollback, and termination.
+     * A retry remains one patch and one post-patch controlled build. The
+     * existing supervised mode enforces local confirmation and rollback.
      */
     openai_agent_mode(state, combined_goal, 1, 1);
 
     free(combined_goal);
-    free(build_log);
+    free(build_output);
 }
-
 
 void openai_review_file(agent_state *state, const char *path)
 {
