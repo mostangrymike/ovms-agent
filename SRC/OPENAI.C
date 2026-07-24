@@ -2163,7 +2163,8 @@ static int display_output_text_from_json(const char *json)
 
 static void openai_agent_mode(agent_state *state,
                               const char *goal,
-                              int allow_write)
+                              int allow_write,
+                              int build_after_write)
 {
     static const char read_only_instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
@@ -2206,9 +2207,13 @@ static void openai_agent_mode(agent_state *state,
     }
 
     if (goal == NULL || *goal == '\0') {
-        (void)puts(allow_write ?
-            "Usage: AGENT/WRITE goal" :
-            "Usage: AGENT goal");
+        if (build_after_write) {
+            (void)puts("Usage: AGENT/FIX goal");
+        } else {
+            (void)puts(allow_write ?
+                "Usage: AGENT/WRITE goal" :
+                "Usage: AGENT goal");
+        }
         return;
     }
 
@@ -2245,9 +2250,13 @@ static void openai_agent_mode(agent_state *state,
     write_attempted = 0;
     openai_cache_init(cache);
 
-    (void)puts(allow_write ?
-        "Starting guarded write agent..." :
-        "Starting read-only agent...");
+    if (build_after_write) {
+        (void)puts("Starting supervised fix-and-build agent...");
+    } else {
+        (void)puts(allow_write ?
+            "Starting guarded write agent..." :
+            "Starting read-only agent...");
+    }
 
     for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
         char *json;
@@ -2404,11 +2413,67 @@ static void openai_agent_mode(agent_state *state,
             free(new_call_id);
 
             if (replace_result == OPENAI_REPLACE_APPLIED) {
-                (void)puts("Patch applied. Agent complete.");
+                if (build_after_write) {
+                    char *build_output;
+                    int build_status;
+
+                    (void)puts("Patch applied. Running controlled build...");
+                    build_output = execute_run_build_tool(&build_status);
+
+                    (void)printf(
+                        "Tool executed: run_build [%s, status %d]\n",
+                        (build_status & 1) != 0 ?
+                            "success" : "failure",
+                        build_status
+                    );
+
+                    if (build_output != NULL) {
+                        static const char prefix[] =
+                            "A supervised exact patch was applied for this "
+                            "goal:\n\n";
+                        static const char middle[] =
+                            "\n\nAnalyze the following OpenVMS build result. "
+                            "State whether it succeeded. If it failed, identify "
+                            "the first actionable compiler or linker diagnostic "
+                            "and recommend the smallest next edit. Do not claim "
+                            "to have made another edit.\n\n";
+                        size_t prompt_size;
+                        char *summary_prompt;
+
+                        prompt_size = strlen(prefix) + strlen(goal) +
+                                      strlen(middle) + strlen(build_output) + 1U;
+                        summary_prompt = malloc(prompt_size);
+
+                        if (summary_prompt != NULL) {
+                            (void)strcpy(summary_prompt, prefix);
+                            (void)strcat(summary_prompt, goal);
+                            (void)strcat(summary_prompt, middle);
+                            (void)strcat(summary_prompt, build_output);
+                            openai_send(state, summary_prompt, 0);
+                            free(summary_prompt);
+                        } else {
+                            (void)puts(
+                                "Unable to allocate build-summary prompt."
+                            );
+                        }
+
+                        free(build_output);
+                    } else {
+                        (void)puts("Unable to capture build output.");
+                    }
+
+                    (void)puts("Fix-and-build agent complete.");
+                } else {
+                    (void)puts("Patch applied. Agent complete.");
+                }
             } else if (replace_result == OPENAI_REPLACE_DECLINED) {
-                (void)puts("Patch cancelled. Agent complete.");
+                (void)puts(build_after_write ?
+                    "Patch cancelled. Build not run. Agent complete." :
+                    "Patch cancelled. Agent complete.");
             } else {
-                (void)puts("Patch failed. Agent complete.");
+                (void)puts(build_after_write ?
+                    "Patch failed. Build not run. Agent complete." :
+                    "Patch failed. Agent complete.");
             }
 
             remove_temporary_files();
@@ -2451,12 +2516,17 @@ static void openai_agent_mode(agent_state *state,
 
 void openai_agent(agent_state *state, const char *goal)
 {
-    openai_agent_mode(state, goal, 0);
+    openai_agent_mode(state, goal, 0, 0);
 }
 
 void openai_agent_write(agent_state *state, const char *goal)
 {
-    openai_agent_mode(state, goal, 1);
+    openai_agent_mode(state, goal, 1, 0);
+}
+
+void openai_agent_fix(agent_state *state, const char *goal)
+{
+    openai_agent_mode(state, goal, 1, 1);
 }
 
 void openai_agent_build(agent_state *state, const char *goal)

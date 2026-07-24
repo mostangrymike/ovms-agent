@@ -45,7 +45,8 @@ static void command_agent_write(agent_state *state,
                                 const char *arguments);
 static void command_agent_build(agent_state *state,
                                 const char *arguments);
-
+static void command_agent_fix(agent_state *state,
+                              const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -65,7 +66,8 @@ static const command_entry command_table[] = {
 { "REVIEW", "Review source with OpenAI: REVIEW file", command_review },
 { "AGENT", "Run read-only AI agent: AGENT goal", command_agent },
 { "AGENT/WRITE", "Run guarded write agent: AGENT/WRITE goal", command_agent_write },
-{ "AGENT/BUILD", "Run controlled build analysis: AGENT/BUILD goal", command_agent_build },
+{ "AGENT/BUILD", "Run controlled project build analysis: AGENT/BUILD goal", command_agent_build },
+{ "AGENT/FIX", "Apply one confirmed fix and build: AGENT/FIX goal", command_agent_fix },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -78,6 +80,12 @@ void command_prompt(void)
 {
     (void)fputs("OVMS-AGENT> ", stdout);
     (void)fflush(stdout);
+}
+
+static void command_agent_fix(agent_state *state,
+                              const char *arguments)
+{
+    openai_agent_fix(state, arguments);
 }
 
 void command_execute(agent_state *state, char *input)
