@@ -7,6 +7,117 @@
 #include "project.h"
 
 #define READ_BUFFER_SIZE 1024
+#define NORMALIZED_PATH_SIZE 1024
+
+
+static int path_is_safe(const char *path);
+static int normalize_project_path(const char *input,
+                                  char *output,
+                                  size_t output_size)
+{
+    const char *position;
+    size_t used;
+
+    if (input == NULL ||
+        output == NULL ||
+        output_size == 0U) {
+        return 0;
+    }
+
+    if (*input == '\0') {
+        if (output_size < 2U) {
+            return 0;
+        }
+
+        output[0] = '.';
+        output[1] = '\0';
+        return 1;
+    }
+
+    if (!path_is_safe(input)) {
+        return 0;
+    }
+
+    position = input;
+    used = 0U;
+
+    /*
+     * Convert:
+     *
+     *   [.SRC]MAIN.C
+     *
+     * to:
+     *
+     *   SRC/MAIN.C
+     */
+    if (position[0] == '[' &&
+        position[1] == '.') {
+        position += 2;
+
+        while (*position != '\0' &&
+               *position != ']') {
+            char ch;
+
+            ch = *position++;
+
+            if (ch == '.') {
+                ch = '/';
+            }
+
+            if (used + 1U >= output_size) {
+                return 0;
+            }
+
+            output[used++] = ch;
+        }
+
+        if (*position != ']') {
+            return 0;
+        }
+
+        ++position;
+
+        if (*position != '\0') {
+            if (used != 0U &&
+                output[used - 1U] != '/') {
+                if (used + 1U >= output_size) {
+                    return 0;
+                }
+
+                output[used++] = '/';
+            }
+
+            while (*position != '\0') {
+                if (used + 1U >= output_size) {
+                    return 0;
+                }
+
+                output[used++] = *position++;
+            }
+        }
+    } else {
+        while (*position != '\0') {
+            if (used + 1U >= output_size) {
+                return 0;
+            }
+
+            output[used++] = *position++;
+        }
+    }
+
+    if (used == 0U) {
+        if (output_size < 2U) {
+            return 0;
+        }
+
+        output[0] = '.';
+        output[1] = '\0';
+        return 1;
+    }
+
+    output[used] = '\0';
+    return 1;
+}
 
 static int path_is_safe(const char *path)
 {
@@ -150,6 +261,7 @@ void project_search(const agent_state *state,
     FILE *file;
     char buffer[1024];
     unsigned long line_number;
+char normalized[NORMALIZED_PATH_SIZE];
     unsigned long matches;
 
     if (state == NULL ||
@@ -159,17 +271,14 @@ void project_search(const agent_state *state,
         return;
     }
 
-    if (!path_is_safe(path)) {
-        (void)puts("Unsafe or invalid project-relative path.");
-        return;
-    }
+    if (!normalize_project_path(path,
+                            normalized,
+                            sizeof(normalized))) {
+    (void)puts("Unsafe or invalid project-relative path.");
+    return;
+}
 
-    if (pattern == NULL || *pattern == '\0') {
-        (void)puts("Search text cannot be empty.");
-        return;
-    }
-
-    file = fopen(path, "r");
+file = fopen(normalized, "r");
 
     if (file == NULL) {
         (void)printf("Unable to search %s: %s\n",
@@ -215,7 +324,7 @@ void project_list(const agent_state *state, const char *path, int show_all)
     DIR *directory;
     struct dirent *entry;
     const char *target;
-
+    char normalized[NORMALIZED_PATH_SIZE];
     if (state == NULL ||
         state->project_root == NULL ||
         *state->project_root == '\0') {
@@ -223,14 +332,14 @@ void project_list(const agent_state *state, const char *path, int show_all)
         return;
     }
 
-    target = path;
-
-if (target == NULL || *target == '\0') {
-    target = ".";
-} else if (!path_is_safe(target)) {
+   if (!normalize_project_path(path,
+                            normalized,
+                            sizeof(normalized))) {
     (void)puts("Unsafe or invalid project-relative path.");
     return;
 }
+
+target = normalized;
 
 directory = opendir(target);
 
@@ -331,6 +440,7 @@ void project_read(const agent_state *state, const char *path)
     FILE *file;
     char buffer[READ_BUFFER_SIZE];
     unsigned long line_number;
+    char normalized[NORMALIZED_PATH_SIZE];
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -339,15 +449,18 @@ void project_read(const agent_state *state, const char *path)
         return;
     }
 
-    if (!path_is_safe(path)) {
-        (void)puts("Unsafe or invalid project-relative path.");
-        return;
-    }
+    if (!normalize_project_path(path,
+                            normalized,
+                            sizeof(normalized))) {
+    (void)puts("Unsafe or invalid project-relative path.");
+    return;
+}
 
-    file = fopen(path, "r");
+file = fopen(normalized, "r");
+
 
     if (file == NULL) {
-        (void)printf("Unable to read %s\n", path);
+        (void)printf("Unable to read %s\n", normalized);
         (void)printf("Reason: %s\n", strerror(errno));
         return;
     }
@@ -385,6 +498,7 @@ int project_patch(const agent_state *state,
     char answer[32];
     long length;
     size_t old_length;
+char normalized[NORMALIZED_PATH_SIZE];
     size_t new_length;
 char *line_start;
 char *line_end;
@@ -402,10 +516,12 @@ size_t after_length;
         return 0;
     }
 
-    if (!path_is_safe(path)) {
-        (void)puts("Unsafe or invalid project-relative path.");
-        return 0;
-    }
+    if (!normalize_project_path(path,
+                            normalized,
+                            sizeof(normalized))) {
+    (void)puts("Unsafe or invalid project-relative path.");
+    return 0;
+}
 
     if (old_text == NULL || *old_text == '\0') {
         (void)puts("Original text cannot be empty.");
@@ -417,11 +533,11 @@ size_t after_length;
         return 0;
     }
 
-    file = fopen(path, "r");
+    file = fopen(normalized, "r");
 
     if (file == NULL) {
         (void)printf("Unable to open %s: %s\n",
-                     path,
+                     normalized,
                      strerror(errno));
         return 0;
     }
@@ -513,7 +629,7 @@ before_length = (size_t)(match - line_start);
 after_length =
     (size_t)(line_end - (match + old_length));
 
-(void)printf("File: %s\n", path);
+(void)printf("File: %s\n", normalized);
 (void)puts("");
 (void)printf("Current:  %.*s%s%.*s\n",
              (int)before_length,
@@ -542,11 +658,11 @@ after_length =
         return 0;
     }
 
-    file = fopen(path, "w");
+    file = fopen(normalized, "w");
 
     if (file == NULL) {
         (void)printf("Unable to write %s: %s\n",
-                     path,
+                     normalized,
                      strerror(errno));
         free(updated);
         free(original);
