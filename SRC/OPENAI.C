@@ -2983,6 +2983,187 @@ void openai_agent_retry(agent_state *state, const char *goal)
     free(build_output);
 }
 
+
+static void openai_selftest_report(const char *name,
+                                   int passed,
+                                   unsigned int *passed_count,
+                                   unsigned int *failed_count)
+{
+    (void)printf(
+        "%-36s %s\n",
+        name,
+        passed ? "PASS" : "FAIL"
+    );
+
+    if (passed) {
+        ++(*passed_count);
+    } else {
+        ++(*failed_count);
+    }
+}
+
+void openai_selftest(agent_state *state)
+{
+    static const char output_json[] =
+        "{"
+        "\"id\":\"resp_test\","
+        "\"output\":[{"
+        "\"type\":\"message\","
+        "\"content\":[{"
+        "\"type\":\"output_text\","
+        "\"text\":\"alpha\\nbeta\""
+        "}]"
+        "}]"
+        "}";
+    static const char function_json[] =
+        "{"
+        "\"id\":\"resp_test\","
+        "\"output\":[{"
+        "\"type\":\"function_call\","
+        "\"name\":\"read_file\","
+        "\"call_id\":\"call_test\","
+        "\"arguments\":\"{\\\"path\\\":\\\"SRC/MAIN.C\\\"}\""
+        "}]"
+        "}";
+    const char *object;
+    const char *value;
+    char *decoded;
+    char *name;
+    char *call_id;
+    char *arguments;
+    FILE *build_file;
+    unsigned int passed_count;
+    unsigned int failed_count;
+
+    passed_count = 0U;
+    failed_count = 0U;
+
+    (void)puts("OVMS Agent non-destructive self-test");
+    (void)puts("------------------------------------");
+
+    openai_selftest_report(
+        "project state available",
+        state != NULL &&
+        state->project_root != NULL &&
+        *state->project_root != '\0',
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "safe project path accepted",
+        openai_path_is_safe("SRC/MAIN.C"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "parent traversal rejected",
+        !openai_path_is_safe("../LOGIN.COM"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "device-qualified path rejected",
+        !openai_path_is_safe("SYS$LOGIN:LOGIN.COM"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "API-key filename blocked",
+        openai_path_is_sensitive("OPENAIKEY.TXT"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "header filename blocked",
+        openai_path_is_sensitive("OVMS_AGENT_HEADERS.TXT"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "ordinary source not sensitive",
+        !openai_path_is_sensitive("SRC/OPENAI.C"),
+        &passed_count,
+        &failed_count
+    );
+
+    object = find_output_text_object(output_json);
+    value = object != NULL ?
+        find_string_value(object, "text") : NULL;
+    decoded = value != NULL ?
+        json_decode_string(value, NULL) : NULL;
+
+    openai_selftest_report(
+        "output_text JSON extraction",
+        decoded != NULL &&
+        strcmp(decoded, "alpha\nbeta") == 0,
+        &passed_count,
+        &failed_count
+    );
+    free(decoded);
+
+    name = NULL;
+    call_id = NULL;
+    arguments = NULL;
+
+    openai_selftest_report(
+        "function-call JSON extraction",
+        extract_function_call(
+            function_json,
+            &name,
+            &call_id,
+            &arguments
+        ) &&
+        name != NULL &&
+        call_id != NULL &&
+        arguments != NULL &&
+        strcmp(name, "read_file") == 0 &&
+        strcmp(call_id, "call_test") == 0 &&
+        strstr(arguments, "SRC/MAIN.C") != NULL,
+        &passed_count,
+        &failed_count
+    );
+
+    free(name);
+    free(call_id);
+    free(arguments);
+
+    build_file = fopen("BUILD.COM", "r");
+
+    openai_selftest_report(
+        "fixed BUILD.COM is readable",
+        build_file != NULL,
+        &passed_count,
+        &failed_count
+    );
+
+    if (build_file != NULL) {
+        (void)fclose(build_file);
+    }
+
+    (void)puts("------------------------------------");
+    (void)printf(
+        "Self-test result: %u passed, %u failed.\n",
+        passed_count,
+        failed_count
+    );
+
+    if (failed_count == 0U) {
+        (void)puts("All non-destructive checks passed.");
+    } else {
+        (void)puts(
+            "One or more checks failed. Do not enable additional "
+            "agent authority until these failures are understood."
+        );
+    }
+}
+
+
 void openai_review_file(agent_state *state, const char *path)
 {
     static const char introduction[] =

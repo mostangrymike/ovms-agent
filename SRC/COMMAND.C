@@ -49,6 +49,8 @@ static void command_agent_fix(agent_state *state,
                               const char *arguments);
 static void command_agent_retry(agent_state *state,
                                 const char *arguments);
+static void command_agent_selftest(agent_state *state,
+                                   const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -71,6 +73,7 @@ static const command_entry command_table[] = {
 { "AGENT/BUILD", "Run controlled project build analysis: AGENT/BUILD goal", command_agent_build },
 { "AGENT/FIX", "Apply one confirmed fix and build: AGENT/FIX goal", command_agent_fix },
 { "AGENT/RETRY","Retry one supervised fix using prior build diagnostics: AGENT/RETRY goal", command_agent_retry },
+{ "AGENT/SELFTEST","Run non-destructive agent checks", command_agent_selftest },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -83,6 +86,13 @@ void command_prompt(void)
 {
     (void)fputs("OVMS-AGENT> ", stdout);
     (void)fflush(stdout);
+}
+
+static void command_agent_selftest(agent_state *state,
+                                   const char *arguments)
+{
+    (void)arguments;
+    openai_selftest(state);
 }
 
 static void command_agent_retry(agent_state *state,
