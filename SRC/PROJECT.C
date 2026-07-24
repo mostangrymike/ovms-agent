@@ -565,12 +565,16 @@ void project_build(const agent_state *state)
     }
 }
 
-void project_read(const agent_state *state, const char *path)
+void project_read(const agent_state *state,
+                  const char *path,
+                  unsigned long start_line,
+                  unsigned long line_count)
 {
     FILE *file;
     char buffer[READ_BUFFER_SIZE];
     unsigned long line_number;
     char normalized[NORMALIZED_PATH_SIZE];
+    unsigned long printed;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -595,17 +599,41 @@ file = fopen(normalized, "r");
         return;
     }
 
-    line_number = 1UL;
+if (start_line == 0UL) {
+    start_line = 1UL;
+}
 
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+line_number = 1UL;
+printed = 0UL;
+
+while (fgets(buffer, sizeof(buffer), file) != NULL) {
+    if (line_number >= start_line) {
         (void)printf("%6lu  %s", line_number, buffer);
 
         if (strchr(buffer, '\n') == NULL) {
             (void)putchar('\n');
         }
 
-        ++line_number;
+        ++printed;
+
+        if (line_count != 0UL &&
+            printed >= line_count) {
+            break;
+        }
     }
+
+    ++line_number;
+}
+
+
+
+
+
+
+
+
+
+
 
     if (ferror(file)) {
         (void)printf("Read error: %s\n", strerror(errno));

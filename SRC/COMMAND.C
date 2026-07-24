@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include "command.h"
 #include "project.h"
 #include "util.h"
@@ -36,7 +36,7 @@ static const command_entry command_table[] = {
     { "STATUS",  "Display agent status", command_status },
     { "LIST", "List a directory: LIST [path]", command_list },
     { "TREE", "Display directory tree: TREE [path]", command_tree },
-    { "READ",    "Read a project-relative text file", command_read },
+    { "READ", "Read lines: READ file [start [count]]", command_read },
     { "BUILD", "Build the current project", command_build },
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
@@ -208,15 +208,77 @@ static void command_list(agent_state *state,
     project_list(state, arguments, 0);
 }
 
-static void command_read(agent_state *state, const char *arguments)
+static void command_read(agent_state *state,
+                         const char *arguments)
 {
+    char work[OVMS_AGENT_INPUT_SIZE];
+    char *cursor;
+    char *path;
+    char *start_text;
+    char *count_text;
+    char *extra;
+    char *end;
+    unsigned long start_line;
+    unsigned long line_count;
+
     if (arguments == NULL || *arguments == '\0') {
-        (void)puts("Usage: READ project-relative-file");
+        (void)puts(
+            "Usage: READ file [start_line [line_count]]"
+        );
         return;
     }
 
-    project_read(state, arguments);
+    if (strlen(arguments) >= sizeof(work)) {
+        (void)puts("READ arguments are too long.");
+        return;
+    }
+
+    (void)strcpy(work, arguments);
+    cursor = work;
+
+    path = command_next_argument(&cursor);
+    start_text = command_next_argument(&cursor);
+    count_text = command_next_argument(&cursor);
+    extra = command_next_argument(&cursor);
+
+    if (path == NULL || extra != NULL) {
+        (void)puts(
+            "Usage: READ file [start_line [line_count]]"
+        );
+        return;
+    }
+
+    start_line = 1UL;
+    line_count = 0UL;
+
+    if (start_text != NULL) {
+        start_line = strtoul(start_text, &end, 10);
+
+        if (*start_text == '\0' ||
+            *end != '\0' ||
+            start_line == 0UL) {
+            (void)puts("Start line must be a positive integer.");
+            return;
+        }
+    }
+
+    if (count_text != NULL) {
+        line_count = strtoul(count_text, &end, 10);
+
+        if (*count_text == '\0' ||
+            *end != '\0' ||
+            line_count == 0UL) {
+            (void)puts("Line count must be a positive integer.");
+            return;
+        }
+    }
+
+    project_read(state,
+                 path,
+                 start_line,
+                 line_count);
 }
+
 
 static char *command_next_argument(char **cursor)
 {
