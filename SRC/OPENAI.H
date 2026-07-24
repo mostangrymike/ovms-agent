@@ -14,5 +14,7 @@ void openai_agent_fix(agent_state *state, const char *goal);
 void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
 void openai_selftest(agent_state *state);
+void openai_status(const agent_state *state);
+void openai_verify(agent_state *state);
 
 #endif

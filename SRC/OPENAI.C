@@ -17,6 +17,29 @@
 
 static char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
 
+#define OPENAI_WORKFLOW_NONE       0
+#define OPENAI_WORKFLOW_ASK        1
+#define OPENAI_WORKFLOW_CHAT       2
+#define OPENAI_WORKFLOW_REVIEW     3
+#define OPENAI_WORKFLOW_AGENT      4
+#define OPENAI_WORKFLOW_WRITE      5
+#define OPENAI_WORKFLOW_FIX        6
+#define OPENAI_WORKFLOW_BUILD      7
+#define OPENAI_WORKFLOW_RETRY      8
+#define OPENAI_WORKFLOW_SELFTEST   9
+#define OPENAI_WORKFLOW_VERIFY    10
+
+#define OPENAI_ROLLBACK_NONE        0
+#define OPENAI_ROLLBACK_NOT_NEEDED  1
+#define OPENAI_ROLLBACK_SUCCEEDED   2
+#define OPENAI_ROLLBACK_FAILED      3
+#define OPENAI_ROLLBACK_DECLINED    4
+
+static int openai_last_workflow = OPENAI_WORKFLOW_NONE;
+static int openai_last_build_known = 0;
+static int openai_last_build_status = 0;
+static int openai_last_rollback = OPENAI_ROLLBACK_NONE;
+
 /* Forward declarations used before their definitions. */
 static int openai_path_is_sensitive(const char *path);
 static int openai_confirm_restore(const char *path);
@@ -665,6 +688,9 @@ static void openai_send(agent_state *state,
     int status;
 
     (void)state;
+
+    openai_last_workflow = continue_conversation ?
+        OPENAI_WORKFLOW_CHAT : OPENAI_WORKFLOW_ASK;
 
     if (prompt == NULL || *prompt == '\0') {
         (void)puts("Prompt cannot be empty.");
@@ -2083,6 +2109,8 @@ static char *execute_run_build_tool(int *build_status)
     (void)remove(OPENAI_BUILD_LOG_FILE);
     status = system(command);
     *build_status = status;
+    openai_last_build_known = 1;
+    openai_last_build_status = status;
 
     output = read_entire_file(OPENAI_BUILD_LOG_FILE, &length);
 
@@ -2341,6 +2369,15 @@ static void openai_agent_mode(agent_state *state,
     int write_attempted;
     openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
 
+    if (build_after_write) {
+        openai_last_workflow = OPENAI_WORKFLOW_FIX;
+        openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    } else if (allow_write) {
+        openai_last_workflow = OPENAI_WORKFLOW_WRITE;
+    } else {
+        openai_last_workflow = OPENAI_WORKFLOW_AGENT;
+    }
+
     if (state == NULL ||
         state->project_root == NULL ||
         *state->project_root == '\0') {
@@ -2562,6 +2599,8 @@ static void openai_agent_mode(agent_state *state,
                     rollback_summary =
                         "Rollback status: not needed because the build "
                         "succeeded.";
+                    openai_last_rollback =
+                        OPENAI_ROLLBACK_NOT_NEEDED;
 
                     (void)puts("Patch applied. Running controlled build...");
                     build_output = execute_run_build_tool(&build_status);
@@ -2578,6 +2617,8 @@ static void openai_agent_mode(agent_state *state,
                         if (openai_confirm_restore(display_path)) {
                             if (openai_restore_previous_version(
                                     display_path)) {
+                                openai_last_rollback =
+                                    OPENAI_ROLLBACK_SUCCEEDED;
                                 rollback_summary =
                                     "Rollback status: successful. The build "
                                     "failed, but the previous source contents "
@@ -2588,6 +2629,8 @@ static void openai_agent_mode(agent_state *state,
                                     "are now the latest file version."
                                 );
                             } else {
+                                openai_last_rollback =
+                                    OPENAI_ROLLBACK_FAILED;
                                 rollback_summary =
                                     "Rollback status: requested but failed. "
                                     "The build failed and the patched source "
@@ -2597,6 +2640,8 @@ static void openai_agent_mode(agent_state *state,
                                 );
                             }
                         } else {
+                            openai_last_rollback =
+                                OPENAI_ROLLBACK_DECLINED;
                             rollback_summary =
                                 "Rollback status: declined. The build failed "
                                 "and the patched source remains the latest "
@@ -2743,6 +2788,9 @@ void openai_agent_build(agent_state *state, const char *goal)
     char *context_items;
     char *tool_output;
     int build_status;
+
+    openai_last_workflow = OPENAI_WORKFLOW_BUILD;
+    openai_last_rollback = OPENAI_ROLLBACK_NONE;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -2906,6 +2954,9 @@ void openai_agent_retry(agent_state *state, const char *goal)
     size_t combined_size;
     int build_status;
 
+    openai_last_workflow = OPENAI_WORKFLOW_RETRY;
+    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+
     if (state == NULL ||
         state->project_root == NULL ||
         *state->project_root == '\0') {
@@ -2984,6 +3035,124 @@ void openai_agent_retry(agent_state *state, const char *goal)
 }
 
 
+static const char *openai_workflow_name(int workflow)
+{
+    switch (workflow) {
+    case OPENAI_WORKFLOW_ASK:
+        return "ASK";
+    case OPENAI_WORKFLOW_CHAT:
+        return "CHAT";
+    case OPENAI_WORKFLOW_REVIEW:
+        return "REVIEW";
+    case OPENAI_WORKFLOW_AGENT:
+        return "AGENT";
+    case OPENAI_WORKFLOW_WRITE:
+        return "AGENT/WRITE";
+    case OPENAI_WORKFLOW_FIX:
+        return "AGENT/FIX";
+    case OPENAI_WORKFLOW_BUILD:
+        return "AGENT/BUILD";
+    case OPENAI_WORKFLOW_RETRY:
+        return "AGENT/RETRY";
+    case OPENAI_WORKFLOW_SELFTEST:
+        return "AGENT/SELFTEST";
+    case OPENAI_WORKFLOW_VERIFY:
+        return "AGENT/VERIFY";
+    default:
+        return "none";
+    }
+}
+
+static const char *openai_rollback_name(int rollback_state)
+{
+    switch (rollback_state) {
+    case OPENAI_ROLLBACK_NOT_NEEDED:
+        return "not needed";
+    case OPENAI_ROLLBACK_SUCCEEDED:
+        return "succeeded";
+    case OPENAI_ROLLBACK_FAILED:
+        return "failed";
+    case OPENAI_ROLLBACK_DECLINED:
+        return "declined";
+    default:
+        return "none recorded";
+    }
+}
+
+void openai_status(const agent_state *state)
+{
+    const char *model;
+    const char *api_key;
+
+    model = getenv("OVMS_AGENT_MODEL");
+    api_key = getenv("OPENAI_API_KEY");
+
+    (void)puts("OVMS Agent capability status");
+    (void)puts("----------------------------");
+
+    (void)printf(
+        "Project root configured:  %s\n",
+        state != NULL &&
+        state->project_root != NULL &&
+        *state->project_root != '\0' ?
+            "yes" : "no"
+    );
+
+    (void)printf(
+        "OpenAI API key defined:   %s\n",
+        api_key != NULL && *api_key != '\0' ?
+            "yes" : "no"
+    );
+
+    (void)printf(
+        "OpenAI model:             %s\n",
+        model != NULL && *model != '\0' ?
+            model : "<not defined>"
+    );
+
+    (void)printf(
+        "Chat conversation active: %s\n",
+        previous_response_id[0] != '\0' ?
+            "yes" : "no"
+    );
+
+    (void)printf(
+        "Last workflow:            %s\n",
+        openai_workflow_name(openai_last_workflow)
+    );
+
+    if (openai_last_build_known) {
+        (void)printf(
+            "Last build:               %s (status %d)\n",
+            (openai_last_build_status & 1) != 0 ?
+                "success" : "failure",
+            openai_last_build_status
+        );
+    } else {
+        (void)puts(
+            "Last build:               not run in this process"
+        );
+    }
+
+    (void)printf(
+        "Last rollback:            %s\n",
+        openai_rollback_name(openai_last_rollback)
+    );
+
+    (void)puts("");
+    (void)puts("Enabled modes:");
+    (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
+    (void)puts("  AGENT, AGENT/WRITE, AGENT/BUILD");
+    (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
+    (void)puts("  AGENT/STATUS, AGENT/VERIFY");
+    (void)puts("");
+    (void)puts("Authority boundaries:");
+    (void)puts("  AGENT is read-only.");
+    (void)puts("  Writes require exact-match local confirmation.");
+    (void)puts("  Builds invoke only the fixed BUILD.COM.");
+    (void)puts("  Failed supervised fixes may offer local rollback.");
+}
+
 static void openai_selftest_report(const char *name,
                                    int passed,
                                    unsigned int *passed_count,
@@ -3002,7 +3171,7 @@ static void openai_selftest_report(const char *name,
     }
 }
 
-void openai_selftest(agent_state *state)
+static unsigned int openai_run_selftest(agent_state *state)
 {
     static const char output_json[] =
         "{"
@@ -3161,6 +3330,76 @@ void openai_selftest(agent_state *state)
             "agent authority until these failures are understood."
         );
     }
+
+    return failed_count;
+}
+
+
+void openai_selftest(agent_state *state)
+{
+    openai_last_workflow = OPENAI_WORKFLOW_SELFTEST;
+    (void)openai_run_selftest(state);
+}
+
+void openai_verify(agent_state *state)
+{
+    unsigned int selftest_failures;
+    char *build_output;
+    int build_status;
+    int build_passed;
+
+    openai_last_workflow = OPENAI_WORKFLOW_VERIFY;
+    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+
+    (void)puts("OVMS Agent verification gate");
+    (void)puts("============================");
+
+    selftest_failures = openai_run_selftest(state);
+
+    (void)puts("");
+    (void)puts("Controlled build verification");
+    (void)puts("-----------------------------");
+
+    build_output = execute_run_build_tool(&build_status);
+    build_passed = build_output != NULL &&
+                   (build_status & 1) != 0;
+
+    (void)printf(
+        "fixed BUILD.COM execution             %s\n",
+        build_passed ? "PASS" : "FAIL"
+    );
+
+    (void)printf(
+        "OpenVMS build status                  %d\n",
+        build_status
+    );
+
+    if (!build_passed && build_output != NULL) {
+        (void)puts("");
+        (void)puts("Captured build output:");
+        (void)puts(build_output);
+    }
+
+    free(build_output);
+
+    (void)puts("============================");
+
+    if (selftest_failures == 0U && build_passed) {
+        (void)puts(
+            "Verification result: PASS. Safety checks and controlled "
+            "build are healthy."
+        );
+    } else {
+        (void)printf(
+            "Verification result: FAIL. Self-test failures: %u; "
+            "build: %s.\n",
+            selftest_failures,
+            build_passed ? "pass" : "fail"
+        );
+        (void)puts(
+            "Do not add more agent authority until verification passes."
+        );
+    }
 }
 
 
@@ -3175,6 +3414,8 @@ void openai_review_file(agent_state *state, const char *path)
     char *source;
     char *prompt;
     size_t prompt_size;
+
+    openai_last_workflow = OPENAI_WORKFLOW_REVIEW;
 
     if (state == NULL ||
         state->project_root == NULL ||
