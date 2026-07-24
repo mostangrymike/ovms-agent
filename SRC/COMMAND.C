@@ -6,6 +6,7 @@
 #include "util.h"
 #include "edit.h"
 #include "openai.h"
+#include "openai_state.h"
 
 typedef void (*command_handler)(agent_state *state,
                                 const char *arguments);
@@ -67,6 +68,8 @@ static void command_agent_state_clear(agent_state *state,
                                       const char *arguments);
 static void command_agent_create(agent_state *state,
                                  const char *arguments);
+static void command_agent_state(agent_state *state,
+                                const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -96,6 +99,7 @@ static const command_entry command_table[] = {
 { "AGENT/LOG/OLD","Display the rotated activity log", command_agent_log_old },
 { "AGENT/LOG/CLEAR","Clear the active activity log with confirmation", command_agent_log_clear },
 { "AGENT/METRICS","Summarize structured activity metrics", command_agent_metrics },
+{ "AGENT/STATE","Display validated persistent workflow state", command_agent_state },
 { "AGENT/STATE/CLEAR","Clear persisted workflow state with confirmation", command_agent_state_clear },
 { "AGENT/CREATE","Create one new confirmed project file: AGENT/CREATE goal", command_agent_create },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
@@ -116,6 +120,14 @@ static void command_agent_create(agent_state *state,
                                  const char *arguments)
 {
     openai_agent_create(state, arguments);
+}
+
+static void command_agent_state(agent_state *state,
+                                const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_state();
 }
 
 static void command_agent_state_clear(agent_state *state,
