@@ -715,6 +715,151 @@ static void openai_send(agent_state *state,
     (void)putchar('\n');
 }
 
+
+static int openai_path_is_safe(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return 0;
+    }
+
+    if (*path == '/' ||
+        strchr(path, ':') != NULL ||
+        strstr(path, "..") != NULL) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static char *openai_read_text_file(const char *path)
+{
+    FILE *file;
+    long length;
+    size_t actual;
+    char *data;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to open %s: %s\n",
+                     path,
+                     strerror(errno));
+        return NULL;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)printf("Unable to size %s: %s\n",
+                     path,
+                     strerror(errno));
+        (void)fclose(file);
+        return NULL;
+    }
+
+    length = ftell(file);
+
+    if (length < 0L) {
+        (void)printf("Unable to size %s.\n", path);
+        (void)fclose(file);
+        return NULL;
+    }
+
+    if (length > 65536L) {
+        (void)printf(
+            "File is too large for REVIEW (%ld bytes; limit 65536).\n",
+            length
+        );
+        (void)fclose(file);
+        return NULL;
+    }
+
+    if (fseek(file, 0L, SEEK_SET) != 0) {
+        (void)printf("Unable to rewind %s: %s\n",
+                     path,
+                     strerror(errno));
+        (void)fclose(file);
+        return NULL;
+    }
+
+    data = malloc((size_t)length + 1U);
+
+    if (data == NULL) {
+        (void)puts("Insufficient memory for file review.");
+        (void)fclose(file);
+        return NULL;
+    }
+
+    actual = fread(data, 1U, (size_t)length, file);
+
+    if (ferror(file)) {
+        (void)printf("Unable to read %s: %s\n",
+                     path,
+                     strerror(errno));
+        free(data);
+        (void)fclose(file);
+        return NULL;
+    }
+
+    data[actual] = '\0';
+    (void)fclose(file);
+    return data;
+}
+
+void openai_review_file(agent_state *state, const char *path)
+{
+    static const char introduction[] =
+        "Review this OpenVMS C source file. Identify correctness bugs, "
+        "OpenVMS portability problems, security issues, and maintainability "
+        "problems. Prioritize concrete findings. Do not rewrite the entire "
+        "file unless necessary.\n\nFile: ";
+    static const char separator[] = "\n\nSource:\n";
+    char *source;
+    char *prompt;
+    size_t prompt_size;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!openai_path_is_safe(path)) {
+        (void)puts("Unsafe or invalid project-relative path.");
+        return;
+    }
+
+    source = openai_read_text_file(path);
+
+    if (source == NULL) {
+        return;
+    }
+
+    prompt_size =
+        strlen(introduction) +
+        strlen(path) +
+        strlen(separator) +
+        strlen(source) +
+        1U;
+
+    prompt = malloc(prompt_size);
+
+    if (prompt == NULL) {
+        (void)puts("Insufficient memory for review prompt.");
+        free(source);
+        return;
+    }
+
+    (void)strcpy(prompt, introduction);
+    (void)strcat(prompt, path);
+    (void)strcat(prompt, separator);
+    (void)strcat(prompt, source);
+
+    openai_send(state, prompt, 0);
+
+    free(prompt);
+    free(source);
+}
+
 void openai_ask(agent_state *state, const char *prompt)
 {
     openai_send(state, prompt, 0);
