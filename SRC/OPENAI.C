@@ -19,6 +19,8 @@ static char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
 
 /* Forward declarations used before their definitions. */
 static int openai_path_is_sensitive(const char *path);
+static int openai_confirm_restore(const char *path);
+static int openai_restore_previous_version(const char *path);
 
 static int json_write_escaped(FILE *file, const char *text)
 {
@@ -2161,6 +2163,132 @@ static int display_output_text_from_json(const char *json)
     return 1;
 }
 
+
+static int openai_confirm_restore(const char *path)
+{
+    char answer[32];
+
+    (void)printf(
+        "Build failed after patching %s.\n"
+        "Restore the previous OpenVMS file version [y/N]? ",
+        path
+    );
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        (void)putchar('\n');
+        return 0;
+    }
+
+    return answer[0] == 'y' || answer[0] == 'Y';
+}
+
+static int openai_restore_previous_version(const char *path)
+{
+    char previous_path[1024];
+    unsigned char buffer[8192];
+    FILE *source;
+    FILE *destination;
+    size_t count;
+    int written;
+
+    if (path == NULL || *path == '\0') {
+        (void)puts("Unable to restore an empty path.");
+        return 0;
+    }
+
+    written = snprintf(
+        previous_path,
+        sizeof(previous_path),
+        "%s;-1",
+        path
+    );
+
+    if (written < 0 ||
+        (size_t)written >= sizeof(previous_path)) {
+        (void)puts("Previous-version path is too long.");
+        return 0;
+    }
+
+    source = fopen(previous_path, "rb");
+
+    if (source == NULL) {
+        (void)printf(
+            "Unable to open previous version %s: %s\n",
+            previous_path,
+            strerror(errno)
+        );
+        return 0;
+    }
+
+    /*
+     * On OpenVMS, opening the unversioned destination for writing
+     * creates a new latest file version.
+     */
+    destination = fopen(path, "wb");
+
+    if (destination == NULL) {
+        (void)printf(
+            "Unable to create restored version of %s: %s\n",
+            path,
+            strerror(errno)
+        );
+        (void)fclose(source);
+        return 0;
+    }
+
+    while ((count = fread(
+                buffer,
+                1U,
+                sizeof(buffer),
+                source)) > 0U) {
+        if (fwrite(buffer, 1U, count, destination) != count) {
+            (void)printf(
+                "Unable to write restored version of %s: %s\n",
+                path,
+                strerror(errno)
+            );
+            (void)fclose(source);
+            (void)fclose(destination);
+            return 0;
+        }
+    }
+
+    if (ferror(source)) {
+        (void)printf(
+            "Unable to read previous version %s: %s\n",
+            previous_path,
+            strerror(errno)
+        );
+        (void)fclose(source);
+        (void)fclose(destination);
+        return 0;
+    }
+
+    if (fclose(source) != 0) {
+        (void)printf(
+            "Unable to close previous version %s: %s\n",
+            previous_path,
+            strerror(errno)
+        );
+        (void)fclose(destination);
+        return 0;
+    }
+
+    if (fclose(destination) != 0) {
+        (void)printf(
+            "Unable to close restored version of %s: %s\n",
+            path,
+            strerror(errno)
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous file contents restored as a new OpenVMS version."
+    );
+    return 1;
+} 
 static void openai_agent_mode(agent_state *state,
                               const char *goal,
                               int allow_write,
@@ -2407,7 +2535,6 @@ static void openai_agent_mode(agent_state *state,
             (void)printf("Tool requested: replace_text %s\n",
                          display_path != NULL ?
                              display_path : "");
-            free(display_path);
             free(name);
             free(arguments);
             free(new_call_id);
@@ -2426,6 +2553,28 @@ static void openai_agent_mode(agent_state *state,
                             "success" : "failure",
                         build_status
                     );
+
+                    if ((build_status & 1) == 0 &&
+                        display_path != NULL) {
+                        if (openai_confirm_restore(display_path)) {
+                            if (openai_restore_previous_version(
+                                    display_path)) {
+                                (void)puts(
+                                    "Rollback complete. The prior contents "
+                                    "are now the latest file version."
+                                );
+                            } else {
+                                (void)puts(
+                                    "Rollback was requested but failed."
+                                );
+                            }
+                        } else {
+                            (void)puts(
+                                "Rollback declined. The patched version "
+                                "remains current."
+                            );
+                        }
+                    }
 
                     if (build_output != NULL) {
                         static const char prefix[] =
@@ -2466,11 +2615,18 @@ static void openai_agent_mode(agent_state *state,
                 } else {
                     (void)puts("Patch applied. Agent complete.");
                 }
+
+                free(display_path);
+                display_path = NULL;
             } else if (replace_result == OPENAI_REPLACE_DECLINED) {
+                free(display_path);
+                display_path = NULL;
                 (void)puts(build_after_write ?
                     "Patch cancelled. Build not run. Agent complete." :
                     "Patch cancelled. Agent complete.");
             } else {
+                free(display_path);
+                display_path = NULL;
                 (void)puts(build_after_write ?
                     "Patch failed. Build not run. Agent complete." :
                     "Patch failed. Agent complete.");
