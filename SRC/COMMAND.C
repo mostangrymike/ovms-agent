@@ -188,6 +188,7 @@ static void command_search(agent_state *state,
         return;
     }
 
+
     if (strlen(arguments) >= sizeof(work)) {
         (void)puts("Search arguments are too long.");
         return;
@@ -206,6 +207,11 @@ static void command_search(agent_state *state,
         (void)puts("Usage: SEARCH file \"text\"");
         return;
     }
+if (!command_decode_escapes(pattern)) {
+    (void)puts("Invalid escape sequence in search text.");
+    return;
+}
+
 
     project_search(state, path, pattern);
 }
