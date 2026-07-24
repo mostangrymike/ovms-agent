@@ -10,6 +10,7 @@ int openai_chat_active(void);
 void openai_review_file(agent_state *state, const char *path);
 void openai_agent(agent_state *state, const char *goal);
 void openai_agent_write(agent_state *state, const char *goal);
+void openai_agent_create(agent_state *state, const char *goal);
 void openai_agent_fix(agent_state *state, const char *goal);
 void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
@@ -17,5 +18,10 @@ void openai_selftest(agent_state *state);
 void openai_status(const agent_state *state);
 void openai_verify(agent_state *state);
 void openai_show_log(void);
+void openai_show_old_log(void);
+void openai_clear_log(void);
+void openai_show_metrics(void);
+void openai_show_state(void);
+void openai_clear_state(void);
 
 #endif

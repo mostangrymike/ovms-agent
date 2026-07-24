@@ -57,6 +57,16 @@ static void command_agent_verify(agent_state *state,
                                  const char *arguments);
 static void command_agent_log(agent_state *state,
                               const char *arguments);
+static void command_agent_log_old(agent_state *state,
+                                  const char *arguments);
+static void command_agent_log_clear(agent_state *state,
+                                    const char *arguments);
+static void command_agent_metrics(agent_state *state,
+                                  const char *arguments);
+static void command_agent_state_clear(agent_state *state,
+                                      const char *arguments);
+static void command_agent_create(agent_state *state,
+                                 const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -83,6 +93,11 @@ static const command_entry command_table[] = {
 { "AGENT/STATUS","Show agent capabilities and recent workflow state", command_agent_status },
 { "AGENT/VERIFY","Run safety checks and a controlled build", command_agent_verify },
 { "AGENT/LOG","Display the structured local activity log", command_agent_log },
+{ "AGENT/LOG/OLD","Display the rotated activity log", command_agent_log_old },
+{ "AGENT/LOG/CLEAR","Clear the active activity log with confirmation", command_agent_log_clear },
+{ "AGENT/METRICS","Summarize structured activity metrics", command_agent_metrics },
+{ "AGENT/STATE/CLEAR","Clear persisted workflow state with confirmation", command_agent_state_clear },
+{ "AGENT/CREATE","Create one new confirmed project file: AGENT/CREATE goal", command_agent_create },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -95,6 +110,44 @@ void command_prompt(void)
 {
     (void)fputs("OVMS-AGENT> ", stdout);
     (void)fflush(stdout);
+}
+
+static void command_agent_create(agent_state *state,
+                                 const char *arguments)
+{
+    openai_agent_create(state, arguments);
+}
+
+static void command_agent_state_clear(agent_state *state,
+                                      const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_clear_state();
+}
+
+static void command_agent_metrics(agent_state *state,
+                                  const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_metrics();
+}
+
+static void command_agent_log_old(agent_state *state,
+                                  const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_old_log();
+}
+
+static void command_agent_log_clear(agent_state *state,
+                                    const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_clear_log();
 }
 
 static void command_agent_log(agent_state *state,

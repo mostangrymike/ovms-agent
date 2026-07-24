@@ -14,6 +14,9 @@
 #define OPENAI_HEADERS_FILE  "OVMS_AGENT_HEADERS.TXT"
 #define OPENAI_BUILD_LOG_FILE "OVMS_AGENT_BUILD.LOG"
 #define OPENAI_ACTIVITY_LOG_FILE "OVMS_AGENT_ACTIVITY.LOG"
+#define OPENAI_ACTIVITY_LOG_OLD_FILE "OVMS_AGENT_ACTIVITY_OLD.LOG"
+#define OPENAI_ACTIVITY_LOG_MAX_BYTES 262144L
+#define OPENAI_STATE_FILE "OVMS_AGENT.STATE"
 #define OPENAI_BUILD_OUTPUT_LIMIT 65536
 #define OPENAI_RESPONSE_ID_SIZE 128
 
@@ -30,6 +33,7 @@ static char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
 #define OPENAI_WORKFLOW_RETRY      8
 #define OPENAI_WORKFLOW_SELFTEST   9
 #define OPENAI_WORKFLOW_VERIFY    10
+#define OPENAI_WORKFLOW_CREATE    11
 
 #define OPENAI_ROLLBACK_NONE        0
 #define OPENAI_ROLLBACK_NOT_NEEDED  1
@@ -41,15 +45,309 @@ static int openai_last_workflow = OPENAI_WORKFLOW_NONE;
 static int openai_last_build_known = 0;
 static int openai_last_build_status = 0;
 static int openai_last_rollback = OPENAI_ROLLBACK_NONE;
-static const char *openai_workflow_name(int workflow);
+static int openai_state_loaded = 0;
+static int openai_state_valid = 0;
 
 /* Forward declarations used before their definitions. */
 static int openai_path_is_sensitive(const char *path);
+static const char *openai_workflow_name(int workflow);
+static const char *openai_rollback_name(int rollback_state);
 static void openai_log_event(const char *workflow,
                              const char *event,
                              int status);
+static int openai_rotate_log_if_needed(void);
+static void openai_save_state(void)
+{
+    FILE *file;
+
+    file = fopen(OPENAI_STATE_FILE, "w");
+
+    if (file == NULL) {
+        return;
+    }
+
+    (void)fprintf(
+        file,
+        "format=1\n"
+        "last_workflow=%d\n"
+        "last_build_known=%d\n"
+        "last_build_status=%d\n"
+        "last_rollback=%d\n",
+        openai_last_workflow,
+        openai_last_build_known,
+        openai_last_build_status,
+        openai_last_rollback
+    );
+
+    if (fclose(file) == 0) {
+        openai_state_loaded = 1;
+        openai_state_valid = 1;
+    }
+}
+
+static void openai_load_state(void)
+{
+    FILE *file;
+    char line[256];
+    int format;
+    int workflow;
+    int build_known;
+    int build_status;
+    int rollback;
+    int saw_format;
+    int saw_workflow;
+    int saw_build_known;
+    int saw_build_status;
+    int saw_rollback;
+
+    if (openai_state_loaded) {
+        return;
+    }
+
+    openai_state_loaded = 1;
+    openai_state_valid = 0;
+
+    format = 0;
+    workflow = OPENAI_WORKFLOW_NONE;
+    build_known = 0;
+    build_status = 0;
+    rollback = OPENAI_ROLLBACK_NONE;
+
+    saw_format = 0;
+    saw_workflow = 0;
+    saw_build_known = 0;
+    saw_build_status = 0;
+    saw_rollback = 0;
+
+    file = fopen(OPENAI_STATE_FILE, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        int value;
+
+        if (sscanf(line, "format=%d", &value) == 1) {
+            format = value;
+            saw_format = 1;
+        } else if (sscanf(
+                       line,
+                       "last_workflow=%d",
+                       &value) == 1) {
+            workflow = value;
+            saw_workflow = 1;
+        } else if (sscanf(
+                       line,
+                       "last_build_known=%d",
+                       &value) == 1) {
+            build_known = value;
+            saw_build_known = 1;
+        } else if (sscanf(
+                       line,
+                       "last_build_status=%d",
+                       &value) == 1) {
+            build_status = value;
+            saw_build_status = 1;
+        } else if (sscanf(
+                       line,
+                       "last_rollback=%d",
+                       &value) == 1) {
+            rollback = value;
+            saw_rollback = 1;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (!saw_format ||
+        !saw_workflow ||
+        !saw_build_known ||
+        !saw_build_status ||
+        !saw_rollback ||
+        format != 1 ||
+        workflow < OPENAI_WORKFLOW_NONE ||
+        workflow > OPENAI_WORKFLOW_CREATE ||
+        (build_known != 0 && build_known != 1) ||
+        rollback < OPENAI_ROLLBACK_NONE ||
+        rollback > OPENAI_ROLLBACK_DECLINED) {
+        (void)puts(
+            "Warning: OVMS_AGENT.STATE is invalid or unsupported; "
+            "persisted workflow state was ignored."
+        );
+        return;
+    }
+
+    openai_last_workflow = workflow;
+    openai_last_build_known = build_known;
+    openai_last_build_status = build_status;
+    openai_last_rollback = rollback;
+    openai_state_valid = 1;
+}
+
+void openai_show_state(void)
+{
+    openai_load_state();
+
+    (void)puts("OVMS Agent persisted state");
+    (void)puts("--------------------------");
+    (void)printf(
+        "State file:               %s\n",
+        OPENAI_STATE_FILE
+    );
+
+    if (!openai_state_valid) {
+        (void)puts(
+            "State status:             unavailable or invalid"
+        );
+        return;
+    }
+
+    (void)puts("State format:             1");
+    (void)printf(
+        "Last workflow:            %s\n",
+        openai_workflow_name(openai_last_workflow)
+    );
+
+    if (openai_last_build_known) {
+        (void)printf(
+            "Last build:               %s (status %d)\n",
+            (openai_last_build_status & 1) != 0 ?
+                "success" : "failure",
+            openai_last_build_status
+        );
+    } else {
+        (void)puts(
+            "Last build:               not recorded"
+        );
+    }
+
+    (void)printf(
+        "Last rollback:            %s\n",
+        openai_rollback_name(openai_last_rollback)
+    );
+
+    (void)puts(
+        "Chat state:               not persisted"
+    );
+    (void)puts(
+        "Secrets/prompts/content:  not stored"
+    );
+}
+
+
+static int openai_copy_file(const char *source_path,
+                            const char *destination_path);
+static void openai_save_state(void);
+static void openai_load_state(void);
 static int openai_confirm_restore(const char *path);
 static int openai_restore_previous_version(const char *path);
+
+static int openai_copy_file(const char *source_path,
+                            const char *destination_path)
+{
+    unsigned char buffer[8192];
+    FILE *source;
+    FILE *destination;
+    size_t count;
+    int success;
+
+    source = fopen(source_path, "rb");
+
+    if (source == NULL) {
+        return 0;
+    }
+
+    destination = fopen(destination_path, "wb");
+
+    if (destination == NULL) {
+        (void)fclose(source);
+        return 0;
+    }
+
+    success = 1;
+
+    while ((count = fread(
+                buffer,
+                1U,
+                sizeof(buffer),
+                source)) > 0U) {
+        if (fwrite(buffer, 1U, count, destination) != count) {
+            success = 0;
+            break;
+        }
+    }
+
+    if (ferror(source)) {
+        success = 0;
+    }
+
+    if (fclose(source) != 0) {
+        success = 0;
+    }
+
+    if (fclose(destination) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
+static int openai_rotate_log_if_needed(void)
+{
+    FILE *file;
+    long length;
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "rb");
+
+    if (file == NULL) {
+        return 1;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    length = ftell(file);
+    (void)fclose(file);
+
+    if (length < 0L) {
+        return 0;
+    }
+
+    if (length < OPENAI_ACTIVITY_LOG_MAX_BYTES) {
+        return 1;
+    }
+
+    (void)remove(OPENAI_ACTIVITY_LOG_OLD_FILE);
+
+    if (!openai_copy_file(
+            OPENAI_ACTIVITY_LOG_FILE,
+            OPENAI_ACTIVITY_LOG_OLD_FILE)) {
+        return 0;
+    }
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "w");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    (void)fprintf(
+        file,
+        "Log rotated after reaching %ld bytes. "
+        "Previous snapshot: %s\n",
+        length,
+        OPENAI_ACTIVITY_LOG_OLD_FILE
+    );
+
+    if (fclose(file) != 0) {
+        return 0;
+    }
+
+    return 1;
+}
 
 static void openai_log_event(const char *workflow,
                              const char *event,
@@ -77,6 +375,10 @@ static void openai_log_event(const char *workflow,
         (void)strcpy(timestamp, "unknown-time");
     }
 
+    if (!openai_rotate_log_if_needed()) {
+        return;
+    }
+
     file = fopen(OPENAI_ACTIVITY_LOG_FILE, "a");
 
     if (file == NULL) {
@@ -93,6 +395,7 @@ static void openai_log_event(const char *workflow,
     );
 
     (void)fclose(file);
+    openai_save_state();
 }
 
 void openai_show_log(void)
@@ -115,6 +418,227 @@ void openai_show_log(void)
     }
 
     (void)fclose(file);
+}
+
+
+void openai_show_old_log(void)
+{
+    FILE *file;
+    char line[1024];
+
+    file = fopen(OPENAI_ACTIVITY_LOG_OLD_FILE, "r");
+
+    if (file == NULL) {
+        (void)puts("No rotated activity log is available.");
+        return;
+    }
+
+    (void)puts("OVMS Agent rotated activity log");
+    (void)puts("-------------------------------");
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        (void)fputs(line, stdout);
+    }
+
+    (void)fclose(file);
+}
+
+void openai_clear_log(void)
+{
+    char answer[32];
+    FILE *file;
+
+    (void)printf(
+        "Clear the active OVMS Agent activity log [y/N]? "
+    );
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        (void)putchar('\n');
+        return;
+    }
+
+    if (answer[0] != 'y' && answer[0] != 'Y') {
+        (void)puts("Activity log clear cancelled.");
+        return;
+    }
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf(
+            "Unable to clear %s: %s\n",
+            OPENAI_ACTIVITY_LOG_FILE,
+            strerror(errno)
+        );
+        return;
+    }
+
+    (void)fclose(file);
+    (void)puts("Active activity log cleared.");
+}
+
+
+static unsigned long openai_percentage(unsigned long part,
+                                       unsigned long total)
+{
+    if (total == 0UL) {
+        return 0UL;
+    }
+
+    return (part * 100UL + total / 2UL) / total;
+}
+
+void openai_clear_state(void)
+{
+    char answer[32];
+
+    (void)printf(
+        "Clear persisted OVMS Agent workflow state [y/N]? "
+    );
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        (void)putchar('\n');
+        return;
+    }
+
+    if (answer[0] != 'y' && answer[0] != 'Y') {
+        (void)puts("Persistent state clear cancelled.");
+        return;
+    }
+
+    if (remove(OPENAI_STATE_FILE) != 0 && errno != ENOENT) {
+        (void)printf(
+            "Unable to remove %s: %s\n",
+            OPENAI_STATE_FILE,
+            strerror(errno)
+        );
+        return;
+    }
+
+    openai_last_workflow = OPENAI_WORKFLOW_NONE;
+    openai_last_build_known = 0;
+    openai_last_build_status = 0;
+    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    openai_state_loaded = 1;
+    openai_state_valid = 0;
+
+    (void)puts("Persistent workflow state cleared.");
+}
+
+void openai_show_metrics(void)
+{
+    FILE *file;
+    char line[1024];
+    unsigned long total_events;
+    unsigned long workflow_starts;
+    unsigned long builds_success;
+    unsigned long builds_failure;
+    unsigned long patches_applied;
+    unsigned long patches_declined;
+    unsigned long patches_failed;
+    unsigned long rollbacks_succeeded;
+    unsigned long rollbacks_failed;
+    unsigned long rollbacks_declined;
+    unsigned long selftests_passed;
+    unsigned long selftests_failed;
+    unsigned long verifies_passed;
+    unsigned long verifies_failed;
+
+    total_events = 0UL;
+    workflow_starts = 0UL;
+    builds_success = 0UL;
+    builds_failure = 0UL;
+    patches_applied = 0UL;
+    patches_declined = 0UL;
+    patches_failed = 0UL;
+    rollbacks_succeeded = 0UL;
+    rollbacks_failed = 0UL;
+    rollbacks_declined = 0UL;
+    selftests_passed = 0UL;
+    selftests_failed = 0UL;
+    verifies_passed = 0UL;
+    verifies_failed = 0UL;
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "r");
+
+    if (file == NULL) {
+        (void)puts(
+            "No activity log is available for metrics."
+        );
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++total_events;
+
+        if (strstr(line, " event=start ") != NULL) {
+            ++workflow_starts;
+        } else if (strstr(line, " event=build_success ") != NULL) {
+            ++builds_success;
+        } else if (strstr(line, " event=build_failure ") != NULL) {
+            ++builds_failure;
+        } else if (strstr(line, " event=patch_applied ") != NULL) {
+            ++patches_applied;
+        } else if (strstr(line, " event=patch_declined ") != NULL) {
+            ++patches_declined;
+        } else if (strstr(line, " event=patch_failed ") != NULL) {
+            ++patches_failed;
+        } else if (strstr(line, " event=rollback_succeeded ") != NULL) {
+            ++rollbacks_succeeded;
+        } else if (strstr(line, " event=rollback_failed ") != NULL) {
+            ++rollbacks_failed;
+        } else if (strstr(line, " event=rollback_declined ") != NULL) {
+            ++rollbacks_declined;
+        } else if (strstr(line, " event=selftest_pass ") != NULL) {
+            ++selftests_passed;
+        } else if (strstr(line, " event=selftest_fail ") != NULL) {
+            ++selftests_failed;
+        } else if (strstr(line, " event=verify_pass ") != NULL) {
+            ++verifies_passed;
+        } else if (strstr(line, " event=verify_fail ") != NULL) {
+            ++verifies_failed;
+        }
+    }
+
+    (void)fclose(file);
+
+    (void)puts("OVMS Agent activity metrics");
+    (void)puts("---------------------------");
+    (void)printf("Total logged events:          %lu\n", total_events);
+    (void)printf("Workflow starts:              %lu\n", workflow_starts);
+    (void)puts("");
+
+    (void)puts("Builds");
+    (void)printf("  Success:                    %lu\n", builds_success);
+    (void)printf("  Failure:                    %lu\n", builds_failure);
+    (void)printf(
+        "  Success rate:               %lu%%\n",
+        openai_percentage(
+            builds_success,
+            builds_success + builds_failure
+        )
+    );
+    (void)puts("");
+
+    (void)puts("Patches");
+    (void)printf("  Applied:                    %lu\n", patches_applied);
+    (void)printf("  Declined:                   %lu\n", patches_declined);
+    (void)printf("  Failed:                     %lu\n", patches_failed);
+    (void)puts("");
+
+    (void)puts("Rollbacks");
+    (void)printf("  Succeeded:                  %lu\n", rollbacks_succeeded);
+    (void)printf("  Failed:                     %lu\n", rollbacks_failed);
+    (void)printf("  Declined:                   %lu\n", rollbacks_declined);
+    (void)puts("");
+
+    (void)puts("Reliability checks");
+    (void)printf("  Self-tests passed:          %lu\n", selftests_passed);
+    (void)printf("  Self-tests failed:          %lu\n", selftests_failed);
+    (void)printf("  Verifications passed:       %lu\n", verifies_passed);
+    (void)printf("  Verifications failed:       %lu\n", verifies_failed);
 }
 
 static int json_write_escaped(FILE *file, const char *text)
@@ -1024,6 +1548,7 @@ static char *openai_read_text_file(const char *path)
 #define OPENAI_AGENT_CACHE_SIZE 8
 #define OPENAI_SEARCH_OUTPUT_LIMIT 32768
 #define OPENAI_LIST_OUTPUT_LIMIT 32768
+#define OPENAI_CREATE_MAX_BYTES 65536U
 
 typedef struct openai_file_cache_entry {
     char *path;
@@ -1035,6 +1560,12 @@ typedef enum openai_replace_result {
     OPENAI_REPLACE_APPLIED = 1,
     OPENAI_REPLACE_DECLINED = 2
 } openai_replace_result;
+
+typedef enum openai_create_result {
+    OPENAI_CREATE_ERROR = 0,
+    OPENAI_CREATE_CREATED = 1,
+    OPENAI_CREATE_DECLINED = 2
+} openai_create_result;
 
 static int write_agent_tools(FILE *file)
 {
@@ -1150,6 +1681,165 @@ static int write_agent_tools_with_replace(FILE *file)
         "]",
         file
     ) != EOF;
+}
+
+static int write_agent_tools_with_create(FILE *file)
+{
+    return fputs(
+        "\"tools\":["
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"list_directory\","
+        "\"description\":\"List entries in one project-relative directory. Use dot for the project root.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{\"path\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"read_file\","
+        "\"description\":\"Read one existing project-relative text file.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{\"path\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"search_file\","
+        "\"description\":\"Search one existing project-relative text file for a literal string.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"pattern\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"pattern\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"create_file\","
+        "\"description\":\"Create one new project-relative text file. The destination must not already exist, content is limited to 65536 bytes, and the local user must confirm before creation.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"content\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"content\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "}"
+        "]",
+        file
+    ) != EOF;
+}
+
+static int write_create_agent_request(
+    const char *model,
+    const char *instructions,
+    const char *user_prompt,
+    const char *previous_id,
+    const char *call_id,
+    const char *tool_output)
+{
+    FILE *file;
+    int success;
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputc('"', file) == EOF) {
+        success = 0;
+    }
+
+    if (success &&
+        previous_id != NULL &&
+        *previous_id != '\0') {
+        if (fputs(",\"previous_response_id\":\"", file) == EOF ||
+            !json_write_escaped(file, previous_id) ||
+            fputc('"', file) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success && call_id != NULL && tool_output != NULL) {
+        if (fputs(",\"input\":[{\"type\":\"function_call_output\","
+                  "\"call_id\":\"", file) == EOF ||
+            !json_write_escaped(file, call_id) ||
+            fputs("\",\"output\":\"", file) == EOF ||
+            !json_write_escaped(file, tool_output) ||
+            fputs("\"}],", file) == EOF) {
+            success = 0;
+        }
+    } else if (success) {
+        if (fputs(",\"input\":\"", file) == EOF ||
+            !json_write_escaped(file, user_prompt) ||
+            fputs("\",", file) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success && !write_agent_tools_with_create(file)) {
+        success = 0;
+    }
+
+    /*
+     * The first response may inspect existing project files. Once context
+     * exists, require the model to invoke create_file instead of asking for
+     * confirmation in ordinary text.
+     */
+    if (success &&
+        previous_id != NULL &&
+        *previous_id != '\0') {
+        if (fputs(
+                ",\"tool_choice\":{"
+                "\"type\":\"function\","
+                "\"name\":\"create_file\""
+                "}",
+                file
+            ) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success && fputs("}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write complete create-agent request.");
+        return 0;
+    }
+
+    return 1;
 }
 
 static int write_build_agent_tools(FILE *file)
@@ -2015,6 +2705,140 @@ static int display_api_error_from_json(const char *json)
     return 1;
 }
 
+
+static openai_create_result execute_create_file_tool(
+    const char *arguments,
+    char **display_path)
+{
+    char *path;
+    char *content;
+    FILE *existing;
+    FILE *destination;
+    char answer[32];
+    size_t content_length;
+    size_t written;
+
+    *display_path = NULL;
+    path = extract_string_argument(arguments, "path");
+    content = extract_string_argument(arguments, "content");
+
+    if (path == NULL || content == NULL) {
+        free(path);
+        free(content);
+        (void)puts("create_file requires path and content.");
+        return OPENAI_CREATE_ERROR;
+    }
+
+    *display_path = openai_duplicate_text(path);
+
+    if (!openai_path_is_safe(path)) {
+        (void)printf(
+            "Unsafe or invalid project-relative path: %s\n",
+            path
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    if (openai_path_is_sensitive(path)) {
+        (void)printf(
+            "Access denied for sensitive path: %s\n",
+            path
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    content_length = strlen(content);
+
+    if (content_length > OPENAI_CREATE_MAX_BYTES) {
+        (void)printf(
+            "Proposed file is too large (%lu bytes; limit %u).\n",
+            (unsigned long)content_length,
+            (unsigned int)OPENAI_CREATE_MAX_BYTES
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    existing = fopen(path, "r");
+
+    if (existing != NULL) {
+        (void)fclose(existing);
+        (void)printf(
+            "Refusing to create %s because it already exists.\n",
+            path
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    (void)printf("Create new file: %s\n", path);
+    (void)printf("Size: %lu bytes\n", (unsigned long)content_length);
+    (void)puts("");
+    (void)puts("Proposed contents:");
+    (void)puts("------------------");
+    (void)fputs(content, stdout);
+
+    if (content_length == 0U ||
+        content[content_length - 1U] != '\n') {
+        (void)putchar('\n');
+    }
+
+    (void)puts("------------------");
+    (void)printf("Create file [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        (void)putchar('\n');
+        free(path);
+        free(content);
+        return OPENAI_CREATE_DECLINED;
+    }
+
+    if (answer[0] != 'y' && answer[0] != 'Y') {
+        (void)puts("File creation cancelled.");
+        free(path);
+        free(content);
+        return OPENAI_CREATE_DECLINED;
+    }
+
+    destination = fopen(path, "w");
+
+    if (destination == NULL) {
+        (void)printf(
+            "Unable to create %s: %s\n",
+            path,
+            strerror(errno)
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    written = fwrite(content, 1U, content_length, destination);
+
+    if (written != content_length ||
+        fclose(destination) != 0) {
+        (void)printf(
+            "Unable to write complete contents to %s: %s\n",
+            path,
+            strerror(errno)
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    (void)puts("File created.");
+    free(path);
+    free(content);
+    return OPENAI_CREATE_CREATED;
+}
 
 static openai_replace_result execute_replace_text_tool(
     agent_state *state,
@@ -2893,6 +3717,298 @@ void openai_agent_fix(agent_state *state, const char *goal)
     openai_agent_mode(state, goal, 1, 1);
 }
 
+void openai_agent_create(agent_state *state, const char *goal)
+{
+    static const char instructions[] =
+        "You are a careful OpenVMS C project agent operating inside a "
+        "project sandbox. You may inspect existing files with list_directory, "
+        "search_file, and read_file. You may create exactly one new text file "
+        "through create_file. Never overwrite an existing file. When the user "
+        "names a destination path, inspect only the source context needed to "
+        "produce the new file. Keep content at or below 65536 bytes. Do not "
+        "ask for confirmation in ordinary text; local confirmation is handled "
+        "by create_file. Never request sensitive paths or paths outside the "
+        "project. Do not request a second creation in the same run.";
+
+    const char *api_key;
+    const char *model;
+    char *previous_id;
+    char *tool_output;
+    char *call_id;
+    unsigned int turn;
+    int create_attempted;
+    openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
+
+    openai_last_workflow = OPENAI_WORKFLOW_CREATE;
+    openai_log_event("AGENT/CREATE", "start", 0);
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (goal == NULL || *goal == '\0') {
+        (void)puts("Usage: AGENT/CREATE goal");
+        return;
+    }
+
+    if (openai_path_is_sensitive(goal)) {
+        (void)puts(
+            "Request denied because it references a sensitive path."
+        );
+        return;
+    }
+
+    api_key = getenv("OPENAI_API_KEY");
+    model = getenv("OVMS_AGENT_MODEL");
+
+    if (api_key == NULL || *api_key == '\0') {
+        (void)puts("OPENAI_API_KEY is not defined.");
+        return;
+    }
+
+    if (model == NULL || *model == '\0') {
+        (void)puts("OVMS_AGENT_MODEL is not defined.");
+        return;
+    }
+
+    if (!write_headers(api_key)) {
+        return;
+    }
+
+    previous_id = NULL;
+    tool_output = NULL;
+    call_id = NULL;
+    create_attempted = 0;
+    openai_cache_init(cache);
+
+    (void)puts("Starting guarded file-creation agent...");
+
+    for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
+        char *json;
+        char *response_id;
+        char *name;
+        char *new_call_id;
+        char *arguments;
+
+        if (!write_create_agent_request(
+                model,
+                instructions,
+                goal,
+                previous_id,
+                call_id,
+                tool_output)) {
+            break;
+        }
+
+        free(call_id);
+        call_id = NULL;
+        free(tool_output);
+        tool_output = NULL;
+
+        if (!perform_openai_request()) {
+            (void)puts("OpenAI request failed.");
+            break;
+        }
+
+        json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+
+        if (json == NULL) {
+            (void)puts("Unable to read OpenAI response.");
+            break;
+        }
+
+        response_id = extract_top_level_id(json);
+
+        if (response_id == NULL) {
+            if (!display_api_error_from_json(json)) {
+                (void)puts(
+                    "Response did not contain an id or readable API error."
+                );
+            }
+
+            free(json);
+            break;
+        }
+
+        free(previous_id);
+        previous_id = response_id;
+
+        if (display_output_text_from_json(json)) {
+            free(json);
+            remove_temporary_files();
+            free(previous_id);
+            openai_cache_free(cache);
+            return;
+        }
+
+        name = NULL;
+        new_call_id = NULL;
+        arguments = NULL;
+
+        if (!extract_function_call(
+                json,
+                &name,
+                &new_call_id,
+                &arguments)) {
+            (void)puts(
+                "Response contained neither output text nor a function call."
+            );
+            free(json);
+            break;
+        }
+
+        free(json);
+
+        if (strcmp(name, "list_directory") == 0) {
+            char *display_path;
+
+            display_path = NULL;
+            tool_output = execute_list_directory_tool(
+                arguments,
+                &display_path
+            );
+
+            (void)printf(
+                "Tool executed: list_directory %s\n",
+                display_path != NULL ? display_path : ""
+            );
+            free(display_path);
+        } else if (strcmp(name, "read_file") == 0) {
+            int cache_hit;
+            char *display_path;
+
+            display_path = NULL;
+            tool_output = execute_read_file_tool(
+                arguments,
+                cache,
+                &cache_hit,
+                &display_path
+            );
+
+            (void)printf(
+                "Tool executed: read_file %s%s\n",
+                display_path != NULL ? display_path : "",
+                cache_hit ? " [cache]" : ""
+            );
+            free(display_path);
+        } else if (strcmp(name, "search_file") == 0) {
+            char *display_path;
+            char *display_pattern;
+
+            display_path = NULL;
+            display_pattern = NULL;
+            tool_output = execute_search_file_tool(
+                arguments,
+                &display_path,
+                &display_pattern
+            );
+
+            (void)printf(
+                "Tool executed: search_file %s \"%s\"\n",
+                display_path != NULL ? display_path : "",
+                display_pattern != NULL ? display_pattern : ""
+            );
+            free(display_path);
+            free(display_pattern);
+        } else if (strcmp(name, "create_file") == 0) {
+            char *display_path;
+            openai_create_result create_result;
+
+            if (create_attempted) {
+                (void)puts(
+                    "Second create request rejected; only one new file "
+                    "is allowed per AGENT/CREATE run."
+                );
+                free(name);
+                free(arguments);
+                free(new_call_id);
+                break;
+            }
+
+            create_attempted = 1;
+            display_path = NULL;
+            create_result = execute_create_file_tool(
+                arguments,
+                &display_path
+            );
+
+            (void)printf(
+                "Tool requested: create_file %s\n",
+                display_path != NULL ? display_path : ""
+            );
+
+            free(display_path);
+            free(name);
+            free(arguments);
+            free(new_call_id);
+
+            if (create_result == OPENAI_CREATE_CREATED) {
+                openai_log_event(
+                    "AGENT/CREATE",
+                    "file_created",
+                    1
+                );
+                (void)puts("File created. Agent complete.");
+            } else if (create_result == OPENAI_CREATE_DECLINED) {
+                openai_log_event(
+                    "AGENT/CREATE",
+                    "file_create_declined",
+                    0
+                );
+                (void)puts("File creation cancelled. Agent complete.");
+            } else {
+                openai_log_event(
+                    "AGENT/CREATE",
+                    "file_create_failed",
+                    0
+                );
+                (void)puts("File creation failed. Agent complete.");
+            }
+
+            remove_temporary_files();
+            free(previous_id);
+            free(call_id);
+            free(tool_output);
+            openai_cache_free(cache);
+            return;
+        } else {
+            tool_output = make_tool_error(
+                "Unsupported tool requested",
+                name
+            );
+            (void)printf(
+                "Unsupported tool requested: %s\n",
+                name
+            );
+        }
+
+        free(name);
+        free(arguments);
+
+        if (tool_output == NULL) {
+            free(new_call_id);
+            (void)puts("Unable to produce tool output.");
+            break;
+        }
+
+        call_id = new_call_id;
+    }
+
+    (void)puts(
+        "Create agent stopped before producing a final result "
+        "(tool-turn limit or error)."
+    );
+
+    remove_temporary_files();
+    free(previous_id);
+    free(call_id);
+    free(tool_output);
+    openai_cache_free(cache);
+}
+
 void openai_agent_build(agent_state *state, const char *goal)
 {
     static const char instructions[] =
@@ -3192,6 +4308,8 @@ static const char *openai_workflow_name(int workflow)
         return "AGENT/SELFTEST";
     case OPENAI_WORKFLOW_VERIFY:
         return "AGENT/VERIFY";
+    case OPENAI_WORKFLOW_CREATE:
+        return "AGENT/CREATE";
     default:
         return "none";
     }
@@ -3217,6 +4335,8 @@ void openai_status(const agent_state *state)
 {
     const char *model;
     const char *api_key;
+
+    openai_load_state();
 
     model = getenv("OVMS_AGENT_MODEL");
     api_key = getenv("OPENAI_API_KEY");
@@ -3247,7 +4367,7 @@ void openai_status(const agent_state *state)
     (void)printf(
         "Chat conversation active: %s\n",
         previous_response_id[0] != '\0' ?
-            "yes" : "no"
+            "yes" : "no (not persisted)"
     );
 
     (void)printf(
@@ -3273,12 +4393,24 @@ void openai_status(const agent_state *state)
         openai_rollback_name(openai_last_rollback)
     );
 
+    (void)printf(
+        "Persistent state file:    %s\n",
+        OPENAI_STATE_FILE
+    );
+
+    (void)printf(
+        "Persistent state valid:   %s\n",
+        openai_state_valid ? "yes" : "no"
+    );
+
     (void)puts("");
     (void)puts("Enabled modes:");
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
-    (void)puts("  AGENT, AGENT/WRITE, AGENT/BUILD");
+    (void)puts("  AGENT, AGENT/WRITE, AGENT/CREATE, AGENT/BUILD");
     (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
     (void)puts("  AGENT/STATUS, AGENT/VERIFY, AGENT/LOG");
+    (void)puts("  AGENT/LOG/OLD, AGENT/LOG/CLEAR");
+    (void)puts("  AGENT/METRICS, AGENT/STATE, AGENT/STATE/CLEAR");
     (void)puts("");
     (void)puts("Authority boundaries:");
     (void)puts("  AGENT is read-only.");
