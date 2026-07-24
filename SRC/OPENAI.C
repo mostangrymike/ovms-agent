@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "openai.h"
 #include "project.h"
@@ -12,6 +13,7 @@
 #define OPENAI_RESPONSE_FILE "OVMS_AGENT_RESPONSE.JSON"
 #define OPENAI_HEADERS_FILE  "OVMS_AGENT_HEADERS.TXT"
 #define OPENAI_BUILD_LOG_FILE "OVMS_AGENT_BUILD.LOG"
+#define OPENAI_ACTIVITY_LOG_FILE "OVMS_AGENT_ACTIVITY.LOG"
 #define OPENAI_BUILD_OUTPUT_LIMIT 65536
 #define OPENAI_RESPONSE_ID_SIZE 128
 
@@ -39,11 +41,81 @@ static int openai_last_workflow = OPENAI_WORKFLOW_NONE;
 static int openai_last_build_known = 0;
 static int openai_last_build_status = 0;
 static int openai_last_rollback = OPENAI_ROLLBACK_NONE;
+static const char *openai_workflow_name(int workflow);
 
 /* Forward declarations used before their definitions. */
 static int openai_path_is_sensitive(const char *path);
+static void openai_log_event(const char *workflow,
+                             const char *event,
+                             int status);
 static int openai_confirm_restore(const char *path);
 static int openai_restore_previous_version(const char *path);
+
+static void openai_log_event(const char *workflow,
+                             const char *event,
+                             int status)
+{
+    FILE *file;
+    time_t now;
+    struct tm *local_time;
+    char timestamp[32];
+
+    if (workflow == NULL || event == NULL) {
+        return;
+    }
+
+    now = time(NULL);
+    local_time = localtime(&now);
+
+    if (local_time != NULL &&
+        strftime(timestamp,
+                 sizeof(timestamp),
+                 "%Y-%m-%dT%H:%M:%S",
+                 local_time) > 0U) {
+        /* timestamp is ready */
+    } else {
+        (void)strcpy(timestamp, "unknown-time");
+    }
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "a");
+
+    if (file == NULL) {
+        return;
+    }
+
+    (void)fprintf(
+        file,
+        "%s workflow=%s event=%s status=%d\n",
+        timestamp,
+        workflow,
+        event,
+        status
+    );
+
+    (void)fclose(file);
+}
+
+void openai_show_log(void)
+{
+    FILE *file;
+    char line[1024];
+
+    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "r");
+
+    if (file == NULL) {
+        (void)puts("No activity log is available in this process directory.");
+        return;
+    }
+
+    (void)puts("OVMS Agent activity log");
+    (void)puts("-----------------------");
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        (void)fputs(line, stdout);
+    }
+
+    (void)fclose(file);
+}
 
 static int json_write_escaped(FILE *file, const char *text)
 {
@@ -691,6 +763,12 @@ static void openai_send(agent_state *state,
 
     openai_last_workflow = continue_conversation ?
         OPENAI_WORKFLOW_CHAT : OPENAI_WORKFLOW_ASK;
+
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
 
     if (prompt == NULL || *prompt == '\0') {
         (void)puts("Prompt cannot be empty.");
@@ -2112,6 +2190,12 @@ static char *execute_run_build_tool(int *build_status)
     openai_last_build_known = 1;
     openai_last_build_status = status;
 
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        (status & 1) != 0 ? "build_success" : "build_failure",
+        status
+    );
+
     output = read_entire_file(OPENAI_BUILD_LOG_FILE, &length);
 
     if (output == NULL) {
@@ -2378,6 +2462,12 @@ static void openai_agent_mode(agent_state *state,
         openai_last_workflow = OPENAI_WORKFLOW_AGENT;
     }
 
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
+
     if (state == NULL ||
         state->project_root == NULL ||
         *state->project_root == '\0') {
@@ -2591,6 +2681,12 @@ static void openai_agent_mode(agent_state *state,
             free(new_call_id);
 
             if (replace_result == OPENAI_REPLACE_APPLIED) {
+                openai_log_event(
+                    openai_workflow_name(openai_last_workflow),
+                    "patch_applied",
+                    1
+                );
+
                 if (build_after_write) {
                     char *build_output;
                     int build_status;
@@ -2619,6 +2715,12 @@ static void openai_agent_mode(agent_state *state,
                                     display_path)) {
                                 openai_last_rollback =
                                     OPENAI_ROLLBACK_SUCCEEDED;
+                                openai_log_event(
+                                    openai_workflow_name(
+                                        openai_last_workflow),
+                                    "rollback_succeeded",
+                                    1
+                                );
                                 rollback_summary =
                                     "Rollback status: successful. The build "
                                     "failed, but the previous source contents "
@@ -2631,6 +2733,12 @@ static void openai_agent_mode(agent_state *state,
                             } else {
                                 openai_last_rollback =
                                     OPENAI_ROLLBACK_FAILED;
+                                openai_log_event(
+                                    openai_workflow_name(
+                                        openai_last_workflow),
+                                    "rollback_failed",
+                                    0
+                                );
                                 rollback_summary =
                                     "Rollback status: requested but failed. "
                                     "The build failed and the patched source "
@@ -2642,6 +2750,12 @@ static void openai_agent_mode(agent_state *state,
                         } else {
                             openai_last_rollback =
                                 OPENAI_ROLLBACK_DECLINED;
+                            openai_log_event(
+                                openai_workflow_name(
+                                    openai_last_workflow),
+                                "rollback_declined",
+                                0
+                            );
                             rollback_summary =
                                 "Rollback status: declined. The build failed "
                                 "and the patched source remains the latest "
@@ -2703,12 +2817,22 @@ static void openai_agent_mode(agent_state *state,
                 free(display_path);
                 display_path = NULL;
             } else if (replace_result == OPENAI_REPLACE_DECLINED) {
+                openai_log_event(
+                    openai_workflow_name(openai_last_workflow),
+                    "patch_declined",
+                    0
+                );
                 free(display_path);
                 display_path = NULL;
                 (void)puts(build_after_write ?
                     "Patch cancelled. Build not run. Agent complete." :
                     "Patch cancelled. Agent complete.");
             } else {
+                openai_log_event(
+                    openai_workflow_name(openai_last_workflow),
+                    "patch_failed",
+                    0
+                );
                 free(display_path);
                 display_path = NULL;
                 (void)puts(build_after_write ?
@@ -2790,6 +2914,11 @@ void openai_agent_build(agent_state *state, const char *goal)
     int build_status;
 
     openai_last_workflow = OPENAI_WORKFLOW_BUILD;
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
     openai_last_rollback = OPENAI_ROLLBACK_NONE;
 
     if (state == NULL ||
@@ -2955,6 +3084,11 @@ void openai_agent_retry(agent_state *state, const char *goal)
     int build_status;
 
     openai_last_workflow = OPENAI_WORKFLOW_RETRY;
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
     openai_last_rollback = OPENAI_ROLLBACK_NONE;
 
     if (state == NULL ||
@@ -3144,7 +3278,7 @@ void openai_status(const agent_state *state)
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
     (void)puts("  AGENT, AGENT/WRITE, AGENT/BUILD");
     (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
-    (void)puts("  AGENT/STATUS, AGENT/VERIFY");
+    (void)puts("  AGENT/STATUS, AGENT/VERIFY, AGENT/LOG");
     (void)puts("");
     (void)puts("Authority boundaries:");
     (void)puts("  AGENT is read-only.");
@@ -3322,6 +3456,13 @@ static unsigned int openai_run_selftest(agent_state *state)
         failed_count
     );
 
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        failed_count == 0U ?
+            "selftest_pass" : "selftest_fail",
+        (int)failed_count
+    );
+
     if (failed_count == 0U) {
         (void)puts("All non-destructive checks passed.");
     } else {
@@ -3338,6 +3479,11 @@ static unsigned int openai_run_selftest(agent_state *state)
 void openai_selftest(agent_state *state)
 {
     openai_last_workflow = OPENAI_WORKFLOW_SELFTEST;
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
     (void)openai_run_selftest(state);
 }
 
@@ -3349,6 +3495,11 @@ void openai_verify(agent_state *state)
     int build_passed;
 
     openai_last_workflow = OPENAI_WORKFLOW_VERIFY;
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
     openai_last_rollback = OPENAI_ROLLBACK_NONE;
 
     (void)puts("OVMS Agent verification gate");
@@ -3384,6 +3535,13 @@ void openai_verify(agent_state *state)
 
     (void)puts("============================");
 
+    openai_log_event(
+        "AGENT/VERIFY",
+        selftest_failures == 0U && build_passed ?
+            "verify_pass" : "verify_fail",
+        build_status
+    );
+
     if (selftest_failures == 0U && build_passed) {
         (void)puts(
             "Verification result: PASS. Safety checks and controlled "
@@ -3416,6 +3574,11 @@ void openai_review_file(agent_state *state, const char *path)
     size_t prompt_size;
 
     openai_last_workflow = OPENAI_WORKFLOW_REVIEW;
+    openai_log_event(
+        openai_workflow_name(openai_last_workflow),
+        "start",
+        0
+    );
 
     if (state == NULL ||
         state->project_root == NULL ||

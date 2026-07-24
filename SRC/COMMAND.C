@@ -55,6 +55,8 @@ static void command_agent_status(agent_state *state,
                                  const char *arguments);
 static void command_agent_verify(agent_state *state,
                                  const char *arguments);
+static void command_agent_log(agent_state *state,
+                              const char *arguments);
 
 
 static const command_entry command_table[] = {
@@ -80,6 +82,7 @@ static const command_entry command_table[] = {
 { "AGENT/SELFTEST","Run non-destructive agent checks", command_agent_selftest },
 { "AGENT/STATUS","Show agent capabilities and recent workflow state", command_agent_status },
 { "AGENT/VERIFY","Run safety checks and a controlled build", command_agent_verify },
+{ "AGENT/LOG","Display the structured local activity log", command_agent_log },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch },
@@ -92,6 +95,14 @@ void command_prompt(void)
 {
     (void)fputs("OVMS-AGENT> ", stdout);
     (void)fflush(stdout);
+}
+
+static void command_agent_log(agent_state *state,
+                              const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_log();
 }
 
 static void command_agent_verify(agent_state *state,
