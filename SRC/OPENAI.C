@@ -6,12 +6,14 @@
 #include <string.h>
 
 #include "openai.h"
+#include "project.h"
 
 #define OPENAI_REQUEST_FILE  "OVMS_AGENT_REQUEST.JSON"
 #define OPENAI_RESPONSE_FILE "OVMS_AGENT_RESPONSE.JSON"
 #define OPENAI_HEADERS_FILE  "OVMS_AGENT_HEADERS.TXT"
 #define OPENAI_RESPONSE_ID_SIZE 128
 
+static int openai_path_is_sensitive(const char *path);
 static char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
 
 static int json_write_escaped(FILE *file, const char *text)
@@ -184,6 +186,11 @@ static char *read_entire_file(const char *path, size_t *length_out)
     long length;
     char *data;
     size_t actual;
+
+    if (openai_path_is_sensitive(path)) {
+        (void)printf("Access denied for sensitive path: %s\n", path);
+        return NULL;
+    }
 
     file = fopen(path, "r");
 
@@ -732,6 +739,103 @@ static int openai_path_is_safe(const char *path)
     return 1;
 }
 
+static int openai_contains_ignore_case(const char *text,
+                                       const char *pattern)
+{
+    const unsigned char *start;
+
+    if (text == NULL || pattern == NULL || *pattern == '\0') {
+        return 0;
+    }
+
+    for (start = (const unsigned char *)text;
+         *start != (unsigned char)'\0';
+         ++start) {
+        const unsigned char *left;
+        const unsigned char *right;
+
+        left = start;
+        right = (const unsigned char *)pattern;
+
+        while (*left != (unsigned char)'\0' &&
+               *right != (unsigned char)'\0' &&
+               tolower((int)*left) == tolower((int)*right)) {
+            ++left;
+            ++right;
+        }
+
+        if (*right == (unsigned char)'\0') {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int openai_path_is_sensitive(const char *path)
+{
+    static const char *blocked[] = {
+        "OPENAIKEY",
+        "OPENAI_API_KEY",
+        "OVMS_AGENT_HEADERS",
+        "OPENAI_TEST_HEADERS",
+        ".PEM",
+        ".KEY",
+        NULL
+    };
+    const char **pattern;
+
+    if (path == NULL) {
+        return 1;
+    }
+
+    for (pattern = blocked; *pattern != NULL; ++pattern) {
+        if (openai_contains_ignore_case(path, *pattern)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int openai_listing_entry_hidden(const char *name)
+{
+    static const char *hidden[] = {
+        "OPENAIKEY",
+        "OVMS_AGENT_HEADERS",
+        "OVMS_AGENT_REQUEST.JSON",
+        "OVMS_AGENT_RESPONSE.JSON",
+        "OPENAI_MODELS.JSON",
+        NULL
+    };
+    const char **pattern;
+    size_t length;
+
+    if (name == NULL) {
+        return 1;
+    }
+
+    for (pattern = hidden; *pattern != NULL; ++pattern) {
+        if (openai_contains_ignore_case(name, *pattern)) {
+            return 1;
+        }
+    }
+
+    length = strlen(name);
+
+    if (length >= 4U) {
+        const char *extension;
+
+        extension = name + length - 4U;
+
+        if (openai_contains_ignore_case(extension, ".OBJ") ||
+            openai_contains_ignore_case(extension, ".EXE")) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 static char *openai_read_text_file(const char *path)
 {
     FILE *file;
@@ -816,6 +920,12 @@ typedef struct openai_file_cache_entry {
     char *content;
 } openai_file_cache_entry;
 
+typedef enum openai_replace_result {
+    OPENAI_REPLACE_ERROR = 0,
+    OPENAI_REPLACE_APPLIED = 1,
+    OPENAI_REPLACE_DECLINED = 2
+} openai_replace_result;
+
 static int write_agent_tools(FILE *file)
 {
     return fputs(
@@ -867,6 +977,168 @@ static int write_agent_tools(FILE *file)
         file
     ) != EOF;
 }
+
+static int write_agent_tools_with_replace(FILE *file)
+{
+    return fputs(
+        "\"tools\":["
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"list_directory\","
+        "\"description\":\"List entries in one project-relative directory. Use dot for the project root.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{\"path\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"read_file\","
+        "\"description\":\"Read one project-relative text file.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{\"path\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"search_file\","
+        "\"description\":\"Search one project-relative text file for a literal string.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"pattern\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"pattern\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"replace_text\","
+        "\"description\":\"Replace one exact, unique text block in a project-relative file. The local user must confirm before the patch is written.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"old_text\":{\"type\":\"string\"},"
+        "\"new_text\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"old_text\",\"new_text\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
+        "}"
+        "]",
+        file
+    ) != EOF;
+}
+
+static int write_agent_request_mode(const char *model,
+                                    const char *instructions,
+                                    const char *user_prompt,
+                                    const char *previous_id,
+                                    const char *call_id,
+                                    const char *tool_output,
+                                    int allow_write)
+{
+    FILE *file;
+    int success;
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputc('"', file) == EOF) {
+        success = 0;
+    }
+
+    if (success &&
+        previous_id != NULL &&
+        *previous_id != '\0') {
+        if (fputs(",\"previous_response_id\":\"", file) == EOF ||
+            !json_write_escaped(file, previous_id) ||
+            fputc('"', file) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success && call_id != NULL && tool_output != NULL) {
+        if (fputs(",\"input\":[{\"type\":\"function_call_output\","
+                  "\"call_id\":\"", file) == EOF ||
+            !json_write_escaped(file, call_id) ||
+            fputs("\",\"output\":\"", file) == EOF ||
+            !json_write_escaped(file, tool_output) ||
+            fputs("\"}],", file) == EOF) {
+            success = 0;
+        }
+    } else if (success) {
+        if (fputs(",\"input\":\"", file) == EOF ||
+            !json_write_escaped(file, user_prompt) ||
+            fputs("\",", file) == EOF) {
+            success = 0;
+        }
+    }
+
+    if (success) {
+        if (allow_write) {
+            success = write_agent_tools_with_replace(file);
+        } else {
+            success = write_agent_tools(file);
+        }
+    }
+
+if (success &&
+    allow_write &&
+    previous_id != NULL &&
+    *previous_id != '\0') {
+
+    if (fputs(
+            ",\"tool_choice\":{"
+            "\"type\":\"function\","
+            "\"name\":\"replace_text\""
+            "}",
+            file
+        ) == EOF) {
+        success = 0;
+    }
+}
+ 
+   if (success && fputs("}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write complete agent request.");
+        return 0;
+    }
+
+    return 1;
+}
+
 static int write_agent_request(const char *model,
                                const char *instructions,
                                const char *user_prompt,
@@ -1330,7 +1602,8 @@ static char *execute_list_directory_tool(const char *arguments,
 
         if (strcmp(entry->d_name, ".") == 0 ||
             strcmp(entry->d_name, "..") == 0 ||
-            strncmp(entry->d_name, ".git", 4U) == 0) {
+            strncmp(entry->d_name, ".git", 4U) == 0 ||
+            openai_listing_entry_hidden(entry->d_name)) {
             continue;
         }
 
@@ -1417,6 +1690,16 @@ static char *execute_search_file_tool(const char *arguments,
         return output;
     }
 
+    if (openai_path_is_sensitive(path)) {
+        output = make_tool_error(
+            "Access denied for sensitive path",
+            path
+        );
+        free(path);
+        free(pattern);
+        return output;
+    }
+
     file = fopen(path, "r");
 
     if (file == NULL) {
@@ -1487,6 +1770,92 @@ static char *execute_search_file_tool(const char *arguments,
     return output;
 }
 
+static int display_api_error_from_json(const char *json)
+{
+    const char *message_value;
+    char *decoded;
+
+    message_value = find_string_value(json, "message");
+
+    if (message_value == NULL) {
+        return 0;
+    }
+
+    decoded = json_decode_string(message_value, NULL);
+
+    if (decoded == NULL) {
+        return 0;
+    }
+
+    (void)printf("OpenAI API error: %s\n", decoded);
+    free(decoded);
+    return 1;
+}
+
+
+static openai_replace_result execute_replace_text_tool(
+    agent_state *state,
+    const char *arguments,
+    char **display_path)
+{
+    char *path;
+    char *old_text;
+    char *new_text;
+    int patched;
+
+    *display_path = NULL;
+
+    path = extract_string_argument(arguments, "path");
+    old_text = extract_string_argument(arguments, "old_text");
+    new_text = extract_string_argument(arguments, "new_text");
+
+    if (path == NULL || old_text == NULL || new_text == NULL) {
+        free(path);
+        free(old_text);
+        free(new_text);
+        (void)puts(
+            "replace_text requires path, old_text, and new_text."
+        );
+        return OPENAI_REPLACE_ERROR;
+    }
+
+    *display_path = openai_duplicate_text(path);
+
+    if (!openai_path_is_safe(path)) {
+        (void)printf(
+            "Unsafe or invalid project-relative path: %s\n",
+            path
+        );
+        free(path);
+        free(old_text);
+        free(new_text);
+        return OPENAI_REPLACE_ERROR;
+    }
+
+    if (openai_path_is_sensitive(path)) {
+        (void)printf(
+            "Access denied for sensitive path: %s\n",
+            path
+        );
+        free(path);
+        free(old_text);
+        free(new_text);
+        return OPENAI_REPLACE_ERROR;
+    }
+
+    patched = project_patch(state, path, old_text, new_text);
+
+    free(path);
+    free(old_text);
+    free(new_text);
+
+    if (patched) {
+        return OPENAI_REPLACE_APPLIED;
+    }
+
+    return OPENAI_REPLACE_DECLINED;
+}
+
 static int display_output_text_from_json(const char *json)
 {
     const char *object_start;
@@ -1517,23 +1886,40 @@ static int display_output_text_from_json(const char *json)
     return 1;
 }
 
-void openai_agent(agent_state *state, const char *goal)
+static void openai_agent_mode(agent_state *state,
+                              const char *goal,
+                              int allow_write)
 {
-    static const char instructions[] =
+    static const char read_only_instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
         "project sandbox. You have three read-only tools: list_directory, "
-        "search_file, and read_file. Use list_directory to discover project "
-        "structure, search_file to locate relevant lines, and read_file for "
-        "full context. Avoid requesting the same file repeatedly. Never claim "
-        "to have inspected content unless a tool returned it. Do not request "
-        "paths outside the project. Provide a concise, concrete answer after "
-        "inspecting the necessary files.";
+        "search_file, and read_file. Sensitive credential and generated "
+        "transport files are blocked. Use the fewest tool calls necessary. "
+        "Never claim to have inspected content unless a tool returned it. "
+        "Do not request paths outside the project. Produce a concise final "
+        "answer as soon as sufficient evidence has been collected.";
+
+    static const char write_instructions[] =
+        "You are a careful OpenVMS C coding agent operating inside a project "
+        "sandbox. You may inspect with list_directory, search_file, and "
+        "read_file. You may propose exact edits only through replace_text. "
+        "When the user names a specific file, read that file directly and do "
+        "not list the project first. Do not search a file after reading it "
+        "unless the requested text was not present. Before calling "
+        "replace_text, ensure old_text is exact and unique. Make one smallest "
+        "possible edit. Do not ask for confirmation in ordinary text. Confirmation is handled locally by replace_text."
+        "Once you know the exact edit, call replace_text immediately.  Never modify "
+        "sensitive files or request paths outside the project. Do not request "
+        "a second patch in the same run.";
+
     const char *api_key;
     const char *model;
+    const char *instructions;
     char *previous_id;
     char *tool_output;
     char *call_id;
     unsigned int turn;
+    int write_attempted;
     openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
 
     if (state == NULL ||
@@ -1544,7 +1930,16 @@ void openai_agent(agent_state *state, const char *goal)
     }
 
     if (goal == NULL || *goal == '\0') {
-        (void)puts("Usage: AGENT goal");
+        (void)puts(allow_write ?
+            "Usage: AGENT/WRITE goal" :
+            "Usage: AGENT goal");
+        return;
+    }
+
+    if (openai_path_is_sensitive(goal)) {
+        (void)puts(
+            "Request denied because it references a sensitive path."
+        );
         return;
     }
 
@@ -1565,12 +1960,18 @@ void openai_agent(agent_state *state, const char *goal)
         return;
     }
 
+    instructions = allow_write ?
+        write_instructions : read_only_instructions;
+
     previous_id = NULL;
     tool_output = NULL;
     call_id = NULL;
+    write_attempted = 0;
     openai_cache_init(cache);
 
-    (void)puts("Starting read-only agent...");
+    (void)puts(allow_write ?
+        "Starting guarded write agent..." :
+        "Starting read-only agent...");
 
     for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
         char *json;
@@ -1579,12 +1980,13 @@ void openai_agent(agent_state *state, const char *goal)
         char *new_call_id;
         char *arguments;
 
-        if (!write_agent_request(model,
-                                 instructions,
-                                 goal,
-                                 previous_id,
-                                 call_id,
-                                 tool_output)) {
+        if (!write_agent_request_mode(model,
+                                      instructions,
+                                      goal,
+                                      previous_id,
+                                      call_id,
+                                      tool_output,
+                                      allow_write)) {
             break;
         }
 
@@ -1608,7 +2010,12 @@ void openai_agent(agent_state *state, const char *goal)
         response_id = extract_top_level_id(json);
 
         if (response_id == NULL) {
-            (void)puts("Response did not contain an id.");
+            if (!display_api_error_from_json(json)) {
+                (void)puts(
+                    "Response did not contain an id or readable API error."
+                );
+            }
+
             free(json);
             break;
         }
@@ -1688,6 +2095,52 @@ void openai_agent(agent_state *state, const char *goal)
                              display_pattern : "");
             free(display_path);
             free(display_pattern);
+        } else if (allow_write &&
+                   strcmp(name, "replace_text") == 0) {
+            char *display_path;
+            openai_replace_result replace_result;
+
+            if (write_attempted) {
+                (void)puts(
+                    "Second write request rejected; only one patch "
+                    "attempt is allowed per AGENT/WRITE run."
+                );
+                free(name);
+                free(arguments);
+                free(new_call_id);
+                break;
+            }
+
+            write_attempted = 1;
+            display_path = NULL;
+            replace_result = execute_replace_text_tool(
+                state,
+                arguments,
+                &display_path
+            );
+
+            (void)printf("Tool requested: replace_text %s\n",
+                         display_path != NULL ?
+                             display_path : "");
+            free(display_path);
+            free(name);
+            free(arguments);
+            free(new_call_id);
+
+            if (replace_result == OPENAI_REPLACE_APPLIED) {
+                (void)puts("Patch applied. Agent complete.");
+            } else if (replace_result == OPENAI_REPLACE_DECLINED) {
+                (void)puts("Patch cancelled. Agent complete.");
+            } else {
+                (void)puts("Patch failed. Agent complete.");
+            }
+
+            remove_temporary_files();
+            free(previous_id);
+            free(call_id);
+            free(tool_output);
+            openai_cache_free(cache);
+            return;
         } else {
             tool_output = make_tool_error(
                 "Unsupported tool requested",
@@ -1718,6 +2171,16 @@ void openai_agent(agent_state *state, const char *goal)
     free(call_id);
     free(tool_output);
     openai_cache_free(cache);
+}
+
+void openai_agent(agent_state *state, const char *goal)
+{
+    openai_agent_mode(state, goal, 0);
+}
+
+void openai_agent_write(agent_state *state, const char *goal)
+{
+    openai_agent_mode(state, goal, 1);
 }
 
 void openai_review_file(agent_state *state, const char *path)
