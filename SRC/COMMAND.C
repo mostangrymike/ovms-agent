@@ -14,6 +14,7 @@ typedef struct command_entry {
     command_handler handler;
 } command_entry;
 
+static int command_decode_escapes(char *text);
 static void command_help(agent_state *state, const char *arguments);
 static void command_version(agent_state *state, const char *arguments);
 static void command_root(agent_state *state, const char *arguments);
@@ -279,6 +280,62 @@ static void command_read(agent_state *state,
                  line_count);
 }
 
+static int command_decode_escapes(char *text)
+{
+    char *source;
+    char *destination;
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    source = text;
+    destination = text;
+
+    while (*source != '\0') {
+        if ((unsigned char)*source != 92U) {
+            *destination++ = *source++;
+            continue;
+        }
+
+        ++source;
+
+        if (*source == '\0') {
+            return 0;
+        }
+
+        switch (*source) {
+        case 'n':
+            *destination++ = '\n';
+            break;
+
+        case 'r':
+            *destination++ = '\r';
+            break;
+
+        case 't':
+            *destination++ = '\t';
+            break;
+
+        case '"':
+            *destination++ = '"';
+            break;
+
+        default:
+            if ((unsigned char)*source == 92U) {
+                *destination++ = (char)92;
+            } else {
+                return 0;
+            }
+            break;
+        }
+
+        ++source;
+    }
+
+    *destination = '\0';
+    return 1;
+}
 
 static char *command_next_argument(char **cursor)
 {
@@ -374,11 +431,20 @@ static void command_patch(agent_state *state,
         return;
     }
 
+
+if (!command_decode_escapes(old_text) ||
+    !command_decode_escapes(new_text)) {
+    (void)puts("Invalid escape sequence in patch text.");
+    return;
+}
+
     (void)project_patch(state,
                         path,
                         old_text,
                         new_text);
+
 }
+
 
 static void command_quit(agent_state *state, const char *arguments)
 {
