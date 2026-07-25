@@ -87,6 +87,8 @@ void command_unused_detail(agent_state *state,
                            const char *arguments);
 void command_rename(agent_state *state,
                     const char *arguments);
+void command_rename_apply(agent_state *state,
+                          const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

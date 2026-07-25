@@ -6511,3 +6511,500 @@ void symbol_rename_preview(agent_state *state,
     }
 }
 
+#define RENAME_FILE_MAX 256U
+
+typedef struct rename_file_change {
+    char path[SYMBOL_PATH_SIZE];
+    unsigned int replacements;
+} rename_file_change;
+
+typedef struct rename_transaction {
+    char old_name[SYMBOL_NAME_SIZE];
+    char new_name[SYMBOL_NAME_SIZE];
+    rename_file_change files[RENAME_FILE_MAX];
+    unsigned int file_count;
+    unsigned int total_replacements;
+} rename_transaction;
+
+static int rename_transaction_find_file(
+    const rename_transaction *transaction,
+    const char *path)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < transaction->file_count;
+         ++index) {
+        if (strcmp(
+                transaction->files[index].path,
+                path) == 0) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static void rename_transaction_add(
+    rename_transaction *transaction,
+    const char *path,
+    unsigned int replacements)
+{
+    int index;
+
+    if (transaction == NULL ||
+        path == NULL ||
+        replacements == 0U) {
+        return;
+    }
+
+    index = rename_transaction_find_file(
+        transaction,
+        path
+    );
+
+    if (index >= 0) {
+        transaction->files[index].replacements +=
+            replacements;
+        transaction->total_replacements +=
+            replacements;
+        return;
+    }
+
+    if (transaction->file_count >= RENAME_FILE_MAX ||
+        strlen(path) >= SYMBOL_PATH_SIZE) {
+        return;
+    }
+
+    (void)strcpy(
+        transaction->files[
+            transaction->file_count
+        ].path,
+        path
+    );
+    transaction->files[
+        transaction->file_count
+    ].replacements = replacements;
+
+    ++transaction->file_count;
+    transaction->total_replacements +=
+        replacements;
+}
+
+static void rename_build_transaction(
+    const char *old_name,
+    const char *new_name,
+    rename_transaction *transaction)
+{
+    rename_match_list matches;
+    unsigned int index;
+
+    (void)memset(transaction, 0, sizeof(*transaction));
+    (void)strcpy(transaction->old_name, old_name);
+    (void)strcpy(transaction->new_name, new_name);
+
+    (void)memset(&matches, 0, sizeof(matches));
+    rename_collect_matches(old_name, &matches);
+
+    for (index = 0U; index < matches.used; ++index) {
+        rename_transaction_add(
+            transaction,
+            matches.matches[index].path,
+            matches.matches[index].occurrences
+        );
+    }
+}
+
+static char *rename_replace_buffer(
+    const char *input,
+    const char *old_name,
+    const char *new_name,
+    unsigned int *replacement_count)
+{
+    const char *position;
+    size_t input_length;
+    size_t old_length;
+    size_t new_length;
+    size_t capacity;
+    char *output;
+    char *destination;
+    unsigned int count;
+
+    input_length = strlen(input);
+    old_length = strlen(old_name);
+    new_length = strlen(new_name);
+    capacity = input_length + 1U;
+    count = 0U;
+
+    position = input;
+
+    while ((position = strstr(position, old_name)) != NULL) {
+        if (symbol_match_at(input, position, old_name)) {
+            if (new_length > old_length) {
+                capacity += new_length - old_length;
+            }
+            ++count;
+            position += old_length;
+        } else {
+            ++position;
+        }
+    }
+
+    output = (char *)malloc(capacity);
+
+    if (output == NULL) {
+        return NULL;
+    }
+
+    position = input;
+    destination = output;
+
+    while (*position != '\0') {
+        const char *match;
+
+        match = strstr(position, old_name);
+
+        if (match == NULL) {
+            size_t tail_length;
+
+            tail_length = strlen(position);
+            (void)memcpy(
+                destination,
+                position,
+                tail_length
+            );
+            destination += tail_length;
+            position += tail_length;
+            break;
+        }
+
+        if (!symbol_match_at(input, match, old_name)) {
+            size_t prefix;
+
+            prefix = (size_t)(match - position) + 1U;
+            (void)memcpy(destination, position, prefix);
+            destination += prefix;
+            position += prefix;
+            continue;
+        }
+
+        {
+            size_t prefix;
+
+            prefix = (size_t)(match - position);
+            (void)memcpy(destination, position, prefix);
+            destination += prefix;
+
+            (void)memcpy(
+                destination,
+                new_name,
+                new_length
+            );
+            destination += new_length;
+            position = match + old_length;
+        }
+    }
+
+    *destination = '\0';
+
+    if (replacement_count != NULL) {
+        *replacement_count = count;
+    }
+
+    return output;
+}
+
+static int rename_apply_file(
+    const char *path,
+    const char *old_name,
+    const char *new_name,
+    unsigned int expected_replacements)
+{
+    FILE *file;
+    char *input;
+    char *output;
+    long size;
+    unsigned int actual_replacements;
+
+    file = fopen(path, "rb");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    size = ftell(file);
+
+    if (size < 0L ||
+        fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    input = (char *)malloc((size_t)size + 1U);
+
+    if (input == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    if (size > 0L &&
+        fread(input, 1U, (size_t)size, file) !=
+            (size_t)size) {
+        free(input);
+        (void)fclose(file);
+        return 0;
+    }
+
+    input[size] = '\0';
+    (void)fclose(file);
+
+    actual_replacements = 0U;
+    output = rename_replace_buffer(
+        input,
+        old_name,
+        new_name,
+        &actual_replacements
+    );
+    free(input);
+
+    if (output == NULL ||
+        actual_replacements != expected_replacements) {
+        free(output);
+        return 0;
+    }
+
+    file = fopen(path, "w");
+
+    if (file == NULL) {
+        free(output);
+        return 0;
+    }
+
+    if (fputs(output, file) == EOF ||
+        fclose(file) != 0) {
+        free(output);
+        return 0;
+    }
+
+    free(output);
+    return 1;
+}
+
+static int rename_confirm_transaction(
+    const rename_transaction *transaction)
+{
+    char answer[32];
+
+    (void)printf(
+        "Rename %s -> %s\n",
+        transaction->old_name,
+        transaction->new_name
+    );
+    (void)puts("========================================");
+    (void)printf(
+        "Files affected:     %u\n",
+        transaction->file_count
+    );
+    (void)printf(
+        "Total replacements: %u\n",
+        transaction->total_replacements
+    );
+    (void)puts("");
+
+    {
+        unsigned int index;
+
+        for (index = 0U;
+             index < transaction->file_count;
+             ++index) {
+            (void)printf(
+                "  %-32s %u replacement%s\n",
+                transaction->files[index].path,
+                transaction->files[index].replacements,
+                transaction->files[index].replacements == 1U ?
+                    "" : "s"
+            );
+        }
+    }
+
+    (void)printf("Apply rename [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+static int rename_confirm_rollback(void)
+{
+    char answer[32];
+
+    (void)printf(
+        "Restore previous OpenVMS file versions [Y/n]? "
+    );
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 1;
+    }
+
+    return answer[0] == '\n' ||
+           answer[0] == '\r' ||
+           answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+static int rename_restore_transaction(
+    const rename_transaction *transaction)
+{
+    unsigned int index;
+    int success;
+
+    success = 1;
+
+    for (index = 0U;
+         index < transaction->file_count;
+         ++index) {
+        char command[SYMBOL_PATH_SIZE * 2U + 64U];
+        int status;
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY %s;-1 %s",
+            transaction->files[index].path,
+            transaction->files[index].path
+        );
+
+        status = system(command);
+
+        if (status != 0) {
+            success = 0;
+        }
+    }
+
+    return success;
+}
+
+static int rename_apply_transaction(
+    const rename_transaction *transaction)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < transaction->file_count;
+         ++index) {
+        if (!rename_apply_file(
+                transaction->files[index].path,
+                transaction->old_name,
+                transaction->new_name,
+                transaction->files[index].replacements)) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int symbol_rename_apply(agent_state *state,
+                        const char *old_name,
+                        const char *new_name)
+{
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(old_name) ||
+        !rename_identifier_valid(new_name)) {
+        (void)puts(
+            "Both names must be valid C identifiers."
+        );
+        return 0;
+    }
+
+    if (strcmp(old_name, new_name) == 0) {
+        (void)puts(
+            "Old and new names must be different."
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before RENAME/APPLY."
+        );
+        return 0;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Rename blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return 0;
+    }
+
+    rename_build_transaction(
+        old_name,
+        new_name,
+        &transaction
+    );
+
+    if (transaction.total_replacements == 0U) {
+        (void)puts("No exact identifier matches found.");
+        return 0;
+    }
+
+    if (!rename_confirm_transaction(&transaction)) {
+        (void)puts("Rename cancelled.");
+        return 0;
+    }
+
+    if (!rename_apply_transaction(&transaction)) {
+        (void)puts(
+            "Rename failed while writing project files."
+        );
+
+        if (rename_confirm_rollback()) {
+            if (rename_restore_transaction(&transaction)) {
+                (void)puts(
+                    "Previous file versions restored."
+                );
+            } else {
+                (void)puts(
+                    "Rollback was incomplete; inspect file versions."
+                );
+            }
+        }
+
+        return 0;
+    }
+
+    (void)puts(
+        "Rename applied. The symbol index is now stale."
+    );
+    (void)puts(
+        "Run REINDEX, then BUILD or AGENT/VERIFY."
+    );
+    return 1;
+}
+
