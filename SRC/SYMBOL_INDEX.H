@@ -26,5 +26,7 @@ void symbol_module_graph(agent_state *state,
 void symbol_module_graph_all(agent_state *state);
 void symbol_impact(agent_state *state,
                    const char *symbol);
+void symbol_module_reverse(agent_state *state,
+                           const char *module);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

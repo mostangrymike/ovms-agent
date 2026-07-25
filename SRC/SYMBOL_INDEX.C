@@ -3909,3 +3909,92 @@ void symbol_impact(agent_state *state,
     }
 }
 
+void symbol_module_reverse(agent_state *state,
+                           const char *module)
+{
+    char target_path[SYMBOL_PATH_SIZE];
+    module_edge_list edges;
+    symbol_name_list sources;
+    unsigned int index;
+    FILE *file;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            target_path,
+            sizeof(target_path))) {
+        (void)puts(
+            "Module must be a project-relative .C or .H file."
+        );
+        return;
+    }
+
+    file = fopen(target_path, "r");
+
+    if (file == NULL) {
+        (void)printf(
+            "Unable to open %s.\n",
+            target_path
+        );
+        return;
+    }
+
+    (void)fclose(file);
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before MODULE/REVERSE."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(&sources, 0, sizeof(sources));
+
+    if (!module_graph_collect_all(&edges)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    for (index = 0U;
+         index < edges.used;
+         ++index) {
+        if (strcmp(
+                edges.edges[index].target,
+                target_path) == 0) {
+            module_name_list_add(
+                &sources,
+                edges.edges[index].source
+            );
+        }
+    }
+
+    (void)printf(
+        "Modules depending on %s (%u)\n",
+        target_path,
+        sources.used
+    );
+    (void)puts("----------------------------------------");
+
+    if (sources.used == 0U) {
+        (void)puts("  none");
+        return;
+    }
+
+    for (index = 0U;
+         index < sources.used;
+         ++index) {
+        (void)printf(
+            "  %s\n",
+            sources.names[index]
+        );
+    }
+}
+

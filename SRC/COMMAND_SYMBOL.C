@@ -18,7 +18,8 @@ static const command_entry symbol_commands[] = {
     { "WHO/USES", "Find all local uses of a C identifier", command_who_uses },
     { "MODULE/GRAPH", "Show direct project-module dependencies", command_module_graph },
     { "MODULE/GRAPH/ALL", "Show the project-wide module graph", command_module_graph_all },
-    { "IMPACT", "Show direct change impact for a symbol", command_impact }
+    { "IMPACT", "Show direct change impact for a symbol", command_impact },
+    { "MODULE/REVERSE", "Show modules that depend on a module", command_module_reverse }
 };
 
 void command_register_symbol(void)
@@ -249,5 +250,21 @@ void command_impact(agent_state *state,
 
     if (symbol != NULL) {
         symbol_impact(state, symbol);
+    }
+}
+
+
+void command_module_reverse(agent_state *state,
+                            const char *arguments)
+{
+    const char *module;
+
+    module = command_symbol_argument(
+        arguments,
+        "Usage: MODULE/REVERSE file.c"
+    );
+
+    if (module != NULL) {
+        symbol_module_reverse(state, module);
     }
 }
