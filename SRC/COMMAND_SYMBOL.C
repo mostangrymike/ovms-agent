@@ -10,7 +10,8 @@ static const command_entry symbol_commands[] = {
     { "INDEX/CHECK", "Check whether the symbol index is current", command_index_check },
     { "WHERE", "Find a C symbol definition: WHERE symbol", command_where },
     { "CALLERS", "Find C call sites: CALLERS symbol", command_callers },
-    { "SYMBOL", "Show symbol definitions and calls: SYMBOL symbol", command_symbol }
+    { "SYMBOL", "Show symbol definitions and calls: SYMBOL symbol", command_symbol },
+    { "SHOW/FUNCTION", "Display a complete C function body", command_show_function }
 };
 
 void command_register_symbol(void)
@@ -118,5 +119,21 @@ void command_symbol(agent_state *state, const char *arguments)
 
     if (symbol != NULL) {
         symbol_show(state, symbol);
+    }
+}
+
+
+void command_show_function(agent_state *state,
+                           const char *arguments)
+{
+    const char *symbol;
+
+    symbol = command_symbol_argument(
+        arguments,
+        "Usage: SHOW/FUNCTION symbol"
+    );
+
+    if (symbol != NULL) {
+        symbol_show_function(state, symbol);
     }
 }

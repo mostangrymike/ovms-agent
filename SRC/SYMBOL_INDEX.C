@@ -102,6 +102,7 @@ static int symbol_line_is_definition(const char *line,
 {
     const char *position;
     const char *after;
+    const char *before;
     const char *open_paren;
     const char *semicolon;
     const char *equal_sign;
@@ -110,6 +111,13 @@ static int symbol_line_is_definition(const char *line,
 
     while (position != NULL) {
         if (symbol_match_at(line, position, symbol)) {
+            before = position;
+
+            while (before > line &&
+                   isspace((unsigned char)before[-1])) {
+                --before;
+            }
+
             after = position + strlen(symbol);
 
             while (*after != '\0' &&
@@ -122,11 +130,20 @@ static int symbol_line_is_definition(const char *line,
                 semicolon = strchr(open_paren, ';');
                 equal_sign = strchr(line, '=');
 
-                if (equal_sign == NULL ||
-                    equal_sign > position) {
-                    if (semicolon == NULL) {
-                        return 1;
-                    }
+                /*
+                 * A function definition must have declaration text before
+                 * the symbol on the same source line. Calls at the beginning
+                 * of a continuation line, such as:
+                 *
+                 *     openai_tool_find("name") == NULL,
+                 *
+                 * are not definitions.
+                 */
+                if (before > line &&
+                    (equal_sign == NULL ||
+                     equal_sign > position) &&
+                    semicolon == NULL) {
+                    return 1;
                 }
             }
         }
@@ -924,3 +941,345 @@ void symbol_show(agent_state *state, const char *symbol)
         calls == 1U ? "" : "es"
     );
 }
+
+static int symbol_source_line_is_definition(
+    const char *path,
+    unsigned long target_line,
+    const char *symbol)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char clean[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        if (line_number == target_line) {
+            (void)fclose(file);
+            return symbol_line_is_definition(clean, symbol);
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int symbol_find_definition_record(
+    const char *symbol,
+    char *path_out,
+    size_t path_size,
+    unsigned long *line_out)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *path;
+        unsigned long line_number;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &path,
+                &line_number)) {
+            continue;
+        }
+
+        if (kind == 'D' &&
+            strcmp(record_symbol, symbol) == 0 &&
+            symbol_source_line_is_definition(
+                path,
+                line_number,
+                symbol)) {
+            if (strlen(path) >= path_size) {
+                (void)fclose(file);
+                return 0;
+            }
+
+            (void)strcpy(path_out, path);
+            *line_out = line_number;
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int symbol_find_definition_live(
+    const char *symbol,
+    char *path_out,
+    size_t path_size,
+    unsigned long *line_out)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return 0;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        unsigned long line_number;
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        line_number = 0UL;
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            char clean[SYMBOL_LINE_SIZE];
+
+            ++line_number;
+            (void)strncpy(clean, line, sizeof(clean) - 1U);
+            clean[sizeof(clean) - 1U] = '\0';
+            symbol_clean_line(clean, &in_block_comment);
+
+            if (symbol_line_is_definition(clean, symbol)) {
+                if (strlen(path) < path_size) {
+                    (void)strcpy(path_out, path);
+                    *line_out = line_number;
+                    (void)fclose(file);
+                    (void)closedir(directory);
+                    return 1;
+                }
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+    return 0;
+}
+
+static int symbol_locate_definition(
+    const char *symbol,
+    char *path_out,
+    size_t path_size,
+    unsigned long *line_out)
+{
+    unsigned int checked;
+    unsigned int changed;
+
+    if (symbol_manifest_current(
+            &checked,
+            &changed,
+            0) &&
+        symbol_find_definition_record(
+            symbol,
+            path_out,
+            path_size,
+            line_out)) {
+        return 1;
+    }
+
+    return symbol_find_definition_live(
+        symbol,
+        path_out,
+        path_size,
+        line_out
+    );
+}
+
+static int symbol_print_function_body(
+    const char *path,
+    unsigned long start_line)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int depth;
+    int started;
+    int in_block_comment;
+    int in_string;
+    int in_character;
+    int escaped;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    depth = 0;
+    started = 0;
+    in_block_comment = 0;
+    in_string = 0;
+    in_character = 0;
+    escaped = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char *position;
+
+        ++line_number;
+
+        if (line_number < start_line) {
+            continue;
+        }
+
+        (void)printf("%6lu  %s", line_number, line);
+
+        for (position = line;
+             *position != '\0';
+             ++position) {
+            if (in_block_comment) {
+                if (position[0] == '*' &&
+                    position[1] == '/') {
+                    ++position;
+                    in_block_comment = 0;
+                }
+                continue;
+            }
+
+            if (in_string) {
+                if (escaped) {
+                    escaped = 0;
+                } else if (*position == '\\') {
+                    escaped = 1;
+                } else if (*position == '"') {
+                    in_string = 0;
+                }
+                continue;
+            }
+
+            if (in_character) {
+                if (escaped) {
+                    escaped = 0;
+                } else if (*position == '\\') {
+                    escaped = 1;
+                } else if (*position == '\'') {
+                    in_character = 0;
+                }
+                continue;
+            }
+
+            if (position[0] == '/' &&
+                position[1] == '*') {
+                ++position;
+                in_block_comment = 1;
+                continue;
+            }
+
+            if (position[0] == '/' &&
+                position[1] == '/') {
+                break;
+            }
+
+            if (*position == '"') {
+                in_string = 1;
+                continue;
+            }
+
+            if (*position == '\'') {
+                in_character = 1;
+                continue;
+            }
+
+            if (*position == '{') {
+                ++depth;
+                started = 1;
+            } else if (*position == '}' && started) {
+                --depth;
+
+                if (depth == 0) {
+                    (void)fclose(file);
+                    return 1;
+                }
+            }
+        }
+    }
+
+    (void)fclose(file);
+    return started;
+}
+
+void symbol_show_function(agent_state *state,
+                          const char *symbol)
+{
+    char path[SYMBOL_PATH_SIZE];
+    unsigned long line_number;
+
+    if (!symbol_prepare(state, symbol)) {
+        return;
+    }
+
+    path[0] = '\0';
+    line_number = 0UL;
+
+    if (!symbol_locate_definition(
+            symbol,
+            path,
+            sizeof(path),
+            &line_number)) {
+        (void)printf(
+            "No function definition found for %s.\n",
+            symbol
+        );
+        return;
+    }
+
+    (void)printf(
+        "Function %s defined in %s at line %lu\n",
+        symbol,
+        path,
+        line_number
+    );
+    (void)puts("----------------------------------------");
+
+    if (!symbol_print_function_body(
+            path,
+            line_number)) {
+        (void)puts(
+            "Unable to determine the complete function body."
+        );
+    }
+}
+

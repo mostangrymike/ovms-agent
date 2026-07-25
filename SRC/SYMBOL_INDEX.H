@@ -11,5 +11,7 @@ void symbol_index_check(agent_state *state);
 void symbol_where(agent_state *state, const char *symbol);
 void symbol_callers(agent_state *state, const char *symbol);
 void symbol_show(agent_state *state, const char *symbol);
+void symbol_show_function(agent_state *state,
+                          const char *symbol);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
