@@ -6862,6 +6862,45 @@ static int rename_confirm_rollback(void)
            answer[0] == 'Y';
 }
 
+static int rename_make_vms_filespec(
+    const char *project_path,
+    char *filespec,
+    size_t filespec_size)
+{
+    const char *slash;
+    const char *name;
+    size_t directory_length;
+
+    if (project_path == NULL ||
+        filespec == NULL ||
+        filespec_size == 0U) {
+        return 0;
+    }
+
+    slash = strchr(project_path, '/');
+
+    if (slash == NULL ||
+        slash == project_path ||
+        slash[1] == '\0') {
+        return 0;
+    }
+
+    directory_length = (size_t)(slash - project_path);
+    name = slash + 1;
+
+    if ((size_t)snprintf(
+            filespec,
+            filespec_size,
+            "[.%.*s]%s",
+            (int)directory_length,
+            project_path,
+            name) >= filespec_size) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static int rename_restore_transaction(
     const rename_transaction *transaction)
 {
@@ -6873,20 +6912,30 @@ static int rename_restore_transaction(
     for (index = 0U;
          index < transaction->file_count;
          ++index) {
-        char command[SYMBOL_PATH_SIZE * 2U + 64U];
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
         int status;
+
+        if (!rename_make_vms_filespec(
+                transaction->files[index].path,
+                filespec,
+                sizeof(filespec))) {
+            success = 0;
+            continue;
+        }
 
         (void)snprintf(
             command,
             sizeof(command),
-            "COPY %s;-1 %s",
-            transaction->files[index].path,
-            transaction->files[index].path
+            "COPY/NOLOG %s;-1 %s;",
+            filespec,
+            filespec
         );
 
         status = system(command);
 
-        if (status != 0) {
+        if (status != 0 &&
+            (status & 1) == 0) {
             success = 0;
         }
     }
@@ -7038,6 +7087,77 @@ static int rename_run_controlled_build(void)
            (status & 1) != 0;
 }
 
+
+static int rename_force_recompile(
+    const rename_transaction *transaction)
+{
+    unsigned int index;
+    int success;
+
+    success = 1;
+
+    for (index = 0U;
+         index < transaction->file_count;
+         ++index) {
+        const char *path;
+        const char *name_start;
+        const char *extension;
+        char object_name[SYMBOL_NAME_SIZE];
+        char command[SYMBOL_PATH_SIZE + SYMBOL_NAME_SIZE + 64U];
+        size_t name_length;
+        int status;
+
+        path = transaction->files[index].path;
+        extension = strrchr(path, '.');
+
+        if (extension == NULL ||
+            (strcmp(extension, ".c") != 0 &&
+             strcmp(extension, ".C") != 0)) {
+            continue;
+        }
+
+        name_start = strrchr(path, '/');
+
+        if (name_start == NULL) {
+            name_start = path;
+        } else {
+            ++name_start;
+        }
+
+        name_length = (size_t)(extension - name_start);
+
+        if (name_length == 0U ||
+            name_length >= sizeof(object_name)) {
+            success = 0;
+            continue;
+        }
+
+        (void)memcpy(
+            object_name,
+            name_start,
+            name_length
+        );
+        object_name[name_length] = '\0';
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "DELETE [.BUILD]%s.OBJ;*",
+            object_name
+        );
+
+        status = system(command);
+
+        /*
+         * DELETE reports failure when no object exists. That is harmless:
+         * the desired outcome is simply that no stale object remains.
+         */
+        (void)status;
+    }
+
+    return success;
+}
+
 static void rename_print_verify_result(
     int reindex_ok,
     int build_ok)
@@ -7148,9 +7268,16 @@ int symbol_rename_verify(agent_state *state,
     reindex_ok = rename_run_reindex(state);
 
     (void)puts(
+        "Invalidating changed object files..."
+    );
+
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
         "Running controlled build..."
     );
-    build_ok = reindex_ok ?
+    build_ok = build_ok ?
         rename_run_controlled_build() : 0;
 
     rename_print_verify_result(
@@ -7193,9 +7320,16 @@ int symbol_rename_verify(agent_state *state,
     reindex_ok = rename_run_reindex(state);
 
     (void)puts(
+        "Invalidating restored object files..."
+    );
+
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
         "Running controlled build after rollback..."
     );
-    build_ok = reindex_ok ?
+    build_ok = build_ok ?
         rename_run_controlled_build() : 0;
 
     (void)puts("");
@@ -7221,5 +7355,772 @@ int symbol_rename_verify(agent_state *state,
     }
 
     return 0;
+}
+
+typedef struct extract_preview_context {
+    char module_path[SYMBOL_PATH_SIZE];
+    char containing_function[SYMBOL_NAME_SIZE];
+    unsigned long function_line;
+    unsigned long start_line;
+    unsigned long end_line;
+    unsigned long selected_lines;
+    unsigned long selected_bytes;
+    unsigned int brace_delta;
+    unsigned int has_return;
+    unsigned int has_goto;
+    unsigned int has_break;
+    unsigned int has_continue;
+} extract_preview_context;
+
+static int extract_parse_range(
+    const char *text,
+    unsigned long *start_line,
+    unsigned long *end_line)
+{
+    char *end_pointer;
+    unsigned long start_value;
+    unsigned long end_value;
+
+    if (text == NULL ||
+        start_line == NULL ||
+        end_line == NULL) {
+        return 0;
+    }
+
+    start_value = strtoul(text, &end_pointer, 10);
+
+    if (end_pointer == text ||
+        *end_pointer != ':') {
+        return 0;
+    }
+
+    end_value = strtoul(
+        end_pointer + 1,
+        &end_pointer,
+        10
+    );
+
+    if (*end_pointer != '\0' ||
+        start_value == 0UL ||
+        end_value < start_value) {
+        return 0;
+    }
+
+    *start_line = start_value;
+    *end_line = end_value;
+    return 1;
+}
+
+static int extract_find_containing_function(
+    const char *path,
+    unsigned long start_line,
+    char *name_out,
+    size_t name_size,
+    unsigned long *line_out)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char best_name[SYMBOL_NAME_SIZE];
+    unsigned long best_line;
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    best_name[0] = '\0';
+    best_line = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'D' ||
+            strcmp(record_path, path) != 0 ||
+            record_line > start_line ||
+            record_line < best_line) {
+            continue;
+        }
+
+        if (strlen(record_symbol) >= sizeof(best_name)) {
+            continue;
+        }
+
+        (void)strcpy(best_name, record_symbol);
+        best_line = record_line;
+    }
+
+    (void)fclose(file);
+
+    if (best_name[0] == '\0' ||
+        strlen(best_name) >= name_size) {
+        return 0;
+    }
+
+    (void)strcpy(name_out, best_name);
+    *line_out = best_line;
+    return 1;
+}
+
+static void extract_analyze_line(
+    const char *line,
+    extract_preview_context *context)
+{
+    const char *position;
+
+    if (line == NULL || context == NULL) {
+        return;
+    }
+
+    context->selected_bytes +=
+        (unsigned long)strlen(line);
+
+    for (position = line;
+         *position != '\0';
+         ++position) {
+        if (*position == '{') {
+            ++context->brace_delta;
+        } else if (*position == '}' &&
+                   context->brace_delta > 0U) {
+            --context->brace_delta;
+        }
+    }
+
+    if (strstr(line, "return") != NULL) {
+        context->has_return = 1U;
+    }
+
+    if (strstr(line, "goto") != NULL) {
+        context->has_goto = 1U;
+    }
+
+    if (strstr(line, "break") != NULL) {
+        context->has_break = 1U;
+    }
+
+    if (strstr(line, "continue") != NULL) {
+        context->has_continue = 1U;
+    }
+}
+
+static int extract_print_selection(
+    const char *path,
+    unsigned long start_line,
+    unsigned long end_line,
+    extract_preview_context *context)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < start_line) {
+            continue;
+        }
+
+        if (line_number > end_line) {
+            break;
+        }
+
+        (void)printf(
+            "%6lu  %s",
+            line_number,
+            line
+        );
+
+        if (line[strlen(line) - 1U] != '\n') {
+            (void)puts("");
+        }
+
+        extract_analyze_line(
+            line,
+            context
+        );
+        ++context->selected_lines;
+    }
+
+    (void)fclose(file);
+
+    return context->selected_lines ==
+           end_line - start_line + 1UL;
+}
+
+static void extract_print_risks(
+    const extract_preview_context *context)
+{
+    (void)puts("");
+    (void)puts("Extraction risks");
+    (void)puts("----------------------------------------");
+
+    if (!context->has_return &&
+        !context->has_goto &&
+        !context->has_break &&
+        !context->has_continue &&
+        context->brace_delta == 0U) {
+        (void)puts("  No obvious control-flow blockers found.");
+        return;
+    }
+
+    if (context->has_return) {
+        (void)puts(
+            "  Selection contains return; caller behavior must be preserved."
+        );
+    }
+
+    if (context->has_goto) {
+        (void)puts(
+            "  Selection contains goto; labels may cross the extraction boundary."
+        );
+    }
+
+    if (context->has_break) {
+        (void)puts(
+            "  Selection contains break; enclosing loop or switch may be required."
+        );
+    }
+
+    if (context->has_continue) {
+        (void)puts(
+            "  Selection contains continue; enclosing loop may be required."
+        );
+    }
+
+    if (context->brace_delta != 0U) {
+        (void)puts(
+            "  Selection has unbalanced braces and is not a complete block."
+        );
+    }
+}
+
+
+#define EXTRACT_IDENTIFIER_MAX 128U
+
+typedef struct extract_identifier {
+    char name[SYMBOL_NAME_SIZE];
+    unsigned int reads;
+    unsigned int writes;
+    unsigned int declarations;
+} extract_identifier;
+
+typedef struct extract_identifier_list {
+    extract_identifier entries[EXTRACT_IDENTIFIER_MAX];
+    unsigned int used;
+} extract_identifier_list;
+
+static int extract_identifier_is_keyword(const char *name)
+{
+    static const char *keywords[] = {
+        "auto", "break", "case", "char", "const", "continue",
+        "default", "do", "double", "else", "enum", "extern",
+        "float", "for", "goto", "if", "inline", "int", "long",
+        "register", "restrict", "return", "short", "signed",
+        "sizeof", "static", "struct", "switch", "typedef",
+        "union", "unsigned", "void", "volatile", "while", "_Bool",
+        "_Complex", "_Imaginary", NULL
+    };
+    const char **keyword;
+
+    for (keyword = keywords; *keyword != NULL; ++keyword) {
+        if (strcmp(name, *keyword) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int extract_identifier_is_library_call(const char *name)
+{
+    return strcmp(name, "printf") == 0 ||
+           strcmp(name, "puts") == 0 ||
+           strcmp(name, "fputs") == 0 ||
+           strcmp(name, "strlen") == 0 ||
+           strcmp(name, "strcmp") == 0 ||
+           strcmp(name, "memcpy") == 0 ||
+           strcmp(name, "memset") == 0 ||
+           strcmp(name, "malloc") == 0 ||
+           strcmp(name, "free") == 0;
+}
+
+static int extract_identifier_find(
+    extract_identifier_list *list,
+    const char *name)
+{
+    unsigned int index;
+
+    for (index = 0U; index < list->used; ++index) {
+        if (strcmp(list->entries[index].name, name) == 0) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static extract_identifier *extract_identifier_get(
+    extract_identifier_list *list,
+    const char *name)
+{
+    int index;
+
+    index = extract_identifier_find(list, name);
+
+    if (index >= 0) {
+        return &list->entries[index];
+    }
+
+    if (list->used >= EXTRACT_IDENTIFIER_MAX ||
+        strlen(name) >= SYMBOL_NAME_SIZE) {
+        return NULL;
+    }
+
+    (void)strcpy(list->entries[list->used].name, name);
+    list->entries[list->used].reads = 0U;
+    list->entries[list->used].writes = 0U;
+    list->entries[list->used].declarations = 0U;
+
+    ++list->used;
+    return &list->entries[list->used - 1U];
+}
+
+static int extract_line_declares_identifier(
+    const char *line,
+    const char *identifier)
+{
+    static const char *types[] = {
+        "char", "short", "int", "long", "float", "double",
+        "unsigned", "signed", "size_t", "FILE", "agent_state",
+        "const", "struct", "enum", "union", NULL
+    };
+    const char **type_name;
+    const char *position;
+
+    position = strstr(line, identifier);
+
+    if (position == NULL) {
+        return 0;
+    }
+
+    for (type_name = types; *type_name != NULL; ++type_name) {
+        const char *type_position;
+
+        type_position = strstr(line, *type_name);
+
+        if (type_position != NULL &&
+            type_position < position) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int extract_line_writes_identifier(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+    size_t length;
+
+    length = strlen(identifier);
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *after;
+
+        if (!symbol_match_at(line, position, identifier)) {
+            ++position;
+            continue;
+        }
+
+        after = position + length;
+
+        while (*after == ' ' || *after == '\t') {
+            ++after;
+        }
+
+        if (*after == '=' && after[1] != '=') {
+            return 1;
+        }
+
+        if ((after[0] == '+' && after[1] == '+') ||
+            (after[0] == '-' && after[1] == '-')) {
+            return 1;
+        }
+
+        if (position >= line + 2 &&
+            ((position[-2] == '+' && position[-1] == '+') ||
+             (position[-2] == '-' && position[-1] == '-'))) {
+            return 1;
+        }
+
+        position += length;
+    }
+
+    return 0;
+}
+
+static void extract_collect_identifiers_from_line(
+    const char *line,
+    extract_identifier_list *identifiers)
+{
+    const unsigned char *position;
+
+    position = (const unsigned char *)line;
+
+    while (*position != '\0') {
+        char name[SYMBOL_NAME_SIZE];
+        size_t used;
+        extract_identifier *entry;
+        int declared;
+        int written;
+
+        if (!(isalpha(*position) || *position == '_')) {
+            ++position;
+            continue;
+        }
+
+        used = 0U;
+
+        while ((isalnum(*position) || *position == '_') &&
+               used + 1U < sizeof(name)) {
+            name[used++] = (char)*position++;
+        }
+
+        name[used] = '\0';
+
+        if (extract_identifier_is_keyword(name) ||
+            extract_identifier_is_library_call(name)) {
+            continue;
+        }
+
+        entry = extract_identifier_get(identifiers, name);
+
+        if (entry == NULL) {
+            continue;
+        }
+
+        declared = extract_line_declares_identifier(line, name);
+        written = extract_line_writes_identifier(line, name);
+
+        if (declared) {
+            ++entry->declarations;
+        }
+
+        if (written) {
+            ++entry->writes;
+        } else {
+            ++entry->reads;
+        }
+    }
+}
+
+static void extract_analyze_selection_identifiers(
+    const char *path,
+    unsigned long start_line,
+    unsigned long end_line,
+    extract_identifier_list *identifiers)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char clean[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < start_line) {
+            continue;
+        }
+
+        if (line_number > end_line) {
+            break;
+        }
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        extract_collect_identifiers_from_line(
+            clean,
+            identifiers
+        );
+    }
+
+    (void)fclose(file);
+}
+
+static void extract_print_dataflow(
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int parameter_count;
+    unsigned int output_count;
+    unsigned int local_count;
+
+    parameter_count = 0U;
+    output_count = 0U;
+    local_count = 0U;
+
+    (void)puts("");
+    (void)puts("Variable-flow analysis");
+    (void)puts("----------------------------------------");
+
+    for (index = 0U; index < identifiers->used; ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->declarations > 0U) {
+            ++local_count;
+            (void)printf(
+                "  LOCAL  %-24s read=%u write=%u\n",
+                entry->name,
+                entry->reads,
+                entry->writes
+            );
+        } else if (entry->writes > 0U) {
+            ++output_count;
+            (void)printf(
+                "  INOUT  %-24s read=%u write=%u\n",
+                entry->name,
+                entry->reads,
+                entry->writes
+            );
+        } else {
+            ++parameter_count;
+            (void)printf(
+                "  INPUT  %-24s read=%u\n",
+                entry->name,
+                entry->reads
+            );
+        }
+    }
+
+    if (identifiers->used == 0U) {
+        (void)puts("  none");
+    }
+
+    (void)puts("");
+    (void)printf("Likely input parameters: %u\n", parameter_count);
+    (void)printf("Likely in/out values:    %u\n", output_count);
+    (void)printf("Locals declared inside:  %u\n", local_count);
+    (void)puts(
+        "Heuristic only: struct fields, pointer aliasing, macros, "
+        "and function names may require manual review."
+    );
+}
+
+void symbol_extract_function_preview(
+    agent_state *state,
+    const char *module,
+    unsigned long start_line,
+    unsigned long end_line,
+    const char *new_name)
+{
+    extract_preview_context context;
+    extract_identifier_list identifiers;
+    FILE *file;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!rename_identifier_valid(new_name)) {
+        (void)puts(
+            "New function name must be a valid C identifier."
+        );
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            context.module_path,
+            sizeof(context.module_path))) {
+        (void)puts(
+            "Module must be a project-relative .C file."
+        );
+        return;
+    }
+
+    if (!symbol_has_c_extension(context.module_path)) {
+        (void)puts(
+            "EXTRACT/FUNCTION requires a .C source module."
+        );
+        return;
+    }
+
+    if (start_line == 0UL ||
+        end_line < start_line) {
+        (void)puts(
+            "Line range must use START:END with END >= START."
+        );
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before EXTRACT/FUNCTION."
+        );
+        return;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Extraction blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return;
+    }
+
+    file = fopen(context.module_path, "r");
+
+    if (file == NULL) {
+        (void)printf(
+            "Unable to open %s.\n",
+            context.module_path
+        );
+        return;
+    }
+
+    (void)fclose(file);
+    (void)memset(&context, 0, sizeof(context));
+    (void)memset(&identifiers, 0, sizeof(identifiers));
+
+    if (!module_path_prepare(
+            module,
+            context.module_path,
+            sizeof(context.module_path))) {
+        return;
+    }
+
+    context.start_line = start_line;
+    context.end_line = end_line;
+
+    (void)extract_find_containing_function(
+        context.module_path,
+        start_line,
+        context.containing_function,
+        sizeof(context.containing_function),
+        &context.function_line
+    );
+
+    (void)printf(
+        "Extract-function preview: %s %lu:%lu -> %s\n",
+        context.module_path,
+        start_line,
+        end_line,
+        new_name
+    );
+    (void)puts("========================================");
+
+    if (context.containing_function[0] != '\0') {
+        (void)printf(
+            "Containing function: %s (line %lu)\n",
+            context.containing_function,
+            context.function_line
+        );
+    } else {
+        (void)puts(
+            "Containing function: not identified"
+        );
+    }
+
+    (void)puts("");
+    (void)puts("Selected source");
+    (void)puts("----------------------------------------");
+
+    if (!extract_print_selection(
+            context.module_path,
+            start_line,
+            end_line,
+            &context)) {
+        (void)puts(
+            "Selection extends beyond the end of the source file."
+        );
+        return;
+    }
+
+    (void)puts("");
+    (void)puts("Planned transformation");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "  Create static void %s(void)\n",
+        new_name
+    );
+    (void)printf(
+        "  Replace lines %lu:%lu with: %s();\n",
+        start_line,
+        end_line,
+        new_name
+    );
+    (void)printf(
+        "  Selected lines: %lu\n",
+        context.selected_lines
+    );
+    (void)printf(
+        "  Selected bytes: %lu\n",
+        context.selected_bytes
+    );
+
+    extract_print_risks(&context);
+
+    extract_analyze_selection_identifiers(
+        context.module_path,
+        start_line,
+        end_line,
+        &identifiers
+    );
+    extract_print_dataflow(&identifiers);
+
+    (void)puts("");
+    (void)puts(
+        "Preview only. No files were modified."
+    );
+    (void)puts(
+        "Parameter, local-variable, and return-value analysis "
+        "will be required before guarded application."
+    );
 }
 
