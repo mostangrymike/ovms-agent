@@ -35,5 +35,7 @@ void symbol_cluster(agent_state *state);
 void symbol_cycle_all(agent_state *state);
 void symbol_cycle_module(agent_state *state,
                          const char *module);
+void symbol_architecture(agent_state *state);
+void symbol_unused(agent_state *state);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

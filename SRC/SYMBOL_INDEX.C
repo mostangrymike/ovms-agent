@@ -5018,3 +5018,796 @@ void symbol_cycle_module(agent_state *state,
     );
 }
 
+#define ARCH_TOP_MAX 10U
+#define ARCH_SYMBOL_MAX 512U
+
+typedef struct architecture_module_stat {
+    char path[SYMBOL_PATH_SIZE];
+    unsigned int fan_in;
+    unsigned int fan_out;
+} architecture_module_stat;
+
+typedef struct architecture_symbol_stat {
+    char name[SYMBOL_NAME_SIZE];
+    unsigned int calls;
+} architecture_symbol_stat;
+
+static int architecture_module_find(
+    architecture_module_stat *stats,
+    unsigned int count,
+    const char *path)
+{
+    unsigned int index;
+
+    for (index = 0U; index < count; ++index) {
+        if (strcmp(stats[index].path, path) == 0) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static int architecture_module_add(
+    architecture_module_stat *stats,
+    unsigned int *count,
+    const char *path)
+{
+    int existing;
+
+    existing = architecture_module_find(
+        stats,
+        *count,
+        path
+    );
+
+    if (existing >= 0) {
+        return existing;
+    }
+
+    if (*count >= PATH_NODE_MAX ||
+        strlen(path) >= SYMBOL_PATH_SIZE) {
+        return -1;
+    }
+
+    (void)strcpy(stats[*count].path, path);
+    stats[*count].fan_in = 0U;
+    stats[*count].fan_out = 0U;
+
+    ++(*count);
+    return (int)(*count - 1U);
+}
+
+static void architecture_collect_module_stats(
+    const module_edge_list *edges,
+    architecture_module_stat *stats,
+    unsigned int *count)
+{
+    unsigned int index;
+
+    *count = 0U;
+
+    for (index = 0U; index < edges->used; ++index) {
+        int source_index;
+        int target_index;
+
+        source_index = architecture_module_add(
+            stats,
+            count,
+            edges->edges[index].source
+        );
+        target_index = architecture_module_add(
+            stats,
+            count,
+            edges->edges[index].target
+        );
+
+        if (source_index >= 0) {
+            ++stats[source_index].fan_out;
+        }
+
+        if (target_index >= 0) {
+            ++stats[target_index].fan_in;
+        }
+    }
+}
+
+static void architecture_sort_modules(
+    architecture_module_stat *stats,
+    unsigned int count,
+    int sort_by_fan_in)
+{
+    unsigned int left;
+
+    for (left = 0U; left < count; ++left) {
+        unsigned int right;
+
+        for (right = left + 1U;
+             right < count;
+             ++right) {
+            unsigned int left_value;
+            unsigned int right_value;
+
+            left_value = sort_by_fan_in ?
+                stats[left].fan_in :
+                stats[left].fan_out;
+            right_value = sort_by_fan_in ?
+                stats[right].fan_in :
+                stats[right].fan_out;
+
+            if (right_value > left_value) {
+                architecture_module_stat temporary;
+
+                temporary = stats[left];
+                stats[left] = stats[right];
+                stats[right] = temporary;
+            }
+        }
+    }
+}
+
+static int architecture_symbol_find(
+    architecture_symbol_stat *stats,
+    unsigned int count,
+    const char *name)
+{
+    unsigned int index;
+
+    for (index = 0U; index < count; ++index) {
+        if (strcmp(stats[index].name, name) == 0) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static void architecture_collect_symbol_stats(
+    architecture_symbol_stat *stats,
+    unsigned int *count)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    *count = 0U;
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+        int index;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'C') {
+            continue;
+        }
+
+        index = architecture_symbol_find(
+            stats,
+            *count,
+            record_symbol
+        );
+
+        if (index < 0) {
+            if (*count >= ARCH_SYMBOL_MAX ||
+                strlen(record_symbol) >= SYMBOL_NAME_SIZE) {
+                continue;
+            }
+
+            (void)strcpy(
+                stats[*count].name,
+                record_symbol
+            );
+            stats[*count].calls = 0U;
+            index = (int)(*count);
+            ++(*count);
+        }
+
+        ++stats[index].calls;
+    }
+
+    (void)fclose(file);
+}
+
+static void architecture_sort_symbols(
+    architecture_symbol_stat *stats,
+    unsigned int count)
+{
+    unsigned int left;
+
+    for (left = 0U; left < count; ++left) {
+        unsigned int right;
+
+        for (right = left + 1U;
+             right < count;
+             ++right) {
+            if (stats[right].calls >
+                stats[left].calls) {
+                architecture_symbol_stat temporary;
+
+                temporary = stats[left];
+                stats[left] = stats[right];
+                stats[right] = temporary;
+            }
+        }
+    }
+}
+
+static void architecture_print_top_modules(
+    const char *heading,
+    architecture_module_stat *stats,
+    unsigned int count,
+    int fan_in)
+{
+    unsigned int limit;
+    unsigned int index;
+
+    architecture_sort_modules(
+        stats,
+        count,
+        fan_in
+    );
+
+    limit = count < ARCH_TOP_MAX ?
+        count : ARCH_TOP_MAX;
+
+    (void)puts(heading);
+    (void)puts("----------------------------------------");
+
+    for (index = 0U; index < limit; ++index) {
+        unsigned int value;
+
+        value = fan_in ?
+            stats[index].fan_in :
+            stats[index].fan_out;
+
+        (void)printf(
+            "  %-36s %u\n",
+            stats[index].path,
+            value
+        );
+    }
+
+    if (limit == 0U) {
+        (void)puts("  none");
+    }
+}
+
+static void architecture_print_top_symbols(
+    architecture_symbol_stat *stats,
+    unsigned int count)
+{
+    unsigned int limit;
+    unsigned int index;
+
+    architecture_sort_symbols(stats, count);
+
+    limit = count < ARCH_TOP_MAX ?
+        count : ARCH_TOP_MAX;
+
+    (void)puts("Most widely used functions");
+    (void)puts("----------------------------------------");
+
+    for (index = 0U; index < limit; ++index) {
+        (void)printf(
+            "  %-36s %u calls\n",
+            stats[index].name,
+            stats[index].calls
+        );
+    }
+
+    if (limit == 0U) {
+        (void)puts("  none");
+    }
+}
+
+void symbol_architecture(agent_state *state)
+{
+    module_edge_list edges;
+    architecture_module_stat modules[PATH_NODE_MAX];
+    architecture_module_stat fan_out_modules[PATH_NODE_MAX];
+    architecture_symbol_stat symbols[ARCH_SYMBOL_MAX];
+    cluster_state cluster;
+    cluster_summary summaries[CLUSTER_MAX];
+    unsigned int module_count;
+    unsigned int symbol_count;
+    unsigned int index;
+    unsigned int multi_count;
+    unsigned int singleton_count;
+    cycle_search_state cycle_state;
+    path_node nodes[PATH_NODE_MAX];
+    unsigned int node_count;
+    int has_cycle;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before ARCHITECTURE."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(modules, 0, sizeof(modules));
+    (void)memset(fan_out_modules, 0, sizeof(fan_out_modules));
+    (void)memset(symbols, 0, sizeof(symbols));
+    (void)memset(summaries, 0, sizeof(summaries));
+    (void)memset(nodes, 0, sizeof(nodes));
+
+    if (!module_graph_collect_all(&edges)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    architecture_collect_module_stats(
+        &edges,
+        modules,
+        &module_count
+    );
+    (void)memcpy(
+        fan_out_modules,
+        modules,
+        sizeof(modules)
+    );
+
+    architecture_collect_symbol_stats(
+        symbols,
+        &symbol_count
+    );
+
+    cluster_initialize(&cluster, &edges);
+    cluster_run(&cluster, &edges);
+    cluster_build_summaries(
+        &cluster,
+        summaries
+    );
+
+    multi_count = 0U;
+    singleton_count = 0U;
+
+    for (index = 0U;
+         index < cluster.component_count;
+         ++index) {
+        if (summaries[index].size > 1U) {
+            ++multi_count;
+        } else {
+            ++singleton_count;
+        }
+    }
+
+    node_count = 0U;
+    has_cycle = path_build_nodes(
+                    &edges,
+                    nodes,
+                    &node_count) &&
+                cycle_find_any(
+                    &edges,
+                    nodes,
+                    node_count,
+                    -1,
+                    &cycle_state);
+
+    (void)puts("Architecture report");
+    (void)puts("========================================");
+    (void)printf("Modules:                %u\n", module_count);
+    (void)printf("Dependency edges:       %u\n", edges.used);
+    (void)printf("Multi-module clusters:  %u\n", multi_count);
+    (void)printf("Singleton modules:      %u\n", singleton_count);
+    (void)printf("Dependency cycle found: %s\n",
+                 has_cycle ? "yes" : "no");
+    (void)puts("");
+
+    architecture_print_top_modules(
+        "Highest fan-in modules",
+        modules,
+        module_count,
+        1
+    );
+    (void)puts("");
+
+    architecture_print_top_modules(
+        "Highest fan-out modules",
+        fan_out_modules,
+        module_count,
+        0
+    );
+    (void)puts("");
+
+    architecture_print_top_symbols(
+        symbols,
+        symbol_count
+    );
+
+    if (has_cycle) {
+        (void)puts("");
+        cycle_print_found(
+            "Representative dependency cycle",
+            nodes,
+            &cycle_state
+        );
+    }
+}
+
+#define UNUSED_SYMBOL_MAX ARCH_SYMBOL_MAX
+
+typedef struct unused_definition {
+    char name[SYMBOL_NAME_SIZE];
+    char path[SYMBOL_PATH_SIZE];
+    unsigned long line;
+    unsigned int calls;
+} unused_definition;
+
+static int unused_definition_find(
+    unused_definition *definitions,
+    unsigned int count,
+    const char *name,
+    const char *path,
+    unsigned long line)
+{
+    unsigned int index;
+
+    for (index = 0U; index < count; ++index) {
+        if (strcmp(definitions[index].name, name) == 0 &&
+            strcmp(definitions[index].path, path) == 0 &&
+            definitions[index].line == line) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static int unused_definition_add(
+    unused_definition *definitions,
+    unsigned int *count,
+    const char *name,
+    const char *path,
+    unsigned long line)
+{
+    int existing;
+
+    existing = unused_definition_find(
+        definitions,
+        *count,
+        name,
+        path,
+        line
+    );
+
+    if (existing >= 0) {
+        return existing;
+    }
+
+    if (*count >= UNUSED_SYMBOL_MAX ||
+        strlen(name) >= SYMBOL_NAME_SIZE ||
+        strlen(path) >= SYMBOL_PATH_SIZE) {
+        return -1;
+    }
+
+    (void)strcpy(definitions[*count].name, name);
+    (void)strcpy(definitions[*count].path, path);
+    definitions[*count].line = line;
+    definitions[*count].calls = 0U;
+
+    ++(*count);
+    return (int)(*count - 1U);
+}
+
+static int unused_symbol_is_entry_point(
+    const char *name)
+{
+    return strcmp(name, "main") == 0 ||
+           strcmp(name, "command_prompt") == 0 ||
+           strcmp(name, "command_execute") == 0;
+}
+
+static int unused_symbol_is_callback_candidate(
+    const char *name)
+{
+    return strncmp(name, "command_", 8U) == 0 ||
+           strstr(name, "_handler") != NULL ||
+           strstr(name, "_callback") != NULL;
+}
+
+static void unused_collect_definitions(
+    unused_definition *definitions,
+    unsigned int *count)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    *count = 0U;
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'D') {
+            (void)unused_definition_add(
+                definitions,
+                count,
+                record_symbol,
+                record_path,
+                record_line
+            );
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static void unused_count_calls(
+    unused_definition *definitions,
+    unsigned int definition_count)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+        unsigned int index;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'C') {
+            continue;
+        }
+
+        for (index = 0U;
+             index < definition_count;
+             ++index) {
+            if (strcmp(
+                    definitions[index].name,
+                    record_symbol) == 0) {
+                ++definitions[index].calls;
+            }
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static void unused_collect_isolated_modules(
+    const module_edge_list *edges,
+    symbol_name_list *isolated)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        char path[SYMBOL_PATH_SIZE];
+        unsigned int edge_index;
+        int connected;
+
+        if (!symbol_has_c_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        connected = 0;
+
+        for (edge_index = 0U;
+             edge_index < edges->used;
+             ++edge_index) {
+            if (strcmp(
+                    edges->edges[edge_index].source,
+                    path) == 0 ||
+                strcmp(
+                    edges->edges[edge_index].target,
+                    path) == 0) {
+                connected = 1;
+                break;
+            }
+        }
+
+        if (!connected) {
+            module_name_list_add(isolated, path);
+        }
+    }
+
+    (void)closedir(directory);
+}
+
+void symbol_unused(agent_state *state)
+{
+    unused_definition definitions[UNUSED_SYMBOL_MAX];
+    unsigned int definition_count;
+    unsigned int index;
+    unsigned int unused_count;
+    unsigned int callback_count;
+    module_edge_list edges;
+    symbol_name_list isolated_modules;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before UNUSED."
+        );
+        return;
+    }
+
+    (void)memset(definitions, 0, sizeof(definitions));
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(
+        &isolated_modules,
+        0,
+        sizeof(isolated_modules)
+    );
+
+    unused_collect_definitions(
+        definitions,
+        &definition_count
+    );
+    unused_count_calls(
+        definitions,
+        definition_count
+    );
+
+    (void)module_graph_collect_all(&edges);
+    unused_collect_isolated_modules(
+        &edges,
+        &isolated_modules
+    );
+
+    unused_count = 0U;
+    callback_count = 0U;
+
+    (void)puts("Unused code analysis");
+    (void)puts("========================================");
+
+    (void)puts("Likely unused functions");
+    (void)puts("----------------------------------------");
+
+    for (index = 0U;
+         index < definition_count;
+         ++index) {
+        if (definitions[index].calls != 0U ||
+            unused_symbol_is_entry_point(
+                definitions[index].name) ||
+            unused_symbol_is_callback_candidate(
+                definitions[index].name)) {
+            continue;
+        }
+
+        (void)printf(
+            "  %-32s %s line %lu\n",
+            definitions[index].name,
+            definitions[index].path,
+            definitions[index].line
+        );
+        ++unused_count;
+    }
+
+    if (unused_count == 0U) {
+        (void)puts("  none");
+    }
+
+    (void)puts("");
+    (void)puts("Callback or registry candidates");
+    (void)puts("----------------------------------------");
+
+    for (index = 0U;
+         index < definition_count;
+         ++index) {
+        if (definitions[index].calls == 0U &&
+            unused_symbol_is_callback_candidate(
+                definitions[index].name) &&
+            !unused_symbol_is_entry_point(
+                definitions[index].name)) {
+            (void)printf(
+                "  %-32s %s line %lu\n",
+                definitions[index].name,
+                definitions[index].path,
+                definitions[index].line
+            );
+            ++callback_count;
+        }
+    }
+
+    if (callback_count == 0U) {
+        (void)puts("  none");
+    }
+
+    (void)puts("");
+    module_print_list(
+        "Isolated source modules",
+        &isolated_modules
+    );
+    (void)puts("");
+
+    (void)printf(
+        "Summary: %u likely unused function%s, "
+        "%u callback candidate%s, "
+        "%u isolated module%s.\n",
+        unused_count,
+        unused_count == 1U ? "" : "s",
+        callback_count,
+        callback_count == 1U ? "" : "s",
+        isolated_modules.used,
+        isolated_modules.used == 1U ? "" : "s"
+    );
+
+    (void)puts(
+        "Review all results before removing code; "
+        "function pointers and external entry points may be invisible."
+    );
+}
+

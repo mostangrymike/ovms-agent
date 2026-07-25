@@ -23,7 +23,9 @@ static const command_entry symbol_commands[] = {
     { "PATH", "Find a dependency path between modules or symbols", command_path },
     { "CLUSTER", "Identify strongly connected module groups", command_cluster },
     { "CYCLE", "Show a project dependency cycle", command_cycle },
-    { "CYCLE/MODULE", "Show a cycle reachable from one module", command_cycle_module }
+    { "CYCLE/MODULE", "Show a cycle reachable from one module", command_cycle_module },
+    { "ARCHITECTURE", "Summarize project architecture metrics", command_architecture },
+    { "UNUSED", "Find likely unused functions and modules", command_unused }
 };
 
 void command_register_symbol(void)
@@ -341,4 +343,28 @@ void command_cycle_module(agent_state *state,
     if (module != NULL) {
         symbol_cycle_module(state, module);
     }
+}
+
+
+void command_architecture(agent_state *state,
+                          const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: ARCHITECTURE");
+        return;
+    }
+
+    symbol_architecture(state);
+}
+
+
+void command_unused(agent_state *state,
+                    const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: UNUSED");
+        return;
+    }
+
+    symbol_unused(state);
 }
