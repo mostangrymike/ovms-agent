@@ -7652,12 +7652,21 @@ typedef struct extract_identifier {
     unsigned int pointer_value_writes;
     unsigned int constants;
     unsigned int address_taken;
+    unsigned int pointee_reads;
 } extract_identifier;
 
 typedef struct extract_identifier_list {
     extract_identifier entries[EXTRACT_IDENTIFIER_MAX];
     unsigned int used;
 } extract_identifier_list;
+
+static int extract_exact_identifier_at(
+    const char *line,
+    const char *position,
+    const char *identifier);
+
+static int extract_entry_is_parameter(
+    const extract_identifier *entry);
 
 static int extract_identifier_is_keyword(const char *name)
 {
@@ -7736,6 +7745,7 @@ static extract_identifier *extract_identifier_get(
     list->entries[list->used].pointer_value_writes = 0U;
     list->entries[list->used].constants = 0U;
     list->entries[list->used].address_taken = 0U;
+    list->entries[list->used].pointee_reads = 0U;
 
     ++list->used;
     return &list->entries[list->used - 1U];
@@ -7831,6 +7841,55 @@ static int extract_identifier_is_function_call(
 
         if (*after == '(') {
             return 1;
+        }
+
+        position += length;
+    }
+
+    return 0;
+}
+
+
+static int extract_line_reads_through_pointer(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+    size_t length;
+
+    length = strlen(identifier);
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *before;
+        const char *after;
+
+        if (!extract_exact_identifier_at(
+                line,
+                position,
+                identifier)) {
+            ++position;
+            continue;
+        }
+
+        before = position;
+
+        while (before > line &&
+               (before[-1] == ' ' || before[-1] == '\t')) {
+            --before;
+        }
+
+        after = position + length;
+
+        while (*after == ' ' || *after == '\t') {
+            ++after;
+        }
+
+        if (before > line &&
+            before[-1] == '*') {
+            if (!(*after == '=' && after[1] != '=')) {
+                return 1;
+            }
         }
 
         position += length;
@@ -8724,6 +8783,10 @@ static void extract_collect_identifiers_from_line(
             ++entry->address_taken;
         }
 
+        if (extract_line_reads_through_pointer(line, name)) {
+            ++entry->pointee_reads;
+        }
+
         if (extract_line_writes_through_pointer(line, name)) {
             ++entry->pointer_writes;
             ++entry->reads;
@@ -8834,9 +8897,10 @@ static void extract_print_dataflow(
                    entry->pointer_value_writes == 0U) {
             ++parameter_count;
             (void)printf(
-                "  INPUT POINTER  %-20s read=%u pointee-write=%u\n",
+                "  INPUT POINTER  %-20s read=%u pointee-read=%u pointee-write=%u\n",
                 entry->name,
                 entry->reads,
+                entry->pointee_reads,
                 entry->pointer_writes
             );
         } else if (entry->writes > 0U ||
@@ -8948,36 +9012,122 @@ static unsigned int extract_count_unresolved_types(
     return count;
 }
 
+static int extract_entry_is_output_slot(
+    const extract_identifier *entry)
+{
+    return entry->pointer_value_writes > 0U ||
+           (entry->writes > 0U &&
+            entry->pointer_writes == 0U);
+}
+
+static int extract_entry_mutates_pointee(
+    const extract_identifier *entry)
+{
+    return entry->pointer_writes > 0U;
+}
+
 static unsigned int extract_pointer_alias_risk(
     const extract_identifier_list *identifiers)
 {
-    unsigned int index;
-    unsigned int pointer_count;
+    unsigned int first;
+    unsigned int second;
 
-    pointer_count = 0U;
+    for (first = 0U;
+         first < identifiers->used;
+         ++first) {
+        const extract_identifier *left;
+        const char *left_type;
 
-    for (index = 0U;
-         index < identifiers->used;
-         ++index) {
-        const extract_identifier *entry;
-        const char *type_name;
+        left = &identifiers->entries[first];
 
-        entry = &identifiers->entries[index];
-
-        if (entry->constants > 0U ||
-            entry->function_calls > 0U ||
-            entry->declarations > 0U) {
+        if (!extract_entry_is_parameter(left)) {
             continue;
         }
 
-        type_name = extract_default_type(entry);
+        left_type = extract_default_type(left);
 
-        if (strchr(type_name, '*') != NULL) {
-            ++pointer_count;
+        if (strchr(left_type, '*') == NULL) {
+            continue;
+        }
+
+        for (second = first + 1U;
+             second < identifiers->used;
+             ++second) {
+            const extract_identifier *right;
+            const char *right_type;
+            int left_output_slot;
+            int right_output_slot;
+            int left_mutates_pointee;
+            int right_mutates_pointee;
+
+            right = &identifiers->entries[second];
+
+            if (!extract_entry_is_parameter(right)) {
+                continue;
+            }
+
+            right_type = extract_default_type(right);
+
+            if (strchr(right_type, '*') == NULL) {
+                continue;
+            }
+
+            left_output_slot =
+                extract_entry_is_output_slot(left);
+            right_output_slot =
+                extract_entry_is_output_slot(right);
+            left_mutates_pointee =
+                extract_entry_mutates_pointee(left);
+            right_mutates_pointee =
+                extract_entry_mutates_pointee(right);
+
+            /*
+             * A read-only input pointer plus the address of a distinct local
+             * pointer variable is not treated as an alias hazard. Example:
+             *
+             *     char *input;
+             *     char *command;
+             *     helper(input, &command);
+             *
+             * The second parameter is an output slot for the local variable,
+             * not another pointer into the input buffer.
+             */
+            if ((left_output_slot &&
+                 !left_mutates_pointee &&
+                 !right_output_slot &&
+                 !right_mutates_pointee) ||
+                (right_output_slot &&
+                 !right_mutates_pointee &&
+                 !left_output_slot &&
+                 !left_mutates_pointee)) {
+                continue;
+            }
+
+            /*
+             * Two pure output slots also refer to distinct caller variables
+             * when generated as &left and &right.
+             */
+            if (left_output_slot &&
+                right_output_slot &&
+                !left_mutates_pointee &&
+                !right_mutates_pointee) {
+                continue;
+            }
+
+            /*
+             * Retain review status when two parameters can both access or
+             * mutate pointed-to storage.
+             */
+            if (left_mutates_pointee ||
+                right_mutates_pointee ||
+                left->pointee_reads > 0U ||
+                right->pointee_reads > 0U) {
+                return 1U;
+            }
         }
     }
 
-    return pointer_count > 1U ? 1U : 0U;
+    return 0U;
 }
 
 static extract_eligibility_result extract_evaluate_eligibility(
@@ -9122,7 +9272,7 @@ static void extract_print_eligibility(
 
     if (result.pointer_alias_risk) {
         (void)puts(
-            "  - multiple pointer parameters may alias"
+            "  - multiple parameters may access overlapping pointed-to storage"
         );
         ++reason_count;
     }
@@ -9340,5 +9490,1484 @@ void symbol_extract_function_preview(
         "Parameter, local-variable, and return-value analysis "
         "will be required before guarded application."
     );
+}
+
+typedef struct extract_text_buffer {
+    char *data;
+    size_t used;
+    size_t capacity;
+} extract_text_buffer;
+
+static int extract_buffer_reserve(
+    extract_text_buffer *buffer,
+    size_t additional)
+{
+    size_t required;
+    size_t capacity;
+    char *new_data;
+
+    required = buffer->used + additional + 1U;
+
+    if (required <= buffer->capacity) {
+        return 1;
+    }
+
+    capacity = buffer->capacity == 0U ?
+        4096U : buffer->capacity;
+
+    while (capacity < required) {
+        capacity *= 2U;
+    }
+
+    new_data = (char *)realloc(
+        buffer->data,
+        capacity
+    );
+
+    if (new_data == NULL) {
+        return 0;
+    }
+
+    buffer->data = new_data;
+    buffer->capacity = capacity;
+    return 1;
+}
+
+static int extract_buffer_append_n(
+    extract_text_buffer *buffer,
+    const char *text,
+    size_t length)
+{
+    if (!extract_buffer_reserve(buffer, length)) {
+        return 0;
+    }
+
+    (void)memcpy(
+        buffer->data + buffer->used,
+        text,
+        length
+    );
+    buffer->used += length;
+    buffer->data[buffer->used] = '\0';
+    return 1;
+}
+
+static int extract_buffer_append(
+    extract_text_buffer *buffer,
+    const char *text)
+{
+    return extract_buffer_append_n(
+        buffer,
+        text,
+        strlen(text)
+    );
+}
+
+static int extract_entry_is_parameter(
+    const extract_identifier *entry)
+{
+    return entry->constants == 0U &&
+           entry->function_calls == 0U &&
+           entry->declarations == 0U;
+}
+
+static int extract_entry_pass_by_address(
+    const extract_identifier *entry)
+{
+    return entry->writes > 0U ||
+           entry->pointer_value_writes > 0U;
+}
+
+static int extract_append_parameter_decl(
+    extract_text_buffer *buffer,
+    const extract_identifier *entry)
+{
+    const char *type_name;
+    char formatted[128];
+    char type_buffer[96];
+    char *first_star;
+    size_t base_length;
+    unsigned int star_count;
+    const char *scan;
+
+    type_name = extract_default_type(entry);
+
+    (void)strncpy(
+        type_buffer,
+        type_name,
+        sizeof(type_buffer) - 1U
+    );
+    type_buffer[sizeof(type_buffer) - 1U] = '\0';
+    extract_trim_type(type_buffer);
+
+    if (extract_entry_pass_by_address(entry)) {
+        size_t length;
+
+        length = strlen(type_buffer);
+
+        if (length + 1U >= sizeof(type_buffer)) {
+            return 0;
+        }
+
+        type_buffer[length] = '*';
+        type_buffer[length + 1U] = '\0';
+    }
+
+    extract_normalize_type_spacing(type_buffer);
+    first_star = strchr(type_buffer, '*');
+
+    if (first_star == NULL) {
+        (void)snprintf(
+            formatted,
+            sizeof(formatted),
+            "%s %s",
+            type_buffer,
+            entry->name
+        );
+    } else {
+        base_length = (size_t)(first_star - type_buffer);
+
+        while (base_length > 0U &&
+               type_buffer[base_length - 1U] == ' ') {
+            --base_length;
+        }
+
+        star_count = 0U;
+
+        for (scan = first_star;
+             *scan != '\0';
+             ++scan) {
+            if (*scan == '*') {
+                ++star_count;
+            }
+        }
+
+        (void)snprintf(
+            formatted,
+            sizeof(formatted),
+            "%.*s ",
+            (int)base_length,
+            type_buffer
+        );
+
+        while (star_count > 0U &&
+               strlen(formatted) + 1U <
+                   sizeof(formatted)) {
+            (void)strcat(formatted, "*");
+            --star_count;
+        }
+
+        if (strlen(formatted) +
+            strlen(entry->name) <
+            sizeof(formatted)) {
+            (void)strcat(
+                formatted,
+                entry->name
+            );
+        }
+    }
+
+    return extract_buffer_append(
+        buffer,
+        formatted
+    );
+}
+
+static int extract_append_signature_text(
+    extract_text_buffer *buffer,
+    const char *new_name,
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int count;
+    unsigned int emitted;
+
+    count = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        if (extract_entry_is_parameter(
+                &identifiers->entries[index])) {
+            ++count;
+        }
+    }
+
+    if (!extract_buffer_append(buffer, "static void ") ||
+        !extract_buffer_append(buffer, new_name) ||
+        !extract_buffer_append(buffer, "(")) {
+        return 0;
+    }
+
+    if (count == 0U) {
+        return extract_buffer_append(
+            buffer,
+            "void)"
+        );
+    }
+
+    if (!extract_buffer_append(buffer, "\n")) {
+        return 0;
+    }
+
+    emitted = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (!extract_entry_is_parameter(entry)) {
+            continue;
+        }
+
+        if (!extract_buffer_append(buffer, "    ") ||
+            !extract_append_parameter_decl(
+                buffer,
+                entry)) {
+            return 0;
+        }
+
+        ++emitted;
+
+        if (emitted < count) {
+            if (!extract_buffer_append(buffer, ",\n")) {
+                return 0;
+            }
+        } else if (!extract_buffer_append(buffer, ")")) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int extract_append_call_text(
+    extract_text_buffer *buffer,
+    const char *new_name,
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int count;
+    unsigned int emitted;
+
+    count = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        if (extract_entry_is_parameter(
+                &identifiers->entries[index])) {
+            ++count;
+        }
+    }
+
+    if (!extract_buffer_append(buffer, new_name) ||
+        !extract_buffer_append(buffer, "(")) {
+        return 0;
+    }
+
+    emitted = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (!extract_entry_is_parameter(entry)) {
+            continue;
+        }
+
+        if (extract_entry_pass_by_address(entry) &&
+            !extract_buffer_append(buffer, "&")) {
+            return 0;
+        }
+
+        if (!extract_buffer_append(
+                buffer,
+                entry->name)) {
+            return 0;
+        }
+
+        ++emitted;
+
+        if (emitted < count &&
+            !extract_buffer_append(buffer, ", ")) {
+            return 0;
+        }
+    }
+
+    return extract_buffer_append(buffer, ");");
+}
+
+static int extract_replace_identifier_for_body(
+    const char *line,
+    const extract_identifier_list *identifiers,
+    extract_text_buffer *output)
+{
+    const char *position;
+
+    position = line;
+
+    while (*position != '\0') {
+        unsigned int index;
+        const extract_identifier *matched;
+        size_t matched_length;
+
+        matched = NULL;
+        matched_length = 0U;
+
+        for (index = 0U;
+             index < identifiers->used;
+             ++index) {
+            const extract_identifier *entry;
+            size_t length;
+
+            entry = &identifiers->entries[index];
+
+            if (!extract_entry_is_parameter(entry) ||
+                !extract_entry_pass_by_address(entry)) {
+                continue;
+            }
+
+            length = strlen(entry->name);
+
+            if (extract_exact_identifier_at(
+                    line,
+                    position,
+                    entry->name)) {
+                matched = entry;
+                matched_length = length;
+                break;
+            }
+        }
+
+        if (matched != NULL) {
+            if (!extract_buffer_append(output, "*") ||
+                !extract_buffer_append_n(
+                    output,
+                    position,
+                    matched_length)) {
+                return 0;
+            }
+
+            position += matched_length;
+        } else {
+            if (!extract_buffer_append_n(
+                    output,
+                    position,
+                    1U)) {
+                return 0;
+            }
+
+            ++position;
+        }
+    }
+
+    return 1;
+}
+
+static unsigned int extract_line_indent(
+    const char *line)
+{
+    unsigned int indent;
+
+    indent = 0U;
+
+    while (line[indent] == ' ' ||
+           line[indent] == '\t') {
+        ++indent;
+    }
+
+    return indent;
+}
+
+static int extract_build_helper(
+    const char *path,
+    unsigned long start_line,
+    unsigned long end_line,
+    const char *new_name,
+    const extract_identifier_list *identifiers,
+    extract_text_buffer *helper)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned int minimum_indent;
+    int found_nonblank;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    minimum_indent = 0U;
+    found_nonblank = 0;
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        unsigned int indent;
+        const char *content;
+
+        ++line_number;
+
+        if (line_number < start_line ||
+            line_number > end_line) {
+            continue;
+        }
+
+        indent = extract_line_indent(line);
+        content = line + indent;
+
+        if (*content == '\0' || *content == '\n') {
+            continue;
+        }
+
+        if (!found_nonblank ||
+            indent < minimum_indent) {
+            minimum_indent = indent;
+            found_nonblank = 1;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (!extract_append_signature_text(
+            helper,
+            new_name,
+            identifiers) ||
+        !extract_buffer_append(helper, "\n{\n")) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *content;
+        unsigned int indent;
+
+        ++line_number;
+
+        if (line_number < start_line ||
+            line_number > end_line) {
+            continue;
+        }
+
+        indent = extract_line_indent(line);
+
+        if (indent >= minimum_indent) {
+            content = line + minimum_indent;
+        } else {
+            content = line;
+        }
+
+        if (!extract_buffer_append(helper, "    ") ||
+            !extract_replace_identifier_for_body(
+                content,
+                identifiers,
+                helper)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    (void)fclose(file);
+
+    return extract_buffer_append(
+        helper,
+        "}\n\n"
+    );
+}
+
+static int extract_write_transformed_file(
+    const char *path,
+    unsigned long function_line,
+    unsigned long start_line,
+    unsigned long end_line,
+    const char *new_name,
+    const extract_identifier_list *identifiers)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    extract_text_buffer helper;
+    extract_text_buffer call;
+    unsigned int call_indent;
+
+    (void)memset(&helper, 0, sizeof(helper));
+    (void)memset(&call, 0, sizeof(call));
+
+    if (!extract_build_helper(
+            path,
+            start_line,
+            end_line,
+            new_name,
+            identifiers,
+            &helper) ||
+        !extract_append_call_text(
+            &call,
+            new_name,
+            identifiers)) {
+        free(helper.data);
+        free(call.data);
+        return 0;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        free(helper.data);
+        free(call.data);
+        return 0;
+    }
+
+    output = fopen("OVMS_EXTRACT.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        free(helper.data);
+        free(call.data);
+        return 0;
+    }
+
+    line_number = 0UL;
+    call_indent = 0U;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number == function_line) {
+            if (fputs(helper.data, output) == EOF) {
+                goto write_failure;
+            }
+        }
+
+        if (line_number == start_line) {
+            unsigned int index;
+
+            call_indent = extract_line_indent(line);
+
+            for (index = 0U;
+                 index < call_indent;
+                 ++index) {
+                if (fputc(
+                        line[index],
+                        output) == EOF) {
+                    goto write_failure;
+                }
+            }
+
+            if (fputs(call.data, output) == EOF ||
+                fputc('\n', output) == EOF) {
+                goto write_failure;
+            }
+        }
+
+        if (line_number >= start_line &&
+            line_number <= end_line) {
+            continue;
+        }
+
+        if (fputs(line, output) == EOF) {
+            goto write_failure;
+        }
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+
+        if (!rename_make_vms_filespec(
+                path,
+                filespec,
+                sizeof(filespec))) {
+            goto close_failure;
+        }
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_EXTRACT.TMP %s;",
+            filespec
+        );
+
+        status = system(command);
+        (void)remove("OVMS_EXTRACT.TMP");
+
+        free(helper.data);
+        free(call.data);
+
+        return status == 0 ||
+               (status & 1) != 0;
+    }
+
+write_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_EXTRACT.TMP");
+    free(helper.data);
+    free(call.data);
+    return 0;
+}
+
+static int extract_confirm_apply(
+    const extract_preview_context *context,
+    const char *new_name,
+    const extract_identifier_list *identifiers)
+{
+    char answer[32];
+    extract_text_buffer signature;
+    extract_text_buffer call;
+
+    (void)memset(&signature, 0, sizeof(signature));
+    (void)memset(&call, 0, sizeof(call));
+
+    if (!extract_append_signature_text(
+            &signature,
+            new_name,
+            identifiers) ||
+        !extract_append_call_text(
+            &call,
+            new_name,
+            identifiers)) {
+        free(signature.data);
+        free(call.data);
+        return 0;
+    }
+
+    (void)puts("");
+    (void)puts("Guarded extraction");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Module:    %s\n",
+        context->module_path
+    );
+    (void)printf(
+        "Range:     %lu:%lu\n",
+        context->start_line,
+        context->end_line
+    );
+    (void)printf(
+        "Function:  %s\n",
+        new_name
+    );
+    (void)puts("");
+    (void)puts(signature.data);
+    (void)printf("Call: %s\n", call.data);
+    (void)printf("Apply extraction [y/N]? ");
+    (void)fflush(stdout);
+
+    free(signature.data);
+    free(call.data);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+int symbol_extract_function_apply(
+    agent_state *state,
+    const char *module,
+    unsigned long start_line,
+    unsigned long end_line,
+    const char *new_name)
+{
+    extract_preview_context context;
+    extract_identifier_list identifiers;
+    extract_eligibility_result eligibility;
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+    int reindex_ok;
+    int build_ok;
+
+    (void)memset(&context, 0, sizeof(context));
+    (void)memset(&identifiers, 0, sizeof(identifiers));
+    (void)memset(&transaction, 0, sizeof(transaction));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(new_name)) {
+        (void)puts(
+            "New function name must be a valid C identifier."
+        );
+        return 0;
+    }
+
+    if (!module_path_prepare(
+            module,
+            context.module_path,
+            sizeof(context.module_path)) ||
+        !symbol_has_c_extension(
+            context.module_path)) {
+        (void)puts(
+            "EXTRACT/FUNCTION/APPLY requires a "
+            "project-relative .C source module."
+        );
+        return 0;
+    }
+
+    if (start_line == 0UL ||
+        end_line < start_line) {
+        (void)puts(
+            "Line range must use START:END with END >= START."
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before EXTRACT/FUNCTION/APPLY."
+        );
+        return 0;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Extraction blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return 0;
+    }
+
+    context.start_line = start_line;
+    context.end_line = end_line;
+
+    if (!extract_find_containing_function(
+            context.module_path,
+            start_line,
+            context.containing_function,
+            sizeof(context.containing_function),
+            &context.function_line)) {
+        (void)puts(
+            "Unable to identify the containing function."
+        );
+        return 0;
+    }
+
+    if (!extract_print_selection(
+            context.module_path,
+            start_line,
+            end_line,
+            &context)) {
+        (void)puts(
+            "Selection extends beyond the end of the source file."
+        );
+        return 0;
+    }
+
+    extract_analyze_selection_identifiers(
+        context.module_path,
+        start_line,
+        end_line,
+        &identifiers
+    );
+    extract_recover_parameter_types(
+        context.module_path,
+        context.function_line,
+        context.containing_function,
+        &identifiers
+    );
+    extract_recover_local_types(
+        context.module_path,
+        context.function_line,
+        start_line,
+        &identifiers
+    );
+
+    eligibility = extract_evaluate_eligibility(
+        &context,
+        &identifiers
+    );
+
+    (void)printf(
+        "Eligibility: %s\n",
+        extract_eligibility_name(
+            eligibility.level)
+    );
+
+    if (eligibility.level !=
+        EXTRACT_ELIGIBILITY_SAFE) {
+        (void)puts(
+            "Extraction refused. Only SAFE TO APPLY "
+            "selections may be modified."
+        );
+        return 0;
+    }
+
+    if (!extract_confirm_apply(
+            &context,
+            new_name,
+            &identifiers)) {
+        (void)puts("Extraction cancelled.");
+        return 0;
+    }
+
+    (void)strcpy(
+        transaction.files[0].path,
+        context.module_path
+    );
+    transaction.files[0].replacements = 1U;
+    transaction.file_count = 1U;
+    transaction.total_replacements = 1U;
+
+    if (!extract_write_transformed_file(
+            context.module_path,
+            context.function_line,
+            start_line,
+            end_line,
+            new_name,
+            &identifiers)) {
+        (void)puts(
+            "Extraction failed while writing the source file."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Extraction applied. Rebuilding symbol index..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Invalidating changed object files..."
+    );
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
+        "Running controlled build..."
+    );
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Extraction verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Extraction completed successfully."
+        );
+        return 1;
+    }
+
+    (void)puts(
+        "Extraction verification failed."
+    );
+
+    if (!rename_confirm_rollback()) {
+        (void)puts(
+            "Rollback declined. Project remains modified."
+        );
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts(
+            "Rollback was incomplete; inspect file versions."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous source version restored."
+    );
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Extraction rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Extraction rollback completed successfully."
+        );
+    } else {
+        (void)puts(
+            "Rollback completed, but verification still failed."
+        );
+    }
+
+    return 0;
+}
+
+typedef struct extract_semantic_check {
+    unsigned int parameter_count;
+    unsigned int input_count;
+    unsigned int output_count;
+    unsigned int local_count;
+    unsigned int function_call_count;
+    unsigned int constant_count;
+    unsigned int unresolved_type_count;
+    unsigned int address_parameter_count;
+    unsigned int body_rewrite_count;
+    unsigned int failures;
+} extract_semantic_check;
+
+static void extract_collect_semantic_counts(
+    const extract_identifier_list *identifiers,
+    extract_semantic_check *check)
+{
+    unsigned int index;
+
+    (void)memset(check, 0, sizeof(*check));
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->constants > 0U) {
+            ++check->constant_count;
+            continue;
+        }
+
+        if (entry->function_calls > 0U) {
+            ++check->function_call_count;
+            continue;
+        }
+
+        if (entry->declarations > 0U) {
+            ++check->local_count;
+            continue;
+        }
+
+        ++check->parameter_count;
+
+        if (entry->inferred_type[0] == '\0') {
+            ++check->unresolved_type_count;
+        }
+
+        if (extract_entry_pass_by_address(entry)) {
+            ++check->output_count;
+            ++check->address_parameter_count;
+            ++check->body_rewrite_count;
+        } else {
+            ++check->input_count;
+        }
+    }
+}
+
+static int extract_verify_signature_consistency(
+    const extract_identifier_list *identifiers,
+    extract_semantic_check *check)
+{
+    unsigned int index;
+    int success;
+
+    success = 1;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+        const char *type_name;
+
+        entry = &identifiers->entries[index];
+
+        if (!extract_entry_is_parameter(entry)) {
+            continue;
+        }
+
+        type_name = extract_default_type(entry);
+
+        if (type_name == NULL ||
+            *type_name == '\0') {
+            ++check->failures;
+            success = 0;
+            continue;
+        }
+
+        if (extract_entry_pass_by_address(entry) &&
+            entry->writes == 0U &&
+            entry->pointer_value_writes == 0U) {
+            ++check->failures;
+            success = 0;
+        }
+
+        if (!extract_entry_pass_by_address(entry) &&
+            (entry->writes > 0U ||
+             entry->pointer_value_writes > 0U)) {
+            ++check->failures;
+            success = 0;
+        }
+    }
+
+    return success;
+}
+
+static int extract_verify_generated_text(
+    const char *new_name,
+    const extract_identifier_list *identifiers,
+    extract_semantic_check *check)
+{
+    extract_text_buffer signature;
+    extract_text_buffer call;
+    unsigned int index;
+    int success;
+
+    (void)memset(&signature, 0, sizeof(signature));
+    (void)memset(&call, 0, sizeof(call));
+
+    success =
+        extract_append_signature_text(
+            &signature,
+            new_name,
+            identifiers) &&
+        extract_append_call_text(
+            &call,
+            new_name,
+            identifiers);
+
+    if (!success) {
+        ++check->failures;
+        free(signature.data);
+        free(call.data);
+        return 0;
+    }
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (!extract_entry_is_parameter(entry)) {
+            continue;
+        }
+
+        if (strstr(signature.data, entry->name) == NULL ||
+            strstr(call.data, entry->name) == NULL) {
+            ++check->failures;
+            success = 0;
+        }
+
+        if (extract_entry_pass_by_address(entry)) {
+            char address_text[SYMBOL_NAME_SIZE + 2U];
+
+            (void)snprintf(
+                address_text,
+                sizeof(address_text),
+                "&%s",
+                entry->name
+            );
+
+            if (strstr(call.data, address_text) == NULL) {
+                ++check->failures;
+                success = 0;
+            }
+        }
+    }
+
+    free(signature.data);
+    free(call.data);
+    return success;
+}
+
+static int extract_verify_body_rewrite(
+    const char *path,
+    unsigned long start_line,
+    unsigned long end_line,
+    const extract_identifier_list *identifiers,
+    extract_semantic_check *check)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    extract_text_buffer rewritten;
+    unsigned int index;
+    int success;
+
+    (void)memset(&rewritten, 0, sizeof(rewritten));
+    success = 1;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        ++check->failures;
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < start_line ||
+            line_number > end_line) {
+            continue;
+        }
+
+        if (!extract_replace_identifier_for_body(
+                line,
+                identifiers,
+                &rewritten)) {
+            success = 0;
+            ++check->failures;
+            break;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (success) {
+        for (index = 0U;
+             index < identifiers->used;
+             ++index) {
+            const extract_identifier *entry;
+
+            entry = &identifiers->entries[index];
+
+            if (!extract_entry_is_parameter(entry) ||
+                !extract_entry_pass_by_address(entry)) {
+                continue;
+            }
+
+            {
+                char dereference_text[SYMBOL_NAME_SIZE + 2U];
+
+                (void)snprintf(
+                    dereference_text,
+                    sizeof(dereference_text),
+                    "*%s",
+                    entry->name
+                );
+
+                if (strstr(
+                        rewritten.data,
+                        dereference_text) == NULL) {
+                    ++check->failures;
+                    success = 0;
+                }
+            }
+        }
+    }
+
+    free(rewritten.data);
+    return success;
+}
+
+static void extract_print_semantic_check(
+    const extract_preview_context *context,
+    const extract_identifier_list *identifiers,
+    const extract_semantic_check *check,
+    int signature_ok,
+    int generated_ok,
+    int body_ok)
+{
+    (void)puts("");
+    (void)puts("Semantic extraction verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Containing function:      %s\n",
+        context->containing_function
+    );
+    (void)printf(
+        "Parameters accounted for: %u\n",
+        check->parameter_count
+    );
+    (void)printf(
+        "Read-only inputs:         %u\n",
+        check->input_count
+    );
+    (void)printf(
+        "Output/in-out values:     %u\n",
+        check->output_count
+    );
+    (void)printf(
+        "Locals retained in body:  %u\n",
+        check->local_count
+    );
+    (void)printf(
+        "Function calls retained:  %u\n",
+        check->function_call_count
+    );
+    (void)printf(
+        "Constants retained:       %u\n",
+        check->constant_count
+    );
+    (void)printf(
+        "Types resolved:           %s\n",
+        check->unresolved_type_count == 0U ?
+            "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Signature consistency:    %s\n",
+        signature_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Generated call coverage:  %s\n",
+        generated_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Body rewrite coverage:    %s\n",
+        body_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Control-flow eligibility: %s\n",
+        extract_eligibility_name(
+            extract_evaluate_eligibility(
+                context,
+                identifiers).level)
+    );
+}
+
+int symbol_extract_function_verify(
+    agent_state *state,
+    const char *module,
+    unsigned long start_line,
+    unsigned long end_line,
+    const char *new_name)
+{
+    extract_preview_context context;
+    extract_identifier_list identifiers;
+    extract_semantic_check check;
+    extract_eligibility_result eligibility;
+    unsigned int checked;
+    unsigned int changed;
+    int signature_ok;
+    int generated_ok;
+    int body_ok;
+    int success;
+
+    (void)memset(&context, 0, sizeof(context));
+    (void)memset(&identifiers, 0, sizeof(identifiers));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(new_name)) {
+        (void)puts(
+            "New function name must be a valid C identifier."
+        );
+        return 0;
+    }
+
+    if (!module_path_prepare(
+            module,
+            context.module_path,
+            sizeof(context.module_path)) ||
+        !symbol_has_c_extension(
+            context.module_path)) {
+        (void)puts(
+            "EXTRACT/FUNCTION/VERIFY requires a "
+            "project-relative .C source module."
+        );
+        return 0;
+    }
+
+    if (start_line == 0UL ||
+        end_line < start_line) {
+        (void)puts(
+            "Line range must use START:END with END >= START."
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before EXTRACT/FUNCTION/VERIFY."
+        );
+        return 0;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Verification blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return 0;
+    }
+
+    context.start_line = start_line;
+    context.end_line = end_line;
+
+    if (!extract_find_containing_function(
+            context.module_path,
+            start_line,
+            context.containing_function,
+            sizeof(context.containing_function),
+            &context.function_line)) {
+        (void)puts(
+            "Unable to identify the containing function."
+        );
+        return 0;
+    }
+
+    if (!extract_print_selection(
+            context.module_path,
+            start_line,
+            end_line,
+            &context)) {
+        (void)puts(
+            "Selection extends beyond the end of the source file."
+        );
+        return 0;
+    }
+
+    extract_analyze_selection_identifiers(
+        context.module_path,
+        start_line,
+        end_line,
+        &identifiers
+    );
+    extract_recover_parameter_types(
+        context.module_path,
+        context.function_line,
+        context.containing_function,
+        &identifiers
+    );
+    extract_recover_local_types(
+        context.module_path,
+        context.function_line,
+        start_line,
+        &identifiers
+    );
+
+    extract_collect_semantic_counts(
+        &identifiers,
+        &check
+    );
+
+    signature_ok =
+        extract_verify_signature_consistency(
+            &identifiers,
+            &check
+        );
+    generated_ok =
+        extract_verify_generated_text(
+            new_name,
+            &identifiers,
+            &check
+        );
+    body_ok =
+        extract_verify_body_rewrite(
+            context.module_path,
+            start_line,
+            end_line,
+            &identifiers,
+            &check
+        );
+
+    eligibility = extract_evaluate_eligibility(
+        &context,
+        &identifiers
+    );
+
+    success =
+        check.unresolved_type_count == 0U &&
+        signature_ok &&
+        generated_ok &&
+        body_ok &&
+        eligibility.level !=
+            EXTRACT_ELIGIBILITY_BLOCKED;
+
+    extract_print_semantic_check(
+        &context,
+        &identifiers,
+        &check,
+        signature_ok,
+        generated_ok,
+        body_ok
+    );
+
+    (void)puts("");
+    (void)printf(
+        "Semantic verification result: %s\n",
+        success ? "PASS" : "FAIL"
+    );
+
+    if (success &&
+        eligibility.level ==
+            EXTRACT_ELIGIBILITY_SAFE) {
+        (void)puts(
+            "Selection is eligible for guarded extraction."
+        );
+    } else if (success) {
+        (void)puts(
+            "Transformation is internally consistent, "
+            "but still requires review."
+        );
+    } else {
+        (void)puts(
+            "Do not apply this extraction."
+        );
+    }
+
+    return success;
 }
 
