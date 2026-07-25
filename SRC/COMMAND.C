@@ -12,13 +12,6 @@ void command_prompt(void)
 }
 
 
-static void command_prepare_input(
-    char *input,
-    char **command)
-{
-    util_trim(input);
-    *command = util_skip_space(input);
-}
 
 void command_execute(agent_state *state, char *input)
 {
@@ -31,7 +24,8 @@ void command_execute(agent_state *state, char *input)
         return;
     }
 
-    command_prepare_input(input, &command);
+    util_trim(input);
+    command = util_skip_space(input);
 
     if (command == NULL || *command == '\0') {
         return;
