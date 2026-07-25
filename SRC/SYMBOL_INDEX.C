@@ -7622,6 +7622,10 @@ typedef struct extract_identifier {
     unsigned int reads;
     unsigned int writes;
     unsigned int declarations;
+    unsigned int function_calls;
+    unsigned int pointer_writes;
+    unsigned int pointer_value_writes;
+    unsigned int constants;
 } extract_identifier;
 
 typedef struct extract_identifier_list {
@@ -7700,6 +7704,10 @@ static extract_identifier *extract_identifier_get(
     list->entries[list->used].reads = 0U;
     list->entries[list->used].writes = 0U;
     list->entries[list->used].declarations = 0U;
+    list->entries[list->used].function_calls = 0U;
+    list->entries[list->used].pointer_writes = 0U;
+    list->entries[list->used].pointer_value_writes = 0U;
+    list->entries[list->used].constants = 0U;
 
     ++list->used;
     return &list->entries[list->used - 1U];
@@ -7732,6 +7740,159 @@ static int extract_line_declares_identifier(
             type_position < position) {
             return 1;
         }
+    }
+
+    return 0;
+}
+
+
+static int extract_identifier_is_constant(const char *name)
+{
+    const unsigned char *position;
+    int has_letter;
+
+    if (strcmp(name, "NULL") == 0 ||
+        strcmp(name, "true") == 0 ||
+        strcmp(name, "false") == 0) {
+        return 1;
+    }
+
+    position = (const unsigned char *)name;
+    has_letter = 0;
+
+    while (*position != '\0') {
+        if (isalpha(*position)) {
+            has_letter = 1;
+            if (islower(*position)) {
+                return 0;
+            }
+        } else if (!(isdigit(*position) ||
+                     *position == '_')) {
+            return 0;
+        }
+
+        ++position;
+    }
+
+    return has_letter;
+}
+
+static int extract_identifier_is_function_call(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+    size_t length;
+
+    length = strlen(identifier);
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *after;
+
+        if (!symbol_match_at(line, position, identifier)) {
+            ++position;
+            continue;
+        }
+
+        after = position + length;
+
+        while (*after == ' ' || *after == '\t') {
+            ++after;
+        }
+
+        if (*after == '(') {
+            return 1;
+        }
+
+        position += length;
+    }
+
+    return 0;
+}
+
+static int extract_line_writes_through_pointer(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+    size_t length;
+
+    length = strlen(identifier);
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *before;
+        const char *after;
+
+        if (!symbol_match_at(line, position, identifier)) {
+            ++position;
+            continue;
+        }
+
+        before = position;
+
+        while (before > line &&
+               (before[-1] == ' ' || before[-1] == '\t')) {
+            --before;
+        }
+
+        after = position + length;
+
+        while (*after == ' ' || *after == '\t') {
+            ++after;
+        }
+
+        if (before > line &&
+            before[-1] == '*' &&
+            *after == '=' &&
+            after[1] != '=') {
+            return 1;
+        }
+
+        position += length;
+    }
+
+    return 0;
+}
+
+static int extract_line_writes_pointer_value(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+    size_t length;
+
+    length = strlen(identifier);
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *after;
+
+        if (!symbol_match_at(line, position, identifier)) {
+            ++position;
+            continue;
+        }
+
+        after = position + length;
+
+        while (*after == ' ' || *after == '\t') {
+            ++after;
+        }
+
+        if ((*after == '=' && after[1] != '=') ||
+            (after[0] == '+' && after[1] == '+') ||
+            (after[0] == '-' && after[1] == '-')) {
+            return 1;
+        }
+
+        if (position >= line + 2 &&
+            ((position[-2] == '+' && position[-1] == '+') ||
+             (position[-2] == '-' && position[-1] == '-'))) {
+            return 1;
+        }
+
+        position += length;
     }
 
     return 0;
@@ -7825,11 +7986,27 @@ static void extract_collect_identifiers_from_line(
         declared = extract_line_declares_identifier(line, name);
         written = extract_line_writes_identifier(line, name);
 
+        if (extract_identifier_is_constant(name)) {
+            ++entry->constants;
+            continue;
+        }
+
+        if (extract_identifier_is_function_call(line, name)) {
+            ++entry->function_calls;
+            continue;
+        }
+
         if (declared) {
             ++entry->declarations;
         }
 
-        if (written) {
+        if (extract_line_writes_through_pointer(line, name)) {
+            ++entry->pointer_writes;
+            ++entry->reads;
+        } else if (extract_line_writes_pointer_value(line, name)) {
+            ++entry->pointer_value_writes;
+            ++entry->writes;
+        } else if (written) {
             ++entry->writes;
         } else {
             ++entry->reads;
@@ -7889,13 +8066,17 @@ static void extract_print_dataflow(
     unsigned int parameter_count;
     unsigned int output_count;
     unsigned int local_count;
+    unsigned int function_count;
+    unsigned int constant_count;
 
     parameter_count = 0U;
     output_count = 0U;
     local_count = 0U;
+    function_count = 0U;
+    constant_count = 0U;
 
     (void)puts("");
-    (void)puts("Variable-flow analysis");
+    (void)puts("Identifier-role analysis");
     (void)puts("----------------------------------------");
 
     for (index = 0U; index < identifiers->used; ++index) {
@@ -7903,26 +8084,51 @@ static void extract_print_dataflow(
 
         entry = &identifiers->entries[index];
 
-        if (entry->declarations > 0U) {
+        if (entry->constants > 0U) {
+            ++constant_count;
+            (void)printf(
+                "  CONSTANT       %-20s uses=%u\n",
+                entry->name,
+                entry->constants
+            );
+        } else if (entry->function_calls > 0U) {
+            ++function_count;
+            (void)printf(
+                "  FUNCTION CALL  %-20s calls=%u\n",
+                entry->name,
+                entry->function_calls
+            );
+        } else if (entry->declarations > 0U) {
             ++local_count;
             (void)printf(
-                "  LOCAL  %-24s read=%u write=%u\n",
+                "  LOCAL          %-20s read=%u write=%u\n",
                 entry->name,
                 entry->reads,
                 entry->writes
             );
-        } else if (entry->writes > 0U) {
-            ++output_count;
+        } else if (entry->pointer_writes > 0U &&
+                   entry->pointer_value_writes == 0U) {
+            ++parameter_count;
             (void)printf(
-                "  INOUT  %-24s read=%u write=%u\n",
+                "  INPUT POINTER  %-20s read=%u pointee-write=%u\n",
                 entry->name,
                 entry->reads,
-                entry->writes
+                entry->pointer_writes
+            );
+        } else if (entry->writes > 0U ||
+                   entry->pointer_value_writes > 0U) {
+            ++output_count;
+            (void)printf(
+                "  INOUT          %-20s read=%u write=%u ptr-write=%u\n",
+                entry->name,
+                entry->reads,
+                entry->writes,
+                entry->pointer_value_writes
             );
         } else {
             ++parameter_count;
             (void)printf(
-                "  INPUT  %-24s read=%u\n",
+                "  INPUT          %-20s read=%u\n",
                 entry->name,
                 entry->reads
             );
@@ -7934,12 +8140,14 @@ static void extract_print_dataflow(
     }
 
     (void)puts("");
-    (void)printf("Likely input parameters: %u\n", parameter_count);
-    (void)printf("Likely in/out values:    %u\n", output_count);
+    (void)printf("Likely parameters:       %u\n", parameter_count);
+    (void)printf("Likely output/inout:     %u\n", output_count);
     (void)printf("Locals declared inside:  %u\n", local_count);
+    (void)printf("Function calls:          %u\n", function_count);
+    (void)printf("Constants/macros:        %u\n", constant_count);
     (void)puts(
-        "Heuristic only: struct fields, pointer aliasing, macros, "
-        "and function names may require manual review."
+        "Heuristic only: typedef names, enum constants, macros, "
+        "struct members, and aliases may still require review."
     );
 }
 
