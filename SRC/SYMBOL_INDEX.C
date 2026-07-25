@@ -4362,3 +4362,351 @@ void symbol_path_find(agent_state *state,
     );
 }
 
+#define CLUSTER_NODE_MAX PATH_NODE_MAX
+#define CLUSTER_MAX PATH_NODE_MAX
+
+typedef struct cluster_state {
+    path_node nodes[CLUSTER_NODE_MAX];
+    unsigned int node_count;
+    int index[CLUSTER_NODE_MAX];
+    int lowlink[CLUSTER_NODE_MAX];
+    int on_stack[CLUSTER_NODE_MAX];
+    int stack[CLUSTER_NODE_MAX];
+    unsigned int stack_used;
+    int next_index;
+    int component[CLUSTER_NODE_MAX];
+    unsigned int component_count;
+} cluster_state;
+
+typedef struct cluster_summary {
+    int component_id;
+    unsigned int size;
+} cluster_summary;
+
+static void cluster_initialize(
+    cluster_state *state,
+    const module_edge_list *edges)
+{
+    unsigned int index;
+
+    (void)memset(state, 0, sizeof(*state));
+
+    (void)path_build_nodes(
+        edges,
+        state->nodes,
+        &state->node_count
+    );
+
+    for (index = 0U;
+         index < state->node_count;
+         ++index) {
+        state->index[index] = -1;
+        state->lowlink[index] = -1;
+        state->component[index] = -1;
+    }
+
+    state->next_index = 0;
+}
+
+static void cluster_strong_connect(
+    cluster_state *state,
+    const module_edge_list *edges,
+    int node_index)
+{
+    unsigned int edge_index;
+
+    state->index[node_index] = state->next_index;
+    state->lowlink[node_index] = state->next_index;
+    ++state->next_index;
+
+    state->stack[state->stack_used++] = node_index;
+    state->on_stack[node_index] = 1;
+
+    for (edge_index = 0U;
+         edge_index < edges->used;
+         ++edge_index) {
+        int next_index;
+
+        if (strcmp(
+                edges->edges[edge_index].source,
+                state->nodes[node_index].path) != 0) {
+            continue;
+        }
+
+        next_index = path_node_find(
+            state->nodes,
+            state->node_count,
+            edges->edges[edge_index].target
+        );
+
+        if (next_index < 0) {
+            continue;
+        }
+
+        if (state->index[next_index] < 0) {
+            cluster_strong_connect(
+                state,
+                edges,
+                next_index
+            );
+
+            if (state->lowlink[next_index] <
+                state->lowlink[node_index]) {
+                state->lowlink[node_index] =
+                    state->lowlink[next_index];
+            }
+        } else if (state->on_stack[next_index] &&
+                   state->index[next_index] <
+                   state->lowlink[node_index]) {
+            state->lowlink[node_index] =
+                state->index[next_index];
+        }
+    }
+
+    if (state->lowlink[node_index] ==
+        state->index[node_index]) {
+        int member;
+
+        do {
+            if (state->stack_used == 0U) {
+                break;
+            }
+
+            member =
+                state->stack[--state->stack_used];
+            state->on_stack[member] = 0;
+            state->component[member] =
+                (int)state->component_count;
+        } while (member != node_index);
+
+        ++state->component_count;
+    }
+}
+
+static void cluster_run(
+    cluster_state *state,
+    const module_edge_list *edges)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < state->node_count;
+         ++index) {
+        if (state->index[index] < 0) {
+            cluster_strong_connect(
+                state,
+                edges,
+                (int)index
+            );
+        }
+    }
+}
+
+static void cluster_build_summaries(
+    const cluster_state *state,
+    cluster_summary *summaries)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < state->component_count;
+         ++index) {
+        summaries[index].component_id = (int)index;
+        summaries[index].size = 0U;
+    }
+
+    for (index = 0U;
+         index < state->node_count;
+         ++index) {
+        int component_id;
+
+        component_id = state->component[index];
+
+        if (component_id >= 0) {
+            ++summaries[component_id].size;
+        }
+    }
+}
+
+static void cluster_sort_summaries(
+    cluster_summary *summaries,
+    unsigned int count)
+{
+    unsigned int left;
+
+    for (left = 0U; left < count; ++left) {
+        unsigned int right;
+
+        for (right = left + 1U;
+             right < count;
+             ++right) {
+            if (summaries[right].size >
+                summaries[left].size) {
+                cluster_summary temporary;
+
+                temporary = summaries[left];
+                summaries[left] = summaries[right];
+                summaries[right] = temporary;
+            }
+        }
+    }
+}
+
+static void cluster_print_component(
+    const cluster_state *state,
+    int component_id,
+    unsigned int display_number,
+    unsigned int size)
+{
+    unsigned int index;
+
+    (void)printf(
+        "Cluster %u (%u module%s)\n",
+        display_number,
+        size,
+        size == 1U ? "" : "s"
+    );
+    (void)puts("----------------------------------------");
+
+    for (index = 0U;
+         index < state->node_count;
+         ++index) {
+        if (state->component[index] ==
+            component_id) {
+            (void)printf(
+                "  %s\n",
+                state->nodes[index].path
+            );
+        }
+    }
+
+    (void)puts("");
+}
+
+void symbol_cluster(agent_state *state)
+{
+    module_edge_list edges;
+    cluster_state cluster;
+    cluster_summary summaries[CLUSTER_MAX];
+    unsigned int index;
+    unsigned int multi_count;
+    unsigned int singleton_count;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before CLUSTER."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(
+        summaries,
+        0,
+        sizeof(summaries)
+    );
+
+    if (!module_graph_collect_all(&edges)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    cluster_initialize(&cluster, &edges);
+    cluster_run(&cluster, &edges);
+    cluster_build_summaries(
+        &cluster,
+        summaries
+    );
+    cluster_sort_summaries(
+        summaries,
+        cluster.component_count
+    );
+
+    multi_count = 0U;
+    singleton_count = 0U;
+
+    for (index = 0U;
+         index < cluster.component_count;
+         ++index) {
+        if (summaries[index].size > 1U) {
+            ++multi_count;
+        } else {
+            ++singleton_count;
+        }
+    }
+
+    (void)puts("Architectural clusters");
+    (void)puts("========================================");
+    (void)printf(
+        "Modules analyzed: %u\n",
+        cluster.node_count
+    );
+    (void)printf(
+        "Multi-module clusters: %u\n",
+        multi_count
+    );
+    (void)printf(
+        "Singleton modules: %u\n",
+        singleton_count
+    );
+    (void)puts("");
+
+    {
+        unsigned int display_number;
+
+        display_number = 1U;
+
+        for (index = 0U;
+             index < cluster.component_count;
+             ++index) {
+            if (summaries[index].size > 1U) {
+                cluster_print_component(
+                    &cluster,
+                    summaries[index].component_id,
+                    display_number++,
+                    summaries[index].size
+                );
+            }
+        }
+    }
+
+    if (singleton_count > 0U) {
+        (void)printf(
+            "Singleton modules (%u)\n",
+            singleton_count
+        );
+        (void)puts("----------------------------------------");
+
+        for (index = 0U;
+             index < cluster.component_count;
+             ++index) {
+            unsigned int node_index;
+
+            if (summaries[index].size != 1U) {
+                continue;
+            }
+
+            for (node_index = 0U;
+                 node_index < cluster.node_count;
+                 ++node_index) {
+                if (cluster.component[node_index] ==
+                    summaries[index].component_id) {
+                    (void)printf(
+                        "  %s\n",
+                        cluster.nodes[node_index].path
+                    );
+                    break;
+                }
+            }
+        }
+    }
+}
+

@@ -20,7 +20,8 @@ static const command_entry symbol_commands[] = {
     { "MODULE/GRAPH/ALL", "Show the project-wide module graph", command_module_graph_all },
     { "IMPACT", "Show direct change impact for a symbol", command_impact },
     { "MODULE/REVERSE", "Show modules that depend on a module", command_module_reverse },
-    { "PATH", "Find a dependency path between modules or symbols", command_path }
+    { "PATH", "Find a dependency path between modules or symbols", command_path },
+    { "CLUSTER", "Identify strongly connected module groups", command_cluster }
 };
 
 void command_register_symbol(void)
@@ -299,4 +300,16 @@ void command_path(agent_state *state,
         source,
         target
     );
+}
+
+
+void command_cluster(agent_state *state,
+                     const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: CLUSTER");
+        return;
+    }
+
+    symbol_cluster(state);
 }
