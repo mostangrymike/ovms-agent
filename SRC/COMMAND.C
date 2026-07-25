@@ -11,6 +11,24 @@ void command_prompt(void)
     (void)fflush(stdout);
 }
 
+static void command_scan_token(
+    char **position)
+{
+    while (**position != '\0' &&
+           **position != ' ' &&
+           **position != '\t') {
+        ++*position;
+    }
+}
+
+static void command_prepare_input(
+    char *input,
+    char **command)
+{
+    util_trim(input);
+    *command = util_skip_space(input);
+}
+
 void command_execute(agent_state *state, char *input)
 {
     const command_entry *entry;
@@ -22,8 +40,7 @@ void command_execute(agent_state *state, char *input)
         return;
     }
 
-    util_trim(input);
-    command = util_skip_space(input);
+    command_prepare_input(input, &command);
 
     if (command == NULL || *command == '\0') {
         return;
@@ -31,11 +48,7 @@ void command_execute(agent_state *state, char *input)
 
     position = command;
 
-    while (*position != '\0' &&
-           *position != ' ' &&
-           *position != '\t') {
-        ++position;
-    }
+    command_scan_token(&position);
 
     if (*position != '\0') {
         *position = '\0';
