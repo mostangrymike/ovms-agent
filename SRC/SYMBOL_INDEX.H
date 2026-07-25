@@ -48,5 +48,23 @@ int symbol_rename_apply(agent_state *state,
 int symbol_rename_verify(agent_state *state,
                          const char *old_name,
                          const char *new_name);
+void symbol_extract_function_preview(agent_state *state,
+                                     const char *module,
+                                     unsigned long start_line,
+                                     unsigned long end_line,
+                                     const char *new_name);
+int symbol_extract_function_apply(agent_state *state,
+                                  const char *module,
+                                  unsigned long start_line,
+                                  unsigned long end_line,
+                                  const char *new_name);
+int symbol_extract_function_verify(agent_state *state,
+                                   const char *module,
+                                   unsigned long start_line,
+                                   unsigned long end_line,
+                                   const char *new_name);
+
+void symbol_inline_function_preview(agent_state *state,
+                                    const char *symbol);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

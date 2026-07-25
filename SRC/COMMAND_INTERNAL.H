@@ -91,6 +91,12 @@ void command_rename_apply(agent_state *state,
                           const char *arguments);
 void command_rename_verify(agent_state *state,
                            const char *arguments);
+void command_extract_function(agent_state *state,
+                              const char *arguments);
+void command_extract_function_apply(agent_state *state,
+                                    const char *arguments);
+void command_extract_function_verify(agent_state *state,
+                                     const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);
@@ -117,5 +123,8 @@ void command_agent_plan_clear(agent_state *state, const char *arguments);
 void command_agent_plan_validate(agent_state *state,
                                  const char *arguments);
 void command_agent_execute(agent_state *state, const char *arguments);
+
+void command_inline_function(agent_state *state,
+                             const char *arguments);
 
 #endif /* OVMS_AGENT_COMMAND_INTERNAL_H */

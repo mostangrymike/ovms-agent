@@ -7668,6 +7668,7 @@ static int extract_exact_identifier_at(
 static int extract_entry_is_parameter(
     const extract_identifier *entry);
 
+
 static int extract_identifier_is_keyword(const char *name)
 {
     static const char *keywords[] = {
@@ -10969,5 +10970,394 @@ int symbol_extract_function_verify(
     }
 
     return success;
+}
+
+typedef struct inline_function_info {
+    char symbol[SYMBOL_NAME_SIZE];
+    char module[SYMBOL_PATH_SIZE];
+    unsigned long definition_line;
+    unsigned long body_start;
+    unsigned long body_end;
+    unsigned int caller_count;
+    char caller_module[SYMBOL_PATH_SIZE];
+    unsigned long caller_line;
+} inline_function_info;
+
+static int inline_find_definition(
+    const char *symbol,
+    inline_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'D' &&
+            strcmp(record_symbol, symbol) == 0) {
+            (void)strncpy(
+                info->module,
+                record_path,
+                sizeof(info->module) - 1U
+            );
+            info->module[
+                sizeof(info->module) - 1U] = '\0';
+            info->definition_line = record_line;
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static void inline_count_callers(
+    const char *symbol,
+    inline_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'C' &&
+            strcmp(record_symbol, symbol) == 0) {
+            ++info->caller_count;
+
+            if (info->caller_count == 1U) {
+                (void)strncpy(
+                    info->caller_module,
+                    record_path,
+                    sizeof(info->caller_module) - 1U
+                );
+                info->caller_module[
+                    sizeof(info->caller_module) - 1U] = '\0';
+                info->caller_line = record_line;
+            }
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static int inline_find_body_range(
+    inline_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int seen_open;
+    long depth;
+
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    seen_open = 0;
+    depth = 0L;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *position;
+
+        ++line_number;
+
+        if (line_number < info->definition_line) {
+            continue;
+        }
+
+        for (position = line;
+             *position != '\0';
+             ++position) {
+            if (*position == '{') {
+                ++depth;
+
+                if (!seen_open) {
+                    seen_open = 1;
+                    info->body_start = line_number + 1UL;
+                }
+            } else if (*position == '}' && seen_open) {
+                --depth;
+
+                if (depth == 0L) {
+                    info->body_end = line_number - 1UL;
+                    (void)fclose(file);
+                    return 1;
+                }
+            }
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int inline_source_line(
+    const char *path,
+    unsigned long wanted,
+    char *output,
+    size_t output_size)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number == wanted) {
+            (void)strncpy(
+                output,
+                line,
+                output_size - 1U
+            );
+            output[output_size - 1U] = '\0';
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static void inline_print_body(
+    const inline_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < info->body_start) {
+            continue;
+        }
+
+        if (line_number > info->body_end) {
+            break;
+        }
+
+        (void)printf(
+            "%6lu  %s",
+            line_number,
+            line
+        );
+
+        if (line[0] != '\0' &&
+            line[strlen(line) - 1U] != '\n') {
+            (void)puts("");
+        }
+    }
+
+    (void)fclose(file);
+}
+
+void symbol_inline_function_preview(
+    agent_state *state,
+    const char *symbol)
+{
+    inline_function_info info;
+    unsigned int checked;
+    unsigned int changed;
+    char caller_text[SYMBOL_LINE_SIZE];
+
+    (void)memset(&info, 0, sizeof(info));
+    caller_text[0] = '\0';
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts(
+            "Function name must be a valid C identifier."
+        );
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before INLINE/FUNCTION."
+        );
+        return;
+    }
+
+    (void)strncpy(
+        info.symbol,
+        symbol,
+        sizeof(info.symbol) - 1U
+    );
+
+    if (!inline_find_definition(
+            symbol,
+            &info)) {
+        (void)printf(
+            "No definition found for %s.\n",
+            symbol
+        );
+        return;
+    }
+
+    inline_count_callers(
+        symbol,
+        &info
+    );
+
+    if (!inline_find_body_range(&info)) {
+        (void)puts(
+            "Unable to identify a complete function body."
+        );
+        return;
+    }
+
+    (void)inline_source_line(
+        info.caller_module,
+        info.caller_line,
+        caller_text,
+        sizeof(caller_text)
+    );
+
+    (void)printf(
+        "Inline-function preview: %s\n",
+        symbol
+    );
+    (void)puts("========================================");
+    (void)printf(
+        "Definition: %s line %lu\n",
+        info.module,
+        info.definition_line
+    );
+    (void)printf(
+        "Callers:    %u\n",
+        info.caller_count
+    );
+
+    if (info.caller_count == 1U) {
+        (void)printf(
+            "Caller:     %s line %lu\n",
+            info.caller_module,
+            info.caller_line
+        );
+    }
+
+    (void)puts("");
+    (void)puts("Function body");
+    (void)puts("----------------------------------------");
+    inline_print_body(&info);
+
+    if (info.caller_count == 1U) {
+        (void)puts("");
+        (void)puts("Call site");
+        (void)puts("----------------------------------------");
+        (void)printf(
+            "%6lu  %s",
+            info.caller_line,
+            caller_text
+        );
+
+        if (caller_text[0] != '\0' &&
+            caller_text[
+                strlen(caller_text) - 1U] != '\n') {
+            (void)puts("");
+        }
+    }
+
+    (void)puts("");
+    (void)puts("Inline eligibility");
+    (void)puts("----------------------------------------");
+
+    if (info.caller_count == 0U) {
+        (void)puts(
+            "  BLOCKED - function has no indexed callers"
+        );
+    } else if (info.caller_count > 1U) {
+        (void)puts(
+            "  REQUIRES REVIEW - function has multiple callers"
+        );
+    } else if (strcmp(
+                   info.module,
+                   info.caller_module) != 0) {
+        (void)puts(
+            "  REQUIRES REVIEW - caller is in a different module"
+        );
+    } else {
+        (void)puts(
+            "  SAFE TO PREVIEW - one caller in the same module"
+        );
+    }
+
+    (void)puts("");
+    (void)puts(
+        "Preview only. No files were modified."
+    );
+    (void)puts(
+        "Guarded application will require argument substitution, "
+        "local-name collision checks, build verification, and rollback."
+    );
 }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "command_internal.h"
@@ -29,7 +30,11 @@ static const command_entry symbol_commands[] = {
     { "UNUSED/DETAIL", "Explain unused-code evidence for a symbol", command_unused_detail },
     { "RENAME", "Preview an exact project-wide identifier rename", command_rename },
     { "RENAME/APPLY", "Apply a confirmed project-wide identifier rename", command_rename_apply },
-    { "RENAME/VERIFY", "Apply, reindex, build, and rollback on failure", command_rename_verify }
+    { "RENAME/VERIFY", "Apply, reindex, build, and rollback on failure", command_rename_verify },
+    { "EXTRACT/FUNCTION", "Preview extraction of a source range", command_extract_function },
+    { "EXTRACT/FUNCTION/APPLY", "Apply one safe extraction with verification", command_extract_function_apply },
+    { "EXTRACT/FUNCTION/VERIFY", "Verify extraction semantics without writing", command_extract_function_verify },
+    { "INLINE/FUNCTION", "Preview inlining a local C function", command_inline_function }
 };
 
 void command_register_symbol(void)
@@ -490,5 +495,224 @@ void command_rename_verify(agent_state *state,
         state,
         old_name,
         new_name
+    );
+}
+
+
+static int command_parse_line_range(
+    const char *text,
+    unsigned long *start_line,
+    unsigned long *end_line)
+{
+    char *end_pointer;
+    unsigned long start_value;
+    unsigned long end_value;
+
+    if (text == NULL ||
+        start_line == NULL ||
+        end_line == NULL) {
+        return 0;
+    }
+
+    start_value = strtoul(
+        text,
+        &end_pointer,
+        10
+    );
+
+    if (end_pointer == text ||
+        *end_pointer != ':') {
+        return 0;
+    }
+
+    end_value = strtoul(
+        end_pointer + 1,
+        &end_pointer,
+        10
+    );
+
+    if (*end_pointer != '\0' ||
+        start_value == 0UL ||
+        end_value < start_value) {
+        return 0;
+    }
+
+    *start_line = start_value;
+    *end_line = end_value;
+    return 1;
+}
+
+void command_extract_function(agent_state *state,
+                              const char *arguments)
+{
+    char *cursor;
+    char *module;
+    char *range;
+    char *new_name;
+    unsigned long start_line;
+    unsigned long end_line;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION file.c START:END new_name"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+    range = command_next_argument(&cursor);
+    new_name = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        range == NULL ||
+        new_name == NULL ||
+        command_next_argument(&cursor) != NULL ||
+        !command_parse_line_range(
+            range,
+            &start_line,
+            &end_line)) {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION file.c START:END new_name"
+        );
+        return;
+    }
+
+    symbol_extract_function_preview(
+        state,
+        module,
+        start_line,
+        end_line,
+        new_name
+    );
+}
+
+
+void command_extract_function_apply(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+    char *range;
+    char *new_name;
+    unsigned long start_line;
+    unsigned long end_line;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION/APPLY "
+            "file.c START:END new_name"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+    range = command_next_argument(&cursor);
+    new_name = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        range == NULL ||
+        new_name == NULL ||
+        command_next_argument(&cursor) != NULL ||
+        !command_parse_line_range(
+            range,
+            &start_line,
+            &end_line)) {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION/APPLY "
+            "file.c START:END new_name"
+        );
+        return;
+    }
+
+    (void)symbol_extract_function_apply(
+        state,
+        module,
+        start_line,
+        end_line,
+        new_name
+    );
+}
+
+
+void command_extract_function_verify(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+    char *range;
+    char *new_name;
+    unsigned long start_line;
+    unsigned long end_line;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION/VERIFY "
+            "file.c START:END new_name"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+    range = command_next_argument(&cursor);
+    new_name = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        range == NULL ||
+        new_name == NULL ||
+        command_next_argument(&cursor) != NULL ||
+        !command_parse_line_range(
+            range,
+            &start_line,
+            &end_line)) {
+        (void)puts(
+            "Usage: EXTRACT/FUNCTION/VERIFY "
+            "file.c START:END new_name"
+        );
+        return;
+    }
+
+    (void)symbol_extract_function_verify(
+        state,
+        module,
+        start_line,
+        end_line,
+        new_name
+    );
+}
+
+
+void command_inline_function(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *symbol;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: INLINE/FUNCTION function_name"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    symbol = command_next_argument(&cursor);
+
+    if (symbol == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: INLINE/FUNCTION function_name"
+        );
+        return;
+    }
+
+    symbol_inline_function_preview(
+        state,
+        symbol
     );
 }
