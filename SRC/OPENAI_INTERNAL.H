@@ -11,6 +11,7 @@
 
 #include "openai.h"
 #include "openai_log.h"
+#include "openai_path.h"
 #include "openai_plan.h"
 #include "openai_execute.h"
 #include "openai_state.h"
@@ -109,11 +110,8 @@ void display_raw_response(void);
 void openai_send(agent_state *state,
                         const char *prompt,
                         int continue_conversation);
-int openai_path_is_safe(const char *path);
 int openai_contains_ignore_case(const char *text,
                                        const char *pattern);
-int openai_path_is_sensitive(const char *path);
-int openai_listing_entry_hidden(const char *name);
 char *openai_read_text_file(const char *path);
 int write_agent_tools(FILE *file);
 int write_agent_tools_with_replace(FILE *file);
