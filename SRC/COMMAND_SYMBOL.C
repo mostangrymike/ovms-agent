@@ -21,7 +21,9 @@ static const command_entry symbol_commands[] = {
     { "IMPACT", "Show direct change impact for a symbol", command_impact },
     { "MODULE/REVERSE", "Show modules that depend on a module", command_module_reverse },
     { "PATH", "Find a dependency path between modules or symbols", command_path },
-    { "CLUSTER", "Identify strongly connected module groups", command_cluster }
+    { "CLUSTER", "Identify strongly connected module groups", command_cluster },
+    { "CYCLE", "Show a project dependency cycle", command_cycle },
+    { "CYCLE/MODULE", "Show a cycle reachable from one module", command_cycle_module }
 };
 
 void command_register_symbol(void)
@@ -312,4 +314,31 @@ void command_cluster(agent_state *state,
     }
 
     symbol_cluster(state);
+}
+
+
+void command_cycle(agent_state *state,
+                   const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: CYCLE");
+        return;
+    }
+
+    symbol_cycle_all(state);
+}
+
+void command_cycle_module(agent_state *state,
+                          const char *arguments)
+{
+    const char *module;
+
+    module = command_symbol_argument(
+        arguments,
+        "Usage: CYCLE/MODULE file.c"
+    );
+
+    if (module != NULL) {
+        symbol_cycle_module(state, module);
+    }
 }

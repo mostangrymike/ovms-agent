@@ -75,6 +75,10 @@ void command_path(agent_state *state,
                   const char *arguments);
 void command_cluster(agent_state *state,
                      const char *arguments);
+void command_cycle(agent_state *state,
+                   const char *arguments);
+void command_cycle_module(agent_state *state,
+                          const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

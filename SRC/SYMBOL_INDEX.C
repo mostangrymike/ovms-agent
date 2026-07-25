@@ -4710,3 +4710,311 @@ void symbol_cluster(agent_state *state)
     }
 }
 
+typedef struct cycle_search_state {
+    int visited[PATH_NODE_MAX];
+    int active[PATH_NODE_MAX];
+    int stack[PATH_NODE_MAX];
+    unsigned int stack_used;
+    int found;
+    int cycle_start;
+    int cycle_end;
+} cycle_search_state;
+
+static void cycle_search_initialize(
+    cycle_search_state *state)
+{
+    (void)memset(state, 0, sizeof(*state));
+    state->cycle_start = -1;
+    state->cycle_end = -1;
+}
+
+static int cycle_find_from(
+    const module_edge_list *edges,
+    path_node *nodes,
+    unsigned int node_count,
+    int node_index,
+    cycle_search_state *state)
+{
+    unsigned int edge_index;
+
+    state->visited[node_index] = 1;
+    state->active[node_index] = 1;
+    state->stack[state->stack_used++] = node_index;
+
+    for (edge_index = 0U;
+         edge_index < edges->used;
+         ++edge_index) {
+        int next_index;
+
+        if (strcmp(
+                edges->edges[edge_index].source,
+                nodes[node_index].path) != 0) {
+            continue;
+        }
+
+        next_index = path_node_find(
+            nodes,
+            node_count,
+            edges->edges[edge_index].target
+        );
+
+        if (next_index < 0) {
+            continue;
+        }
+
+        if (!state->visited[next_index]) {
+            if (cycle_find_from(
+                    edges,
+                    nodes,
+                    node_count,
+                    next_index,
+                    state)) {
+                return 1;
+            }
+        } else if (state->active[next_index]) {
+            state->found = 1;
+            state->cycle_start = next_index;
+            state->cycle_end = node_index;
+            return 1;
+        }
+    }
+
+    if (state->stack_used > 0U) {
+        --state->stack_used;
+    }
+
+    state->active[node_index] = 0;
+    return 0;
+}
+
+static int cycle_find_any(
+    const module_edge_list *edges,
+    path_node *nodes,
+    unsigned int node_count,
+    int preferred_start,
+    cycle_search_state *state)
+{
+    unsigned int index;
+
+    cycle_search_initialize(state);
+
+    if (preferred_start >= 0) {
+        return cycle_find_from(
+            edges,
+            nodes,
+            node_count,
+            preferred_start,
+            state
+        );
+    }
+
+    for (index = 0U;
+         index < node_count;
+         ++index) {
+        if (!state->visited[index] &&
+            cycle_find_from(
+                edges,
+                nodes,
+                node_count,
+                (int)index,
+                state)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static void cycle_print_found(
+    const char *title,
+    path_node *nodes,
+    cycle_search_state *state)
+{
+    unsigned int index;
+    int start_position;
+
+    (void)puts(title);
+    (void)puts("----------------------------------------");
+
+    start_position = -1;
+
+    for (index = 0U;
+         index < state->stack_used;
+         ++index) {
+        if (state->stack[index] ==
+            state->cycle_start) {
+            start_position = (int)index;
+            break;
+        }
+    }
+
+    if (start_position < 0) {
+        (void)puts("Cycle detected, but path reconstruction failed.");
+        return;
+    }
+
+    for (index = (unsigned int)start_position;
+         index < state->stack_used;
+         ++index) {
+        (void)printf(
+            "%s -> ",
+            nodes[state->stack[index]].path
+        );
+    }
+
+    (void)printf(
+        "%s\n",
+        nodes[state->cycle_start].path
+    );
+}
+
+void symbol_cycle_all(agent_state *state)
+{
+    module_edge_list edges;
+    path_node nodes[PATH_NODE_MAX];
+    unsigned int node_count;
+    cycle_search_state search;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before CYCLE."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(nodes, 0, sizeof(nodes));
+
+    if (!module_graph_collect_all(&edges) ||
+        !path_build_nodes(
+            &edges,
+            nodes,
+            &node_count)) {
+        (void)puts("Unable to construct the project graph.");
+        return;
+    }
+
+    if (!cycle_find_any(
+            &edges,
+            nodes,
+            node_count,
+            -1,
+            &search)) {
+        (void)puts("No project dependency cycle found.");
+        return;
+    }
+
+    cycle_print_found(
+        "Project dependency cycle",
+        nodes,
+        &search
+    );
+}
+
+void symbol_cycle_module(agent_state *state,
+                         const char *module)
+{
+    char path[SYMBOL_PATH_SIZE];
+    module_edge_list edges;
+    path_node nodes[PATH_NODE_MAX];
+    unsigned int node_count;
+    int start_index;
+    cycle_search_state search;
+    FILE *file;
+    char title[SYMBOL_PATH_SIZE + 64U];
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path))) {
+        (void)puts(
+            "Module must be a project-relative .C or .H file."
+        );
+        return;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to open %s.\n", path);
+        return;
+    }
+
+    (void)fclose(file);
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before CYCLE."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(nodes, 0, sizeof(nodes));
+
+    if (!module_graph_collect_all(&edges) ||
+        !path_build_nodes(
+            &edges,
+            nodes,
+            &node_count)) {
+        (void)puts("Unable to construct the project graph.");
+        return;
+    }
+
+    start_index = path_node_find(
+        nodes,
+        node_count,
+        path
+    );
+
+    if (start_index < 0) {
+        (void)printf(
+            "%s is not present in the module graph.\n",
+            path
+        );
+        return;
+    }
+
+    if (!cycle_find_any(
+            &edges,
+            nodes,
+            node_count,
+            start_index,
+            &search)) {
+        (void)printf(
+            "No dependency cycle reachable from %s.\n",
+            path
+        );
+        return;
+    }
+
+    (void)snprintf(
+        title,
+        sizeof(title),
+        "Dependency cycle reachable from %s",
+        path
+    );
+
+    cycle_print_found(
+        title,
+        nodes,
+        &search
+    );
+}
+
