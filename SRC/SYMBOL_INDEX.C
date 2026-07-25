@@ -7370,6 +7370,8 @@ typedef struct extract_preview_context {
     unsigned int has_goto;
     unsigned int has_break;
     unsigned int has_continue;
+    unsigned int has_label;
+    unsigned int has_preprocessor;
 } extract_preview_context;
 
 static int extract_parse_range(
@@ -7512,6 +7514,28 @@ static void extract_analyze_line(
 
     if (strstr(line, "continue") != NULL) {
         context->has_continue = 1U;
+    }
+
+    {
+        const char *trimmed;
+
+        trimmed = line;
+
+        while (*trimmed == ' ' || *trimmed == '\t') {
+            ++trimmed;
+        }
+
+        if (*trimmed == '#') {
+            context->has_preprocessor = 1U;
+        }
+
+        if ((isalpha((unsigned char)*trimmed) ||
+             *trimmed == '_') &&
+            strchr(trimmed, ':') != NULL &&
+            strstr(trimmed, "case ") != trimmed &&
+            strstr(trimmed, "default:") != trimmed) {
+            context->has_label = 1U;
+        }
     }
 }
 
@@ -8851,6 +8875,270 @@ static void extract_print_dataflow(
     );
 }
 
+
+typedef enum extract_eligibility {
+    EXTRACT_ELIGIBILITY_SAFE = 1,
+    EXTRACT_ELIGIBILITY_REVIEW = 2,
+    EXTRACT_ELIGIBILITY_BLOCKED = 3
+} extract_eligibility;
+
+typedef struct extract_eligibility_result {
+    extract_eligibility level;
+    unsigned int unresolved_types;
+    unsigned int outputs;
+    unsigned int pointer_alias_risk;
+} extract_eligibility_result;
+
+static unsigned int extract_count_outputs(
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int count;
+
+    count = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->constants > 0U ||
+            entry->function_calls > 0U ||
+            entry->declarations > 0U) {
+            continue;
+        }
+
+        if (entry->writes > 0U ||
+            entry->pointer_value_writes > 0U) {
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+static unsigned int extract_count_unresolved_types(
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int count;
+
+    count = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->constants > 0U ||
+            entry->function_calls > 0U ||
+            entry->declarations > 0U) {
+            continue;
+        }
+
+        if (entry->inferred_type[0] == '\0') {
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+static unsigned int extract_pointer_alias_risk(
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int pointer_count;
+
+    pointer_count = 0U;
+
+    for (index = 0U;
+         index < identifiers->used;
+         ++index) {
+        const extract_identifier *entry;
+        const char *type_name;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->constants > 0U ||
+            entry->function_calls > 0U ||
+            entry->declarations > 0U) {
+            continue;
+        }
+
+        type_name = extract_default_type(entry);
+
+        if (strchr(type_name, '*') != NULL) {
+            ++pointer_count;
+        }
+    }
+
+    return pointer_count > 1U ? 1U : 0U;
+}
+
+static extract_eligibility_result extract_evaluate_eligibility(
+    const extract_preview_context *context,
+    const extract_identifier_list *identifiers)
+{
+    extract_eligibility_result result;
+
+    result.level = EXTRACT_ELIGIBILITY_SAFE;
+    result.unresolved_types =
+        extract_count_unresolved_types(identifiers);
+    result.outputs =
+        extract_count_outputs(identifiers);
+    result.pointer_alias_risk =
+        extract_pointer_alias_risk(identifiers);
+
+    if (context->has_goto ||
+        context->has_break ||
+        context->has_continue ||
+        context->has_label ||
+        context->has_preprocessor ||
+        context->brace_delta != 0U) {
+        result.level = EXTRACT_ELIGIBILITY_BLOCKED;
+        return result;
+    }
+
+    if (context->has_return ||
+        result.unresolved_types > 0U ||
+        result.outputs > 1U ||
+        result.pointer_alias_risk) {
+        result.level = EXTRACT_ELIGIBILITY_REVIEW;
+    }
+
+    return result;
+}
+
+static const char *extract_eligibility_name(
+    extract_eligibility level)
+{
+    switch (level) {
+    case EXTRACT_ELIGIBILITY_SAFE:
+        return "SAFE TO APPLY";
+
+    case EXTRACT_ELIGIBILITY_REVIEW:
+        return "REQUIRES REVIEW";
+
+    case EXTRACT_ELIGIBILITY_BLOCKED:
+        return "BLOCKED";
+
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static void extract_print_eligibility(
+    const extract_preview_context *context,
+    const extract_identifier_list *identifiers)
+{
+    extract_eligibility_result result;
+    unsigned int reason_count;
+
+    result = extract_evaluate_eligibility(
+        context,
+        identifiers
+    );
+
+    (void)puts("");
+    (void)puts("Extraction eligibility");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "  %s\n",
+        extract_eligibility_name(result.level)
+    );
+
+    reason_count = 0U;
+
+    if (context->has_return) {
+        (void)puts(
+            "  - selection contains return"
+        );
+        ++reason_count;
+    }
+
+    if (context->has_goto) {
+        (void)puts(
+            "  - selection contains goto"
+        );
+        ++reason_count;
+    }
+
+    if (context->has_break) {
+        (void)puts(
+            "  - selection contains break"
+        );
+        ++reason_count;
+    }
+
+    if (context->has_continue) {
+        (void)puts(
+            "  - selection contains continue"
+        );
+        ++reason_count;
+    }
+
+    if (context->has_label) {
+        (void)puts(
+            "  - selection contains a label"
+        );
+        ++reason_count;
+    }
+
+    if (context->has_preprocessor) {
+        (void)puts(
+            "  - selection contains a preprocessor directive"
+        );
+        ++reason_count;
+    }
+
+    if (context->brace_delta != 0U) {
+        (void)puts(
+            "  - selection has unbalanced braces"
+        );
+        ++reason_count;
+    }
+
+    if (result.unresolved_types > 0U) {
+        (void)printf(
+            "  - %u parameter type%s unresolved\n",
+            result.unresolved_types,
+            result.unresolved_types == 1U ? "" : "s"
+        );
+        ++reason_count;
+    }
+
+    if (result.outputs > 1U) {
+        (void)printf(
+            "  - %u output or in/out values require coordination\n",
+            result.outputs
+        );
+        ++reason_count;
+    }
+
+    if (result.pointer_alias_risk) {
+        (void)puts(
+            "  - multiple pointer parameters may alias"
+        );
+        ++reason_count;
+    }
+
+    if (reason_count == 0U) {
+        (void)puts(
+            "  - no blocking or review conditions detected"
+        );
+    }
+
+    (void)puts(
+        "Eligibility is heuristic; guarded application must still "
+        "build and roll back on failure."
+    );
+}
+
 void symbol_extract_function_preview(
     agent_state *state,
     const char *module,
@@ -9037,6 +9325,10 @@ void symbol_extract_function_preview(
     extract_print_dataflow(&identifiers);
     extract_print_signature(
         new_name,
+        &identifiers
+    );
+    extract_print_eligibility(
+        &context,
         &identifiers
     );
 
