@@ -112,6 +112,7 @@ void openai_agent_mode(agent_state *state,
         char *name;
         char *new_call_id;
         char *arguments;
+        const openai_tool_descriptor *descriptor;
 
         if (!write_agent_request_mode(model,
                                       instructions,
@@ -208,80 +209,16 @@ void openai_agent_mode(agent_state *state,
 
         free(json);
 
-        if (strcmp(name, "list_directory") == 0) {
-            char *display_path;
+        descriptor = openai_tool_find(name);
 
-            display_path = NULL;
-            tool_output = execute_list_directory_tool(
+        if (openai_tool_is_read(descriptor)) {
+            tool_output = openai_tool_execute_read(
+                descriptor,
                 arguments,
-                &display_path
+                cache
             );
-
-            (void)printf("Tool executed: list_directory %s\n",
-                         display_path != NULL ?
-                             display_path : "");
-            free(display_path);
-        } else if (strcmp(name, "read_file") == 0) {
-            int cache_hit;
-            char *display_path;
-
-            display_path = NULL;
-            tool_output = execute_read_file_tool(
-                arguments,
-                cache,
-                &cache_hit,
-                &display_path
-            );
-
-            (void)printf("Tool executed: read_file %s%s\n",
-                         display_path != NULL ? display_path : "",
-                         cache_hit ? " [cache]" : "");
-            free(display_path);
-        } else if (strcmp(name, "read_file_range") == 0) {
-            char *display_path;
-            long display_start;
-            long display_end;
-
-            display_path = NULL;
-            display_start = 0L;
-            display_end = 0L;
-
-            tool_output = execute_read_file_range_tool(
-                arguments,
-                &display_path,
-                &display_start,
-                &display_end
-            );
-
-            (void)printf(
-                "Tool executed: read_file_range %s %ld-%ld\n",
-                display_path != NULL ? display_path : "",
-                display_start,
-                display_end
-            );
-
-            free(display_path);
-        } else if (strcmp(name, "search_file") == 0) {
-            char *display_path;
-            char *display_pattern;
-
-            display_path = NULL;
-            display_pattern = NULL;
-            tool_output = execute_search_file_tool(
-                arguments,
-                &display_path,
-                &display_pattern
-            );
-
-            (void)printf("Tool executed: search_file %s \"%s\"\n",
-                         display_path != NULL ? display_path : "",
-                         display_pattern != NULL ?
-                             display_pattern : "");
-            free(display_path);
-            free(display_pattern);
         } else if (allow_write &&
-                   (strcmp(name, "replace_text") == 0 ||
-                    strcmp(name, "replace_lines") == 0)) {
+                   openai_tool_is_replace(descriptor)) {
             char *display_path;
             openai_replace_result replace_result;
             int use_lines;
@@ -299,7 +236,8 @@ void openai_agent_mode(agent_state *state,
 
             write_attempted = 1;
             display_path = NULL;
-            use_lines = strcmp(name, "replace_lines") == 0;
+            use_lines =
+                descriptor->kind == OPENAI_TOOL_REPLACE_LINES;
             replace_result = use_lines ?
                 execute_replace_lines_tool(
                     state, arguments, &display_path) :

@@ -22,6 +22,7 @@ void openai_agent_build(agent_state *state, const char *goal)
     char *arguments;
     char *context_items;
     char *tool_output;
+    const openai_tool_descriptor *descriptor;
     int build_status;
 
     openai_last_workflow = OPENAI_WORKFLOW_BUILD;
@@ -100,7 +101,10 @@ void openai_agent_build(agent_state *state, const char *goal)
         return;
     }
 
-    if (strcmp(name, "run_build") != 0) {
+    descriptor = openai_tool_find(name);
+
+    if (descriptor == NULL ||
+        descriptor->kind != OPENAI_TOOL_RUN_BUILD) {
         (void)printf("Unsupported build tool requested: %s\n", name);
         free(name);
         free(call_id);

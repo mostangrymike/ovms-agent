@@ -14,6 +14,7 @@
 #include "openai_path.h"
 #include "openai_cache.h"
 #include "openai_tool_schema.h"
+#include "openai_tool_registry.h"
 #include "openai_response.h"
 #include "openai_json_parse.h"
 #include "openai_json_write.h"
