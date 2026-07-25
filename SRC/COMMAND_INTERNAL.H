@@ -24,6 +24,7 @@ size_t command_registry_count(void);
 void command_register_core(void);
 void command_register_project(void);
 void command_register_agent(void);
+void command_register_symbol(void);
 
 char *command_next_argument(char **cursor);
 int command_decode_escapes(char *text);
@@ -43,6 +44,13 @@ void command_patch(agent_state *state, const char *arguments);
 void command_build(agent_state *state, const char *arguments);
 void command_gitstatus(agent_state *state, const char *arguments);
 void command_gitdiff(agent_state *state, const char *arguments);
+
+void command_reindex(agent_state *state, const char *arguments);
+void command_index_status(agent_state *state,
+                          const char *arguments);
+void command_where(agent_state *state, const char *arguments);
+void command_callers(agent_state *state, const char *arguments);
+void command_symbol(agent_state *state, const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

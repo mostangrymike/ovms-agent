@@ -1,0 +1,14 @@
+#ifndef OVMS_AGENT_SYMBOL_INDEX_H
+#define OVMS_AGENT_SYMBOL_INDEX_H
+
+#include "agent.h"
+
+#define SYMBOL_INDEX_FILE "OVMS_AGENT_SYMBOLS.DAT"
+
+void symbol_reindex(agent_state *state);
+void symbol_index_status(agent_state *state);
+void symbol_where(agent_state *state, const char *symbol);
+void symbol_callers(agent_state *state, const char *symbol);
+void symbol_show(agent_state *state, const char *symbol);
+
+#endif /* OVMS_AGENT_SYMBOL_INDEX_H */
