@@ -15,7 +15,10 @@ static const command_entry symbol_commands[] = {
     { "SHOW/STRUCT", "Display a struct, union, or enum definition", command_show_struct },
     { "SHOW/MODULE", "Summarize a local C or header module", command_show_module },
     { "DEPENDENCIES", "Show local module dependencies", command_dependencies },
-    { "WHO/USES", "Find all local uses of a C identifier", command_who_uses }
+    { "WHO/USES", "Find all local uses of a C identifier", command_who_uses },
+    { "MODULE/GRAPH", "Show direct project-module dependencies", command_module_graph },
+    { "MODULE/GRAPH/ALL", "Show the project-wide module graph", command_module_graph_all },
+    { "IMPACT", "Show direct change impact for a symbol", command_impact }
 };
 
 void command_register_symbol(void)
@@ -203,5 +206,48 @@ void command_who_uses(agent_state *state,
 
     if (symbol != NULL) {
         symbol_who_uses(state, symbol);
+    }
+}
+
+
+void command_module_graph(agent_state *state,
+                          const char *arguments)
+{
+    const char *module;
+
+    module = command_symbol_argument(
+        arguments,
+        "Usage: MODULE/GRAPH file.c"
+    );
+
+    if (module != NULL) {
+        symbol_module_graph(state, module);
+    }
+}
+
+void command_module_graph_all(agent_state *state,
+                              const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: MODULE/GRAPH/ALL");
+        return;
+    }
+
+    symbol_module_graph_all(state);
+}
+
+
+void command_impact(agent_state *state,
+                    const char *arguments)
+{
+    const char *symbol;
+
+    symbol = command_symbol_argument(
+        arguments,
+        "Usage: IMPACT symbol"
+    );
+
+    if (symbol != NULL) {
+        symbol_impact(state, symbol);
     }
 }

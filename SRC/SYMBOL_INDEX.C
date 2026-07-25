@@ -3318,3 +3318,594 @@ void symbol_who_uses(agent_state *state,
     }
 }
 
+#define MODULE_EDGE_MAX 1024U
+
+typedef struct module_edge {
+    char source[SYMBOL_PATH_SIZE];
+    char target[SYMBOL_PATH_SIZE];
+} module_edge;
+
+typedef struct module_edge_list {
+    module_edge edges[MODULE_EDGE_MAX];
+    unsigned int used;
+} module_edge_list;
+
+static int module_edge_exists(
+    const module_edge_list *list,
+    const char *source,
+    const char *target)
+{
+    unsigned int index;
+
+    for (index = 0U; index < list->used; ++index) {
+        if (strcmp(list->edges[index].source, source) == 0 &&
+            strcmp(list->edges[index].target, target) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static void module_edge_add(
+    module_edge_list *list,
+    const char *source,
+    const char *target)
+{
+    if (list == NULL ||
+        source == NULL ||
+        target == NULL ||
+        *source == '\0' ||
+        *target == '\0' ||
+        strcmp(source, target) == 0 ||
+        list->used >= MODULE_EDGE_MAX ||
+        strlen(source) >= SYMBOL_PATH_SIZE ||
+        strlen(target) >= SYMBOL_PATH_SIZE ||
+        module_edge_exists(list, source, target)) {
+        return;
+    }
+
+    (void)strcpy(list->edges[list->used].source, source);
+    (void)strcpy(list->edges[list->used].target, target);
+    ++list->used;
+}
+
+static int module_graph_current(void)
+{
+    unsigned int checked;
+    unsigned int changed;
+
+    return symbol_manifest_current(
+        &checked,
+        &changed,
+        0
+    );
+}
+
+static int module_graph_collect_one(
+    const char *source_path,
+    module_edge_list *edges)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long line_number;
+        char target_path[SYMBOL_PATH_SIZE];
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &line_number)) {
+            continue;
+        }
+
+        if (kind != 'C' ||
+            strcmp(record_path, source_path) != 0) {
+            continue;
+        }
+
+        target_path[0] = '\0';
+
+        if (dependency_find_definition_module(
+                record_symbol,
+                target_path,
+                sizeof(target_path))) {
+            module_edge_add(
+                edges,
+                source_path,
+                target_path
+            );
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int module_graph_collect_all(
+    module_edge_list *edges)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long line_number;
+        char target_path[SYMBOL_PATH_SIZE];
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &line_number)) {
+            continue;
+        }
+
+        if (kind != 'C') {
+            continue;
+        }
+
+        target_path[0] = '\0';
+
+        if (dependency_find_definition_module(
+                record_symbol,
+                target_path,
+                sizeof(target_path))) {
+            module_edge_add(
+                edges,
+                record_path,
+                target_path
+            );
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static void module_graph_print(
+    const char *title,
+    const module_edge_list *edges)
+{
+    unsigned int index;
+
+    (void)puts(title);
+    (void)puts("----------------------------------------");
+
+    if (edges->used == 0U) {
+        (void)puts("No project-module edges found.");
+        return;
+    }
+
+    for (index = 0U; index < edges->used; ++index) {
+        (void)printf(
+            "%s -> %s\n",
+            edges->edges[index].source,
+            edges->edges[index].target
+        );
+    }
+
+    (void)printf(
+        "Total edges: %u\n",
+        edges->used
+    );
+}
+
+void symbol_module_graph(agent_state *state,
+                         const char *module)
+{
+    char path[SYMBOL_PATH_SIZE];
+    module_edge_list edges;
+    FILE *file;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path))) {
+        (void)puts(
+            "Module must be a project-relative .C or .H file."
+        );
+        return;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to open %s.\n", path);
+        return;
+    }
+
+    (void)fclose(file);
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before MODULE/GRAPH."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+
+    if (!module_graph_collect_one(path, &edges)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    {
+        char title[SYMBOL_PATH_SIZE + 64U];
+
+        (void)snprintf(
+            title,
+            sizeof(title),
+            "Module graph for %s",
+            path
+        );
+        module_graph_print(title, &edges);
+    }
+}
+
+void symbol_module_graph_all(agent_state *state)
+{
+    module_edge_list edges;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before MODULE/GRAPH/ALL."
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+
+    if (!module_graph_collect_all(&edges)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    module_graph_print(
+        "Project module dependency graph",
+        &edges
+    );
+}
+
+static int impact_find_calling_function(
+    const char *path,
+    unsigned long call_line,
+    char *function_out,
+    size_t function_size)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char best_name[SYMBOL_NAME_SIZE];
+    unsigned long best_line;
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    best_name[0] = '\0';
+    best_line = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'D' ||
+            strcmp(record_path, path) != 0 ||
+            record_line > call_line ||
+            record_line < best_line) {
+            continue;
+        }
+
+        if (strlen(record_symbol) >= sizeof(best_name)) {
+            continue;
+        }
+
+        (void)strcpy(best_name, record_symbol);
+        best_line = record_line;
+    }
+
+    (void)fclose(file);
+
+    if (best_name[0] == '\0' ||
+        strlen(best_name) >= function_size) {
+        return 0;
+    }
+
+    (void)strcpy(function_out, best_name);
+    return 1;
+}
+
+static int impact_find_definition(
+    const char *symbol,
+    char *path_out,
+    size_t path_size,
+    unsigned long *line_out)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'D' &&
+            strcmp(record_symbol, symbol) == 0) {
+            if (strlen(record_path) >= path_size) {
+                (void)fclose(file);
+                return 0;
+            }
+
+            (void)strcpy(path_out, record_path);
+            *line_out = record_line;
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int impact_collect_callers(
+    const char *symbol,
+    symbol_name_list *functions,
+    symbol_name_list *modules)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'C' ||
+            strcmp(record_symbol, symbol) != 0) {
+            continue;
+        }
+
+        module_name_list_add(
+            modules,
+            record_path
+        );
+
+        {
+            char function_name[SYMBOL_NAME_SIZE];
+
+            function_name[0] = '\0';
+
+            if (impact_find_calling_function(
+                    record_path,
+                    record_line,
+                    function_name,
+                    sizeof(function_name))) {
+                module_name_list_add(
+                    functions,
+                    function_name
+                );
+            }
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static void impact_print_functions(
+    const symbol_name_list *functions)
+{
+    unsigned int index;
+
+    (void)printf(
+        "Directly affected functions (%u)\n",
+        functions->used
+    );
+    (void)puts("----------------------------------------");
+
+    if (functions->used == 0U) {
+        (void)puts("  none");
+        return;
+    }
+
+    for (index = 0U;
+         index < functions->used;
+         ++index) {
+        (void)printf(
+            "  %s\n",
+            functions->names[index]
+        );
+    }
+}
+
+static void impact_print_modules(
+    const symbol_name_list *modules)
+{
+    unsigned int index;
+
+    (void)printf(
+        "Directly affected modules (%u)\n",
+        modules->used
+    );
+    (void)puts("----------------------------------------");
+
+    if (modules->used == 0U) {
+        (void)puts("  none");
+        return;
+    }
+
+    for (index = 0U;
+         index < modules->used;
+         ++index) {
+        (void)printf(
+            "  %s\n",
+            modules->names[index]
+        );
+    }
+}
+
+void symbol_impact(agent_state *state,
+                   const char *symbol)
+{
+    unsigned int checked;
+    unsigned int changed;
+    char definition_path[SYMBOL_PATH_SIZE];
+    unsigned long definition_line;
+    symbol_name_list functions;
+    symbol_name_list modules;
+
+    if (!symbol_prepare(state, symbol)) {
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before IMPACT."
+        );
+        return;
+    }
+
+    definition_path[0] = '\0';
+    definition_line = 0UL;
+    (void)memset(&functions, 0, sizeof(functions));
+    (void)memset(&modules, 0, sizeof(modules));
+
+    (void)printf("Impact analysis for %s\n", symbol);
+    (void)puts("========================================");
+
+    if (impact_find_definition(
+            symbol,
+            definition_path,
+            sizeof(definition_path),
+            &definition_line)) {
+        (void)printf(
+            "Definition: %s line %lu\n",
+            definition_path,
+            definition_line
+        );
+    } else {
+        (void)puts(
+            "Definition: external, unresolved, or not a function"
+        );
+    }
+
+    if (!impact_collect_callers(
+            symbol,
+            &functions,
+            &modules)) {
+        (void)puts("Unable to read the symbol index.");
+        return;
+    }
+
+    (void)puts("");
+    impact_print_functions(&functions);
+    (void)puts("");
+    impact_print_modules(&modules);
+    (void)puts("");
+
+    (void)printf(
+        "Estimated rebuild scope: %u module%s.\n",
+        modules.used,
+        modules.used == 1U ? "" : "s"
+    );
+
+    if (modules.used == 0U) {
+        (void)puts(
+            "No indexed direct callers were found."
+        );
+    } else if (modules.used <= 3U) {
+        (void)puts("Impact level: LOW");
+    } else if (modules.used <= 10U) {
+        (void)puts("Impact level: MODERATE");
+    } else {
+        (void)puts("Impact level: HIGH");
+    }
+}
+

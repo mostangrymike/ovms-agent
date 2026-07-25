@@ -21,5 +21,10 @@ void symbol_show_dependencies(agent_state *state,
                               const char *module);
 void symbol_who_uses(agent_state *state,
                      const char *symbol);
+void symbol_module_graph(agent_state *state,
+                         const char *module);
+void symbol_module_graph_all(agent_state *state);
+void symbol_impact(agent_state *state,
+                   const char *symbol);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
