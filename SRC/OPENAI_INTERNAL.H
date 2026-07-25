@@ -14,6 +14,10 @@
 #include "openai_path.h"
 #include "openai_cache.h"
 #include "openai_tool_schema.h"
+#include "openai_transport.h"
+#include "openai_request_build.h"
+#include "openai_request_agent.h"
+#include "openai_request_basic.h"
 #include "openai_plan.h"
 #include "openai_execute.h"
 #include "openai_state.h"
@@ -81,11 +85,6 @@ void openai_load_state(void);
 void openai_show_state(void);
 void openai_clear_state(void);
 int json_write_escaped(FILE *file, const char *text);
-int write_request(const char *model,
-                         const char *prompt,
-                         const char *previous_id);
-int write_headers(const char *api_key);
-void remove_temporary_files(void);
 char *read_entire_file(const char *path, size_t *length_out);
 const char *skip_space(const char *position);
 int hex_value(int ch);
@@ -109,37 +108,6 @@ void openai_send(agent_state *state,
 int openai_contains_ignore_case(const char *text,
                                        const char *pattern);
 char *openai_read_text_file(const char *path);
-int write_create_agent_request(
-    const char *model,
-    const char *instructions,
-    const char *user_prompt,
-    const char *previous_id,
-    const char *call_id,
-    const char *tool_output);
-int write_build_initial_request(
-    const char *model,
-    const char *instructions,
-    const char *user_prompt);
-int write_build_followup_request(
-    const char *model,
-    const char *instructions,
-    const char *context_items,
-    const char *call_id,
-    const char *tool_output);
-int write_agent_request_mode(const char *model,
-                                    const char *instructions,
-                                    const char *user_prompt,
-                                    const char *previous_id,
-                                    const char *call_id,
-                                    const char *tool_output,
-                                    int allow_write);
-int write_agent_request(const char *model,
-                               const char *instructions,
-                               const char *user_prompt,
-                               const char *previous_id,
-                               const char *call_id,
-                               const char *tool_output);
-int perform_openai_request(void);
 char *extract_top_level_id(const char *json);
 const char *find_function_call_object(const char *json);
 int extract_function_call(const char *json,
