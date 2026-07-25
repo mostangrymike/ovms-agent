@@ -2953,3 +2953,368 @@ void symbol_show_dependencies(agent_state *state,
     );
 }
 
+static const char *usage_kind_name(
+    int is_definition,
+    int is_call,
+    int is_declaration,
+    int is_type_reference)
+{
+    if (is_definition) {
+        return "DEF";
+    }
+
+    if (is_call) {
+        return "CALL";
+    }
+
+    if (is_type_reference) {
+        return "TYPE";
+    }
+
+    if (is_declaration) {
+        return "DECL";
+    }
+
+    return "REF";
+}
+
+static int usage_line_has_declaration_prefix(
+    const char *line,
+    const char *position)
+{
+    const char *cursor;
+
+    cursor = line;
+
+    while (cursor < position &&
+           isspace((unsigned char)*cursor)) {
+        ++cursor;
+    }
+
+    if (cursor >= position) {
+        return 0;
+    }
+
+    if (strncmp(cursor, "extern", 6U) == 0 ||
+        strncmp(cursor, "static", 6U) == 0 ||
+        strncmp(cursor, "const", 5U) == 0 ||
+        strncmp(cursor, "volatile", 8U) == 0 ||
+        strncmp(cursor, "unsigned", 8U) == 0 ||
+        strncmp(cursor, "signed", 6U) == 0 ||
+        strncmp(cursor, "short", 5U) == 0 ||
+        strncmp(cursor, "long", 4U) == 0 ||
+        strncmp(cursor, "int", 3U) == 0 ||
+        strncmp(cursor, "char", 4U) == 0 ||
+        strncmp(cursor, "void", 4U) == 0 ||
+        strncmp(cursor, "float", 5U) == 0 ||
+        strncmp(cursor, "double", 6U) == 0 ||
+        strncmp(cursor, "struct", 6U) == 0 ||
+        strncmp(cursor, "union", 5U) == 0 ||
+        strncmp(cursor, "enum", 4U) == 0 ||
+        strncmp(cursor, "typedef", 7U) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int usage_line_is_type_reference(
+    const char *line,
+    const char *position)
+{
+    const char *end;
+    const char *start;
+    size_t length;
+
+    if (line == NULL ||
+        position == NULL ||
+        position <= line) {
+        return 0;
+    }
+
+    end = position;
+
+    while (end > line &&
+           isspace((unsigned char)end[-1])) {
+        --end;
+    }
+
+    start = end;
+
+    while (start > line &&
+           symbol_is_identifier_char(
+               (unsigned char)start[-1])) {
+        --start;
+    }
+
+    length = (size_t)(end - start);
+
+    return (length == 6U &&
+            strncmp(start, "struct", 6U) == 0) ||
+           (length == 5U &&
+            strncmp(start, "union", 5U) == 0) ||
+           (length == 4U &&
+            strncmp(start, "enum", 4U) == 0);
+}
+
+static int usage_line_is_call(
+    const char *line,
+    const char *position,
+    const char *symbol)
+{
+    const char *after;
+
+    if (symbol_is_member_access(line, position)) {
+        return 0;
+    }
+
+    after = position + strlen(symbol);
+
+    while (*after != '\0' &&
+           isspace((unsigned char)*after)) {
+        ++after;
+    }
+
+    return *after == '(';
+}
+
+static int usage_line_is_definition(
+    const char *path,
+    unsigned long line_number,
+    const char *symbol)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'D' &&
+            record_line == line_number &&
+            strcmp(record_symbol, symbol) == 0 &&
+            strcmp(record_path, path) == 0) {
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int usage_line_is_indexed_call(
+    const char *path,
+    unsigned long line_number,
+    const char *symbol)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'C' &&
+            record_line == line_number &&
+            strcmp(record_symbol, symbol) == 0 &&
+            strcmp(record_path, path) == 0) {
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+void symbol_who_uses(agent_state *state,
+                     const char *symbol)
+{
+    DIR *directory;
+    struct dirent *entry;
+    unsigned int matches;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (!symbol_prepare(state, symbol)) {
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before WHO/USES."
+        );
+        return;
+    }
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        (void)puts("Unable to open SRC directory.");
+        return;
+    }
+
+    (void)printf("Uses of %s\n", symbol);
+    (void)puts("----------------------------------------");
+
+    matches = 0U;
+
+    while ((entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        char clean[SYMBOL_LINE_SIZE];
+        unsigned long line_number;
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name) &&
+            !symbol_has_header_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        line_number = 0UL;
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            const char *position;
+
+            ++line_number;
+            (void)strncpy(clean, line, sizeof(clean) - 1U);
+            clean[sizeof(clean) - 1U] = '\0';
+            symbol_clean_line(clean, &in_block_comment);
+
+            position = clean;
+
+            while ((position = strstr(position, symbol)) != NULL) {
+                int is_definition;
+                int is_call;
+                int is_declaration;
+                int is_type_reference;
+
+                if (!symbol_match_at(clean, position, symbol)) {
+                    ++position;
+                    continue;
+                }
+
+                is_definition = usage_line_is_definition(
+                    path,
+                    line_number,
+                    symbol
+                );
+                is_call = usage_line_is_indexed_call(
+                    path,
+                    line_number,
+                    symbol
+                );
+                is_type_reference = usage_line_is_type_reference(
+                    clean,
+                    position
+                );
+                is_declaration =
+                    !is_definition &&
+                    !is_call &&
+                    usage_line_has_declaration_prefix(
+                        clean,
+                        position
+                    );
+
+                /*
+                 * Only use syntax as a call fallback when the occurrence
+                 * is not already known to be a declaration or type use.
+                 * This prevents header prototypes from appearing as calls.
+                 */
+                if (!is_call &&
+                    !is_declaration &&
+                    !is_type_reference) {
+                    is_call = usage_line_is_call(
+                        clean,
+                        position,
+                        symbol
+                    );
+                }
+
+                (void)printf(
+                    "%-4s %-32s line %lu\n",
+                    usage_kind_name(
+                        is_definition,
+                        is_call,
+                        is_declaration,
+                        is_type_reference
+                    ),
+                    path,
+                    line_number
+                );
+
+                ++matches;
+                position += strlen(symbol);
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+
+    if (matches == 0U) {
+        (void)puts("No uses found.");
+    } else {
+        (void)printf(
+            "Total matches: %u\n",
+            matches
+        );
+    }
+}
+

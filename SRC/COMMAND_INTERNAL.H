@@ -61,6 +61,8 @@ void command_show_module(agent_state *state,
                          const char *arguments);
 void command_dependencies(agent_state *state,
                           const char *arguments);
+void command_who_uses(agent_state *state,
+                      const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

@@ -14,7 +14,8 @@ static const command_entry symbol_commands[] = {
     { "SHOW/FUNCTION", "Display a complete C function body", command_show_function },
     { "SHOW/STRUCT", "Display a struct, union, or enum definition", command_show_struct },
     { "SHOW/MODULE", "Summarize a local C or header module", command_show_module },
-    { "DEPENDENCIES", "Show local module dependencies", command_dependencies }
+    { "DEPENDENCIES", "Show local module dependencies", command_dependencies },
+    { "WHO/USES", "Find all local uses of a C identifier", command_who_uses }
 };
 
 void command_register_symbol(void)
@@ -186,5 +187,21 @@ void command_dependencies(agent_state *state,
 
     if (module != NULL) {
         symbol_show_dependencies(state, module);
+    }
+}
+
+
+void command_who_uses(agent_state *state,
+                      const char *arguments)
+{
+    const char *symbol;
+
+    symbol = command_symbol_argument(
+        arguments,
+        "Usage: WHO/USES symbol"
+    );
+
+    if (symbol != NULL) {
+        symbol_who_uses(state, symbol);
     }
 }
