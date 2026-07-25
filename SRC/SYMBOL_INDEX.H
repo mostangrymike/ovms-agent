@@ -7,6 +7,7 @@
 
 void symbol_reindex(agent_state *state);
 void symbol_index_status(agent_state *state);
+void symbol_index_check(agent_state *state);
 void symbol_where(agent_state *state, const char *symbol);
 void symbol_callers(agent_state *state, const char *symbol);
 void symbol_show(agent_state *state, const char *symbol);

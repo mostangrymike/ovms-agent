@@ -7,6 +7,7 @@
 static const command_entry symbol_commands[] = {
     { "REINDEX", "Rebuild the persistent C symbol index", command_reindex },
     { "INDEX/STATUS", "Display symbol-index statistics", command_index_status },
+    { "INDEX/CHECK", "Check whether the symbol index is current", command_index_check },
     { "WHERE", "Find a C symbol definition: WHERE symbol", command_where },
     { "CALLERS", "Find C call sites: CALLERS symbol", command_callers },
     { "SYMBOL", "Show symbol definitions and calls: SYMBOL symbol", command_symbol }
@@ -65,6 +66,17 @@ void command_index_status(agent_state *state,
     }
 
     symbol_index_status(state);
+}
+
+void command_index_check(agent_state *state,
+                         const char *arguments)
+{
+    if (arguments != NULL && *arguments != '\0') {
+        (void)puts("Usage: INDEX/CHECK");
+        return;
+    }
+
+    symbol_index_check(state);
 }
 
 void command_where(agent_state *state, const char *arguments)

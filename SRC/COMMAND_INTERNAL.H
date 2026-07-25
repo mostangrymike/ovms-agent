@@ -48,6 +48,8 @@ void command_gitdiff(agent_state *state, const char *arguments);
 void command_reindex(agent_state *state, const char *arguments);
 void command_index_status(agent_state *state,
                           const char *arguments);
+void command_index_check(agent_state *state,
+                         const char *arguments);
 void command_where(agent_state *state, const char *arguments);
 void command_callers(agent_state *state, const char *arguments);
 void command_symbol(agent_state *state, const char *arguments);

@@ -3,13 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
 
 #include "symbol_index.h"
 
 #define SYMBOL_LINE_SIZE 2048
 #define SYMBOL_PATH_SIZE 512
 #define SYMBOL_NAME_SIZE 256
-#define SYMBOL_INDEX_VERSION 1
+#define SYMBOL_INDEX_VERSION 2
+#define SYMBOL_MANIFEST_PREFIX "F|"
+
+typedef struct symbol_manifest_record {
+    char path[SYMBOL_PATH_SIZE];
+    unsigned long size;
+    unsigned long mtime;
+} symbol_manifest_record;
 
 static int symbol_is_identifier_char(int ch)
 {
@@ -241,6 +250,7 @@ static unsigned int symbol_index_line(FILE *index_file,
 {
     char *position;
     unsigned int entries;
+    time_t now;
 
     entries = 0U;
     position = line;
@@ -315,6 +325,24 @@ static unsigned int symbol_index_line(FILE *index_file,
     return entries;
 }
 
+static int symbol_write_manifest_record(FILE *file,
+                                        const char *path)
+{
+    struct stat st;
+
+    if (stat(path, &st) != 0) {
+        return 0;
+    }
+
+    return fprintf(
+        file,
+        "F|%s|%lu|%lu\n",
+        path,
+        (unsigned long)st.st_size,
+        (unsigned long)st.st_mtime
+    ) >= 0;
+}
+
 static unsigned int symbol_build_index(void)
 {
     DIR *directory;
@@ -322,6 +350,7 @@ static unsigned int symbol_build_index(void)
     FILE *index_file;
     unsigned int files;
     unsigned int entries;
+    time_t now;
 
     directory = opendir("SRC");
 
@@ -341,10 +370,17 @@ static unsigned int symbol_build_index(void)
         return 0U;
     }
 
+    now = time(NULL);
+
     (void)fprintf(
         index_file,
         "# OVMS Agent symbol index version %d\n",
         SYMBOL_INDEX_VERSION
+    );
+    (void)fprintf(
+        index_file,
+        "# generated=%lu\n",
+        (unsigned long)now
     );
 
     files = 0U;
@@ -372,6 +408,11 @@ static unsigned int symbol_build_index(void)
         source_file = fopen(path, "r");
 
         if (source_file == NULL) {
+            continue;
+        }
+
+        if (!symbol_write_manifest_record(index_file, path)) {
+            (void)fclose(source_file);
             continue;
         }
 
@@ -408,6 +449,78 @@ static unsigned int symbol_build_index(void)
     return entries;
 }
 
+static int symbol_parse_manifest(char *line,
+                                 symbol_manifest_record *record)
+{
+    char *first;
+    char *second;
+    char *newline;
+    char *end;
+
+    if (line == NULL ||
+        record == NULL ||
+        strncmp(line, SYMBOL_MANIFEST_PREFIX, 2U) != 0) {
+        return 0;
+    }
+
+    first = strchr(line + 2, '|');
+    if (first == NULL) return 0;
+    second = strchr(first + 1, '|');
+    if (second == NULL) return 0;
+    newline = strchr(second + 1, '\n');
+    if (newline != NULL) *newline = '\0';
+    *first = '\0';
+    *second = '\0';
+
+    if (strlen(line + 2) >= sizeof(record->path)) return 0;
+    (void)strcpy(record->path, line + 2);
+
+    record->size = strtoul(first + 1, &end, 10);
+    if (end == first + 1 || *end != '\0') return 0;
+    record->mtime = strtoul(second + 1, &end, 10);
+    return end != second + 1 && *end == '\0';
+}
+
+static int symbol_manifest_current(unsigned int *checked_out,
+                                   unsigned int *changed_out,
+                                   int verbose)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned int checked;
+    unsigned int changed;
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+    if (file == NULL) {
+        if (checked_out != NULL) *checked_out = 0U;
+        if (changed_out != NULL) *changed_out = 0U;
+        return 0;
+    }
+
+    checked = 0U;
+    changed = 0U;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        symbol_manifest_record record;
+        struct stat st;
+
+        if (!symbol_parse_manifest(line, &record)) continue;
+        ++checked;
+
+        if (stat(record.path, &st) != 0 ||
+            (unsigned long)st.st_size != record.size ||
+            (unsigned long)st.st_mtime != record.mtime) {
+            ++changed;
+            if (verbose) (void)printf("  %s\n", record.path);
+        }
+    }
+
+    (void)fclose(file);
+    if (checked_out != NULL) *checked_out = checked;
+    if (changed_out != NULL) *changed_out = changed;
+    return checked > 0U && changed == 0U;
+}
+
 static int symbol_parse_record(char *line,
                                char *kind,
                                char **symbol,
@@ -421,6 +534,7 @@ static int symbol_parse_record(char *line,
 
     if (line == NULL ||
         line[0] == '#' ||
+        line[0] == 'F' ||
         line[0] == '\0') {
         return 0;
     }
@@ -603,28 +717,27 @@ static unsigned int symbol_query(const char *symbol,
                                  int show_calls)
 {
     FILE *file;
+    unsigned int checked;
+    unsigned int changed;
 
     file = fopen(SYMBOL_INDEX_FILE, "r");
-
-    if (file != NULL) {
-        (void)fclose(file);
-        return symbol_query_index(
-            symbol,
-            show_definitions,
-            show_calls
+    if (file == NULL) {
+        (void)printf(
+            "%s not found; using live source scan.\n",
+            SYMBOL_INDEX_FILE
         );
+        return symbol_scan_live(symbol, show_definitions, show_calls);
+    }
+    (void)fclose(file);
+
+    if (!symbol_manifest_current(&checked, &changed, 0)) {
+        (void)puts("Symbol index is stale.");
+        (void)puts("Using live source scan.");
+        (void)puts("Run REINDEX to refresh.");
+        return symbol_scan_live(symbol, show_definitions, show_calls);
     }
 
-    (void)printf(
-        "%s not found; using live source scan.\n",
-        SYMBOL_INDEX_FILE
-    );
-
-    return symbol_scan_live(
-        symbol,
-        show_definitions,
-        show_calls
-    );
+    return symbol_query_index(symbol, show_definitions, show_calls);
 }
 
 static int symbol_prepare(agent_state *state,
@@ -661,12 +774,11 @@ void symbol_reindex(agent_state *state)
     (void)symbol_build_index();
 }
 
-void symbol_index_status(agent_state *state)
+void symbol_index_check(agent_state *state)
 {
     FILE *file;
-    char line[SYMBOL_LINE_SIZE];
-    unsigned int definitions;
-    unsigned int calls;
+    unsigned int checked;
+    unsigned int changed;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -676,36 +788,70 @@ void symbol_index_status(agent_state *state)
     }
 
     file = fopen(SYMBOL_INDEX_FILE, "r");
-
     if (file == NULL) {
-        (void)printf(
-            "Symbol index: missing (%s)\n",
-            SYMBOL_INDEX_FILE
-        );
+        (void)printf("Symbol index is missing (%s).\n", SYMBOL_INDEX_FILE);
+        (void)puts("Run REINDEX to create it.");
+        return;
+    }
+    (void)fclose(file);
+
+    (void)puts("Checking symbol database...");
+    if (symbol_manifest_current(&checked, &changed, 1)) {
+        (void)printf("%u file%s checked.\n", checked, checked == 1U ? "" : "s");
+        (void)puts("Current.");
+    } else {
+        (void)printf("%u file%s checked; %u changed.\n",
+                     checked, checked == 1U ? "" : "s", changed);
+        (void)puts("Run REINDEX.");
+    }
+}
+
+void symbol_index_status(agent_state *state)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned int definitions;
+    unsigned int calls;
+    unsigned int manifest_files;
+    unsigned int checked;
+    unsigned int changed;
+    int current;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+    if (file == NULL) {
+        (void)printf("Symbol index: missing (%s)\n", SYMBOL_INDEX_FILE);
         (void)puts("Run REINDEX to create it.");
         return;
     }
 
     definitions = 0U;
     calls = 0U;
-
+    manifest_files = 0U;
     while (fgets(line, sizeof(line), file) != NULL) {
-        if (line[0] == 'D' && line[1] == '|') {
-            ++definitions;
-        } else if (line[0] == 'C' && line[1] == '|') {
-            ++calls;
-        }
+        if (line[0] == 'D' && line[1] == '|') ++definitions;
+        else if (line[0] == 'C' && line[1] == '|') ++calls;
+        else if (line[0] == 'F' && line[1] == '|') ++manifest_files;
     }
-
     (void)fclose(file);
 
+    current = symbol_manifest_current(&checked, &changed, 0);
     (void)printf("Symbol index: %s\n", SYMBOL_INDEX_FILE);
+    (void)printf("Status:       %s\n", current ? "CURRENT" : "STALE");
+    (void)printf("Source files: %u\n", manifest_files);
     (void)printf("Definitions:  %u\n", definitions);
     (void)printf("Call sites:   %u\n", calls);
-    (void)printf(
-        "Total entries: %u\n",
-        definitions + calls
-    );
+    (void)printf("Total entries: %u\n", definitions + calls);
+    if (!current) {
+        (void)printf("Changed files: %u\n", changed);
+        (void)puts("Run INDEX/CHECK for details.");
+    }
 }
 
 void symbol_where(agent_state *state, const char *symbol)
