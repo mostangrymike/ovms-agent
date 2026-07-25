@@ -14,6 +14,9 @@
 #include "openai_path.h"
 #include "openai_cache.h"
 #include "openai_tool_schema.h"
+#include "openai_response.h"
+#include "openai_json_parse.h"
+#include "openai_json_write.h"
 #include "openai_transport.h"
 #include "openai_request_build.h"
 #include "openai_request_agent.h"
@@ -84,48 +87,18 @@ void openai_state_save(void);
 void openai_load_state(void);
 void openai_show_state(void);
 void openai_clear_state(void);
-int json_write_escaped(FILE *file, const char *text);
-char *read_entire_file(const char *path, size_t *length_out);
-const char *skip_space(const char *position);
-int hex_value(int ch);
-int append_utf8(char **destination,
-                       size_t *remaining,
-                       unsigned int codepoint);
-char *json_decode_string(const char *start,
-                                const char **after);
-int json_key_matches(const char *position,
-                            const char *key,
-                            const char **value_start);
-const char *find_string_value(const char *start,
-                                     const char *key);
-const char *find_output_text_object(const char *json);
-int save_response_id(const char *json);
-int display_clean_response(void);
-void display_raw_response(void);
 void openai_send(agent_state *state,
                         const char *prompt,
                         int continue_conversation);
 int openai_contains_ignore_case(const char *text,
                                        const char *pattern);
 char *openai_read_text_file(const char *path);
-char *extract_top_level_id(const char *json);
-const char *find_function_call_object(const char *json);
-int extract_function_call(const char *json,
-                                 char **name,
-                                 char **call_id,
-                                 char **arguments);
-char *extract_path_argument(const char *arguments);
 char *make_tool_error(const char *message,
                              const char *path);
-char *extract_string_argument(const char *arguments,
-                                     const char *name);
 const char *openai_cache_lookup(
     const openai_file_cache_entry *cache,
     const char *path);
 char *openai_duplicate_text(const char *text);
-int extract_integer_argument(const char *arguments,
-                                    const char *name,
-                                    long *value_out);
 char *execute_read_file_range_tool(
     const char *arguments,
     char **display_path,
@@ -145,7 +118,6 @@ char *execute_list_directory_tool(const char *arguments,
 char *execute_search_file_tool(const char *arguments,
                                       char **display_path,
                                       char **display_pattern);
-int display_api_error_from_json(const char *json);
 openai_create_result execute_create_file_tool(
     const char *arguments,
     char **display_path);
@@ -157,10 +129,7 @@ openai_replace_result execute_replace_lines_tool(
     agent_state *state,
     const char *arguments,
     char **display_path);
-char *extract_output_items_json(const char *json);
 char *execute_run_build_tool(int *build_status);
-char *extract_output_text_from_json(const char *json);
-int display_output_text_from_json(const char *json);
 int openai_confirm_restore(const char *path);
 int openai_restore_previous_version(const char *path);
 void openai_agent_mode(agent_state *state,
