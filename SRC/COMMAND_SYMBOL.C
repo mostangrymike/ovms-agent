@@ -12,7 +12,9 @@ static const command_entry symbol_commands[] = {
     { "CALLERS", "Find C call sites: CALLERS symbol", command_callers },
     { "SYMBOL", "Show symbol definitions and calls: SYMBOL symbol", command_symbol },
     { "SHOW/FUNCTION", "Display a complete C function body", command_show_function },
-    { "SHOW/STRUCT", "Display a struct, union, or enum definition", command_show_struct }
+    { "SHOW/STRUCT", "Display a struct, union, or enum definition", command_show_struct },
+    { "SHOW/MODULE", "Summarize a local C or header module", command_show_module },
+    { "DEPENDENCIES", "Show local module dependencies", command_dependencies }
 };
 
 void command_register_symbol(void)
@@ -152,5 +154,37 @@ void command_show_struct(agent_state *state,
 
     if (symbol != NULL) {
         symbol_show_struct(state, symbol);
+    }
+}
+
+
+void command_show_module(agent_state *state,
+                         const char *arguments)
+{
+    const char *module;
+
+    module = command_symbol_argument(
+        arguments,
+        "Usage: SHOW/MODULE file.c"
+    );
+
+    if (module != NULL) {
+        symbol_show_module(state, module);
+    }
+}
+
+
+void command_dependencies(agent_state *state,
+                          const char *arguments)
+{
+    const char *module;
+
+    module = command_symbol_argument(
+        arguments,
+        "Usage: DEPENDENCIES file.c"
+    );
+
+    if (module != NULL) {
+        symbol_show_dependencies(state, module);
     }
 }

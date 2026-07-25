@@ -2539,3 +2539,417 @@ void symbol_show_module(agent_state *state,
     module_print_list("Types declared", &types);
 }
 
+static int dependency_header_is_project_local(
+    const char *header,
+    char *path_out,
+    size_t path_size)
+{
+    FILE *file;
+    char path[SYMBOL_PATH_SIZE];
+
+    if (header == NULL ||
+        *header == '\0' ||
+        strchr(header, '/') != NULL ||
+        strchr(header, '\\') != NULL) {
+        return 0;
+    }
+
+    if ((size_t)snprintf(
+            path,
+            sizeof(path),
+            "SRC/%s",
+            header) >= sizeof(path)) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    (void)fclose(file);
+
+    if (strlen(path) >= path_size) {
+        return 0;
+    }
+
+    (void)strcpy(path_out, path);
+    return 1;
+}
+
+static int dependency_find_definition_module(
+    const char *symbol,
+    char *path_out,
+    size_t path_size)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long line_number;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &line_number)) {
+            continue;
+        }
+
+        if (kind != 'D' ||
+            strcmp(record_symbol, symbol) != 0) {
+            continue;
+        }
+
+        if (strlen(record_path) >= path_size) {
+            (void)fclose(file);
+            return 0;
+        }
+
+        (void)strcpy(path_out, record_path);
+        (void)fclose(file);
+        return 1;
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static void dependency_collect_includes(
+    const char *path,
+    symbol_name_list *project_headers,
+    symbol_name_list *system_headers)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *position;
+        const char *end;
+        char header[SYMBOL_NAME_SIZE];
+        char local_path[SYMBOL_PATH_SIZE];
+        size_t length;
+
+        position = line;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+
+        if (*position != '#') {
+            continue;
+        }
+
+        ++position;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+
+        if (strncmp(position, "include", 7U) != 0) {
+            continue;
+        }
+
+        position += 7;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+
+        if (*position == '"') {
+            ++position;
+            end = strchr(position, '"');
+        } else if (*position == '<') {
+            ++position;
+            end = strchr(position, '>');
+        } else {
+            continue;
+        }
+
+        if (end == NULL) {
+            continue;
+        }
+
+        length = (size_t)(end - position);
+
+        if (length == 0U ||
+            length >= sizeof(header)) {
+            continue;
+        }
+
+        (void)memcpy(header, position, length);
+        header[length] = '\0';
+
+        if (dependency_header_is_project_local(
+                header,
+                local_path,
+                sizeof(local_path))) {
+            module_name_list_add(
+                project_headers,
+                local_path
+            );
+        } else {
+            module_name_list_add(
+                system_headers,
+                header
+            );
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static int dependency_load_module_calls(
+    const char *path,
+    symbol_name_list *calls)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned int checked;
+    unsigned int changed;
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        return 0;
+    }
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long line_number;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &line_number)) {
+            continue;
+        }
+
+        if (kind == 'C' &&
+            strcmp(record_path, path) == 0) {
+            module_name_list_add(
+                calls,
+                record_symbol
+            );
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static void dependency_print_mapping(
+    const char *heading,
+    const symbol_name_list *symbols,
+    int show_defining_module)
+{
+    unsigned int index;
+
+    (void)printf("%s (%u)\n", heading, symbols->used);
+    (void)puts("----------------------------------------");
+
+    if (symbols->used == 0U) {
+        (void)puts("  none");
+        return;
+    }
+
+    for (index = 0U;
+         index < symbols->used;
+         ++index) {
+        if (show_defining_module) {
+            char path[SYMBOL_PATH_SIZE];
+
+            path[0] = '\0';
+
+            if (dependency_find_definition_module(
+                    symbols->names[index],
+                    path,
+                    sizeof(path))) {
+                (void)printf(
+                    "  %-32s %s\n",
+                    symbols->names[index],
+                    path
+                );
+            } else {
+                (void)printf(
+                    "  %-32s external or unresolved\n",
+                    symbols->names[index]
+                );
+            }
+        } else {
+            (void)printf(
+                "  %s\n",
+                symbols->names[index]
+            );
+        }
+    }
+}
+
+void symbol_show_dependencies(agent_state *state,
+                              const char *module)
+{
+    char path[SYMBOL_PATH_SIZE];
+    symbol_name_list project_headers;
+    symbol_name_list system_headers;
+    symbol_name_list calls;
+    symbol_name_list project_modules;
+    symbol_name_list external_calls;
+    unsigned int index;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path))) {
+        (void)puts(
+            "Module must be a project-relative .C or .H file."
+        );
+        return;
+    }
+
+    {
+        FILE *file;
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            (void)printf("Unable to open %s.\n", path);
+            return;
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)memset(
+        &project_headers,
+        0,
+        sizeof(project_headers)
+    );
+    (void)memset(
+        &system_headers,
+        0,
+        sizeof(system_headers)
+    );
+    (void)memset(&calls, 0, sizeof(calls));
+    (void)memset(
+        &project_modules,
+        0,
+        sizeof(project_modules)
+    );
+    (void)memset(
+        &external_calls,
+        0,
+        sizeof(external_calls)
+    );
+
+    dependency_collect_includes(
+        path,
+        &project_headers,
+        &system_headers
+    );
+
+    if (!dependency_load_module_calls(path, &calls)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before DEPENDENCIES."
+        );
+        return;
+    }
+
+    for (index = 0U;
+         index < calls.used;
+         ++index) {
+        char definition_path[SYMBOL_PATH_SIZE];
+
+        definition_path[0] = '\0';
+
+        if (dependency_find_definition_module(
+                calls.names[index],
+                definition_path,
+                sizeof(definition_path))) {
+            if (strcmp(definition_path, path) != 0) {
+                module_name_list_add(
+                    &project_modules,
+                    definition_path
+                );
+            }
+        } else {
+            module_name_list_add(
+                &external_calls,
+                calls.names[index]
+            );
+        }
+    }
+
+    (void)printf("Dependencies for %s\n", path);
+    (void)puts("");
+
+    module_print_list(
+        "Project headers",
+        &project_headers
+    );
+    (void)puts("");
+
+    module_print_list(
+        "System or external headers",
+        &system_headers
+    );
+    (void)puts("");
+
+    module_print_list(
+        "Called project modules",
+        &project_modules
+    );
+    (void)puts("");
+
+    dependency_print_mapping(
+        "External or unresolved calls",
+        &external_calls,
+        0
+    );
+    (void)puts("");
+
+    dependency_print_mapping(
+        "All indexed calls",
+        &calls,
+        1
+    );
+}
+

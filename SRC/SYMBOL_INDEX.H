@@ -15,5 +15,9 @@ void symbol_show_function(agent_state *state,
                           const char *symbol);
 void symbol_show_struct(agent_state *state,
                         const char *symbol);
+void symbol_show_module(agent_state *state,
+                        const char *module);
+void symbol_show_dependencies(agent_state *state,
+                              const char *module);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

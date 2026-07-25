@@ -57,6 +57,10 @@ void command_show_function(agent_state *state,
                            const char *arguments);
 void command_show_struct(agent_state *state,
                          const char *arguments);
+void command_show_module(agent_state *state,
+                         const char *arguments);
+void command_dependencies(agent_state *state,
+                          const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);
