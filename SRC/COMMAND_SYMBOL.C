@@ -11,7 +11,8 @@ static const command_entry symbol_commands[] = {
     { "WHERE", "Find a C symbol definition: WHERE symbol", command_where },
     { "CALLERS", "Find C call sites: CALLERS symbol", command_callers },
     { "SYMBOL", "Show symbol definitions and calls: SYMBOL symbol", command_symbol },
-    { "SHOW/FUNCTION", "Display a complete C function body", command_show_function }
+    { "SHOW/FUNCTION", "Display a complete C function body", command_show_function },
+    { "SHOW/STRUCT", "Display a struct, union, or enum definition", command_show_struct }
 };
 
 void command_register_symbol(void)
@@ -135,5 +136,21 @@ void command_show_function(agent_state *state,
 
     if (symbol != NULL) {
         symbol_show_function(state, symbol);
+    }
+}
+
+
+void command_show_struct(agent_state *state,
+                         const char *arguments)
+{
+    const char *symbol;
+
+    symbol = command_symbol_argument(
+        arguments,
+        "Usage: SHOW/STRUCT symbol"
+    );
+
+    if (symbol != NULL) {
+        symbol_show_struct(state, symbol);
     }
 }

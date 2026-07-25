@@ -55,6 +55,8 @@ void command_callers(agent_state *state, const char *arguments);
 void command_symbol(agent_state *state, const char *arguments);
 void command_show_function(agent_state *state,
                            const char *arguments);
+void command_show_struct(agent_state *state,
+                         const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

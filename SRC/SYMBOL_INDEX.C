@@ -1283,3 +1283,342 @@ void symbol_show_function(agent_state *state,
     }
 }
 
+static int symbol_has_header_extension(const char *name)
+{
+    size_t length;
+
+    if (name == NULL) {
+        return 0;
+    }
+
+    length = strlen(name);
+
+    return length >= 2U &&
+           name[length - 2U] == '.' &&
+           (name[length - 1U] == 'H' ||
+            name[length - 1U] == 'h');
+}
+
+static int symbol_line_starts_type_definition(
+    const char *line,
+    const char *symbol,
+    const char **kind_out)
+{
+    static const char *kinds[] = {
+        "struct",
+        "union",
+        "enum",
+        NULL
+    };
+    const char **kind;
+    const char *position;
+    const char *name_start;
+    size_t length;
+
+    if (line == NULL || symbol == NULL) {
+        return 0;
+    }
+
+    position = line;
+
+    while (*position != '\0' &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (strncmp(position, "typedef", 7U) == 0 &&
+        isspace((unsigned char)position[7])) {
+        position += 7;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+    }
+
+    for (kind = kinds; *kind != NULL; ++kind) {
+        length = strlen(*kind);
+
+        if (strncmp(position, *kind, length) != 0 ||
+            !isspace((unsigned char)position[length])) {
+            continue;
+        }
+
+        position += length;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+
+        name_start = position;
+
+        while (symbol_is_identifier_char(
+                   (unsigned char)*position)) {
+            ++position;
+        }
+
+        if ((size_t)(position - name_start) == strlen(symbol) &&
+            strncmp(name_start, symbol, strlen(symbol)) == 0) {
+            if (kind_out != NULL) {
+                *kind_out = *kind;
+            }
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int symbol_find_type_definition(
+    const char *symbol,
+    char *path_out,
+    size_t path_size,
+    unsigned long *line_out,
+    char *kind_out,
+    size_t kind_size)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return 0;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        unsigned long line_number;
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name) &&
+            !symbol_has_header_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        line_number = 0UL;
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            char clean[SYMBOL_LINE_SIZE];
+            const char *kind;
+
+            ++line_number;
+            (void)strncpy(clean, line, sizeof(clean) - 1U);
+            clean[sizeof(clean) - 1U] = '\0';
+            symbol_clean_line(clean, &in_block_comment);
+
+            kind = NULL;
+
+            if (symbol_line_starts_type_definition(
+                    clean,
+                    symbol,
+                    &kind)) {
+                if (strlen(path) < path_size &&
+                    strlen(kind) < kind_size) {
+                    (void)strcpy(path_out, path);
+                    (void)strcpy(kind_out, kind);
+                    *line_out = line_number;
+                    (void)fclose(file);
+                    (void)closedir(directory);
+                    return 1;
+                }
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+    return 0;
+}
+
+static int symbol_print_braced_definition(
+    const char *path,
+    unsigned long start_line)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int depth;
+    int started;
+    int in_block_comment;
+    int in_string;
+    int in_character;
+    int escaped;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    depth = 0;
+    started = 0;
+    in_block_comment = 0;
+    in_string = 0;
+    in_character = 0;
+    escaped = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char *position;
+
+        ++line_number;
+
+        if (line_number < start_line) {
+            continue;
+        }
+
+        (void)printf("%6lu  %s", line_number, line);
+
+        for (position = line;
+             *position != '\0';
+             ++position) {
+            if (in_block_comment) {
+                if (position[0] == '*' &&
+                    position[1] == '/') {
+                    ++position;
+                    in_block_comment = 0;
+                }
+                continue;
+            }
+
+            if (in_string) {
+                if (escaped) {
+                    escaped = 0;
+                } else if (*position == '\\') {
+                    escaped = 1;
+                } else if (*position == '"') {
+                    in_string = 0;
+                }
+                continue;
+            }
+
+            if (in_character) {
+                if (escaped) {
+                    escaped = 0;
+                } else if (*position == '\\') {
+                    escaped = 1;
+                } else if (*position == '\'') {
+                    in_character = 0;
+                }
+                continue;
+            }
+
+            if (position[0] == '/' &&
+                position[1] == '*') {
+                ++position;
+                in_block_comment = 1;
+                continue;
+            }
+
+            if (position[0] == '/' &&
+                position[1] == '/') {
+                break;
+            }
+
+            if (*position == '"') {
+                in_string = 1;
+                continue;
+            }
+
+            if (*position == '\'') {
+                in_character = 1;
+                continue;
+            }
+
+            if (*position == '{') {
+                ++depth;
+                started = 1;
+            } else if (*position == '}' && started) {
+                --depth;
+
+                if (depth == 0) {
+                    /*
+                     * Continue until the terminating semicolon when it is
+                     * present on this or the following line.
+                     */
+                    if (strchr(position, ';') != NULL) {
+                        (void)fclose(file);
+                        return 1;
+                    }
+                }
+            } else if (*position == ';' &&
+                       started &&
+                       depth == 0) {
+                (void)fclose(file);
+                return 1;
+            }
+        }
+    }
+
+    (void)fclose(file);
+    return started;
+}
+
+void symbol_show_struct(agent_state *state,
+                        const char *symbol)
+{
+    char path[SYMBOL_PATH_SIZE];
+    char kind[16];
+    unsigned long line_number;
+
+    if (!symbol_prepare(state, symbol)) {
+        return;
+    }
+
+    path[0] = '\0';
+    kind[0] = '\0';
+    line_number = 0UL;
+
+    if (!symbol_find_type_definition(
+            symbol,
+            path,
+            sizeof(path),
+            &line_number,
+            kind,
+            sizeof(kind))) {
+        (void)printf(
+            "No struct, union, or enum definition found for %s.\n",
+            symbol
+        );
+        return;
+    }
+
+    (void)printf(
+        "%s %s defined in %s at line %lu\n",
+        kind,
+        symbol,
+        path,
+        line_number
+    );
+    (void)puts("----------------------------------------");
+
+    if (!symbol_print_braced_definition(
+            path,
+            line_number)) {
+        (void)puts(
+            "Unable to determine the complete type definition."
+        );
+    }
+}
+
