@@ -6,7 +6,7 @@
 #include "util.h"
 
 static const command_entry core_commands[] = {
-    { "HELP", "Display command help", command_help },
+    { "HELP", "Display available commands", command_help },
     { "VERSION", "Display agent version", command_version },
     { "QUIT", "Exit OVMS Agent", command_quit },
     { "EXIT", "Exit OVMS Agent", command_quit }

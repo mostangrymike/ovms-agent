@@ -11,6 +11,8 @@
 
 #include "openai.h"
 #include "openai_log.h"
+#include "openai_plan.h"
+#include "openai_execute.h"
 #include "openai_state.h"
 #include "project.h"
 
@@ -204,6 +206,7 @@ openai_replace_result execute_replace_lines_tool(
     char **display_path);
 char *extract_output_items_json(const char *json);
 char *execute_run_build_tool(int *build_status);
+char *extract_output_text_from_json(const char *json);
 int display_output_text_from_json(const char *json);
 int openai_confirm_restore(const char *path);
 int openai_restore_previous_version(const char *path);

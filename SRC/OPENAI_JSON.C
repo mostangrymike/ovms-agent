@@ -806,6 +806,27 @@ char *extract_output_items_json(const char *json)
     return result;
 }
 
+
+char *extract_output_text_from_json(const char *json)
+{
+    const char *object_start;
+    const char *text_value;
+
+    object_start = find_output_text_object(json);
+
+    if (object_start == NULL) {
+        return NULL;
+    }
+
+    text_value = find_string_value(object_start, "text");
+
+    if (text_value == NULL) {
+        return NULL;
+    }
+
+    return json_decode_string(text_value, NULL);
+}
+
 int display_output_text_from_json(const char *json)
 {
     const char *object_start;

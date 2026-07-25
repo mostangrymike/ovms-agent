@@ -30,7 +30,18 @@ void openai_agent_mode(agent_state *state,
         "Files to modify, Files to create, Ordered edits, Validation, Risks, "
         "and Authority required. Identify exact symbols or sections when "
         "possible. State explicitly when no file creation is needed. Do not "
-        "claim a file or symbol exists unless a tool result showed it.";
+        "claim a file or symbol exists unless a tool result showed it. "
+        "For validation steps, use OpenVMS-native commands: $ @BUILD "
+        "to compile, $ @OVMS_AGENT to run the image, and SEARCH instead "
+        "of grep. Do not suggest gcc, make, ./program, grep, sed, awk, "
+        "or other Unix shell commands unless the user explicitly requests "
+        "Unix instructions. For a plan that can be executed automatically, "
+        "include exactly one machine-readable operation at the end using "
+        "these exact lines: BEGIN_OPERATION, type=replace_text, path=<one "
+        "project-relative file>, old_text=<one exact source line>, "
+        "new_text=<one replacement line>, END_OPERATION. Do not include "
+        "more than one operation. Omit the operation block if an exact "
+        "single-line replacement cannot be proven from tool output.";
 
     static const char write_instructions[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
@@ -196,7 +207,34 @@ void openai_agent_mode(agent_state *state,
         free(previous_id);
         previous_id = response_id;
 
-        if (display_output_text_from_json(json)) {
+        if (workflow == OPENAI_WORKFLOW_PLAN) {
+            char *plan_text;
+
+            plan_text = extract_output_text_from_json(json);
+
+            if (plan_text != NULL) {
+                (void)puts("");
+                (void)puts(plan_text);
+
+                if (openai_plan_save(goal, plan_text)) {
+                    (void)puts("");
+                    (void)puts(
+                        "Implementation plan saved to "
+                        "OVMS_AGENT_PLAN.TXT."
+                    );
+                } else {
+                    (void)puts("");
+                    (void)puts("Unable to save implementation plan.");
+                }
+
+                free(plan_text);
+                free(json);
+                remove_temporary_files();
+                free(previous_id);
+                openai_cache_free(cache);
+                return;
+            }
+        } else if (display_output_text_from_json(json)) {
             free(json);
             remove_temporary_files();
             free(previous_id);
