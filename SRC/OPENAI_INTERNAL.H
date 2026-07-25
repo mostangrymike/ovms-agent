@@ -34,6 +34,7 @@
 #define OPENAI_WORKFLOW_SELFTEST   9
 #define OPENAI_WORKFLOW_VERIFY    10
 #define OPENAI_WORKFLOW_CREATE    11
+#define OPENAI_WORKFLOW_PLAN      12
 
 #define OPENAI_ROLLBACK_NONE        0
 #define OPENAI_ROLLBACK_NOT_NEEDED  1
@@ -42,6 +43,7 @@
 #define OPENAI_ROLLBACK_DECLINED    4
 
 #define OPENAI_AGENT_MAX_TURNS 12
+#define OPENAI_PLAN_MAX_TURNS 24
 #define OPENAI_AGENT_CACHE_SIZE 8
 #define OPENAI_SEARCH_OUTPUT_LIMIT 32768
 #define OPENAI_LIST_OUTPUT_LIMIT 32768
@@ -196,16 +198,22 @@ openai_replace_result execute_replace_text_tool(
     agent_state *state,
     const char *arguments,
     char **display_path);
+openai_replace_result execute_replace_lines_tool(
+    agent_state *state,
+    const char *arguments,
+    char **display_path);
 char *extract_output_items_json(const char *json);
 char *execute_run_build_tool(int *build_status);
 int display_output_text_from_json(const char *json);
 int openai_confirm_restore(const char *path);
 int openai_restore_previous_version(const char *path);
 void openai_agent_mode(agent_state *state,
-                              const char *goal,
-                              int allow_write,
-                              int build_after_write);
+                       const char *goal,
+                       int allow_write,
+                       int build_after_write,
+                       int workflow);
 void openai_agent(agent_state *state, const char *goal);
+void openai_agent_plan(agent_state *state, const char *goal);
 void openai_agent_write(agent_state *state, const char *goal);
 void openai_agent_fix(agent_state *state, const char *goal);
 void openai_agent_create(agent_state *state, const char *goal);

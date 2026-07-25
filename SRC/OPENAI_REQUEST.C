@@ -323,6 +323,23 @@ int write_agent_tools_with_replace(FILE *file)
         "\"additionalProperties\":false"
         "},"
         "\"strict\":true"
+        "},"
+        "{"
+        "\"type\":\"function\","
+        "\"name\":\"replace_lines\","
+        "\"description\":\"Replace one inclusive line range in a project-relative text file. The local user must confirm before the patch is written.\","
+        "\"parameters\":{"
+        "\"type\":\"object\","
+        "\"properties\":{"
+        "\"path\":{\"type\":\"string\"},"
+        "\"first_line\":{\"type\":\"integer\",\"minimum\":1},"
+        "\"last_line\":{\"type\":\"integer\",\"minimum\":1},"
+        "\"new_text\":{\"type\":\"string\"}"
+        "},"
+        "\"required\":[\"path\",\"first_line\",\"last_line\",\"new_text\"],"
+        "\"additionalProperties\":false"
+        "},"
+        "\"strict\":true"
         "}"
         "]",
         file
@@ -697,10 +714,7 @@ int write_agent_request_mode(const char *model,
         allow_write &&
         previous_id != NULL &&
         *previous_id != '\0') {
-        if (fputs(",\"tool_choice\":{" 
-                  "\"type\":\"function\","
-                  "\"name\":\"replace_text\""
-                  "}", file) == EOF) {
+        if (fputs(",\"tool_choice\":\"required\"", file) == EOF) {
             success = 0;
         }
     }

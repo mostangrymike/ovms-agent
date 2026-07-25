@@ -25,6 +25,8 @@ const char *openai_workflow_name(int workflow)
         return "AGENT/VERIFY";
     case OPENAI_WORKFLOW_CREATE:
         return "AGENT/CREATE";
+    case OPENAI_WORKFLOW_PLAN:
+        return "AGENT/PLAN";
     default:
         return "none";
     }
@@ -121,7 +123,7 @@ void openai_status(const agent_state *state)
     (void)puts("");
     (void)puts("Enabled modes:");
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
-    (void)puts("  AGENT, AGENT/WRITE, AGENT/CREATE, AGENT/BUILD");
+    (void)puts("  AGENT, AGENT/PLAN, AGENT/WRITE, AGENT/CREATE, AGENT/BUILD");
     (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
     (void)puts("  AGENT/STATUS, AGENT/VERIFY, AGENT/LOG");
     (void)puts("  AGENT/LOG/OLD, AGENT/LOG/CLEAR");

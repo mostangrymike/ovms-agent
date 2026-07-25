@@ -1,9 +1,14 @@
 #include "openai_internal.h"
 
+#ifndef OPENAI_PLAN_MAX_TURNS
+#define OPENAI_PLAN_MAX_TURNS 24
+#endif
+
 void openai_agent_mode(agent_state *state,
-                              const char *goal,
-                              int allow_write,
-                              int build_after_write)
+                       const char *goal,
+                       int allow_write,
+                       int build_after_write,
+                       int workflow)
 {
     static const char read_only_instructions[] =
         "You are a careful OpenVMS C code analyst operating inside a "
@@ -15,17 +20,33 @@ void openai_agent_mode(agent_state *state,
         "Do not request paths outside the project. Produce a concise final "
         "answer as soon as sufficient evidence has been collected.";
 
+    static const char plan_instructions[] =
+        "You are a careful OpenVMS software implementation planner operating "
+        "inside a project sandbox. You have read-only tools only: "
+        "list_directory, search_file, read_file, and read_file_range. Inspect "
+        "only enough project context to produce a concrete implementation "
+        "plan. Never modify files, request a write tool, or run a build. The "
+        "final answer must contain these headings: Goal, Files to inspect, "
+        "Files to modify, Files to create, Ordered edits, Validation, Risks, "
+        "and Authority required. Identify exact symbols or sections when "
+        "possible. State explicitly when no file creation is needed. Do not "
+        "claim a file or symbol exists unless a tool result showed it.";
+
     static const char write_instructions[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
         "sandbox. You may inspect with list_directory, search_file, read_file, "
         "and read_file_range. Use ranged reads for large files. You may "
-        "propose exact edits only through replace_text. "
+        "propose edits only through replace_text or replace_lines. Use "
+        "replace_lines when an exact inclusive line range is known, and use "
+        "replace_text when an exact unique text block is safer. "
         "When the user names a specific file, read that file directly and do "
         "not list the project first. Do not search a file after reading it "
         "unless the requested text was not present. Before calling "
-        "replace_text, ensure old_text is exact and unique. Make one smallest "
+        "replace_text, ensure old_text is exact and unique. Before calling "
+        "replace_lines, verify first_line and last_line from a ranged read. "
+        "Make one smallest "
         "possible edit. Do not ask for confirmation in ordinary text. "
-        "Confirmation is handled locally by replace_text; call it immediately "
+        "Confirmation is handled locally by the write tool; call it immediately "
         "once the exact edit is known. Never modify sensitive files or request "
         "paths outside the project. Do not request "
         "a second patch in the same run.";
@@ -37,10 +58,13 @@ void openai_agent_mode(agent_state *state,
     char *tool_output;
     char *call_id;
     unsigned int turn;
+    unsigned int turn_limit;
     int write_attempted;
     openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
 
-    if (build_after_write) {
+    if (workflow == OPENAI_WORKFLOW_PLAN) {
+        openai_last_workflow = OPENAI_WORKFLOW_PLAN;
+    } else if (build_after_write) {
         openai_last_workflow = OPENAI_WORKFLOW_FIX;
         openai_last_rollback = OPENAI_ROLLBACK_NONE;
     } else if (allow_write) {
@@ -63,7 +87,9 @@ void openai_agent_mode(agent_state *state,
     }
 
     if (goal == NULL || *goal == '\0') {
-        if (build_after_write) {
+        if (workflow == OPENAI_WORKFLOW_PLAN) {
+            (void)puts("Usage: AGENT/PLAN goal");
+        } else if (build_after_write) {
             (void)puts("Usage: AGENT/FIX goal");
         } else {
             (void)puts(allow_write ?
@@ -97,13 +123,19 @@ void openai_agent_mode(agent_state *state,
         return;
     }
 
-    instructions = allow_write ?
-        write_instructions : read_only_instructions;
+    if (workflow == OPENAI_WORKFLOW_PLAN) {
+        instructions = plan_instructions;
+    } else {
+        instructions = allow_write ?
+            write_instructions : read_only_instructions;
+    }
 
     previous_id = NULL;
     tool_output = NULL;
     call_id = NULL;
     write_attempted = 0;
+    turn_limit = workflow == OPENAI_WORKFLOW_PLAN ?
+        OPENAI_PLAN_MAX_TURNS : OPENAI_AGENT_MAX_TURNS;
     openai_cache_init(cache);
 
     if (build_after_write) {
@@ -114,7 +146,7 @@ void openai_agent_mode(agent_state *state,
             "Starting read-only agent...");
     }
 
-    for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
+    for (turn = 0U; turn < turn_limit; ++turn) {
         char *json;
         char *response_id;
         char *name;
@@ -261,9 +293,11 @@ void openai_agent_mode(agent_state *state,
             free(display_path);
             free(display_pattern);
         } else if (allow_write &&
-                   strcmp(name, "replace_text") == 0) {
+                   (strcmp(name, "replace_text") == 0 ||
+                    strcmp(name, "replace_lines") == 0)) {
             char *display_path;
             openai_replace_result replace_result;
+            int use_lines;
 
             if (write_attempted) {
                 (void)puts(
@@ -278,13 +312,15 @@ void openai_agent_mode(agent_state *state,
 
             write_attempted = 1;
             display_path = NULL;
-            replace_result = execute_replace_text_tool(
-                state,
-                arguments,
-                &display_path
-            );
+            use_lines = strcmp(name, "replace_lines") == 0;
+            replace_result = use_lines ?
+                execute_replace_lines_tool(
+                    state, arguments, &display_path) :
+                execute_replace_text_tool(
+                    state, arguments, &display_path);
 
-            (void)printf("Tool requested: replace_text %s\n",
+            (void)printf("Tool requested: %s %s\n",
+                         use_lines ? "replace_lines" : "replace_text",
                          display_path != NULL ?
                              display_path : "");
             free(name);
@@ -491,17 +527,22 @@ void openai_agent_mode(agent_state *state,
 
 void openai_agent(agent_state *state, const char *goal)
 {
-    openai_agent_mode(state, goal, 0, 0);
+    openai_agent_mode(state, goal, 0, 0, OPENAI_WORKFLOW_AGENT);
+}
+
+void openai_agent_plan(agent_state *state, const char *goal)
+{
+    openai_agent_mode(state, goal, 0, 0, OPENAI_WORKFLOW_PLAN);
 }
 
 void openai_agent_write(agent_state *state, const char *goal)
 {
-    openai_agent_mode(state, goal, 1, 0);
+    openai_agent_mode(state, goal, 1, 0, OPENAI_WORKFLOW_WRITE);
 }
 
 void openai_agent_fix(agent_state *state, const char *goal)
 {
-    openai_agent_mode(state, goal, 1, 1);
+    openai_agent_mode(state, goal, 1, 1, OPENAI_WORKFLOW_FIX);
 }
 
 void openai_agent_create(agent_state *state, const char *goal)
@@ -999,7 +1040,8 @@ void openai_agent_retry(agent_state *state, const char *goal)
         "The current project build has just failed. This is a fresh "
         "supervised repair attempt. Use the current build diagnostics below "
         "as evidence. Inspect the current source before proposing one new "
-        "smallest exact patch. Apply at most one replace_text operation and "
+        "smallest patch. Apply at most one replace_text or replace_lines "
+        "operation and "
         "then run the controlled build. Do not propose unrelated cleanup."
         "\n\nUser goal:\n";
     static const char log_label[] =
@@ -1088,7 +1130,7 @@ void openai_agent_retry(agent_state *state, const char *goal)
      * A retry remains one patch and one post-patch controlled build. The
      * existing supervised mode enforces local confirmation and rollback.
      */
-    openai_agent_mode(state, combined_goal, 1, 1);
+    openai_agent_mode(state, combined_goal, 1, 1, OPENAI_WORKFLOW_FIX);
 
     free(combined_goal);
     free(build_output);

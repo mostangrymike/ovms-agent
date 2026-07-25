@@ -116,7 +116,7 @@ void openai_load_state(void)
         !saw_rollback ||
         format != 1 ||
         workflow < OPENAI_WORKFLOW_NONE ||
-        workflow > OPENAI_WORKFLOW_CREATE ||
+        workflow > OPENAI_WORKFLOW_PLAN ||
         (build_known != 0 && build_known != 1) ||
         rollback < OPENAI_ROLLBACK_NONE ||
         rollback > OPENAI_ROLLBACK_DECLINED) {
