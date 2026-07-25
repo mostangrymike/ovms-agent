@@ -7008,3 +7008,218 @@ int symbol_rename_apply(agent_state *state,
     return 1;
 }
 
+static int rename_run_reindex(agent_state *state)
+{
+    unsigned int checked;
+    unsigned int changed;
+
+    symbol_reindex(state);
+
+    return symbol_manifest_current(
+        &checked,
+        &changed,
+        0
+    );
+}
+
+static int rename_run_controlled_build(void)
+{
+    int status;
+
+    status = system(
+        "@BUILD.COM"
+    );
+
+    /*
+     * OpenVMS success statuses are odd. Preserve zero as success for
+     * portability when this source is inspected or tested elsewhere.
+     */
+    return status == 0 ||
+           (status & 1) != 0;
+}
+
+static void rename_print_verify_result(
+    int reindex_ok,
+    int build_ok)
+{
+    (void)puts("");
+    (void)puts("Rename verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+}
+
+int symbol_rename_verify(agent_state *state,
+                         const char *old_name,
+                         const char *new_name)
+{
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+    int reindex_ok;
+    int build_ok;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(old_name) ||
+        !rename_identifier_valid(new_name)) {
+        (void)puts(
+            "Both names must be valid C identifiers."
+        );
+        return 0;
+    }
+
+    if (strcmp(old_name, new_name) == 0) {
+        (void)puts(
+            "Old and new names must be different."
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before RENAME/VERIFY."
+        );
+        return 0;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Rename blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return 0;
+    }
+
+    rename_build_transaction(
+        old_name,
+        new_name,
+        &transaction
+    );
+
+    if (transaction.total_replacements == 0U) {
+        (void)puts("No exact identifier matches found.");
+        return 0;
+    }
+
+    if (!rename_confirm_transaction(&transaction)) {
+        (void)puts("Rename cancelled.");
+        return 0;
+    }
+
+    if (!rename_apply_transaction(&transaction)) {
+        (void)puts(
+            "Rename failed while writing project files."
+        );
+
+        if (rename_confirm_rollback()) {
+            if (rename_restore_transaction(&transaction)) {
+                (void)puts(
+                    "Previous file versions restored."
+                );
+            } else {
+                (void)puts(
+                    "Rollback was incomplete; inspect file versions."
+                );
+            }
+        }
+
+        return 0;
+    }
+
+    (void)puts(
+        "Rename applied. Rebuilding symbol index..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Running controlled build..."
+    );
+    build_ok = reindex_ok ?
+        rename_run_controlled_build() : 0;
+
+    rename_print_verify_result(
+        reindex_ok,
+        build_ok
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Rename completed successfully."
+        );
+        return 1;
+    }
+
+    (void)puts(
+        "Rename verification failed."
+    );
+
+    if (!rename_confirm_rollback()) {
+        (void)puts(
+            "Rollback declined. Project remains modified."
+        );
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts(
+            "Rollback was incomplete; inspect file versions."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous file versions restored."
+    );
+
+    (void)puts(
+        "Rebuilding symbol index after rollback..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Running controlled build after rollback..."
+    );
+    build_ok = reindex_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Rollback completed successfully."
+        );
+    } else {
+        (void)puts(
+            "Rollback completed, but verification still failed."
+        );
+    }
+
+    return 0;
+}
+

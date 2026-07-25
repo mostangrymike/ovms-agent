@@ -45,5 +45,8 @@ void symbol_rename_preview(agent_state *state,
 int symbol_rename_apply(agent_state *state,
                         const char *old_name,
                         const char *new_name);
+int symbol_rename_verify(agent_state *state,
+                         const char *old_name,
+                         const char *new_name);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
