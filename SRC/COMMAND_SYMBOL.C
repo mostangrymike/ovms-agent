@@ -25,7 +25,9 @@ static const command_entry symbol_commands[] = {
     { "CYCLE", "Show a project dependency cycle", command_cycle },
     { "CYCLE/MODULE", "Show a cycle reachable from one module", command_cycle_module },
     { "ARCHITECTURE", "Summarize project architecture metrics", command_architecture },
-    { "UNUSED", "Find likely unused functions and modules", command_unused }
+    { "UNUSED", "Find likely unused functions and modules", command_unused },
+    { "UNUSED/DETAIL", "Explain unused-code evidence for a symbol", command_unused_detail },
+    { "RENAME", "Preview an exact project-wide identifier rename", command_rename }
 };
 
 void command_register_symbol(void)
@@ -367,4 +369,54 @@ void command_unused(agent_state *state,
     }
 
     symbol_unused(state);
+}
+
+
+void command_unused_detail(agent_state *state,
+                           const char *arguments)
+{
+    const char *symbol;
+
+    symbol = command_symbol_argument(
+        arguments,
+        "Usage: UNUSED/DETAIL symbol"
+    );
+
+    if (symbol != NULL) {
+        symbol_unused_detail(
+            state,
+            symbol
+        );
+    }
+}
+
+
+void command_rename(agent_state *state,
+                    const char *arguments)
+{
+    char *cursor;
+    char *old_name;
+    char *new_name;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: RENAME old_name new_name");
+        return;
+    }
+
+    cursor = (char *)arguments;
+    old_name = command_next_argument(&cursor);
+    new_name = command_next_argument(&cursor);
+
+    if (old_name == NULL ||
+        new_name == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts("Usage: RENAME old_name new_name");
+        return;
+    }
+
+    symbol_rename_preview(
+        state,
+        old_name,
+        new_name
+    );
 }

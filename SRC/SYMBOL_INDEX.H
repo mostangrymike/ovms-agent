@@ -37,5 +37,10 @@ void symbol_cycle_module(agent_state *state,
                          const char *module);
 void symbol_architecture(agent_state *state);
 void symbol_unused(agent_state *state);
+void symbol_unused_detail(agent_state *state,
+                          const char *symbol);
+void symbol_rename_preview(agent_state *state,
+                           const char *old_name,
+                           const char *new_name);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

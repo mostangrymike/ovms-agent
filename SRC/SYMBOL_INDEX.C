@@ -5811,3 +5811,703 @@ void symbol_unused(agent_state *state)
     );
 }
 
+typedef struct unused_detail_counts {
+    unsigned int definitions;
+    unsigned int calls;
+    unsigned int declarations;
+    unsigned int type_references;
+    unsigned int ordinary_references;
+    unsigned int table_references;
+    unsigned int header_references;
+} unused_detail_counts;
+
+static int unused_detail_line_has_table_context(
+    const char *line)
+{
+    return strchr(line, '{') != NULL ||
+           strchr(line, '}') != NULL ||
+           strchr(line, '[') != NULL ||
+           strchr(line, ']') != NULL ||
+           strstr(line, "registry") != NULL ||
+           strstr(line, "table") != NULL;
+}
+
+static void unused_detail_print_match(
+    const char *kind,
+    const char *path,
+    unsigned long line_number,
+    const char *line)
+{
+    char display[SYMBOL_LINE_SIZE];
+    size_t length;
+
+    (void)strncpy(
+        display,
+        line,
+        sizeof(display) - 1U
+    );
+    display[sizeof(display) - 1U] = '\0';
+
+    length = strlen(display);
+
+    while (length > 0U &&
+           (display[length - 1U] == '\n' ||
+            display[length - 1U] == '\r')) {
+        display[--length] = '\0';
+    }
+
+    (void)printf(
+        "%-5s %-32s line %-6lu %s\n",
+        kind,
+        path,
+        line_number,
+        display
+    );
+}
+
+static void unused_detail_scan_sources(
+    const char *symbol,
+    unused_detail_counts *counts)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        char clean[SYMBOL_LINE_SIZE];
+        unsigned long line_number;
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name) &&
+            !symbol_has_header_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        line_number = 0UL;
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            const char *position;
+
+            ++line_number;
+            (void)strncpy(
+                clean,
+                line,
+                sizeof(clean) - 1U
+            );
+            clean[sizeof(clean) - 1U] = '\0';
+            symbol_clean_line(
+                clean,
+                &in_block_comment
+            );
+
+            position = clean;
+
+            while ((position = strstr(
+                        position,
+                        symbol)) != NULL) {
+                int is_definition;
+                int is_call;
+                int is_type;
+                int is_declaration;
+                const char *kind;
+
+                if (!symbol_match_at(
+                        clean,
+                        position,
+                        symbol)) {
+                    ++position;
+                    continue;
+                }
+
+                is_definition = usage_line_is_definition(
+                    path,
+                    line_number,
+                    symbol
+                );
+                is_call = usage_line_is_indexed_call(
+                    path,
+                    line_number,
+                    symbol
+                );
+                is_type = usage_line_is_type_reference(
+                    clean,
+                    position
+                );
+                is_declaration =
+                    !is_definition &&
+                    !is_call &&
+                    usage_line_has_declaration_prefix(
+                        clean,
+                        position
+                    );
+
+                if (!is_call &&
+                    !is_declaration &&
+                    !is_type) {
+                    is_call = usage_line_is_call(
+                        clean,
+                        position,
+                        symbol
+                    );
+                }
+
+                if (is_definition) {
+                    kind = "DEF";
+                    ++counts->definitions;
+                } else if (is_call) {
+                    kind = "CALL";
+                    ++counts->calls;
+                } else if (is_type) {
+                    kind = "TYPE";
+                    ++counts->type_references;
+                } else if (is_declaration) {
+                    kind = "DECL";
+                    ++counts->declarations;
+                } else {
+                    kind = "REF";
+                    ++counts->ordinary_references;
+                }
+
+                if (symbol_has_header_extension(path)) {
+                    ++counts->header_references;
+                }
+
+                if (!is_definition &&
+                    unused_detail_line_has_table_context(
+                        clean)) {
+                    ++counts->table_references;
+                }
+
+                unused_detail_print_match(
+                    kind,
+                    path,
+                    line_number,
+                    line
+                );
+
+                position += strlen(symbol);
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+}
+
+static void unused_detail_print_assessment(
+    const char *symbol,
+    const unused_detail_counts *counts)
+{
+    (void)puts("");
+    (void)puts("Assessment");
+    (void)puts("----------------------------------------");
+
+    if (counts->definitions == 0U) {
+        (void)puts(
+            "No project definition was found."
+        );
+        return;
+    }
+
+    if (counts->calls > 0U) {
+        (void)printf(
+            "%s is not unused: %u direct indexed call%s found.\n",
+            symbol,
+            counts->calls,
+            counts->calls == 1U ? "" : "s"
+        );
+        return;
+    }
+
+    if (counts->table_references > 0U) {
+        (void)printf(
+            "%s has no direct calls, but %u table or registry "
+            "reference%s were found.\n",
+            symbol,
+            counts->table_references,
+            counts->table_references == 1U ? "" : "s"
+        );
+        (void)puts(
+            "This is likely a callback, command handler, "
+            "or function-pointer target."
+        );
+        return;
+    }
+
+    if (counts->header_references > 0U ||
+        counts->declarations > 0U) {
+        (void)printf(
+            "%s has no direct calls, but it is declared in a "
+            "header or interface.\n",
+            symbol
+        );
+        (void)puts(
+            "It may be an externally callable project API."
+        );
+        return;
+    }
+
+    (void)printf(
+        "%s has a definition but no direct calls, table references, "
+        "or interface declarations.\n",
+        symbol
+    );
+    (void)puts(
+        "It is a strong unused-code candidate, but manual review "
+        "is still required."
+    );
+}
+
+void symbol_unused_detail(agent_state *state,
+                          const char *symbol)
+{
+    unused_detail_counts counts;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (!symbol_prepare(state, symbol)) {
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before UNUSED/DETAIL."
+        );
+        return;
+    }
+
+    (void)memset(&counts, 0, sizeof(counts));
+
+    (void)printf(
+        "Unused-code detail for %s\n",
+        symbol
+    );
+    (void)puts("========================================");
+
+    unused_detail_scan_sources(
+        symbol,
+        &counts
+    );
+
+    (void)puts("");
+    (void)puts("Reference summary");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Definitions:               %u\n",
+        counts.definitions
+    );
+    (void)printf(
+        "Direct calls:              %u\n",
+        counts.calls
+    );
+    (void)printf(
+        "Declarations:              %u\n",
+        counts.declarations
+    );
+    (void)printf(
+        "Type references:           %u\n",
+        counts.type_references
+    );
+    (void)printf(
+        "Ordinary references:       %u\n",
+        counts.ordinary_references
+    );
+    (void)printf(
+        "Table/registry references: %u\n",
+        counts.table_references
+    );
+    (void)printf(
+        "Header references:         %u\n",
+        counts.header_references
+    );
+
+    unused_detail_print_assessment(
+        symbol,
+        &counts
+    );
+}
+
+#define RENAME_MATCH_MAX 1024U
+
+typedef struct rename_match {
+    char path[SYMBOL_PATH_SIZE];
+    unsigned long line;
+    unsigned int occurrences;
+} rename_match;
+
+typedef struct rename_match_list {
+    rename_match matches[RENAME_MATCH_MAX];
+    unsigned int used;
+    unsigned int total_occurrences;
+} rename_match_list;
+
+static int rename_identifier_valid(const char *name)
+{
+    const unsigned char *position;
+
+    if (name == NULL ||
+        *name == '\0' ||
+        !(isalpha((unsigned char)*name) ||
+          *name == '_')) {
+        return 0;
+    }
+
+    position = (const unsigned char *)name + 1;
+
+    while (*position != '\0') {
+        if (!(isalnum(*position) ||
+              *position == '_')) {
+            return 0;
+        }
+
+        ++position;
+    }
+
+    return 1;
+}
+
+static unsigned int rename_count_line_matches(
+    const char *line,
+    const char *symbol)
+{
+    const char *position;
+    unsigned int count;
+
+    if (line == NULL || symbol == NULL) {
+        return 0U;
+    }
+
+    position = line;
+    count = 0U;
+
+    while ((position = strstr(position, symbol)) != NULL) {
+        if (symbol_match_at(line, position, symbol)) {
+            ++count;
+            position += strlen(symbol);
+        } else {
+            ++position;
+        }
+    }
+
+    return count;
+}
+
+static void rename_match_add(
+    rename_match_list *list,
+    const char *path,
+    unsigned long line,
+    unsigned int occurrences)
+{
+    if (list == NULL ||
+        path == NULL ||
+        occurrences == 0U ||
+        list->used >= RENAME_MATCH_MAX ||
+        strlen(path) >= SYMBOL_PATH_SIZE) {
+        return;
+    }
+
+    (void)strcpy(
+        list->matches[list->used].path,
+        path
+    );
+    list->matches[list->used].line = line;
+    list->matches[list->used].occurrences = occurrences;
+    ++list->used;
+    list->total_occurrences += occurrences;
+}
+
+static void rename_collect_matches(
+    const char *old_name,
+    rename_match_list *list)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        char clean[SYMBOL_LINE_SIZE];
+        unsigned long line_number;
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name) &&
+            !symbol_has_header_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        line_number = 0UL;
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            unsigned int occurrences;
+
+            ++line_number;
+            (void)strncpy(
+                clean,
+                line,
+                sizeof(clean) - 1U
+            );
+            clean[sizeof(clean) - 1U] = '\0';
+
+            symbol_clean_line(
+                clean,
+                &in_block_comment
+            );
+
+            occurrences = rename_count_line_matches(
+                clean,
+                old_name
+            );
+
+            if (occurrences > 0U) {
+                rename_match_add(
+                    list,
+                    path,
+                    line_number,
+                    occurrences
+                );
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+}
+
+static int rename_new_name_conflicts(
+    const char *new_name)
+{
+    DIR *directory;
+    struct dirent *entry;
+    int found;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return 0;
+    }
+
+    found = 0;
+
+    while (!found &&
+           (entry = readdir(directory)) != NULL) {
+        FILE *file;
+        char path[SYMBOL_PATH_SIZE];
+        char line[SYMBOL_LINE_SIZE];
+        char clean[SYMBOL_LINE_SIZE];
+        int in_block_comment;
+
+        if (!symbol_has_c_extension(entry->d_name) &&
+            !symbol_has_header_extension(entry->d_name)) {
+            continue;
+        }
+
+        if ((size_t)snprintf(
+                path,
+                sizeof(path),
+                "SRC/%s",
+                entry->d_name) >= sizeof(path)) {
+            continue;
+        }
+
+        file = fopen(path, "r");
+
+        if (file == NULL) {
+            continue;
+        }
+
+        in_block_comment = 0;
+
+        while (fgets(line, sizeof(line), file) != NULL) {
+            (void)strncpy(
+                clean,
+                line,
+                sizeof(clean) - 1U
+            );
+            clean[sizeof(clean) - 1U] = '\0';
+
+            symbol_clean_line(
+                clean,
+                &in_block_comment
+            );
+
+            if (rename_count_line_matches(
+                    clean,
+                    new_name) > 0U) {
+                found = 1;
+                break;
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    (void)closedir(directory);
+    return found;
+}
+
+static void rename_print_preview(
+    const rename_match_list *list,
+    const char *old_name,
+    const char *new_name)
+{
+    unsigned int index;
+
+    (void)printf(
+        "Rename preview: %s -> %s\n",
+        old_name,
+        new_name
+    );
+    (void)puts("========================================");
+
+    if (list->used == 0U) {
+        (void)puts("No exact identifier matches found.");
+        return;
+    }
+
+    for (index = 0U;
+         index < list->used;
+         ++index) {
+        (void)printf(
+            "%-32s line %-6lu %u occurrence%s\n",
+            list->matches[index].path,
+            list->matches[index].line,
+            list->matches[index].occurrences,
+            list->matches[index].occurrences == 1U ? "" : "s"
+        );
+    }
+
+    (void)puts("");
+    (void)printf(
+        "Files/lines affected: %u\n",
+        list->used
+    );
+    (void)printf(
+        "Total replacements:   %u\n",
+        list->total_occurrences
+    );
+}
+
+void symbol_rename_preview(agent_state *state,
+                           const char *old_name,
+                           const char *new_name)
+{
+    rename_match_list matches;
+    unsigned int checked;
+    unsigned int changed;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!rename_identifier_valid(old_name) ||
+        !rename_identifier_valid(new_name)) {
+        (void)puts(
+            "Both names must be valid C identifiers."
+        );
+        return;
+    }
+
+    if (strcmp(old_name, new_name) == 0) {
+        (void)puts(
+            "Old and new names must be different."
+        );
+        return;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before RENAME."
+        );
+        return;
+    }
+
+    if (rename_new_name_conflicts(new_name)) {
+        (void)printf(
+            "Rename blocked: %s already exists in project source.\n",
+            new_name
+        );
+        return;
+    }
+
+    (void)memset(&matches, 0, sizeof(matches));
+    rename_collect_matches(
+        old_name,
+        &matches
+    );
+
+    rename_print_preview(
+        &matches,
+        old_name,
+        new_name
+    );
+
+    if (matches.total_occurrences > 0U) {
+        (void)puts("");
+        (void)puts(
+            "Preview only. No files were modified."
+        );
+        (void)puts(
+            "Use the guarded write agent or PATCH commands "
+            "to apply confirmed replacements."
+        );
+    }
+}
+
