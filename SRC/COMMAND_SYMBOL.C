@@ -19,7 +19,8 @@ static const command_entry symbol_commands[] = {
     { "MODULE/GRAPH", "Show direct project-module dependencies", command_module_graph },
     { "MODULE/GRAPH/ALL", "Show the project-wide module graph", command_module_graph_all },
     { "IMPACT", "Show direct change impact for a symbol", command_impact },
-    { "MODULE/REVERSE", "Show modules that depend on a module", command_module_reverse }
+    { "MODULE/REVERSE", "Show modules that depend on a module", command_module_reverse },
+    { "PATH", "Find a dependency path between modules or symbols", command_path }
 };
 
 void command_register_symbol(void)
@@ -267,4 +268,35 @@ void command_module_reverse(agent_state *state,
     if (module != NULL) {
         symbol_module_reverse(state, module);
     }
+}
+
+
+void command_path(agent_state *state,
+                  const char *arguments)
+{
+    char *cursor;
+    char *source;
+    char *target;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: PATH source target");
+        return;
+    }
+
+    cursor = (char *)arguments;
+    source = command_next_argument(&cursor);
+    target = command_next_argument(&cursor);
+
+    if (source == NULL ||
+        target == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts("Usage: PATH source target");
+        return;
+    }
+
+    symbol_path_find(
+        state,
+        source,
+        target
+    );
 }

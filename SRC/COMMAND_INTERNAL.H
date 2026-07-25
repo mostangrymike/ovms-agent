@@ -71,6 +71,8 @@ void command_impact(agent_state *state,
                     const char *arguments);
 void command_module_reverse(agent_state *state,
                             const char *arguments);
+void command_path(agent_state *state,
+                  const char *arguments);
 
 void command_ask(agent_state *state, const char *arguments);
 void command_chat(agent_state *state, const char *arguments);

@@ -3998,3 +3998,367 @@ void symbol_module_reverse(agent_state *state,
     }
 }
 
+#define PATH_NODE_MAX 256U
+
+typedef struct path_node {
+    char path[SYMBOL_PATH_SIZE];
+    int predecessor;
+    int visited;
+} path_node;
+
+static int path_token_is_module(const char *token)
+{
+    size_t length;
+
+    if (token == NULL) {
+        return 0;
+    }
+
+    length = strlen(token);
+
+    return length >= 2U &&
+           token[length - 2U] == '.' &&
+           (token[length - 1U] == 'C' ||
+            token[length - 1U] == 'c' ||
+            token[length - 1U] == 'H' ||
+            token[length - 1U] == 'h');
+}
+
+static int path_resolve_token(
+    const char *token,
+    char *path_out,
+    size_t path_size)
+{
+    unsigned long line_number;
+
+    if (path_token_is_module(token)) {
+        return module_path_prepare(
+            token,
+            path_out,
+            path_size
+        );
+    }
+
+    line_number = 0UL;
+
+    return impact_find_definition(
+        token,
+        path_out,
+        path_size,
+        &line_number
+    );
+}
+
+static int path_node_find(
+    path_node *nodes,
+    unsigned int node_count,
+    const char *path)
+{
+    unsigned int index;
+
+    for (index = 0U; index < node_count; ++index) {
+        if (strcmp(nodes[index].path, path) == 0) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static int path_node_add(
+    path_node *nodes,
+    unsigned int *node_count,
+    const char *path)
+{
+    int existing;
+
+    existing = path_node_find(
+        nodes,
+        *node_count,
+        path
+    );
+
+    if (existing >= 0) {
+        return existing;
+    }
+
+    if (*node_count >= PATH_NODE_MAX ||
+        strlen(path) >= SYMBOL_PATH_SIZE) {
+        return -1;
+    }
+
+    (void)strcpy(
+        nodes[*node_count].path,
+        path
+    );
+    nodes[*node_count].predecessor = -1;
+    nodes[*node_count].visited = 0;
+
+    ++(*node_count);
+    return (int)(*node_count - 1U);
+}
+
+static int path_build_nodes(
+    const module_edge_list *edges,
+    path_node *nodes,
+    unsigned int *node_count)
+{
+    unsigned int index;
+
+    *node_count = 0U;
+
+    for (index = 0U;
+         index < edges->used;
+         ++index) {
+        if (path_node_add(
+                nodes,
+                node_count,
+                edges->edges[index].source) < 0 ||
+            path_node_add(
+                nodes,
+                node_count,
+                edges->edges[index].target) < 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int path_find_shortest(
+    const module_edge_list *edges,
+    path_node *nodes,
+    unsigned int node_count,
+    int source_index,
+    int target_index)
+{
+    int queue[PATH_NODE_MAX];
+    unsigned int head;
+    unsigned int tail;
+
+    head = 0U;
+    tail = 0U;
+
+    nodes[source_index].visited = 1;
+    queue[tail++] = source_index;
+
+    while (head < tail) {
+        int current;
+        unsigned int edge_index;
+
+        current = queue[head++];
+
+        if (current == target_index) {
+            return 1;
+        }
+
+        for (edge_index = 0U;
+             edge_index < edges->used;
+             ++edge_index) {
+            int next;
+
+            if (strcmp(
+                    edges->edges[edge_index].source,
+                    nodes[current].path) != 0) {
+                continue;
+            }
+
+            next = path_node_find(
+                nodes,
+                node_count,
+                edges->edges[edge_index].target
+            );
+
+            if (next < 0 ||
+                nodes[next].visited) {
+                continue;
+            }
+
+            nodes[next].visited = 1;
+            nodes[next].predecessor = current;
+            queue[tail++] = next;
+        }
+    }
+
+    return 0;
+}
+
+static void path_print_result(
+    path_node *nodes,
+    int source_index,
+    int target_index)
+{
+    int chain[PATH_NODE_MAX];
+    unsigned int used;
+    int current;
+
+    used = 0U;
+    current = target_index;
+
+    while (current >= 0 &&
+           used < PATH_NODE_MAX) {
+        chain[used++] = current;
+
+        if (current == source_index) {
+            break;
+        }
+
+        current = nodes[current].predecessor;
+    }
+
+    if (used == 0U ||
+        chain[used - 1U] != source_index) {
+        (void)puts("No dependency path found.");
+        return;
+    }
+
+    (void)printf(
+        "Dependency path (%u edge%s)\n",
+        used - 1U,
+        used - 1U == 1U ? "" : "s"
+    );
+    (void)puts("----------------------------------------");
+
+    while (used > 0U) {
+        --used;
+        (void)printf(
+            "%s%s",
+            nodes[chain[used]].path,
+            used == 0U ? "\n" : " -> "
+        );
+    }
+}
+
+void symbol_path_find(agent_state *state,
+                      const char *source,
+                      const char *target)
+{
+    char source_path[SYMBOL_PATH_SIZE];
+    char target_path[SYMBOL_PATH_SIZE];
+    module_edge_list edges;
+    path_node nodes[PATH_NODE_MAX];
+    unsigned int node_count;
+    int source_index;
+    int target_index;
+    FILE *file;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_graph_current()) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before PATH."
+        );
+        return;
+    }
+
+    source_path[0] = '\0';
+    target_path[0] = '\0';
+
+    if (!path_resolve_token(
+            source,
+            source_path,
+            sizeof(source_path))) {
+        (void)printf(
+            "Unable to resolve source: %s\n",
+            source
+        );
+        return;
+    }
+
+    if (!path_resolve_token(
+            target,
+            target_path,
+            sizeof(target_path))) {
+        (void)printf(
+            "Unable to resolve target: %s\n",
+            target
+        );
+        return;
+    }
+
+    file = fopen(source_path, "r");
+    if (file == NULL) {
+        (void)printf(
+            "Unable to open %s.\n",
+            source_path
+        );
+        return;
+    }
+    (void)fclose(file);
+
+    file = fopen(target_path, "r");
+    if (file == NULL) {
+        (void)printf(
+            "Unable to open %s.\n",
+            target_path
+        );
+        return;
+    }
+    (void)fclose(file);
+
+    if (strcmp(source_path, target_path) == 0) {
+        (void)printf(
+            "Source and target resolve to the same module: %s\n",
+            source_path
+        );
+        return;
+    }
+
+    (void)memset(&edges, 0, sizeof(edges));
+    (void)memset(nodes, 0, sizeof(nodes));
+
+    if (!module_graph_collect_all(&edges) ||
+        !path_build_nodes(
+            &edges,
+            nodes,
+            &node_count)) {
+        (void)puts("Unable to construct the project graph.");
+        return;
+    }
+
+    source_index = path_node_add(
+        nodes,
+        &node_count,
+        source_path
+    );
+    target_index = path_node_add(
+        nodes,
+        &node_count,
+        target_path
+    );
+
+    if (source_index < 0 ||
+        target_index < 0) {
+        (void)puts("Project graph is too large.");
+        return;
+    }
+
+    (void)printf(
+        "Finding path: %s -> %s\n",
+        source_path,
+        target_path
+    );
+
+    if (!path_find_shortest(
+            &edges,
+            nodes,
+            node_count,
+            source_index,
+            target_index)) {
+        (void)puts("No dependency path found.");
+        return;
+    }
+
+    path_print_result(
+        nodes,
+        source_index,
+        target_index
+    );
+}
+

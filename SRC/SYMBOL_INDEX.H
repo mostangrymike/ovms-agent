@@ -28,5 +28,8 @@ void symbol_impact(agent_state *state,
                    const char *symbol);
 void symbol_module_reverse(agent_state *state,
                            const char *module);
+void symbol_path_find(agent_state *state,
+                      const char *source,
+                      const char *target);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
