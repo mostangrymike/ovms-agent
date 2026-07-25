@@ -1,4 +1,5 @@
 #include "openai_internal.h"
+#include "openai_prompts.h"
 
 #ifndef OPENAI_PLAN_MAX_TURNS
 #define OPENAI_PLAN_MAX_TURNS 24
@@ -10,58 +11,6 @@ void openai_agent_mode(agent_state *state,
                        int build_after_write,
                        int workflow)
 {
-    static const char read_only_instructions[] =
-        "You are a careful OpenVMS C code analyst operating inside a "
-        "project sandbox. You have four read-only tools: list_directory, "
-        "search_file, read_file, and read_file_range. Use ranged reads "
-        "for files too large to read whole. Sensitive credential and generated "
-        "transport files are blocked. Use the fewest tool calls necessary. "
-        "Never claim to have inspected content unless a tool returned it. "
-        "Do not request paths outside the project. Produce a concise final "
-        "answer as soon as sufficient evidence has been collected.";
-
-    static const char plan_instructions[] =
-        "You are a careful OpenVMS software implementation planner operating "
-        "inside a project sandbox. You have read-only tools only: "
-        "list_directory, search_file, read_file, and read_file_range. Inspect "
-        "only enough project context to produce a concrete implementation "
-        "plan. Never modify files, request a write tool, or run a build. The "
-        "final answer must contain these headings: Goal, Files to inspect, "
-        "Files to modify, Files to create, Ordered edits, Validation, Risks, "
-        "and Authority required. Identify exact symbols or sections when "
-        "possible. State explicitly when no file creation is needed. Do not "
-        "claim a file or symbol exists unless a tool result showed it. "
-        "For validation steps, use OpenVMS-native commands: $ @BUILD "
-        "to compile, $ @OVMS_AGENT to run the image, and SEARCH instead "
-        "of grep. Do not suggest gcc, make, ./program, grep, sed, awk, "
-        "or other Unix shell commands unless the user explicitly requests "
-        "Unix instructions. For a plan that can be executed automatically, "
-        "include exactly one machine-readable operation at the end using "
-        "these exact lines: BEGIN_OPERATION, type=replace_text, path=<one "
-        "project-relative file>, old_text=<one exact source line>, "
-        "new_text=<one replacement line>, END_OPERATION. Do not include "
-        "more than one operation. Omit the operation block if an exact "
-        "single-line replacement cannot be proven from tool output.";
-
-    static const char write_instructions[] =
-        "You are a careful OpenVMS C coding agent operating inside a project "
-        "sandbox. You may inspect with list_directory, search_file, read_file, "
-        "and read_file_range. Use ranged reads for large files. You may "
-        "propose edits only through replace_text or replace_lines. Use "
-        "replace_lines when an exact inclusive line range is known, and use "
-        "replace_text when an exact unique text block is safer. "
-        "When the user names a specific file, read that file directly and do "
-        "not list the project first. Do not search a file after reading it "
-        "unless the requested text was not present. Before calling "
-        "replace_text, ensure old_text is exact and unique. Before calling "
-        "replace_lines, verify first_line and last_line from a ranged read. "
-        "Make one smallest "
-        "possible edit. Do not ask for confirmation in ordinary text. "
-        "Confirmation is handled locally by the write tool; call it immediately "
-        "once the exact edit is known. Never modify sensitive files or request "
-        "paths outside the project. Do not request "
-        "a second patch in the same run.";
-
     const char *api_key;
     const char *model;
     const char *instructions;
@@ -135,10 +84,10 @@ void openai_agent_mode(agent_state *state,
     }
 
     if (workflow == OPENAI_WORKFLOW_PLAN) {
-        instructions = plan_instructions;
+        instructions = openai_prompt_plan();
     } else {
         instructions = allow_write ?
-            write_instructions : read_only_instructions;
+            openai_prompt_write() : openai_prompt_read_only();
     }
 
     previous_id = NULL;
@@ -585,17 +534,7 @@ void openai_agent_fix(agent_state *state, const char *goal)
 
 void openai_agent_create(agent_state *state, const char *goal)
 {
-    static const char instructions[] =
-        "You are a careful OpenVMS C project agent operating inside a "
-        "project sandbox. You may inspect existing files with list_directory, "
-        "search_file, read_file, and read_file_range. Use ranged reads for "
-        "large files. You may create exactly one new text file "
-        "through create_file. Never overwrite an existing file. When the user "
-        "names a destination path, inspect only the source context needed to "
-        "produce the new file. Keep content at or below 65536 bytes. Do not "
-        "ask for confirmation in ordinary text; local confirmation is handled "
-        "by create_file. Never request sensitive paths or paths outside the "
-        "project. Do not request a second creation in the same run.";
+    const char *instructions;
 
     const char *api_key;
     const char *model;
@@ -640,6 +579,8 @@ void openai_agent_create(agent_state *state, const char *goal)
         (void)puts("OVMS_AGENT_MODEL is not defined.");
         return;
     }
+
+    instructions = openai_prompt_create();
 
     if (!write_headers(api_key)) {
         return;
