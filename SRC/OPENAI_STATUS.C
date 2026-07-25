@@ -123,7 +123,10 @@ void openai_status(const agent_state *state)
     (void)puts("");
     (void)puts("Enabled modes:");
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
-    (void)puts("  AGENT, AGENT/PLAN, AGENT/WRITE, AGENT/CREATE, AGENT/BUILD");
+    (void)puts(
+        "  AGENT, AGENT/PLAN, AGENT/EXECUTE, AGENT/WRITE, "
+        "AGENT/CREATE, AGENT/BUILD"
+    );
     (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
     (void)puts("  AGENT/STATUS, AGENT/VERIFY, AGENT/LOG");
     (void)puts("  AGENT/LOG/OLD, AGENT/LOG/CLEAR");

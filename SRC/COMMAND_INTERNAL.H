@@ -1,6 +1,8 @@
 #ifndef OVMS_AGENT_COMMAND_INTERNAL_H
 #define OVMS_AGENT_COMMAND_INTERNAL_H
 
+#include <stddef.h>
+
 #include "agent.h"
 
 typedef void (*command_handler)(agent_state *state,
@@ -12,7 +14,16 @@ typedef struct command_entry {
     command_handler handler;
 } command_entry;
 
-const command_entry *command_table_get(void);
+int command_registry_add(const command_entry *entries,
+                         size_t entry_count);
+void command_registry_initialize(void);
+const command_entry *command_find(const char *name);
+const command_entry *command_registry_get(size_t index);
+size_t command_registry_count(void);
+
+void command_register_core(void);
+void command_register_project(void);
+void command_register_agent(void);
 
 char *command_next_argument(char **cursor);
 int command_decode_escapes(char *text);

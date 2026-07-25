@@ -7,6 +7,28 @@
 #include "project.h"
 #include "util.h"
 
+static const command_entry project_commands[] = {
+    { "ROOT", "Display the project root", command_root },
+    { "STATUS", "Display agent status", command_status },
+    { "LIST", "List a directory: LIST [path]", command_list },
+    { "TREE", "Display directory tree: TREE [path]", command_tree },
+    { "READ", "Read lines: READ file [start [count]]", command_read },
+    { "BUILD", "Build the current project", command_build },
+    { "GITSTATUS", "Display Git status", command_gitstatus },
+    { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
+    { "EDIT", "Edit a file: EDIT file", command_edit },
+    { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
+    { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
+};
+
+void command_register_project(void)
+{
+    (void)command_registry_add(
+        project_commands,
+        sizeof(project_commands) / sizeof(project_commands[0])
+    );
+}
+
 void command_build(agent_state *state,
                    const char *arguments)
 {

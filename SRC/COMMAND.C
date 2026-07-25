@@ -46,13 +46,11 @@ void command_execute(agent_state *state, char *input)
 
     util_uppercase(command);
 
-    for (entry = command_table_get();
-         entry->name != NULL;
-         ++entry) {
-        if (strcmp(command, entry->name) == 0) {
-            entry->handler(state, arguments);
-            return;
-        }
+    entry = command_find(command);
+
+    if (entry != NULL) {
+        entry->handler(state, arguments);
+        return;
     }
 
     if (strcmp(command, "LIST/ALL") == 0) {

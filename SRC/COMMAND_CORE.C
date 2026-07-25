@@ -5,6 +5,21 @@
 #include "command_internal.h"
 #include "util.h"
 
+static const command_entry core_commands[] = {
+    { "HELP", "Display command help", command_help },
+    { "VERSION", "Display agent version", command_version },
+    { "QUIT", "Exit OVMS Agent", command_quit },
+    { "EXIT", "Exit OVMS Agent", command_quit }
+};
+
+void command_register_core(void)
+{
+    (void)command_registry_add(
+        core_commands,
+        sizeof(core_commands) / sizeof(core_commands[0])
+    );
+}
+
 void command_help(agent_state *state, const char *arguments)
 {
     const command_entry *entry;
@@ -13,10 +28,15 @@ void command_help(agent_state *state, const char *arguments)
     (void)arguments;
     (void)puts("Commands:");
 
-    for (entry = command_table_get();
-         entry->name != NULL;
-         ++entry) {
-        if (strcmp(entry->name, "EXIT") != 0) {
+    size_t index;
+
+    for (index = 0U;
+         index < command_registry_count();
+         ++index) {
+        entry = command_registry_get(index);
+
+        if (entry != NULL &&
+            strcmp(entry->name, "EXIT") != 0) {
             (void)printf(
                 "  %-10s %s\n",
                 entry->name,
