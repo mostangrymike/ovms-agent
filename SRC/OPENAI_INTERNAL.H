@@ -12,6 +12,7 @@
 #include "openai.h"
 #include "openai_log.h"
 #include "openai_path.h"
+#include "openai_cache.h"
 #include "openai_plan.h"
 #include "openai_execute.h"
 #include "openai_state.h"
@@ -47,16 +48,10 @@
 
 #define OPENAI_AGENT_MAX_TURNS 12
 #define OPENAI_PLAN_MAX_TURNS 24
-#define OPENAI_AGENT_CACHE_SIZE 8
 #define OPENAI_SEARCH_OUTPUT_LIMIT 32768
 #define OPENAI_LIST_OUTPUT_LIMIT 32768
 #define OPENAI_CREATE_MAX_BYTES 65536U
 #define OPENAI_RANGE_OUTPUT_LIMIT 65536U
-
-typedef struct openai_file_cache_entry {
-    char *path;
-    char *content;
-} openai_file_cache_entry;
 
 typedef enum openai_replace_result {
     OPENAI_REPLACE_ERROR = 0,
@@ -159,14 +154,9 @@ char *make_tool_error(const char *message,
                              const char *path);
 char *extract_string_argument(const char *arguments,
                                      const char *name);
-void openai_cache_init(openai_file_cache_entry *cache);
-void openai_cache_free(openai_file_cache_entry *cache);
 const char *openai_cache_lookup(
     const openai_file_cache_entry *cache,
     const char *path);
-int openai_cache_store(openai_file_cache_entry *cache,
-                              const char *path,
-                              const char *content);
 char *openai_duplicate_text(const char *text);
 int extract_integer_argument(const char *arguments,
                                     const char *name,
