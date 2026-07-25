@@ -7619,6 +7619,7 @@ static void extract_print_risks(
 
 typedef struct extract_identifier {
     char name[SYMBOL_NAME_SIZE];
+    char inferred_type[64];
     unsigned int reads;
     unsigned int writes;
     unsigned int declarations;
@@ -7626,6 +7627,7 @@ typedef struct extract_identifier {
     unsigned int pointer_writes;
     unsigned int pointer_value_writes;
     unsigned int constants;
+    unsigned int address_taken;
 } extract_identifier;
 
 typedef struct extract_identifier_list {
@@ -7701,6 +7703,7 @@ static extract_identifier *extract_identifier_get(
     }
 
     (void)strcpy(list->entries[list->used].name, name);
+    list->entries[list->used].inferred_type[0] = '\0';
     list->entries[list->used].reads = 0U;
     list->entries[list->used].writes = 0U;
     list->entries[list->used].declarations = 0U;
@@ -7708,6 +7711,7 @@ static extract_identifier *extract_identifier_get(
     list->entries[list->used].pointer_writes = 0U;
     list->entries[list->used].pointer_value_writes = 0U;
     list->entries[list->used].constants = 0U;
+    list->entries[list->used].address_taken = 0U;
 
     ++list->used;
     return &list->entries[list->used - 1U];
@@ -7943,6 +7947,693 @@ static int extract_line_writes_identifier(
     return 0;
 }
 
+
+static void extract_set_inferred_type(
+    extract_identifier *entry,
+    const char *type_name)
+{
+    if (entry == NULL ||
+        type_name == NULL ||
+        *type_name == '\0' ||
+        entry->inferred_type[0] != '\0' ||
+        strlen(type_name) >= sizeof(entry->inferred_type)) {
+        return;
+    }
+
+    (void)strcpy(entry->inferred_type, type_name);
+}
+
+static void extract_infer_type_from_line(
+    const char *line,
+    const char *identifier,
+    extract_identifier *entry)
+{
+    const char *position;
+    const char *type_start;
+    const char *type_end;
+    char type_buffer[64];
+    size_t length;
+
+    if (line == NULL ||
+        identifier == NULL ||
+        entry == NULL ||
+        entry->inferred_type[0] != '\0') {
+        return;
+    }
+
+    position = strstr(line, identifier);
+
+    if (position == NULL) {
+        return;
+    }
+
+    type_start = line;
+
+    while (*type_start == ' ' || *type_start == '\t') {
+        ++type_start;
+    }
+
+    type_end = position;
+
+    while (type_end > type_start &&
+           (type_end[-1] == ' ' || type_end[-1] == '\t')) {
+        --type_end;
+    }
+
+    if (type_end <= type_start) {
+        return;
+    }
+
+    length = (size_t)(type_end - type_start);
+
+    if (length >= sizeof(type_buffer)) {
+        return;
+    }
+
+    (void)memcpy(type_buffer, type_start, length);
+    type_buffer[length] = '\0';
+
+    if (strstr(type_buffer, "if") != NULL ||
+        strstr(type_buffer, "while") != NULL ||
+        strstr(type_buffer, "for") != NULL ||
+        strstr(type_buffer, "return") != NULL) {
+        return;
+    }
+
+    extract_set_inferred_type(entry, type_buffer);
+}
+
+static int extract_identifier_address_taken(
+    const char *line,
+    const char *identifier)
+{
+    const char *position;
+
+    position = line;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        const char *before;
+
+        if (!symbol_match_at(line, position, identifier)) {
+            ++position;
+            continue;
+        }
+
+        before = position;
+
+        while (before > line &&
+               (before[-1] == ' ' || before[-1] == '\t')) {
+            --before;
+        }
+
+        if (before > line && before[-1] == '&') {
+            return 1;
+        }
+
+        position += strlen(identifier);
+    }
+
+    return 0;
+}
+
+
+static void extract_trim_type(char *type_name)
+{
+    char *start;
+    char *end;
+
+    if (type_name == NULL) {
+        return;
+    }
+
+    start = type_name;
+
+    while (*start == ' ' || *start == '\t') {
+        ++start;
+    }
+
+    if (start != type_name) {
+        (void)memmove(
+            type_name,
+            start,
+            strlen(start) + 1U
+        );
+    }
+
+    end = type_name + strlen(type_name);
+
+    while (end > type_name &&
+           (end[-1] == ' ' || end[-1] == '\t')) {
+        --end;
+    }
+
+    *end = '\0';
+}
+
+static void extract_normalize_type_spacing(char *type_name)
+{
+    char normalized[64];
+    const char *source;
+    char *destination;
+    int pending_space;
+
+    if (type_name == NULL) {
+        return;
+    }
+
+    source = type_name;
+    destination = normalized;
+    pending_space = 0;
+
+    while (*source != '\0' &&
+           (size_t)(destination - normalized) + 1U <
+               sizeof(normalized)) {
+        if (*source == ' ' || *source == '\t') {
+            pending_space = 1;
+            ++source;
+            continue;
+        }
+
+        if (*source == '*') {
+            if (destination > normalized &&
+                destination[-1] == ' ') {
+                --destination;
+            }
+
+            *destination++ = '*';
+            pending_space = 0;
+            ++source;
+            continue;
+        }
+
+        if (pending_space &&
+            destination > normalized &&
+            destination[-1] != '*') {
+            *destination++ = ' ';
+        }
+
+        *destination++ = *source++;
+        pending_space = 0;
+    }
+
+    *destination = '\0';
+    (void)strcpy(type_name, normalized);
+}
+
+static int extract_exact_identifier_at(
+    const char *line,
+    const char *position,
+    const char *identifier)
+{
+    size_t length;
+    unsigned char before;
+    unsigned char after;
+
+    if (line == NULL ||
+        position == NULL ||
+        identifier == NULL) {
+        return 0;
+    }
+
+    length = strlen(identifier);
+
+    if (strncmp(position, identifier, length) != 0) {
+        return 0;
+    }
+
+    before = position > line ?
+        (unsigned char)position[-1] : 0U;
+    after = (unsigned char)position[length];
+
+    if (position > line &&
+        (isalnum(before) || before == '_')) {
+        return 0;
+    }
+
+    if (isalnum(after) || after == '_') {
+        return 0;
+    }
+
+    return 1;
+}
+
+static void extract_set_type_from_fragment(
+    extract_identifier *entry,
+    const char *fragment,
+    const char *identifier)
+{
+    char type_buffer[64];
+    const char *position;
+    size_t length;
+
+    if (entry == NULL ||
+        fragment == NULL ||
+        identifier == NULL ||
+        entry->inferred_type[0] != '\0') {
+        return;
+    }
+
+    position = fragment;
+
+    while ((position = strstr(position, identifier)) != NULL) {
+        if (extract_exact_identifier_at(
+                fragment,
+                position,
+                identifier)) {
+            break;
+        }
+
+        ++position;
+    }
+
+    if (position == NULL) {
+        return;
+    }
+
+    length = (size_t)(position - fragment);
+
+    while (length > 0U &&
+           (fragment[length - 1U] == ' ' ||
+            fragment[length - 1U] == '\t')) {
+        --length;
+    }
+
+    while (length > 0U &&
+           fragment[length - 1U] == '*') {
+        --length;
+    }
+
+    if (length == 0U ||
+        length >= sizeof(type_buffer)) {
+        return;
+    }
+
+    (void)memcpy(type_buffer, fragment, length);
+    type_buffer[length] = '\0';
+    extract_trim_type(type_buffer);
+
+    {
+        const char *star_scan;
+        unsigned int star_count;
+        size_t used;
+
+        star_scan = fragment;
+        star_count = 0U;
+
+        while (star_scan < position) {
+            if (*star_scan == '*') {
+                ++star_count;
+            }
+
+            ++star_scan;
+        }
+
+        used = strlen(type_buffer);
+
+        while (star_count > 0U &&
+               used + 1U < sizeof(type_buffer)) {
+            type_buffer[used++] = '*';
+            type_buffer[used] = '\0';
+            --star_count;
+        }
+    }
+
+    extract_normalize_type_spacing(type_buffer);
+    extract_set_inferred_type(entry, type_buffer);
+}
+
+static void extract_recover_parameter_types(
+    const char *path,
+    unsigned long function_line,
+    const char *function_name,
+    extract_identifier_list *identifiers)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char signature[SYMBOL_LINE_SIZE * 4U];
+    unsigned long line_number;
+    int collecting;
+    char *open_paren;
+    char *close_paren;
+    char *cursor;
+
+    if (function_name == NULL ||
+        *function_name == '\0') {
+        return;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    signature[0] = '\0';
+    line_number = 0UL;
+    collecting = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < function_line) {
+            continue;
+        }
+
+        if (!collecting) {
+            if (strstr(line, function_name) == NULL) {
+                continue;
+            }
+
+            collecting = 1;
+        }
+
+        if (strlen(signature) + strlen(line) + 1U <
+            sizeof(signature)) {
+            (void)strcat(signature, line);
+        }
+
+        if (strchr(line, ')') != NULL) {
+            break;
+        }
+    }
+
+    (void)fclose(file);
+
+    open_paren = strchr(signature, '(');
+    close_paren = strrchr(signature, ')');
+
+    if (open_paren == NULL ||
+        close_paren == NULL ||
+        close_paren <= open_paren) {
+        return;
+    }
+
+    *close_paren = '\0';
+    cursor = open_paren + 1;
+
+    while (*cursor != '\0') {
+        char *comma;
+        char fragment[128];
+        size_t length;
+        unsigned int index;
+
+        comma = strchr(cursor, ',');
+
+        if (comma == NULL) {
+            length = strlen(cursor);
+        } else {
+            length = (size_t)(comma - cursor);
+        }
+
+        if (length >= sizeof(fragment)) {
+            length = sizeof(fragment) - 1U;
+        }
+
+        (void)memcpy(fragment, cursor, length);
+        fragment[length] = '\0';
+        extract_trim_type(fragment);
+
+        for (index = 0U;
+             index < identifiers->used;
+             ++index) {
+            extract_set_type_from_fragment(
+                &identifiers->entries[index],
+                fragment,
+                identifiers->entries[index].name
+            );
+        }
+
+        if (comma == NULL) {
+            break;
+        }
+
+        cursor = comma + 1;
+    }
+}
+
+static void extract_recover_local_types(
+    const char *path,
+    unsigned long function_line,
+    unsigned long selection_start,
+    extract_identifier_list *identifiers)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        unsigned int index;
+
+        ++line_number;
+
+        if (line_number <= function_line ||
+            line_number >= selection_start) {
+            continue;
+        }
+
+        for (index = 0U;
+             index < identifiers->used;
+             ++index) {
+            extract_identifier *entry;
+
+            entry = &identifiers->entries[index];
+
+            if (entry->inferred_type[0] != '\0') {
+                continue;
+            }
+
+            if (extract_line_declares_identifier(
+                    line,
+                    entry->name)) {
+                extract_set_type_from_fragment(
+                    entry,
+                    line,
+                    entry->name
+                );
+            }
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static int extract_type_is_pointer(const char *type_name)
+{
+    return type_name != NULL &&
+           strchr(type_name, '*') != NULL;
+}
+
+static void extract_print_parameter(
+    const char *type_name,
+    const char *name,
+    int add_pointer)
+{
+    char buffer[96];
+    size_t length;
+
+    (void)strncpy(
+        buffer,
+        type_name,
+        sizeof(buffer) - 1U
+    );
+    buffer[sizeof(buffer) - 1U] = '\0';
+
+    extract_trim_type(buffer);
+    length = strlen(buffer);
+
+    if (add_pointer &&
+        length + 1U < sizeof(buffer)) {
+        buffer[length++] = '*';
+        buffer[length] = '\0';
+    }
+
+    extract_normalize_type_spacing(buffer);
+
+    {
+        char *first_star;
+
+        first_star = strchr(buffer, '*');
+
+        if (first_star != NULL) {
+            size_t base_length;
+            unsigned int star_count;
+            const char *scan;
+
+            base_length = (size_t)(first_star - buffer);
+
+            while (base_length > 0U &&
+                   buffer[base_length - 1U] == ' ') {
+                --base_length;
+            }
+
+            star_count = 0U;
+
+            for (scan = first_star;
+                 *scan != '\0';
+                 ++scan) {
+                if (*scan == '*') {
+                    ++star_count;
+                }
+            }
+
+            (void)printf(
+                "    %.*s ",
+                (int)base_length,
+                buffer
+            );
+
+            while (star_count > 0U) {
+                (void)printf("*");
+                --star_count;
+            }
+
+            (void)printf("%s", name);
+        } else {
+            (void)printf(
+                "    %s %s",
+                buffer,
+                name
+            );
+        }
+    }
+}
+
+static const char *extract_default_type(
+    const extract_identifier *entry)
+{
+    if (entry->inferred_type[0] != '\0') {
+        return entry->inferred_type;
+    }
+
+    if (entry->pointer_writes > 0U ||
+        entry->pointer_value_writes > 0U) {
+        return "char*";
+    }
+
+    return "int";
+}
+
+static void extract_print_signature(
+    const char *new_name,
+    const extract_identifier_list *identifiers)
+{
+    unsigned int index;
+    unsigned int parameter_count;
+
+    parameter_count = 0U;
+
+    for (index = 0U; index < identifiers->used; ++index) {
+        const extract_identifier *entry;
+
+        entry = &identifiers->entries[index];
+
+        if (entry->constants > 0U ||
+            entry->function_calls > 0U ||
+            entry->declarations > 0U) {
+            continue;
+        }
+
+        ++parameter_count;
+    }
+
+    (void)puts("");
+    (void)puts("Proposed function signature");
+    (void)puts("----------------------------------------");
+
+    (void)printf("static void %s(", new_name);
+
+    if (parameter_count == 0U) {
+        (void)puts("void)");
+    } else {
+        unsigned int emitted;
+
+        emitted = 0U;
+        (void)puts("");
+
+        for (index = 0U; index < identifiers->used; ++index) {
+            const extract_identifier *entry;
+            const char *type_name;
+
+            entry = &identifiers->entries[index];
+
+            if (entry->constants > 0U ||
+                entry->function_calls > 0U ||
+                entry->declarations > 0U) {
+                continue;
+            }
+
+            type_name = extract_default_type(entry);
+
+            extract_print_parameter(
+                type_name,
+                entry->name,
+                entry->writes > 0U ||
+                entry->pointer_value_writes > 0U
+            );
+
+            ++emitted;
+
+            if (emitted < parameter_count) {
+                (void)puts(",");
+            } else {
+                (void)puts(")");
+            }
+        }
+    }
+
+    (void)puts("");
+    (void)puts("Proposed replacement call");
+    (void)puts("----------------------------------------");
+    (void)printf("  %s(", new_name);
+
+    if (parameter_count == 0U) {
+        (void)puts(");");
+    } else {
+        unsigned int emitted;
+
+        emitted = 0U;
+
+        for (index = 0U; index < identifiers->used; ++index) {
+            const extract_identifier *entry;
+
+            entry = &identifiers->entries[index];
+
+            if (entry->constants > 0U ||
+                entry->function_calls > 0U ||
+                entry->declarations > 0U) {
+                continue;
+            }
+
+            if (entry->writes > 0U ||
+                entry->pointer_value_writes > 0U) {
+                (void)printf("&%s", entry->name);
+            } else {
+                (void)printf("%s", entry->name);
+            }
+
+            ++emitted;
+
+            if (emitted < parameter_count) {
+                (void)printf(", ");
+            } else {
+                (void)puts(");");
+            }
+        }
+    }
+
+    (void)puts(
+        "Signature inference is heuristic and must be reviewed before application."
+    );
+}
+
 static void extract_collect_identifiers_from_line(
     const char *line,
     extract_identifier_list *identifiers)
@@ -7998,6 +8689,15 @@ static void extract_collect_identifiers_from_line(
 
         if (declared) {
             ++entry->declarations;
+            extract_infer_type_from_line(
+                line,
+                name,
+                entry
+            );
+        }
+
+        if (extract_identifier_address_taken(line, name)) {
+            ++entry->address_taken;
         }
 
         if (extract_line_writes_through_pointer(line, name)) {
@@ -8320,7 +9020,25 @@ void symbol_extract_function_preview(
         end_line,
         &identifiers
     );
+
+    extract_recover_parameter_types(
+        context.module_path,
+        context.function_line,
+        context.containing_function,
+        &identifiers
+    );
+    extract_recover_local_types(
+        context.module_path,
+        context.function_line,
+        start_line,
+        &identifiers
+    );
+
     extract_print_dataflow(&identifiers);
+    extract_print_signature(
+        new_name,
+        &identifiers
+    );
 
     (void)puts("");
     (void)puts(
