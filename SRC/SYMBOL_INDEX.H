@@ -66,5 +66,7 @@ int symbol_extract_function_verify(agent_state *state,
 
 void symbol_inline_function_preview(agent_state *state,
                                     const char *symbol);
+int symbol_inline_function_apply(agent_state *state,
+                                 const char *symbol);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

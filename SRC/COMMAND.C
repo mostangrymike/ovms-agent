@@ -11,15 +11,6 @@ void command_prompt(void)
     (void)fflush(stdout);
 }
 
-static void command_scan_token(
-    char **position)
-{
-    while (**position != '\0' &&
-           **position != ' ' &&
-           **position != '\t') {
-        ++*position;
-    }
-}
 
 static void command_prepare_input(
     char *input,
@@ -48,7 +39,11 @@ void command_execute(agent_state *state, char *input)
 
     position = command;
 
-    command_scan_token(&position);
+    while (*position != '\0' &&
+           *position != ' ' &&
+           *position != '\t') {
+        ++position;
+    }
 
     if (*position != '\0') {
         *position = '\0';

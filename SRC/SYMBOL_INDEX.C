@@ -11361,3 +11361,920 @@ void symbol_inline_function_preview(
     );
 }
 
+#define INLINE_PARAMETER_MAX 16U
+
+typedef struct inline_parameter {
+    char name[SYMBOL_NAME_SIZE];
+    char argument[SYMBOL_NAME_SIZE + 2U];
+    unsigned int argument_is_address;
+} inline_parameter;
+
+typedef struct inline_parameter_list {
+    inline_parameter entries[INLINE_PARAMETER_MAX];
+    unsigned int used;
+} inline_parameter_list;
+
+static void inline_trim(char *text)
+{
+    char *start;
+    char *end;
+
+    if (text == NULL) {
+        return;
+    }
+
+    start = text;
+
+    while (*start == ' ' ||
+           *start == '\t' ||
+           *start == '\r' ||
+           *start == '\n') {
+        ++start;
+    }
+
+    if (start != text) {
+        (void)memmove(
+            text,
+            start,
+            strlen(start) + 1U
+        );
+    }
+
+    end = text + strlen(text);
+
+    while (end > text &&
+           (end[-1] == ' ' ||
+            end[-1] == '\t' ||
+            end[-1] == '\r' ||
+            end[-1] == '\n')) {
+        --end;
+    }
+
+    *end = '\0';
+}
+
+static int inline_simple_argument(
+    const char *text,
+    char *name,
+    size_t name_size,
+    unsigned int *is_address)
+{
+    const char *position;
+    size_t length;
+
+    if (text == NULL ||
+        name == NULL ||
+        is_address == NULL) {
+        return 0;
+    }
+
+    position = text;
+    *is_address = 0U;
+
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    if (*position == '&') {
+        *is_address = 1U;
+        ++position;
+    }
+
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    if (!(isalpha((unsigned char)*position) ||
+          *position == '_')) {
+        return 0;
+    }
+
+    length = 0U;
+
+    while (isalnum((unsigned char)position[length]) ||
+           position[length] == '_') {
+        ++length;
+    }
+
+    if (length == 0U ||
+        length >= name_size) {
+        return 0;
+    }
+
+    {
+        const char *tail;
+
+        tail = position + length;
+
+        while (*tail == ' ' || *tail == '\t') {
+            ++tail;
+        }
+
+        if (*tail != '\0') {
+            return 0;
+        }
+    }
+
+    (void)memcpy(name, position, length);
+    name[length] = '\0';
+    return 1;
+}
+
+static int inline_extract_parameter_name(
+    const char *fragment,
+    char *name,
+    size_t name_size)
+{
+    const char *end;
+    const char *start;
+    size_t length;
+
+    if (fragment == NULL ||
+        name == NULL ||
+        name_size == 0U) {
+        return 0;
+    }
+
+    end = fragment + strlen(fragment);
+
+    while (end > fragment &&
+           (end[-1] == ' ' ||
+            end[-1] == '\t' ||
+            end[-1] == '\r' ||
+            end[-1] == '\n')) {
+        --end;
+    }
+
+    start = end;
+
+    while (start > fragment &&
+           (isalnum((unsigned char)start[-1]) ||
+            start[-1] == '_')) {
+        --start;
+    }
+
+    length = (size_t)(end - start);
+
+    if (length == 0U ||
+        length >= name_size ||
+        !(isalpha((unsigned char)*start) ||
+          *start == '_')) {
+        return 0;
+    }
+
+    (void)memcpy(name, start, length);
+    name[length] = '\0';
+    return 1;
+}
+
+static int inline_read_signature(
+    const inline_function_info *info,
+    char *parameters,
+    size_t parameters_size)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char signature[SYMBOL_LINE_SIZE * 4U];
+    unsigned long line_number;
+    char *open_paren;
+    char *close_paren;
+    size_t length;
+
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    signature[0] = '\0';
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < info->definition_line) {
+            continue;
+        }
+
+        if (strlen(signature) + strlen(line) + 1U >=
+            sizeof(signature)) {
+            (void)fclose(file);
+            return 0;
+        }
+
+        (void)strcat(signature, line);
+
+        if (strchr(line, '{') != NULL) {
+            break;
+        }
+    }
+
+    (void)fclose(file);
+
+    open_paren = strchr(signature, '(');
+    close_paren = strrchr(signature, ')');
+
+    if (open_paren == NULL ||
+        close_paren == NULL ||
+        close_paren <= open_paren) {
+        return 0;
+    }
+
+    length = (size_t)(close_paren - open_paren - 1);
+
+    if (length >= parameters_size) {
+        return 0;
+    }
+
+    (void)memcpy(
+        parameters,
+        open_paren + 1,
+        length
+    );
+    parameters[length] = '\0';
+    inline_trim(parameters);
+    return 1;
+}
+
+static int inline_read_call_arguments(
+    const inline_function_info *info,
+    char *arguments,
+    size_t arguments_size)
+{
+    char line[SYMBOL_LINE_SIZE];
+    char *symbol_position;
+    char *open_paren;
+    char *close_paren;
+    size_t length;
+
+    if (!inline_source_line(
+            info->caller_module,
+            info->caller_line,
+            line,
+            sizeof(line))) {
+        return 0;
+    }
+
+    symbol_position = strstr(
+        line,
+        info->symbol
+    );
+
+    if (symbol_position == NULL) {
+        return 0;
+    }
+
+    open_paren = strchr(symbol_position, '(');
+    close_paren = strrchr(symbol_position, ')');
+
+    if (open_paren == NULL ||
+        close_paren == NULL ||
+        close_paren <= open_paren) {
+        return 0;
+    }
+
+    length = (size_t)(close_paren - open_paren - 1);
+
+    if (length >= arguments_size) {
+        return 0;
+    }
+
+    (void)memcpy(
+        arguments,
+        open_paren + 1,
+        length
+    );
+    arguments[length] = '\0';
+    inline_trim(arguments);
+    return 1;
+}
+
+static int inline_parse_mapping(
+    const inline_function_info *info,
+    inline_parameter_list *mapping)
+{
+    char parameters[SYMBOL_LINE_SIZE * 2U];
+    char arguments[SYMBOL_LINE_SIZE * 2U];
+    char *parameter_cursor;
+    char *argument_cursor;
+
+    (void)memset(mapping, 0, sizeof(*mapping));
+
+    if (!inline_read_signature(
+            info,
+            parameters,
+            sizeof(parameters)) ||
+        !inline_read_call_arguments(
+            info,
+            arguments,
+            sizeof(arguments))) {
+        return 0;
+    }
+
+    if (strcmp(parameters, "void") == 0) {
+        parameters[0] = '\0';
+    }
+
+    parameter_cursor = parameters;
+    argument_cursor = arguments;
+
+    while (*parameter_cursor != '\0' ||
+           *argument_cursor != '\0') {
+        char *parameter_comma;
+        char *argument_comma;
+        char parameter_fragment[128];
+        char argument_fragment[128];
+        size_t parameter_length;
+        size_t argument_length;
+        inline_parameter *entry;
+
+        if (mapping->used >= INLINE_PARAMETER_MAX) {
+            return 0;
+        }
+
+        parameter_comma = strchr(parameter_cursor, ',');
+        argument_comma = strchr(argument_cursor, ',');
+
+        parameter_length = parameter_comma != NULL ?
+            (size_t)(parameter_comma - parameter_cursor) :
+            strlen(parameter_cursor);
+        argument_length = argument_comma != NULL ?
+            (size_t)(argument_comma - argument_cursor) :
+            strlen(argument_cursor);
+
+        if (parameter_length >= sizeof(parameter_fragment) ||
+            argument_length >= sizeof(argument_fragment)) {
+            return 0;
+        }
+
+        (void)memcpy(
+            parameter_fragment,
+            parameter_cursor,
+            parameter_length
+        );
+        parameter_fragment[parameter_length] = '\0';
+        inline_trim(parameter_fragment);
+
+        (void)memcpy(
+            argument_fragment,
+            argument_cursor,
+            argument_length
+        );
+        argument_fragment[argument_length] = '\0';
+        inline_trim(argument_fragment);
+
+        entry = &mapping->entries[mapping->used];
+
+        if (!inline_extract_parameter_name(
+                parameter_fragment,
+                entry->name,
+                sizeof(entry->name)) ||
+            !inline_simple_argument(
+                argument_fragment,
+                entry->argument,
+                sizeof(entry->argument),
+                &entry->argument_is_address)) {
+            return 0;
+        }
+
+        ++mapping->used;
+
+        if ((parameter_comma == NULL) !=
+            (argument_comma == NULL)) {
+            return 0;
+        }
+
+        if (parameter_comma == NULL) {
+            break;
+        }
+
+        parameter_cursor = parameter_comma + 1;
+        argument_cursor = argument_comma + 1;
+    }
+
+    return 1;
+}
+
+static int inline_replace_body_line(
+    const char *line,
+    const inline_parameter_list *mapping,
+    extract_text_buffer *output)
+{
+    const char *position;
+
+    position = line;
+
+    while (*position != '\0') {
+        unsigned int index;
+        const inline_parameter *matched;
+        size_t matched_length;
+
+        matched = NULL;
+        matched_length = 0U;
+
+        for (index = 0U;
+             index < mapping->used;
+             ++index) {
+            const inline_parameter *entry;
+
+            entry = &mapping->entries[index];
+
+            if (extract_exact_identifier_at(
+                    line,
+                    position,
+                    entry->name)) {
+                matched = entry;
+                matched_length = strlen(entry->name);
+                break;
+            }
+        }
+
+        if (matched == NULL) {
+            if (!extract_buffer_append_n(
+                    output,
+                    position,
+                    1U)) {
+                return 0;
+            }
+
+            ++position;
+            continue;
+        }
+
+        if (matched->argument_is_address &&
+            output->used > 0U &&
+            output->data[output->used - 1U] == '*') {
+            --output->used;
+            output->data[output->used] = '\0';
+        }
+
+        if (!extract_buffer_append(
+                output,
+                matched->argument)) {
+            return 0;
+        }
+
+        position += matched_length;
+    }
+
+    return 1;
+}
+
+static int inline_build_expansion(
+    const inline_function_info *info,
+    const inline_parameter_list *mapping,
+    extract_text_buffer *expansion)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned int minimum_indent;
+    unsigned int caller_indent;
+    int found_nonblank;
+    char caller_line[SYMBOL_LINE_SIZE];
+
+    if (!inline_source_line(
+            info->caller_module,
+            info->caller_line,
+            caller_line,
+            sizeof(caller_line))) {
+        return 0;
+    }
+
+    caller_indent = extract_line_indent(caller_line);
+    minimum_indent = 0U;
+    found_nonblank = 0;
+
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *content;
+        unsigned int indent;
+
+        ++line_number;
+
+        if (line_number < info->body_start ||
+            line_number > info->body_end) {
+            continue;
+        }
+
+        indent = extract_line_indent(line);
+        content = line + indent;
+
+        if (*content == '\0' || *content == '\n') {
+            continue;
+        }
+
+        if (!found_nonblank ||
+            indent < minimum_indent) {
+            minimum_indent = indent;
+            found_nonblank = 1;
+        }
+    }
+
+    (void)fclose(file);
+
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *content;
+        unsigned int indent;
+        unsigned int index;
+
+        ++line_number;
+
+        if (line_number < info->body_start ||
+            line_number > info->body_end) {
+            continue;
+        }
+
+        indent = extract_line_indent(line);
+        content = indent >= minimum_indent ?
+            line + minimum_indent : line;
+
+        for (index = 0U;
+             index < caller_indent;
+             ++index) {
+            if (!extract_buffer_append_n(
+                    expansion,
+                    &caller_line[index],
+                    1U)) {
+                (void)fclose(file);
+                return 0;
+            }
+        }
+
+        if (!inline_replace_body_line(
+                content,
+                mapping,
+                expansion)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int inline_write_transformed_file(
+    const inline_function_info *info,
+    const extract_text_buffer *expansion)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long definition_end;
+
+    definition_end = info->body_end + 1UL;
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_INLINE.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number >= info->definition_line &&
+            line_number <= definition_end) {
+            continue;
+        }
+
+        if (line_number == info->caller_line) {
+            if (fputs(expansion->data, output) == EOF) {
+                goto inline_write_failure;
+            }
+
+            continue;
+        }
+
+        if (fputs(line, output) == EOF) {
+            goto inline_write_failure;
+        }
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto inline_close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+
+        if (!rename_make_vms_filespec(
+                info->module,
+                filespec,
+                sizeof(filespec))) {
+            goto inline_close_failure;
+        }
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_INLINE.TMP %s;",
+            filespec
+        );
+
+        status = system(command);
+        (void)remove("OVMS_INLINE.TMP");
+
+        return status == 0 ||
+               (status & 1) != 0;
+    }
+
+inline_write_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+inline_close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_INLINE.TMP");
+    return 0;
+}
+
+static int inline_confirm_apply(
+    const inline_function_info *info,
+    const extract_text_buffer *expansion)
+{
+    char answer[32];
+
+    (void)puts("");
+    (void)puts("Guarded inline");
+    (void)puts("----------------------------------------");
+    (void)printf("Function: %s\n", info->symbol);
+    (void)printf(
+        "Module:   %s\n",
+        info->module
+    );
+    (void)printf(
+        "Caller:   line %lu\n",
+        info->caller_line
+    );
+    (void)puts("");
+    (void)puts("Expanded body");
+    (void)puts("----------------------------------------");
+    (void)fputs(expansion->data, stdout);
+
+    if (expansion->used > 0U &&
+        expansion->data[expansion->used - 1U] != '\n') {
+        (void)puts("");
+    }
+
+    (void)printf("Apply inline [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+int symbol_inline_function_apply(
+    agent_state *state,
+    const char *symbol)
+{
+    inline_function_info info;
+    inline_parameter_list mapping;
+    extract_text_buffer expansion;
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+    int reindex_ok;
+    int build_ok;
+
+    (void)memset(&info, 0, sizeof(info));
+    (void)memset(&mapping, 0, sizeof(mapping));
+    (void)memset(&expansion, 0, sizeof(expansion));
+    (void)memset(&transaction, 0, sizeof(transaction));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts(
+            "Function name must be a valid C identifier."
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before INLINE/FUNCTION/APPLY."
+        );
+        return 0;
+    }
+
+    (void)strncpy(
+        info.symbol,
+        symbol,
+        sizeof(info.symbol) - 1U
+    );
+
+    if (!inline_find_definition(symbol, &info)) {
+        (void)printf(
+            "No definition found for %s.\n",
+            symbol
+        );
+        return 0;
+    }
+
+    inline_count_callers(symbol, &info);
+
+    if (info.caller_count != 1U) {
+        (void)puts(
+            "Inline refused. Exactly one indexed caller is required."
+        );
+        return 0;
+    }
+
+    if (strcmp(info.module, info.caller_module) != 0) {
+        (void)puts(
+            "Inline refused. The caller must be in the same module."
+        );
+        return 0;
+    }
+
+    if (!inline_find_body_range(&info)) {
+        (void)puts(
+            "Unable to identify a complete function body."
+        );
+        return 0;
+    }
+
+    if (!inline_parse_mapping(&info, &mapping)) {
+        (void)puts(
+            "Inline refused. Only simple identifier and "
+            "&identifier call arguments are supported."
+        );
+        return 0;
+    }
+
+    if (!inline_build_expansion(
+            &info,
+            &mapping,
+            &expansion)) {
+        (void)puts(
+            "Unable to generate the inline expansion."
+        );
+        free(expansion.data);
+        return 0;
+    }
+
+    if (!inline_confirm_apply(
+            &info,
+            &expansion)) {
+        (void)puts("Inline cancelled.");
+        free(expansion.data);
+        return 0;
+    }
+
+    (void)strcpy(
+        transaction.files[0].path,
+        info.module
+    );
+    transaction.files[0].replacements = 1U;
+    transaction.file_count = 1U;
+    transaction.total_replacements = 1U;
+
+    if (!inline_write_transformed_file(
+            &info,
+            &expansion)) {
+        (void)puts(
+            "Inline failed while writing the source file."
+        );
+        free(expansion.data);
+        return 0;
+    }
+
+    free(expansion.data);
+
+    (void)puts(
+        "Inline applied. Rebuilding symbol index..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Invalidating changed object files..."
+    );
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
+        "Running controlled build..."
+    );
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Inline verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Inline completed successfully."
+        );
+        return 1;
+    }
+
+    (void)puts("Inline verification failed.");
+
+    if (!rename_confirm_rollback()) {
+        (void)puts(
+            "Rollback declined. Project remains modified."
+        );
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts(
+            "Rollback was incomplete; inspect file versions."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous source version restored."
+    );
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Inline rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Inline rollback completed successfully."
+        );
+    } else {
+        (void)puts(
+            "Rollback completed, but verification still failed."
+        );
+    }
+
+    return 0;
+}
+

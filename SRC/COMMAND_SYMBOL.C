@@ -34,7 +34,8 @@ static const command_entry symbol_commands[] = {
     { "EXTRACT/FUNCTION", "Preview extraction of a source range", command_extract_function },
     { "EXTRACT/FUNCTION/APPLY", "Apply one safe extraction with verification", command_extract_function_apply },
     { "EXTRACT/FUNCTION/VERIFY", "Verify extraction semantics without writing", command_extract_function_verify },
-    { "INLINE/FUNCTION", "Preview inlining a local C function", command_inline_function }
+    { "INLINE/FUNCTION", "Preview inlining a local C function", command_inline_function },
+    { "INLINE/FUNCTION/APPLY", "Apply one guarded local inline", command_inline_function_apply }
 };
 
 void command_register_symbol(void)
@@ -712,6 +713,38 @@ void command_inline_function(
     }
 
     symbol_inline_function_preview(
+        state,
+        symbol
+    );
+}
+
+
+void command_inline_function_apply(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *symbol;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: INLINE/FUNCTION/APPLY function_name"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    symbol = command_next_argument(&cursor);
+
+    if (symbol == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: INLINE/FUNCTION/APPLY function_name"
+        );
+        return;
+    }
+
+    (void)symbol_inline_function_apply(
         state,
         symbol
     );

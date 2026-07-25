@@ -126,5 +126,7 @@ void command_agent_execute(agent_state *state, const char *arguments);
 
 void command_inline_function(agent_state *state,
                              const char *arguments);
+void command_inline_function_apply(agent_state *state,
+                                   const char *arguments);
 
 #endif /* OVMS_AGENT_COMMAND_INTERNAL_H */
