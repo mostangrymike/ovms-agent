@@ -6,4 +6,4 @@
 void command_prompt(void);
 void command_execute(agent_state *state, char *input);
 
-#endif
+#endif /* OVMS_AGENT_COMMAND_H */
