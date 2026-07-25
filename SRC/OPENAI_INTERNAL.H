@@ -13,6 +13,7 @@
 #include "openai_log.h"
 #include "openai_path.h"
 #include "openai_cache.h"
+#include "openai_tool_schema.h"
 #include "openai_plan.h"
 #include "openai_execute.h"
 #include "openai_state.h"
@@ -108,9 +109,6 @@ void openai_send(agent_state *state,
 int openai_contains_ignore_case(const char *text,
                                        const char *pattern);
 char *openai_read_text_file(const char *path);
-int write_agent_tools(FILE *file);
-int write_agent_tools_with_replace(FILE *file);
-int write_agent_tools_with_create(FILE *file);
 int write_create_agent_request(
     const char *model,
     const char *instructions,
@@ -118,7 +116,6 @@ int write_create_agent_request(
     const char *previous_id,
     const char *call_id,
     const char *tool_output);
-int write_build_agent_tools(FILE *file);
 int write_build_initial_request(
     const char *model,
     const char *instructions,
