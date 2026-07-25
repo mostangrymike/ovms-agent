@@ -260,24 +260,24 @@ static void symbol_clean_line(char *line,
     }
 }
 
-static unsigned int symbol_index_line(FILE *index_file,
-                                      const char *path,
-                                      unsigned long line_number,
-                                      char *line)
+static int symbol_extract_candidate(
+    const char *line,
+    char *symbol,
+    size_t symbol_size,
+    const char **name_position_out)
 {
-    char *position;
-    unsigned int entries;
-    time_t now;
+    const char *position;
+    const char *after;
+    const char *last_candidate;
+    char last_name[SYMBOL_NAME_SIZE];
 
-    entries = 0U;
     position = line;
+    last_candidate = NULL;
+    last_name[0] = '\0';
 
     while (*position != '\0') {
-        char symbol[SYMBOL_NAME_SIZE];
-        char *after;
+        const char *start;
         size_t length;
-        int definition;
-        int call;
 
         while (*position != '\0' &&
                !(isalpha((unsigned char)*position) ||
@@ -289,54 +289,526 @@ static unsigned int symbol_index_line(FILE *index_file,
             break;
         }
 
-        after = position + 1;
-
+        start = position++;
         while (symbol_is_identifier_char(
-                   (unsigned char)*after)) {
-            ++after;
+                   (unsigned char)*position)) {
+            ++position;
         }
 
-        length = (size_t)(after - position);
-
-        if (length >= sizeof(symbol)) {
-            position = after;
+        length = (size_t)(position - start);
+        if (length == 0U || length >= sizeof(last_name)) {
             continue;
         }
 
-        (void)memcpy(symbol, position, length);
-        symbol[length] = '\0';
-        position = after;
+        (void)memcpy(last_name, start, length);
+        last_name[length] = '\0';
 
-        if (symbol_is_keyword(symbol)) {
+        if (symbol_is_keyword(last_name)) {
             continue;
         }
 
+        after = position;
         while (*after != '\0' &&
                isspace((unsigned char)*after)) {
             ++after;
         }
 
-        if (*after != '(') {
+        if (*after == '(') {
+            last_candidate = start;
+        }
+    }
+
+    if (last_candidate == NULL ||
+        last_name[0] == '\0' ||
+        strlen(last_name) >= symbol_size) {
+        return 0;
+    }
+
+    (void)strcpy(symbol, last_name);
+    if (name_position_out != NULL) {
+        *name_position_out = last_candidate;
+    }
+
+    return 1;
+}
+
+static int symbol_candidate_is_definition(
+    const char *line,
+    const char *name_position,
+    const char *symbol)
+{
+    const char *before;
+    const char *after;
+    const char *close_paren;
+    const char *brace;
+    const char *semicolon;
+
+    before = name_position;
+    while (before > line &&
+           isspace((unsigned char)before[-1])) {
+        --before;
+    }
+
+    /*
+     * A top-level function definition must have declaration text before the
+     * name. This rejects continuation-line calls and expression calls.
+     */
+    if (before == line) {
+        return 0;
+    }
+
+    after = name_position + strlen(symbol);
+    while (*after != '\0' &&
+           isspace((unsigned char)*after)) {
+        ++after;
+    }
+
+    if (*after != '(') {
+        return 0;
+    }
+
+    close_paren = strrchr(after, ')');
+    if (close_paren == NULL) {
+        return 0;
+    }
+
+    brace = strchr(close_paren, '{');
+    semicolon = strchr(close_paren, ';');
+
+    return brace != NULL &&
+           (semicolon == NULL || brace < semicolon);
+}
+
+static int symbol_candidate_is_member_call(
+    const char *line,
+    const char *name_position)
+{
+    const char *before;
+
+    before = name_position;
+    while (before > line &&
+           isspace((unsigned char)before[-1])) {
+        --before;
+    }
+
+    if (before >= line + 2 &&
+        before[-2] == '-' &&
+        before[-1] == '>') {
+        return 1;
+    }
+
+    return before > line &&
+           before[-1] == '.';
+}
+
+typedef struct symbol_scan_state {
+    unsigned int brace_depth;
+    unsigned int paren_depth;
+    int in_block_comment;
+    int in_string;
+    int in_character;
+    int escaped;
+    int pending_definition;
+    int pending_signature;
+    char pending_name[SYMBOL_NAME_SIZE];
+    unsigned long pending_line;
+} symbol_scan_state;
+
+static void symbol_scan_state_init(symbol_scan_state *state)
+{
+    (void)memset(state, 0, sizeof(*state));
+}
+
+static int symbol_is_control_word(const char *name)
+{
+    return strcmp(name, "if") == 0 ||
+           strcmp(name, "for") == 0 ||
+           strcmp(name, "while") == 0 ||
+           strcmp(name, "switch") == 0 ||
+           strcmp(name, "return") == 0 ||
+           strcmp(name, "sizeof") == 0;
+}
+
+static int symbol_is_member_access(const char *line,
+                                   const char *position)
+{
+    const char *before;
+
+    before = position;
+
+    while (before > line &&
+           isspace((unsigned char)before[-1])) {
+        --before;
+    }
+
+    if (before >= line + 2 &&
+        before[-2] == '-' &&
+        before[-1] == '>') {
+        return 1;
+    }
+
+    return before > line && before[-1] == '.';
+}
+
+static int symbol_has_declaration_prefix(const char *line,
+                                         const char *name_position)
+{
+    const char *position;
+
+    position = line;
+
+    while (position < name_position &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (position >= name_position) {
+        return 0;
+    }
+
+    if (strncmp(position, "if", 2U) == 0 ||
+        strncmp(position, "for", 3U) == 0 ||
+        strncmp(position, "while", 5U) == 0 ||
+        strncmp(position, "switch", 6U) == 0 ||
+        strncmp(position, "return", 6U) == 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static int symbol_find_matching_paren(const char *start,
+                                      const char **after_out)
+{
+    const char *position;
+    int depth;
+    int in_string;
+    int in_character;
+    int escaped;
+
+    if (start == NULL || *start != '(') {
+        return 0;
+    }
+
+    depth = 0;
+    in_string = 0;
+    in_character = 0;
+    escaped = 0;
+
+    for (position = start; *position != '\0'; ++position) {
+        if (in_string) {
+            if (escaped) {
+                escaped = 0;
+            } else if (*position == '\\') {
+                escaped = 1;
+            } else if (*position == '"') {
+                in_string = 0;
+            }
             continue;
         }
 
-        definition = symbol_line_is_definition(line, symbol);
-        call = !definition &&
-               symbol_line_is_call(line, symbol);
+        if (in_character) {
+            if (escaped) {
+                escaped = 0;
+            } else if (*position == '\\') {
+                escaped = 1;
+            } else if (*position == '\'') {
+                in_character = 0;
+            }
+            continue;
+        }
 
-        if (definition || call) {
-            if (fprintf(
+        if (*position == '"') {
+            in_string = 1;
+        } else if (*position == '\'') {
+            in_character = 1;
+        } else if (*position == '(') {
+            ++depth;
+        } else if (*position == ')') {
+            --depth;
+
+            if (depth == 0) {
+                if (after_out != NULL) {
+                    *after_out = position + 1;
+                }
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static unsigned int symbol_emit_record(FILE *index_file,
+                                       char kind,
+                                       const char *name,
+                                       const char *path,
+                                       unsigned long line_number)
+{
+    if (fprintf(
+            index_file,
+            "%c|%s|%s|%lu\n",
+            kind,
+            name,
+            path,
+            line_number) < 0) {
+        return 0U;
+    }
+
+    return 1U;
+}
+
+static unsigned int symbol_scan_line(FILE *index_file,
+                                     const char *path,
+                                     unsigned long line_number,
+                                     char *line,
+                                     symbol_scan_state *state)
+{
+    const char *position;
+    unsigned int entries;
+
+    entries = 0U;
+    position = line;
+
+    while (*position != '\0') {
+        if (state->in_block_comment) {
+            if (position[0] == '*' &&
+                position[1] == '/') {
+                state->in_block_comment = 0;
+                position += 2;
+            } else {
+                ++position;
+            }
+            continue;
+        }
+
+        if (state->in_string) {
+            if (state->escaped) {
+                state->escaped = 0;
+            } else if (*position == '\\') {
+                state->escaped = 1;
+            } else if (*position == '"') {
+                state->in_string = 0;
+            }
+            ++position;
+            continue;
+        }
+
+        if (state->in_character) {
+            if (state->escaped) {
+                state->escaped = 0;
+            } else if (*position == '\\') {
+                state->escaped = 1;
+            } else if (*position == '\'') {
+                state->in_character = 0;
+            }
+            ++position;
+            continue;
+        }
+
+        if (position[0] == '/' &&
+            position[1] == '*') {
+            state->in_block_comment = 1;
+            position += 2;
+            continue;
+        }
+
+        if (position[0] == '/' &&
+            position[1] == '/') {
+            break;
+        }
+
+        if (*position == '"') {
+            state->in_string = 1;
+            ++position;
+            continue;
+        }
+
+        if (*position == '\'') {
+            state->in_character = 1;
+            ++position;
+            continue;
+        }
+
+        if (*position == '(') {
+            if (state->pending_signature) {
+                ++state->paren_depth;
+            }
+            ++position;
+            continue;
+        }
+
+        if (*position == ')') {
+            if (state->pending_signature &&
+                state->paren_depth > 0U) {
+                --state->paren_depth;
+
+                if (state->paren_depth == 0U) {
+                    state->pending_signature = 0;
+                    state->pending_definition = 1;
+                }
+            }
+            ++position;
+            continue;
+        }
+
+        if (*position == '{') {
+            if (state->brace_depth == 0U &&
+                state->pending_definition) {
+                entries += symbol_emit_record(
                     index_file,
-                    "%c|%s|%s|%lu\n",
-                    definition ? 'D' : 'C',
-                    symbol,
+                    'D',
+                    state->pending_name,
                     path,
-                    line_number) < 0) {
-                return entries;
+                    state->pending_line
+                );
+                state->pending_definition = 0;
+                state->pending_signature = 0;
+                state->pending_name[0] = '\0';
             }
 
-            ++entries;
+            ++state->brace_depth;
+            ++position;
+            continue;
         }
+
+        if (*position == '}') {
+            if (state->brace_depth > 0U) {
+                --state->brace_depth;
+            }
+            ++position;
+            continue;
+        }
+
+        if (*position == ';') {
+            if (state->brace_depth == 0U) {
+                state->pending_definition = 0;
+                state->pending_signature = 0;
+                state->paren_depth = 0U;
+                state->pending_name[0] = '\0';
+            }
+            ++position;
+            continue;
+        }
+
+        if (isalpha((unsigned char)*position) ||
+            *position == '_') {
+            const char *name_start;
+            const char *after_name;
+            char name[SYMBOL_NAME_SIZE];
+            size_t length;
+
+            name_start = position++;
+            while (symbol_is_identifier_char(
+                       (unsigned char)*position)) {
+                ++position;
+            }
+
+            length = (size_t)(position - name_start);
+            if (length == 0U || length >= sizeof(name)) {
+                continue;
+            }
+
+            (void)memcpy(name, name_start, length);
+            name[length] = '\0';
+
+            if (symbol_is_keyword(name) ||
+                symbol_is_control_word(name)) {
+                continue;
+            }
+
+            after_name = position;
+            while (*after_name != '\0' &&
+                   isspace((unsigned char)*after_name)) {
+                ++after_name;
+            }
+
+            if (*after_name != '(') {
+                continue;
+            }
+
+            if (state->brace_depth == 0U) {
+                if (symbol_has_declaration_prefix(
+                        line,
+                        name_start) &&
+                    !symbol_is_member_access(
+                        line,
+                        name_start)) {
+                    const char *after_paren;
+
+                    after_paren = NULL;
+
+                    if (symbol_find_matching_paren(
+                            after_name,
+                            &after_paren)) {
+                        while (*after_paren != '\0' &&
+                               isspace((unsigned char)*after_paren)) {
+                            ++after_paren;
+                        }
+
+                        if (*after_paren == '{') {
+                            entries += symbol_emit_record(
+                                index_file,
+                                'D',
+                                name,
+                                path,
+                                line_number
+                            );
+                        } else if (*after_paren == '\0') {
+                            state->pending_definition = 1;
+                            (void)strcpy(
+                                state->pending_name,
+                                name
+                            );
+                            state->pending_line = line_number;
+                        }
+                    } else {
+                        /*
+                         * Parameter list continues onto later lines.
+                         * Track parentheses until the signature closes.
+                         */
+                        state->pending_signature = 1;
+                        state->paren_depth = 1U;
+                        (void)strcpy(
+                            state->pending_name,
+                            name
+                        );
+                        state->pending_line = line_number;
+
+                        for (after_paren = after_name + 1;
+                             *after_paren != '\0';
+                             ++after_paren) {
+                            if (*after_paren == '(') {
+                                ++state->paren_depth;
+                            } else if (*after_paren == ')' &&
+                                       state->paren_depth > 0U) {
+                                --state->paren_depth;
+                            }
+                        }
+
+                        if (state->paren_depth == 0U) {
+                            state->pending_signature = 0;
+                            state->pending_definition = 1;
+                        }
+                    }
+                }
+            } else if (!symbol_is_member_access(
+                           line,
+                           name_start)) {
+                entries += symbol_emit_record(
+                    index_file,
+                    'C',
+                    name,
+                    path,
+                    line_number
+                );
+            }
+
+            position = after_name + 1;
+            continue;
+        }
+
+        ++position;
     }
 
     return entries;
@@ -408,7 +880,7 @@ static unsigned int symbol_build_index(void)
         char path[SYMBOL_PATH_SIZE];
         char line[SYMBOL_LINE_SIZE];
         unsigned long line_number;
-        int in_block_comment;
+        symbol_scan_state scan_state;
 
         if (!symbol_has_c_extension(entry->d_name)) {
             continue;
@@ -435,16 +907,16 @@ static unsigned int symbol_build_index(void)
 
         ++files;
         line_number = 0UL;
-        in_block_comment = 0;
+        symbol_scan_state_init(&scan_state);
 
         while (fgets(line, sizeof(line), source_file) != NULL) {
             ++line_number;
-            symbol_clean_line(line, &in_block_comment);
-            entries += symbol_index_line(
+            entries += symbol_scan_line(
                 index_file,
                 path,
                 line_number,
-                line
+                line,
+                &scan_state
             );
         }
 
@@ -949,9 +1421,8 @@ static int symbol_source_line_is_definition(
 {
     FILE *file;
     char line[SYMBOL_LINE_SIZE];
-    char clean[SYMBOL_LINE_SIZE];
     unsigned long line_number;
-    int in_block_comment;
+    symbol_scan_state state;
 
     file = fopen(path, "r");
 
@@ -960,17 +1431,57 @@ static int symbol_source_line_is_definition(
     }
 
     line_number = 0UL;
-    in_block_comment = 0;
+    symbol_scan_state_init(&state);
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        ++line_number;
-        (void)strncpy(clean, line, sizeof(clean) - 1U);
-        clean[sizeof(clean) - 1U] = '\0';
-        symbol_clean_line(clean, &in_block_comment);
+        FILE *sink;
+        unsigned int before;
 
-        if (line_number == target_line) {
+        ++line_number;
+        before = state.pending_definition;
+
+        sink = tmpfile();
+
+        if (sink == NULL) {
             (void)fclose(file);
-            return symbol_line_is_definition(clean, symbol);
+            return 0;
+        }
+
+        (void)symbol_scan_line(
+            sink,
+            path,
+            line_number,
+            line,
+            &state
+        );
+
+        (void)fclose(sink);
+
+        if (line_number == target_line &&
+            state.pending_definition &&
+            strcmp(state.pending_name, symbol) == 0) {
+            (void)fclose(file);
+            return 1;
+        }
+
+        if (line_number == target_line &&
+            !before &&
+            strstr(line, symbol) != NULL &&
+            state.brace_depth > 0U) {
+            /*
+             * Same-line opening brace definitions are already emitted by the
+             * scanner. Validate them with the conservative prefix rule.
+             */
+            const char *position;
+
+            position = strstr(line, symbol);
+            if (position != NULL &&
+                symbol_has_declaration_prefix(
+                    line,
+                    position)) {
+                (void)fclose(file);
+                return 1;
+            }
         }
     }
 
@@ -1620,5 +2131,411 @@ void symbol_show_struct(agent_state *state,
             "Unable to determine the complete type definition."
         );
     }
+}
+
+#define MODULE_ITEM_MAX 256U
+
+typedef struct symbol_name_list {
+    char names[MODULE_ITEM_MAX][SYMBOL_NAME_SIZE];
+    unsigned int used;
+} symbol_name_list;
+
+static int module_name_list_contains(
+    const symbol_name_list *list,
+    const char *name)
+{
+    unsigned int index;
+
+    for (index = 0U; index < list->used; ++index) {
+        if (strcmp(list->names[index], name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static void module_name_list_add(
+    symbol_name_list *list,
+    const char *name)
+{
+    if (list == NULL ||
+        name == NULL ||
+        *name == '\0' ||
+        list->used >= MODULE_ITEM_MAX ||
+        strlen(name) >= SYMBOL_NAME_SIZE ||
+        module_name_list_contains(list, name)) {
+        return;
+    }
+
+    (void)strcpy(list->names[list->used], name);
+    ++list->used;
+}
+
+static int module_path_prepare(
+    const char *module,
+    char *path,
+    size_t path_size)
+{
+    size_t length;
+
+    if (module == NULL ||
+        *module == '\0' ||
+        strchr(module, ':') != NULL ||
+        strstr(module, "..") != NULL ||
+        *module == '/') {
+        return 0;
+    }
+
+    if (strncmp(module, "SRC/", 4U) == 0 ||
+        strncmp(module, "src/", 4U) == 0) {
+        if (strlen(module) >= path_size) {
+            return 0;
+        }
+
+        (void)strcpy(path, module);
+    } else {
+        if ((size_t)snprintf(
+                path,
+                path_size,
+                "SRC/%s",
+                module) >= path_size) {
+            return 0;
+        }
+    }
+
+    length = strlen(path);
+
+    return length >= 2U &&
+           path[length - 2U] == '.' &&
+           (path[length - 1U] == 'C' ||
+            path[length - 1U] == 'c' ||
+            path[length - 1U] == 'H' ||
+            path[length - 1U] == 'h');
+}
+
+static void module_extract_include(
+    const char *line,
+    symbol_name_list *includes)
+{
+    const char *position;
+    const char *end;
+    char name[SYMBOL_NAME_SIZE];
+    size_t length;
+
+    position = line;
+
+    while (*position != '\0' &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (*position != '#') {
+        return;
+    }
+
+    ++position;
+
+    while (*position != '\0' &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (strncmp(position, "include", 7U) != 0) {
+        return;
+    }
+
+    position += 7;
+
+    while (*position != '\0' &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (*position == '"') {
+        ++position;
+        end = strchr(position, '"');
+    } else if (*position == '<') {
+        ++position;
+        end = strchr(position, '>');
+    } else {
+        return;
+    }
+
+    if (end == NULL) {
+        return;
+    }
+
+    length = (size_t)(end - position);
+
+    if (length == 0U ||
+        length >= sizeof(name)) {
+        return;
+    }
+
+    (void)memcpy(name, position, length);
+    name[length] = '\0';
+    module_name_list_add(includes, name);
+}
+
+static int module_load_index_symbols(
+    const char *path,
+    symbol_name_list *definitions,
+    symbol_name_list *calls)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned int checked;
+    unsigned int changed;
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        return 0;
+    }
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long line_number;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &line_number)) {
+            continue;
+        }
+
+        if (strcmp(record_path, path) != 0) {
+            continue;
+        }
+
+        if (kind == 'D') {
+            module_name_list_add(
+                definitions,
+                record_symbol
+            );
+        } else if (kind == 'C') {
+            module_name_list_add(
+                calls,
+                record_symbol
+            );
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static void module_extract_type(
+    const char *line,
+    symbol_name_list *types)
+{
+    static const char *kinds[] = {
+        "struct",
+        "union",
+        "enum",
+        NULL
+    };
+    const char *position;
+    const char **kind;
+
+    position = line;
+
+    while (*position != '\0' &&
+           isspace((unsigned char)*position)) {
+        ++position;
+    }
+
+    if (strncmp(position, "typedef", 7U) == 0 &&
+        isspace((unsigned char)position[7])) {
+        position += 7;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+    }
+
+    for (kind = kinds; *kind != NULL; ++kind) {
+        size_t kind_length;
+        const char *name_start;
+        char name[SYMBOL_NAME_SIZE];
+        size_t name_length;
+
+        kind_length = strlen(*kind);
+
+        if (strncmp(position, *kind, kind_length) != 0 ||
+            !isspace((unsigned char)position[kind_length])) {
+            continue;
+        }
+
+        position += kind_length;
+
+        while (*position != '\0' &&
+               isspace((unsigned char)*position)) {
+            ++position;
+        }
+
+        name_start = position;
+
+        while (symbol_is_identifier_char(
+                   (unsigned char)*position)) {
+            ++position;
+        }
+
+        name_length = (size_t)(position - name_start);
+
+        if (name_length == 0U ||
+            name_length >= sizeof(name)) {
+            return;
+        }
+
+        (void)memcpy(name, name_start, name_length);
+        name[name_length] = '\0';
+        module_name_list_add(types, name);
+        return;
+    }
+}
+
+static void module_print_list(
+    const char *heading,
+    const symbol_name_list *list)
+{
+    unsigned int index;
+
+    (void)printf("%s (%u)\n", heading, list->used);
+    (void)puts("----------------------------------------");
+
+    if (list->used == 0U) {
+        (void)puts("  none");
+        return;
+    }
+
+    for (index = 0U; index < list->used; ++index) {
+        (void)printf("  %s\n", list->names[index]);
+    }
+}
+
+void symbol_show_module(agent_state *state,
+                        const char *module)
+{
+    char path[SYMBOL_PATH_SIZE];
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char clean[SYMBOL_LINE_SIZE];
+    unsigned long line_count;
+    int in_block_comment;
+    symbol_name_list includes;
+    symbol_name_list definitions;
+    symbol_name_list calls;
+    symbol_name_list types;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path))) {
+        (void)puts(
+            "Module must be a project-relative .C or .H file."
+        );
+        return;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        (void)printf("Unable to open %s.\n", path);
+        return;
+    }
+
+    (void)memset(&includes, 0, sizeof(includes));
+    (void)memset(&definitions, 0, sizeof(definitions));
+    (void)memset(&calls, 0, sizeof(calls));
+    (void)memset(&types, 0, sizeof(types));
+
+    line_count = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_count;
+        module_extract_include(line, &includes);
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        module_extract_type(clean, &types);
+    }
+
+    (void)fclose(file);
+
+    if (!module_load_index_symbols(
+            path,
+            &definitions,
+            &calls)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX for function lists."
+        );
+    }
+
+    /*
+     * A definition should not also appear in the call list for the same
+     * module summary.
+     */
+    {
+        unsigned int source_index;
+        symbol_name_list filtered_calls;
+
+        (void)memset(
+            &filtered_calls,
+            0,
+            sizeof(filtered_calls)
+        );
+
+        for (source_index = 0U;
+             source_index < calls.used;
+             ++source_index) {
+            if (!module_name_list_contains(
+                    &definitions,
+                    calls.names[source_index])) {
+                module_name_list_add(
+                    &filtered_calls,
+                    calls.names[source_index]
+                );
+            }
+        }
+
+        calls = filtered_calls;
+    }
+
+    (void)printf("Module: %s\n", path);
+    (void)printf("Lines:  %lu\n", line_count);
+    (void)puts("");
+
+    module_print_list("Includes", &includes);
+    (void)puts("");
+    module_print_list("Functions defined", &definitions);
+    (void)puts("");
+    module_print_list("Functions called", &calls);
+    (void)puts("");
+    module_print_list("Types declared", &types);
 }
 
