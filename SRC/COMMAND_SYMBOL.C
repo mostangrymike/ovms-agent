@@ -5,6 +5,10 @@
 #include "command_internal.h"
 #include "symbol_index.h"
 
+static const char *command_symbol_argument(const char *arguments,
+                                            const char *usage);
+
+
 static const command_entry symbol_commands[] = {
     { "REINDEX", "Rebuild the persistent C symbol index", command_reindex },
     { "INDEX/STATUS", "Display symbol-index statistics", command_index_status },
@@ -39,7 +43,9 @@ static const command_entry symbol_commands[] = {
     { "DELETE/FUNCTION", "Preview deleting an unused function", command_delete_function },
     { "DELETE/FUNCTION/APPLY", "Delete one unused function with verification", command_delete_function_apply },
     { "MOVE/FUNCTION", "Preview moving a function between modules", command_move_function },
-    { "MOVE/FUNCTION/APPLY", "Move one function with verification", command_move_function_apply }
+    { "MOVE/FUNCTION/APPLY", "Move one function with verification", command_move_function_apply },
+    { "DECLARATIONS/CHECK", "Audit static helper declaration order", command_declarations_check },
+    { "DECLARATIONS/FIX", "Insert missing static helper prototypes", command_declarations_fix }
 };
 
 void command_register_symbol(void)
@@ -874,5 +880,69 @@ void command_move_function_apply(
         state,
         symbol,
         destination
+    );
+}
+
+
+void command_declarations_check(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: DECLARATIONS/CHECK module.c"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: DECLARATIONS/CHECK module.c"
+        );
+        return;
+    }
+
+    symbol_declaration_order_check(
+        state,
+        module
+    );
+}
+
+
+void command_declarations_fix(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: DECLARATIONS/FIX module.c"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: DECLARATIONS/FIX module.c"
+        );
+        return;
+    }
+
+    (void)symbol_declaration_order_fix(
+        state,
+        module
     );
 }

@@ -136,5 +136,9 @@ void command_move_function(agent_state *state,
                            const char *arguments);
 void command_move_function_apply(agent_state *state,
                                  const char *arguments);
+void command_declarations_check(agent_state *state,
+                                const char *arguments);
+void command_declarations_fix(agent_state *state,
+                              const char *arguments);
 
 #endif /* OVMS_AGENT_COMMAND_INTERNAL_H */

@@ -81,4 +81,10 @@ int symbol_move_function_apply(agent_state *state,
                                const char *symbol,
                                const char *destination);
 
+void symbol_declaration_order_check(agent_state *state,
+                                    const char *module);
+
+int symbol_declaration_order_fix(agent_state *state,
+                                 const char *module);
+
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

@@ -13803,7 +13803,7 @@ void symbol_move_function_preview(
 
     if (info.missing_includes.used > 0U) {
         (void)puts(
-            "  - review and add only the destination includes required by the body"
+            "  - add the missing required includes to the destination"
         );
     }
 
@@ -13823,11 +13823,15 @@ void symbol_move_function_preview(
         (void)puts("  BLOCKED - header modules are not supported");
     }
 
-    if (info.missing_includes.used > 0U ||
-        info.dependency_modules.used > 0U ||
+    if (info.dependency_modules.used > 0U ||
         info.caller_count > 0U) {
         (void)puts(
-            "  REQUIRES REVIEW - declarations and includes must be coordinated"
+            "  REQUIRES REVIEW - declarations and dependencies must be coordinated"
+        );
+    } else if (!blocked &&
+               info.missing_includes.used > 0U) {
+        (void)puts(
+            "  SAFE TO APPLY WITH INCLUDE INSERTION"
         );
     } else if (!blocked) {
         (void)puts(
@@ -14602,6 +14606,70 @@ move_source_close_failure:
     return 0;
 }
 
+static int move_line_is_include(
+    const char *line)
+{
+    const char *position;
+
+    position = line;
+
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    return strncmp(position, "#include", 8U) == 0 &&
+           (position[8] == ' ' || position[8] == '\t');
+}
+
+static unsigned long move_last_include_line(
+    const char *path)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long last_include;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0UL;
+    }
+
+    line_number = 0UL;
+    last_include = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (move_line_is_include(line)) {
+            last_include = line_number;
+        }
+    }
+
+    (void)fclose(file);
+    return last_include;
+}
+
+static int move_write_missing_includes(
+    FILE *output,
+    const move_function_info *info)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < info->missing_includes.used;
+         ++index) {
+        if (fprintf(
+                output,
+                "#include %s\n",
+                info->missing_includes.values[index]) < 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 static int move_write_destination_with_definition(
     const move_function_info *info,
     const extract_text_buffer *definition)
@@ -14609,6 +14677,9 @@ static int move_write_destination_with_definition(
     FILE *file;
     FILE *output;
     char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long last_include;
+    int includes_written;
     int last_had_newline;
 
     file = fopen(info->destination_module, "r");
@@ -14624,10 +14695,28 @@ static int move_write_destination_with_definition(
         return 0;
     }
 
+    last_include =
+        move_last_include_line(info->destination_module);
+    line_number = 0UL;
+    includes_written = 0;
     last_had_newline = 1;
+
+    if (last_include == 0UL &&
+        info->missing_includes.used > 0U) {
+        if (!move_write_missing_includes(
+                output,
+                info) ||
+            fputc('\n', output) == EOF) {
+            goto move_dest_failure;
+        }
+
+        includes_written = 1;
+    }
 
     while (fgets(line, sizeof(line), file) != NULL) {
         size_t length;
+
+        ++line_number;
 
         if (fputs(line, output) == EOF) {
             goto move_dest_failure;
@@ -14637,6 +14726,24 @@ static int move_write_destination_with_definition(
         last_had_newline =
             length == 0U ||
             line[length - 1U] == '\n';
+
+        if (!includes_written &&
+            line_number == last_include &&
+            info->missing_includes.used > 0U) {
+            if (!last_had_newline &&
+                fputc('\n', output) == EOF) {
+                goto move_dest_failure;
+            }
+
+            if (!move_write_missing_includes(
+                    output,
+                    info)) {
+                goto move_dest_failure;
+            }
+
+            includes_written = 1;
+            last_had_newline = 1;
+        }
     }
 
     if (!last_had_newline &&
@@ -14727,6 +14834,18 @@ static int move_confirm_apply(
     (void)puts(
         "Objects:     source and destination modules"
     );
+
+    if (info->missing_includes.used > 0U) {
+        (void)puts("Includes to add:");
+
+        move_print_list(
+            &info->missing_includes,
+            "none"
+        );
+    } else {
+        (void)puts("Includes to add: none");
+    }
+
     (void)printf("Apply move [y/N]? ");
     (void)fflush(stdout);
 
@@ -14888,18 +15007,6 @@ int symbol_move_function_apply(
     move_compute_required_includes(&info);
     move_compute_missing_includes(&info);
 
-    if (!move_destination_has_required_includes(&info)) {
-        (void)puts(
-            "Move refused. Destination is missing one or more "
-            "source includes."
-        );
-        move_print_list(
-            &info.missing_includes,
-            "none"
-        );
-        return 0;
-    }
-
     if (!move_dependencies_are_external(&info)) {
         (void)puts(
             "Move refused. The function depends on a symbol "
@@ -15051,6 +15158,976 @@ int symbol_move_function_apply(
     if (reindex_ok && build_ok) {
         (void)puts(
             "Function move rollback completed successfully."
+        );
+    } else {
+        (void)puts(
+            "Rollback completed, but verification still failed."
+        );
+    }
+
+    return 0;
+}
+
+#define DECL_ORDER_MAX_FUNCTIONS 2048U
+#define DECL_ORDER_MAX_CALLS 8192U
+
+typedef struct declaration_order_function {
+    char name[SYMBOL_NAME_SIZE];
+    unsigned long prototype_line;
+    unsigned long definition_line;
+    unsigned long first_call_line;
+    unsigned int is_static;
+} declaration_order_function;
+
+typedef struct declaration_order_table {
+    declaration_order_function entries[DECL_ORDER_MAX_FUNCTIONS];
+    unsigned int used;
+} declaration_order_table;
+
+static declaration_order_function *declaration_order_find(
+    declaration_order_table *table,
+    const char *name)
+{
+    unsigned int index;
+
+    for (index = 0U; index < table->used; ++index) {
+        if (strcmp(table->entries[index].name, name) == 0) {
+            return &table->entries[index];
+        }
+    }
+
+    return NULL;
+}
+
+static declaration_order_function *declaration_order_get(
+    declaration_order_table *table,
+    const char *name)
+{
+    declaration_order_function *entry;
+
+    entry = declaration_order_find(table, name);
+
+    if (entry != NULL) {
+        return entry;
+    }
+
+    if (table->used >= DECL_ORDER_MAX_FUNCTIONS ||
+        strlen(name) >= SYMBOL_NAME_SIZE) {
+        return NULL;
+    }
+
+    entry = &table->entries[table->used];
+    (void)memset(entry, 0, sizeof(*entry));
+    (void)strcpy(entry->name, name);
+    ++table->used;
+    return entry;
+}
+
+static int declaration_order_statement_name(
+    const char *statement,
+    char *name,
+    size_t name_size,
+    int *is_static,
+    int *is_definition,
+    int *is_prototype)
+{
+    const char *open_paren;
+    const char *cursor;
+    const char *end;
+    size_t length;
+
+    *is_static = 0;
+    *is_definition = 0;
+    *is_prototype = 0;
+    name[0] = '\0';
+
+    open_paren = strchr(statement, '(');
+
+    if (open_paren == NULL) {
+        return 0;
+    }
+
+    cursor = open_paren;
+
+    while (cursor > statement &&
+           (cursor[-1] == ' ' || cursor[-1] == '\t' ||
+            cursor[-1] == '\r' || cursor[-1] == '\n')) {
+        --cursor;
+    }
+
+    end = cursor;
+
+    while (cursor > statement &&
+           (isalnum((unsigned char)cursor[-1]) ||
+            cursor[-1] == '_')) {
+        --cursor;
+    }
+
+    length = (size_t)(end - cursor);
+
+    if (length == 0U || length >= name_size ||
+        !(isalpha((unsigned char)*cursor) || *cursor == '_')) {
+        return 0;
+    }
+
+    (void)memcpy(name, cursor, length);
+    name[length] = '\0';
+
+    if (extract_identifier_is_keyword(name)) {
+        return 0;
+    }
+
+    {
+        const char *position;
+
+        position = statement;
+
+        while ((position = strstr(position, "static")) != NULL) {
+            if (extract_exact_identifier_at(
+                    statement,
+                    position,
+                    "static")) {
+                *is_static = 1;
+                break;
+            }
+
+            ++position;
+        }
+    }
+
+    if (strchr(statement, '{') != NULL) {
+        *is_definition = 1;
+    } else if (strchr(statement, ';') != NULL) {
+        *is_prototype = 1;
+    }
+
+    return *is_definition || *is_prototype;
+}
+
+static int declaration_order_collect_declarations(
+    const char *path,
+    declaration_order_table *table)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char statement[SYMBOL_LINE_SIZE * 16U];
+    unsigned long line_number;
+    unsigned long statement_start;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    statement[0] = '\0';
+    line_number = 0UL;
+    statement_start = 1UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        char name[SYMBOL_NAME_SIZE];
+        int is_static;
+        int is_definition;
+        int is_prototype;
+        declaration_order_function *entry;
+
+        ++line_number;
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        if (statement[0] == '\0') {
+            statement_start = line_number;
+        }
+
+        if (strlen(statement) + strlen(clean) + 2U >=
+            sizeof(statement)) {
+            statement[0] = '\0';
+            statement_start = line_number;
+        }
+
+        (void)strcat(statement, clean);
+        (void)strcat(statement, " ");
+
+        if (strchr(statement, ';') == NULL &&
+            strchr(statement, '{') == NULL) {
+            continue;
+        }
+
+        if (declaration_order_statement_name(
+                statement,
+                name,
+                sizeof(name),
+                &is_static,
+                &is_definition,
+                &is_prototype)) {
+            entry = declaration_order_get(table, name);
+
+            if (entry == NULL) {
+                (void)fclose(file);
+                return 0;
+            }
+
+            if (is_static) {
+                entry->is_static = 1U;
+            }
+
+            if (is_prototype &&
+                entry->prototype_line == 0UL) {
+                entry->prototype_line = statement_start;
+            }
+
+            if (is_definition &&
+                entry->definition_line == 0UL) {
+                entry->definition_line = statement_start;
+            }
+        }
+
+        statement[0] = '\0';
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int declaration_order_collect_calls(
+    const char *path,
+    declaration_order_table *table)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        const char *position;
+
+        ++line_number;
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+        position = clean;
+
+        while (*position != '\0') {
+            char name[SYMBOL_NAME_SIZE];
+            size_t length;
+            const char *after;
+            declaration_order_function *entry;
+
+            if (!(isalpha((unsigned char)*position) ||
+                  *position == '_')) {
+                ++position;
+                continue;
+            }
+
+            length = 0U;
+
+            while (isalnum((unsigned char)position[length]) ||
+                   position[length] == '_') {
+                ++length;
+            }
+
+            if (length >= sizeof(name)) {
+                position += length;
+                continue;
+            }
+
+            (void)memcpy(name, position, length);
+            name[length] = '\0';
+            after = position + length;
+
+            while (*after == ' ' || *after == '\t') {
+                ++after;
+            }
+
+            if (*after == '(') {
+                entry = declaration_order_find(table, name);
+
+                if (entry != NULL &&
+                    entry->first_call_line == 0UL &&
+                    line_number != entry->prototype_line &&
+                    line_number != entry->definition_line) {
+                    entry->first_call_line = line_number;
+                }
+            }
+
+            position += length;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+void symbol_declaration_order_check(
+    agent_state *state,
+    const char *module)
+{
+    declaration_order_table table;
+    char path[SYMBOL_PATH_SIZE];
+    unsigned int index;
+    unsigned int failures;
+    unsigned int static_count;
+
+    (void)memset(&table, 0, sizeof(table));
+    failures = 0U;
+    static_count = 0U;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path)) ||
+        !symbol_has_c_extension(path)) {
+        (void)puts(
+            "Module must be a project-relative .C file."
+        );
+        return;
+    }
+
+    if (!move_file_exists(path)) {
+        (void)printf(
+            "Unable to open %s.\n",
+            path
+        );
+        return;
+    }
+
+    if (!declaration_order_collect_declarations(
+            path,
+            &table) ||
+        !declaration_order_collect_calls(
+            path,
+            &table)) {
+        (void)puts(
+            "Unable to complete declaration-order analysis."
+        );
+        return;
+    }
+
+    (void)printf(
+        "Static declaration-order audit: %s\n",
+        path
+    );
+    (void)puts("========================================");
+
+    for (index = 0U; index < table.used; ++index) {
+        declaration_order_function *entry;
+        unsigned long visible_line;
+
+        entry = &table.entries[index];
+
+        if (!entry->is_static) {
+            continue;
+        }
+
+        ++static_count;
+        visible_line = entry->prototype_line != 0UL ?
+            entry->prototype_line : entry->definition_line;
+
+        if (entry->first_call_line != 0UL &&
+            (visible_line == 0UL ||
+             entry->first_call_line < visible_line)) {
+            ++failures;
+            (void)printf(
+                "FAIL %-32s first call %lu, first declaration %lu\n",
+                entry->name,
+                entry->first_call_line,
+                visible_line
+            );
+        }
+    }
+
+    if (failures == 0U) {
+        (void)puts(
+            "PASS No static helper is called before a visible declaration."
+        );
+    }
+
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Static functions checked: %u\n",
+        static_count
+    );
+    (void)printf(
+        "Declaration-order failures: %u\n",
+        failures
+    );
+
+    if (failures > 0U) {
+        (void)puts(
+            "Add private forward declarations or move definitions "
+            "before their first calls."
+        );
+    }
+}
+
+typedef struct declaration_fix_item {
+    char name[SYMBOL_NAME_SIZE];
+    unsigned long definition_line;
+    unsigned long first_call_line;
+    char prototype[SYMBOL_LINE_SIZE * 8U];
+} declaration_fix_item;
+
+typedef struct declaration_fix_list {
+    declaration_fix_item entries[DECL_ORDER_MAX_FUNCTIONS];
+    unsigned int used;
+} declaration_fix_list;
+
+static int declaration_fix_extract_signature(
+    const char *path,
+    const char *symbol,
+    unsigned long definition_line,
+    char *prototype,
+    size_t prototype_size)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char signature[SYMBOL_LINE_SIZE * 8U];
+    unsigned long line_number;
+    int collecting;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    signature[0] = '\0';
+    line_number = 0UL;
+    collecting = 0;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+
+        ++line_number;
+
+        if (line_number < definition_line) {
+            continue;
+        }
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+
+        symbol_clean_line(
+            clean,
+            &in_block_comment
+        );
+
+        if (!collecting) {
+            char *position;
+
+            position = strstr(clean, symbol);
+
+            while (position != NULL) {
+                const char *after;
+
+                if (!extract_exact_identifier_at(
+                        clean,
+                        position,
+                        symbol)) {
+                    position = strstr(
+                        position + 1,
+                        symbol
+                    );
+                    continue;
+                }
+
+                after = position + strlen(symbol);
+
+                while (*after == ' ' ||
+                       *after == '\t') {
+                    ++after;
+                }
+
+                if (*after == '(') {
+                    collecting = 1;
+                    break;
+                }
+
+                position = strstr(
+                    position + 1,
+                    symbol
+                );
+            }
+
+            if (!collecting) {
+                continue;
+            }
+        }
+
+        if (strlen(signature) +
+            strlen(clean) + 2U >=
+            sizeof(signature)) {
+            (void)fclose(file);
+            return 0;
+        }
+
+        (void)strcat(signature, clean);
+        (void)strcat(signature, " ");
+
+        {
+            char *brace;
+
+            brace = strchr(signature, '{');
+
+            if (brace != NULL) {
+                *brace = '\0';
+                break;
+            }
+        }
+    }
+
+    (void)fclose(file);
+    inline_trim(signature);
+
+    if (!collecting ||
+        signature[0] == '\0' ||
+        strchr(signature, '(') == NULL ||
+        strchr(signature, ')') == NULL) {
+        return 0;
+    }
+
+    if (strlen(signature) + 2U >= prototype_size) {
+        return 0;
+    }
+
+    (void)snprintf(
+        prototype,
+        prototype_size,
+        "%s;\n",
+        signature
+    );
+
+    return 1;
+}
+
+static int declaration_fix_collect(
+    const char *path,
+    declaration_fix_list *fixes)
+{
+    declaration_order_table table;
+    unsigned int index;
+
+    (void)memset(&table, 0, sizeof(table));
+    (void)memset(fixes, 0, sizeof(*fixes));
+
+    if (!declaration_order_collect_declarations(
+            path,
+            &table) ||
+        !declaration_order_collect_calls(
+            path,
+            &table)) {
+        return 0;
+    }
+
+    for (index = 0U; index < table.used; ++index) {
+        declaration_order_function *entry;
+        unsigned long visible_line;
+        declaration_fix_item *item;
+
+        entry = &table.entries[index];
+
+        if (!entry->is_static) {
+            continue;
+        }
+
+        visible_line = entry->prototype_line != 0UL ?
+            entry->prototype_line : entry->definition_line;
+
+        if (entry->first_call_line == 0UL ||
+            (visible_line != 0UL &&
+             entry->first_call_line >= visible_line)) {
+            continue;
+        }
+
+        if (fixes->used >= DECL_ORDER_MAX_FUNCTIONS) {
+            return 0;
+        }
+
+        item = &fixes->entries[fixes->used];
+        (void)strncpy(
+            item->name,
+            entry->name,
+            sizeof(item->name) - 1U
+        );
+        item->definition_line = entry->definition_line;
+        item->first_call_line = entry->first_call_line;
+
+        if (!declaration_fix_extract_signature(
+                path,
+                entry->name,
+                entry->definition_line,
+                item->prototype,
+                sizeof(item->prototype))) {
+            return 0;
+        }
+
+        ++fixes->used;
+    }
+
+    return 1;
+}
+
+static unsigned long declaration_fix_insert_line(
+    const char *path)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long last_include;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0UL;
+    }
+
+    line_number = 0UL;
+    last_include = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        const char *position;
+
+        ++line_number;
+        position = line;
+
+        while (*position == ' ' || *position == '\t') {
+            ++position;
+        }
+
+        if (strncmp(position, "#include", 8U) == 0) {
+            last_include = line_number;
+        }
+    }
+
+    (void)fclose(file);
+    return last_include;
+}
+
+static int declaration_fix_write_file(
+    const char *path,
+    const declaration_fix_list *fixes)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long insert_line;
+    unsigned int index;
+    char filespec[SYMBOL_PATH_SIZE + 16U];
+    char command[SYMBOL_PATH_SIZE * 2U + 96U];
+    int status;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_DECL_FIX.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    insert_line = declaration_fix_insert_line(path);
+    line_number = 0UL;
+
+    if (insert_line == 0UL) {
+        for (index = 0U; index < fixes->used; ++index) {
+            if (fputs(fixes->entries[index].prototype, output) == EOF) {
+                goto decl_fix_failure;
+            }
+        }
+
+        if (fputc('\n', output) == EOF) {
+            goto decl_fix_failure;
+        }
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (fputs(line, output) == EOF) {
+            goto decl_fix_failure;
+        }
+
+        if (line_number == insert_line) {
+            if (fputc('\n', output) == EOF) {
+                goto decl_fix_failure;
+            }
+
+            for (index = 0U; index < fixes->used; ++index) {
+                if (fputs(
+                        fixes->entries[index].prototype,
+                        output) == EOF) {
+                    goto decl_fix_failure;
+                }
+            }
+
+            if (fputc('\n', output) == EOF) {
+                goto decl_fix_failure;
+            }
+        }
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto decl_fix_close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    if (!rename_make_vms_filespec(
+            path,
+            filespec,
+            sizeof(filespec))) {
+        goto decl_fix_close_failure;
+    }
+
+    (void)snprintf(
+        command,
+        sizeof(command),
+        "COPY/NOLOG OVMS_DECL_FIX.TMP %s;",
+        filespec
+    );
+
+    status = system(command);
+    (void)remove("OVMS_DECL_FIX.TMP");
+
+    return status == 0 ||
+           (status & 1) != 0;
+
+decl_fix_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+decl_fix_close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_DECL_FIX.TMP");
+    return 0;
+}
+
+static int declaration_fix_confirm(
+    const char *path,
+    const declaration_fix_list *fixes)
+{
+    unsigned int index;
+    char answer[32];
+
+    (void)printf(
+        "Static declaration fix: %s\n",
+        path
+    );
+    (void)puts("========================================");
+    (void)printf(
+        "Prototypes to add: %u\n",
+        fixes->used
+    );
+    (void)puts("");
+
+    for (index = 0U; index < fixes->used; ++index) {
+        (void)printf(
+            "%s",
+            fixes->entries[index].prototype
+        );
+    }
+
+    (void)printf("Apply declarations [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+int symbol_declaration_order_fix(
+    agent_state *state,
+    const char *module)
+{
+    declaration_fix_list fixes;
+    rename_transaction transaction;
+    char path[SYMBOL_PATH_SIZE];
+    int reindex_ok;
+    int build_ok;
+
+    (void)memset(&fixes, 0, sizeof(fixes));
+    (void)memset(&transaction, 0, sizeof(transaction));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path)) ||
+        !symbol_has_c_extension(path)) {
+        (void)puts(
+            "Module must be a project-relative .C file."
+        );
+        return 0;
+    }
+
+    if (!move_file_exists(path)) {
+        (void)printf("Unable to open %s.\n", path);
+        return 0;
+    }
+
+    if (!declaration_fix_collect(path, &fixes)) {
+        (void)puts(
+            "Unable to generate declaration fixes."
+        );
+        return 0;
+    }
+
+    if (fixes.used == 0U) {
+        (void)puts(
+            "No declaration-order fixes are required."
+        );
+        return 1;
+    }
+
+    if (!declaration_fix_confirm(path, &fixes)) {
+        (void)puts("Declaration fix cancelled.");
+        return 0;
+    }
+
+    (void)strcpy(
+        transaction.files[0].path,
+        path
+    );
+    transaction.files[0].replacements = fixes.used;
+    transaction.file_count = 1U;
+    transaction.total_replacements = fixes.used;
+
+    if (!declaration_fix_write_file(path, &fixes)) {
+        (void)puts(
+            "Declaration fix failed while writing the source file."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Declarations inserted. Rebuilding symbol index..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Invalidating changed object files..."
+    );
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
+        "Running controlled build..."
+    );
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Declaration-fix verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Declaration fix completed successfully."
+        );
+        return 1;
+    }
+
+    (void)puts(
+        "Declaration-fix verification failed."
+    );
+
+    if (!rename_confirm_rollback()) {
+        (void)puts(
+            "Rollback declined. Project remains modified."
+        );
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts(
+            "Rollback was incomplete; inspect file versions."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous source version restored."
+    );
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Declaration-fix rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Declaration-fix rollback completed successfully."
         );
     } else {
         (void)puts(
