@@ -1,0 +1,216 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "rms_write.h"
+
+#define RMS_WRITE_COMMAND_SIZE 1024U
+#define RMS_WRITE_PATH_SIZE 512U
+#define RMS_WRITE_RECORD_SIZE 32767U
+
+static int rms_write_case_equal(
+    const char *left,
+    const char *right)
+{
+    while (*left != '\0' && *right != '\0') {
+        int a;
+        int b;
+
+        a = *left >= 'a' && *left <= 'z' ?
+            *left - ('a' - 'A') : *left;
+        b = *right >= 'a' && *right <= 'z' ?
+            *right - ('a' - 'A') : *right;
+
+        if (a != b) {
+            return 0;
+        }
+
+        ++left;
+        ++right;
+    }
+
+    return *left == '\0' && *right == '\0';
+}
+
+static int rms_write_has_extension(
+    const char *path,
+    const char *extension)
+{
+    const char *dot;
+
+    if (path == NULL || extension == NULL) {
+        return 0;
+    }
+
+    dot = strrchr(path, '.');
+
+    if (dot == NULL) {
+        return 0;
+    }
+
+    return rms_write_case_equal(dot, extension);
+}
+
+int rms_path_requires_record_writer(
+    const char *path)
+{
+    return rms_write_has_extension(path, ".OPT") ||
+           rms_write_has_extension(path, ".COM") ||
+           rms_write_has_extension(path, ".CLD");
+}
+
+static int rms_write_emit_record(
+    FILE *file,
+    const char *record,
+    size_t length)
+{
+    if (length > RMS_WRITE_RECORD_SIZE) {
+        return 0;
+    }
+
+    if (length == 0U) {
+        return fputc('\n', file) != EOF;
+    }
+
+    /*
+     * On OpenVMS record files, the C RTL treats each fwrite item as
+     * an RMS record.  Use one item whose size is the complete logical
+     * line.  fwrite(record, 1, length, file) creates length one-byte
+     * records and produces one-character-per-line output.
+     */
+    if (fwrite(record, length, 1U, file) != 1U) {
+        return 0;
+    }
+
+    return 1;
+}
+
+int rms_write_text_file(
+    const char *path,
+    const char *text)
+{
+    FILE *file;
+    const char *start;
+    const char *position;
+
+    if (path == NULL || text == NULL) {
+        return 0;
+    }
+
+    file = fopen(
+        path,
+        "w",
+        "rfm=var",
+        "rat=cr"
+    );
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    start = text;
+    position = text;
+
+    while (*position != '\0') {
+        if (*position == '\n') {
+            size_t length;
+
+            length = (size_t)(position - start);
+
+            if (length > 0U &&
+                start[length - 1U] == '\r') {
+                --length;
+            }
+
+            if (!rms_write_emit_record(
+                    file,
+                    start,
+                    length)) {
+                (void)fclose(file);
+                return 0;
+            }
+
+            ++position;
+            start = position;
+        } else {
+            ++position;
+        }
+    }
+
+    if (position != start) {
+        size_t length;
+
+        length = (size_t)(position - start);
+
+        if (length > 0U &&
+            start[length - 1U] == '\r') {
+            --length;
+        }
+
+        if (!rms_write_emit_record(
+                file,
+                start,
+                length)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    return fclose(file) == 0;
+}
+
+int rms_replace_text_file(
+    const char *path,
+    const char *text)
+{
+    char temporary[RMS_WRITE_PATH_SIZE];
+    char command[RMS_WRITE_COMMAND_SIZE];
+    int status;
+
+    if (path == NULL || text == NULL) {
+        return 0;
+    }
+
+    if (!rms_path_requires_record_writer(path)) {
+        FILE *file;
+
+        file = fopen(path, "w");
+
+        if (file == NULL) {
+            return 0;
+        }
+
+        if (fputs(text, file) == EOF) {
+            (void)fclose(file);
+            return 0;
+        }
+
+        return fclose(file) == 0;
+    }
+
+    (void)snprintf(
+        temporary,
+        sizeof(temporary),
+        "OVMS_RMS_SAFE.TMP"
+    );
+
+    if (!rms_write_text_file(
+            temporary,
+            text)) {
+        return 0;
+    }
+
+    (void)snprintf(
+        command,
+        sizeof(command),
+        "COPY/NOLOG %s %s",
+        temporary,
+        path
+    );
+
+    status = system(command);
+    (void)remove(temporary);
+
+    return status == 0 ||
+           (status & 1) != 0;
+}
