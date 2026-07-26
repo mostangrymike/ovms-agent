@@ -37,7 +37,8 @@ static const command_entry symbol_commands[] = {
     { "INLINE/FUNCTION", "Preview inlining a local C function", command_inline_function },
     { "INLINE/FUNCTION/APPLY", "Apply one guarded local inline", command_inline_function_apply },
     { "DELETE/FUNCTION", "Preview deleting an unused function", command_delete_function },
-    { "DELETE/FUNCTION/APPLY", "Delete one unused function with verification", command_delete_function_apply }
+    { "DELETE/FUNCTION/APPLY", "Delete one unused function with verification", command_delete_function_apply },
+    { "MOVE/FUNCTION", "Preview moving a function between modules", command_move_function }
 };
 
 void command_register_symbol(void)
@@ -799,4 +800,40 @@ void command_delete_function_apply(
     }
 
     (void)symbol_delete_function_apply(state, symbol);
+}
+
+
+void command_move_function(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *symbol;
+    char *destination;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts(
+            "Usage: MOVE/FUNCTION function_name destination.c"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    symbol = command_next_argument(&cursor);
+    destination = command_next_argument(&cursor);
+
+    if (symbol == NULL ||
+        destination == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: MOVE/FUNCTION function_name destination.c"
+        );
+        return;
+    }
+
+    symbol_move_function_preview(
+        state,
+        symbol,
+        destination
+    );
 }

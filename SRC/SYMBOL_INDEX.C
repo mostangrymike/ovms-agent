@@ -13221,3 +13221,622 @@ int symbol_delete_function_apply(
     return 0;
 }
 
+#define MOVE_INCLUDE_MAX 64U
+#define MOVE_DEPENDENCY_MAX 128U
+#define MOVE_CALLER_MAX 128U
+
+typedef struct move_string_list {
+    char values[MOVE_DEPENDENCY_MAX][SYMBOL_PATH_SIZE];
+    unsigned int used;
+} move_string_list;
+
+typedef struct move_function_info {
+    char symbol[SYMBOL_NAME_SIZE];
+    char source_module[SYMBOL_PATH_SIZE];
+    char destination_module[SYMBOL_PATH_SIZE];
+    unsigned long definition_line;
+    unsigned long body_start;
+    unsigned long body_end;
+    unsigned int caller_count;
+    move_string_list callers;
+    move_string_list source_includes;
+    move_string_list destination_includes;
+    move_string_list missing_includes;
+    move_string_list called_symbols;
+    move_string_list dependency_modules;
+} move_function_info;
+
+static int move_list_contains(
+    const move_string_list *list,
+    const char *value)
+{
+    unsigned int index;
+
+    for (index = 0U; index < list->used; ++index) {
+        if (strcmp(list->values[index], value) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int move_list_add(
+    move_string_list *list,
+    const char *value)
+{
+    if (value == NULL ||
+        *value == '\0' ||
+        strlen(value) >= SYMBOL_PATH_SIZE) {
+        return 0;
+    }
+
+    if (move_list_contains(list, value)) {
+        return 1;
+    }
+
+    if (list->used >= MOVE_DEPENDENCY_MAX) {
+        return 0;
+    }
+
+    (void)strcpy(list->values[list->used], value);
+    ++list->used;
+    return 1;
+}
+
+static int move_file_exists(const char *path)
+{
+    FILE *file;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int move_collect_includes(
+    const char *path,
+    move_string_list *includes)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char *position;
+        char *end;
+        char include_name[SYMBOL_PATH_SIZE];
+        size_t length;
+
+        position = line;
+
+        while (*position == ' ' || *position == '\t') {
+            ++position;
+        }
+
+        if (strncmp(position, "#include", 8U) != 0) {
+            continue;
+        }
+
+        position += 8;
+
+        while (*position == ' ' || *position == '\t') {
+            ++position;
+        }
+
+        if (*position == '"') {
+            end = strchr(position + 1, '"');
+        } else if (*position == '<') {
+            end = strchr(position + 1, '>');
+        } else {
+            continue;
+        }
+
+        if (end == NULL) {
+            continue;
+        }
+
+        length = (size_t)(end - position + 1);
+
+        if (length >= sizeof(include_name)) {
+            continue;
+        }
+
+        (void)memcpy(include_name, position, length);
+        include_name[length] = '\0';
+
+        if (!move_list_add(includes, include_name)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int move_find_definition_record(
+    const char *symbol,
+    char *module,
+    size_t module_size,
+    unsigned long *line_number)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind == 'D' &&
+            strcmp(record_symbol, symbol) == 0) {
+            (void)strncpy(module, record_path, module_size - 1U);
+            module[module_size - 1U] = '\0';
+            *line_number = record_line;
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int move_collect_callers(
+    const char *symbol,
+    move_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+        char caller[SYMBOL_PATH_SIZE];
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if (kind != 'C' ||
+            strcmp(record_symbol, symbol) != 0) {
+            continue;
+        }
+
+        (void)snprintf(
+            caller,
+            sizeof(caller),
+            "%s line %lu",
+            record_path,
+            record_line
+        );
+
+        if (!move_list_add(&info->callers, caller)) {
+            (void)fclose(file);
+            return 0;
+        }
+
+        ++info->caller_count;
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int move_collect_called_symbols(
+    const move_function_info *info,
+    move_string_list *called_symbols)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(info->source_module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        const char *position;
+
+        ++line_number;
+
+        if (line_number < info->body_start) {
+            continue;
+        }
+
+        if (line_number > info->body_end) {
+            break;
+        }
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+        position = clean;
+
+        while (*position != '\0') {
+            char name[SYMBOL_NAME_SIZE];
+            size_t length;
+            const char *after;
+
+            if (!(isalpha((unsigned char)*position) ||
+                  *position == '_')) {
+                ++position;
+                continue;
+            }
+
+            length = 0U;
+
+            while (isalnum((unsigned char)position[length]) ||
+                   position[length] == '_') {
+                ++length;
+            }
+
+            if (length >= sizeof(name)) {
+                position += length;
+                continue;
+            }
+
+            (void)memcpy(name, position, length);
+            name[length] = '\0';
+            after = position + length;
+
+            while (*after == ' ' || *after == '\t') {
+                ++after;
+            }
+
+            if (*after == '(' &&
+                !extract_identifier_is_keyword(name) &&
+                strcmp(name, info->symbol) != 0) {
+                if (!move_list_add(called_symbols, name)) {
+                    (void)fclose(file);
+                    return 0;
+                }
+            }
+
+            position += length;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int move_resolve_dependencies(
+    move_function_info *info)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < info->called_symbols.used;
+         ++index) {
+        char module[SYMBOL_PATH_SIZE];
+        unsigned long line_number;
+
+        module[0] = '\0';
+        line_number = 0UL;
+
+        if (!move_find_definition_record(
+                info->called_symbols.values[index],
+                module,
+                sizeof(module),
+                &line_number)) {
+            continue;
+        }
+
+        if (strcmp(module, info->source_module) == 0 ||
+            strcmp(module, info->destination_module) == 0) {
+            continue;
+        }
+
+        if (!move_list_add(
+                &info->dependency_modules,
+                module)) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static void move_compute_missing_includes(
+    move_function_info *info)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < info->source_includes.used;
+         ++index) {
+        const char *include_name;
+
+        include_name = info->source_includes.values[index];
+
+        if (!move_list_contains(
+                &info->destination_includes,
+                include_name)) {
+            (void)move_list_add(
+                &info->missing_includes,
+                include_name
+            );
+        }
+    }
+}
+
+static void move_print_list(
+    const move_string_list *list,
+    const char *empty_text)
+{
+    unsigned int index;
+
+    if (list->used == 0U) {
+        (void)printf("  %s\n", empty_text);
+        return;
+    }
+
+    for (index = 0U; index < list->used; ++index) {
+        (void)printf("  %s\n", list->values[index]);
+    }
+}
+
+void symbol_move_function_preview(
+    agent_state *state,
+    const char *symbol,
+    const char *destination)
+{
+    move_function_info info;
+    inline_function_info inline_info;
+    unsigned int checked;
+    unsigned int changed;
+    int blocked;
+
+    (void)memset(&info, 0, sizeof(info));
+    (void)memset(&inline_info, 0, sizeof(inline_info));
+    blocked = 0;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts("Function name must be a valid C identifier.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            destination,
+            info.destination_module,
+            sizeof(info.destination_module)) ||
+        !symbol_has_c_extension(info.destination_module)) {
+        (void)puts(
+            "Destination must be a project-relative .C module."
+        );
+        return;
+    }
+
+    if (!move_file_exists(info.destination_module)) {
+        (void)printf(
+            "Destination module does not exist: %s\n",
+            info.destination_module
+        );
+        return;
+    }
+
+    if (!symbol_manifest_current(&checked, &changed, 0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before MOVE/FUNCTION."
+        );
+        return;
+    }
+
+    (void)strncpy(info.symbol, symbol, sizeof(info.symbol) - 1U);
+
+    if (!move_find_definition_record(
+            symbol,
+            info.source_module,
+            sizeof(info.source_module),
+            &info.definition_line)) {
+        (void)printf("No definition found for %s.\n", symbol);
+        return;
+    }
+
+    if (strcmp(
+            info.source_module,
+            info.destination_module) == 0) {
+        (void)puts(
+            "Move blocked: source and destination modules are the same."
+        );
+        return;
+    }
+
+    (void)strncpy(
+        inline_info.symbol,
+        symbol,
+        sizeof(inline_info.symbol) - 1U
+    );
+    (void)strncpy(
+        inline_info.module,
+        info.source_module,
+        sizeof(inline_info.module) - 1U
+    );
+    inline_info.definition_line = info.definition_line;
+
+    if (!inline_find_body_range(&inline_info)) {
+        (void)puts(
+            "Unable to identify a complete function body."
+        );
+        return;
+    }
+
+    info.body_start = inline_info.body_start;
+    info.body_end = inline_info.body_end;
+
+    if (!move_collect_callers(symbol, &info) ||
+        !move_collect_includes(
+            info.source_module,
+            &info.source_includes) ||
+        !move_collect_includes(
+            info.destination_module,
+            &info.destination_includes) ||
+        !move_collect_called_symbols(
+            &info,
+            &info.called_symbols) ||
+        !move_resolve_dependencies(&info)) {
+        (void)puts(
+            "Unable to complete move-function analysis."
+        );
+        return;
+    }
+
+    move_compute_missing_includes(&info);
+
+    (void)printf("Move-function preview: %s\n", symbol);
+    (void)puts("========================================");
+    (void)printf(
+        "Source:      %s line %lu\n",
+        info.source_module,
+        info.definition_line
+    );
+    (void)printf(
+        "Destination: %s\n",
+        info.destination_module
+    );
+    (void)printf(
+        "Callers:     %u\n",
+        info.caller_count
+    );
+
+    (void)puts("");
+    (void)puts("Indexed callers");
+    (void)puts("----------------------------------------");
+    move_print_list(&info.callers, "none");
+
+    (void)puts("");
+    (void)puts("Functions called by moved body");
+    (void)puts("----------------------------------------");
+    move_print_list(&info.called_symbols, "none detected");
+
+    (void)puts("");
+    (void)puts("Resolved dependency modules");
+    (void)puts("----------------------------------------");
+    move_print_list(
+        &info.dependency_modules,
+        "none outside source/destination"
+    );
+
+    (void)puts("");
+    (void)puts("Source includes absent from destination");
+    (void)puts("----------------------------------------");
+    move_print_list(
+        &info.missing_includes,
+        "none"
+    );
+
+    (void)puts("");
+    (void)puts("Required source changes");
+    (void)puts("----------------------------------------");
+    (void)puts(
+        "  - remove the complete definition from the source module"
+    );
+    (void)puts(
+        "  - insert the complete definition into the destination module"
+    );
+
+    if (info.caller_count > 0U) {
+        (void)puts(
+            "  - ensure a declaration remains visible to all callers"
+        );
+    }
+
+    if (info.missing_includes.used > 0U) {
+        (void)puts(
+            "  - review and add only the destination includes required by the body"
+        );
+    }
+
+    if (info.dependency_modules.used > 0U) {
+        (void)puts(
+            "  - verify declarations for called project functions are visible"
+        );
+    }
+
+    (void)puts("");
+    (void)puts("Move eligibility");
+    (void)puts("----------------------------------------");
+
+    if (strstr(info.source_module, ".h") != NULL ||
+        strstr(info.destination_module, ".h") != NULL) {
+        blocked = 1;
+        (void)puts("  BLOCKED - header modules are not supported");
+    }
+
+    if (info.missing_includes.used > 0U ||
+        info.dependency_modules.used > 0U ||
+        info.caller_count > 0U) {
+        (void)puts(
+            "  REQUIRES REVIEW - declarations and includes must be coordinated"
+        );
+    } else if (!blocked) {
+        (void)puts(
+            "  SAFE TO PLAN - no external declaration or include changes detected"
+        );
+    }
+
+    (void)puts("");
+    (void)puts(
+        "Preview only. No files were modified."
+    );
+    (void)puts(
+        "A guarded apply milestone must update declarations, "
+        "both module versions, object files, and build verification."
+    );
+}
+
