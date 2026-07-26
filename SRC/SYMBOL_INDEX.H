@@ -77,5 +77,8 @@ int symbol_delete_function_apply(agent_state *state,
 void symbol_move_function_preview(agent_state *state,
                                   const char *symbol,
                                   const char *destination);
+int symbol_move_function_apply(agent_state *state,
+                               const char *symbol,
+                               const char *destination);
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

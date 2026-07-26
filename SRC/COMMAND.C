@@ -12,6 +12,7 @@ void command_prompt(void)
 }
 
 
+
 void command_execute(agent_state *state, char *input)
 {
     const command_entry *entry;

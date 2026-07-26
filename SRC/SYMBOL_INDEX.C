@@ -13840,3 +13840,864 @@ void symbol_move_function_preview(
     );
 }
 
+static int move_destination_has_symbol(
+    const char *symbol,
+    const char *destination)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+
+    file = fopen(SYMBOL_INDEX_FILE, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char kind;
+        char *record_symbol;
+        char *record_path;
+        unsigned long record_line;
+
+        if (!symbol_parse_record(
+                line,
+                &kind,
+                &record_symbol,
+                &record_path,
+                &record_line)) {
+            continue;
+        }
+
+        if ((kind == 'D' || kind == 'T') &&
+            strcmp(record_symbol, symbol) == 0 &&
+            strcmp(record_path, destination) == 0) {
+            (void)fclose(file);
+            return 1;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int move_header_contains_declaration(
+    const char *path,
+    const char *symbol)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char statement[SYMBOL_LINE_SIZE * 8U];
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    statement[0] = '\0';
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        char *symbol_position;
+        char *open_paren;
+        char *semicolon;
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+
+        symbol_clean_line(
+            clean,
+            &in_block_comment
+        );
+
+        if (strlen(statement) +
+            strlen(clean) + 2U >=
+            sizeof(statement)) {
+            statement[0] = '\0';
+        }
+
+        (void)strcat(statement, clean);
+        (void)strcat(statement, " ");
+
+        semicolon = strchr(statement, ';');
+
+        if (semicolon == NULL) {
+            continue;
+        }
+
+        *semicolon = '\0';
+        symbol_position = strstr(statement, symbol);
+
+        while (symbol_position != NULL) {
+            const char *after_name;
+
+            if (!extract_exact_identifier_at(
+                    statement,
+                    symbol_position,
+                    symbol)) {
+                symbol_position = strstr(
+                    symbol_position + 1,
+                    symbol
+                );
+                continue;
+            }
+
+            after_name =
+                symbol_position + strlen(symbol);
+
+            while (*after_name == ' ' ||
+                   *after_name == '\t' ||
+                   *after_name == '\r' ||
+                   *after_name == '\n') {
+                ++after_name;
+            }
+
+            open_paren = (char *)after_name;
+
+            if (*open_paren == '(' &&
+                strchr(open_paren, ')') != NULL &&
+                strchr(statement, '{') == NULL &&
+                strchr(statement, '=') == NULL) {
+                (void)fclose(file);
+                return 1;
+            }
+
+            symbol_position = strstr(
+                symbol_position + 1,
+                symbol
+            );
+        }
+
+        {
+            char *remaining;
+
+            remaining = semicolon + 1;
+
+            while (*remaining == ' ' ||
+                   *remaining == '\t' ||
+                   *remaining == '\r' ||
+                   *remaining == '\n') {
+                ++remaining;
+            }
+
+            (void)memmove(
+                statement,
+                remaining,
+                strlen(remaining) + 1U
+            );
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int move_shared_declaration_exists(
+    const char *symbol)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return 0;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        char path[SYMBOL_PATH_SIZE];
+        size_t length;
+
+        length = strlen(entry->d_name);
+
+        if (length < 3U ||
+            entry->d_name[length - 2U] != '.' ||
+            (entry->d_name[length - 1U] != 'h' &&
+             entry->d_name[length - 1U] != 'H')) {
+            continue;
+        }
+
+        (void)snprintf(
+            path,
+            sizeof(path),
+            "SRC/%s",
+            entry->d_name
+        );
+
+        if (move_header_contains_declaration(
+                path,
+                symbol)) {
+            (void)closedir(directory);
+            return 1;
+        }
+    }
+
+    (void)closedir(directory);
+    return 0;
+}
+
+static int move_destination_has_required_includes(
+    const move_function_info *info)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < info->source_includes.used;
+         ++index) {
+        const char *include_name;
+
+        include_name = info->source_includes.values[index];
+
+        if (!move_list_contains(
+                &info->destination_includes,
+                include_name)) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int move_dependencies_are_external(
+    const move_function_info *info)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < info->called_symbols.used;
+         ++index) {
+        char module[SYMBOL_PATH_SIZE];
+        unsigned long line_number;
+
+        module[0] = '\0';
+        line_number = 0UL;
+
+        if (!move_find_definition_record(
+                info->called_symbols.values[index],
+                module,
+                sizeof(module),
+                &line_number)) {
+            continue;
+        }
+
+        if (strcmp(module, info->source_module) == 0) {
+            /*
+             * A dependency that remains private to the source module would
+             * become invisible after the move.
+             */
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int move_copy_definition_text(
+    const move_function_info *info,
+    extract_text_buffer *definition)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long end_line;
+
+    end_line = info->body_end + 1UL;
+    file = fopen(info->source_module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < info->definition_line) {
+            continue;
+        }
+
+        if (line_number > end_line) {
+            break;
+        }
+
+        if (!extract_buffer_append(
+                definition,
+                line)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (definition->used == 0U) {
+        return 0;
+    }
+
+    if (definition->data[definition->used - 1U] != '\n') {
+        if (!extract_buffer_append(
+                definition,
+                "\n")) {
+            return 0;
+        }
+    }
+
+    return extract_buffer_append(
+        definition,
+        "\n"
+    );
+}
+
+static int move_write_source_without_definition(
+    const move_function_info *info)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long end_line;
+
+    end_line = info->body_end + 1UL;
+    file = fopen(info->source_module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_MOVE_SOURCE.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number >= info->definition_line &&
+            line_number <= end_line) {
+            continue;
+        }
+
+        if (fputs(line, output) == EOF) {
+            goto move_source_failure;
+        }
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto move_source_close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+
+        if (!rename_make_vms_filespec(
+                info->source_module,
+                filespec,
+                sizeof(filespec))) {
+            goto move_source_close_failure;
+        }
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_MOVE_SOURCE.TMP %s;",
+            filespec
+        );
+
+        status = system(command);
+        (void)remove("OVMS_MOVE_SOURCE.TMP");
+
+        return status == 0 ||
+               (status & 1) != 0;
+    }
+
+move_source_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+move_source_close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_MOVE_SOURCE.TMP");
+    return 0;
+}
+
+static int move_write_destination_with_definition(
+    const move_function_info *info,
+    const extract_text_buffer *definition)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    int last_had_newline;
+
+    file = fopen(info->destination_module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_MOVE_DEST.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    last_had_newline = 1;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        size_t length;
+
+        if (fputs(line, output) == EOF) {
+            goto move_dest_failure;
+        }
+
+        length = strlen(line);
+        last_had_newline =
+            length == 0U ||
+            line[length - 1U] == '\n';
+    }
+
+    if (!last_had_newline &&
+        fputc('\n', output) == EOF) {
+        goto move_dest_failure;
+    }
+
+    if (fputc('\n', output) == EOF ||
+        fputs(definition->data, output) == EOF) {
+        goto move_dest_failure;
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto move_dest_close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+
+        if (!rename_make_vms_filespec(
+                info->destination_module,
+                filespec,
+                sizeof(filespec))) {
+            goto move_dest_close_failure;
+        }
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_MOVE_DEST.TMP %s;",
+            filespec
+        );
+
+        status = system(command);
+        (void)remove("OVMS_MOVE_DEST.TMP");
+
+        return status == 0 ||
+               (status & 1) != 0;
+    }
+
+move_dest_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+move_dest_close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_MOVE_DEST.TMP");
+    return 0;
+}
+
+static int move_confirm_apply(
+    const move_function_info *info)
+{
+    char answer[32];
+
+    (void)puts("");
+    (void)puts("Guarded function move");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Function:    %s\n",
+        info->symbol
+    );
+    (void)printf(
+        "Source:      %s\n",
+        info->source_module
+    );
+    (void)printf(
+        "Destination: %s\n",
+        info->destination_module
+    );
+    (void)printf(
+        "Source lines: %lu:%lu\n",
+        info->definition_line,
+        info->body_end + 1UL
+    );
+    (void)puts(
+        "Objects:     source and destination modules"
+    );
+    (void)printf("Apply move [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+int symbol_move_function_apply(
+    agent_state *state,
+    const char *symbol,
+    const char *destination)
+{
+    move_function_info info;
+    inline_function_info inline_info;
+    extract_text_buffer definition;
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+    int reindex_ok;
+    int build_ok;
+    int source_written;
+    int destination_written;
+
+    (void)memset(&info, 0, sizeof(info));
+    (void)memset(&inline_info, 0, sizeof(inline_info));
+    (void)memset(&definition, 0, sizeof(definition));
+    (void)memset(&transaction, 0, sizeof(transaction));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts(
+            "Function name must be a valid C identifier."
+        );
+        return 0;
+    }
+
+    if (!module_path_prepare(
+            destination,
+            info.destination_module,
+            sizeof(info.destination_module)) ||
+        !symbol_has_c_extension(
+            info.destination_module)) {
+        (void)puts(
+            "Destination must be a project-relative .C module."
+        );
+        return 0;
+    }
+
+    if (!move_file_exists(info.destination_module)) {
+        (void)printf(
+            "Destination module does not exist: %s\n",
+            info.destination_module
+        );
+        return 0;
+    }
+
+    if (!symbol_manifest_current(
+            &checked,
+            &changed,
+            0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before MOVE/FUNCTION/APPLY."
+        );
+        return 0;
+    }
+
+    (void)strncpy(
+        info.symbol,
+        symbol,
+        sizeof(info.symbol) - 1U
+    );
+
+    if (!move_find_definition_record(
+            symbol,
+            info.source_module,
+            sizeof(info.source_module),
+            &info.definition_line)) {
+        (void)printf(
+            "No definition found for %s.\n",
+            symbol
+        );
+        return 0;
+    }
+
+    if (strcmp(
+            info.source_module,
+            info.destination_module) == 0) {
+        (void)puts(
+            "Move refused. Source and destination modules are the same."
+        );
+        return 0;
+    }
+
+    if (move_destination_has_symbol(
+            symbol,
+            info.destination_module)) {
+        (void)puts(
+            "Move refused. Destination already contains the symbol."
+        );
+        return 0;
+    }
+
+    if (!move_shared_declaration_exists(symbol)) {
+        (void)puts(
+            "Move refused. No shared header declaration was found."
+        );
+        return 0;
+    }
+
+    (void)strncpy(
+        inline_info.symbol,
+        symbol,
+        sizeof(inline_info.symbol) - 1U
+    );
+    (void)strncpy(
+        inline_info.module,
+        info.source_module,
+        sizeof(inline_info.module) - 1U
+    );
+    inline_info.definition_line = info.definition_line;
+
+    if (!inline_find_body_range(&inline_info)) {
+        (void)puts(
+            "Unable to identify a complete function body."
+        );
+        return 0;
+    }
+
+    info.body_start = inline_info.body_start;
+    info.body_end = inline_info.body_end;
+
+    if (!move_collect_callers(symbol, &info) ||
+        !move_collect_includes(
+            info.source_module,
+            &info.source_includes) ||
+        !move_collect_includes(
+            info.destination_module,
+            &info.destination_includes) ||
+        !move_collect_called_symbols(
+            &info,
+            &info.called_symbols)) {
+        (void)puts(
+            "Unable to complete move-function analysis."
+        );
+        return 0;
+    }
+
+    move_compute_missing_includes(&info);
+
+    if (!move_destination_has_required_includes(&info)) {
+        (void)puts(
+            "Move refused. Destination is missing one or more "
+            "source includes."
+        );
+        move_print_list(
+            &info.missing_includes,
+            "none"
+        );
+        return 0;
+    }
+
+    if (!move_dependencies_are_external(&info)) {
+        (void)puts(
+            "Move refused. The function depends on a symbol "
+            "private to the source module."
+        );
+        return 0;
+    }
+
+    if (!move_copy_definition_text(
+            &info,
+            &definition)) {
+        (void)puts(
+            "Unable to copy the function definition."
+        );
+        free(definition.data);
+        return 0;
+    }
+
+    if (!move_confirm_apply(&info)) {
+        (void)puts("Function move cancelled.");
+        free(definition.data);
+        return 0;
+    }
+
+    (void)strcpy(
+        transaction.files[0].path,
+        info.source_module
+    );
+    transaction.files[0].replacements = 1U;
+    (void)strcpy(
+        transaction.files[1].path,
+        info.destination_module
+    );
+    transaction.files[1].replacements = 1U;
+    transaction.file_count = 2U;
+    transaction.total_replacements = 2U;
+
+    source_written =
+        move_write_source_without_definition(&info);
+
+    if (!source_written) {
+        (void)puts(
+            "Move failed while writing the source module."
+        );
+        free(definition.data);
+        return 0;
+    }
+
+    destination_written =
+        move_write_destination_with_definition(
+            &info,
+            &definition
+        );
+    free(definition.data);
+
+    if (!destination_written) {
+        (void)puts(
+            "Move failed while writing the destination module."
+        );
+
+        if (rename_restore_transaction(&transaction)) {
+            (void)puts(
+                "Previous module versions restored."
+            );
+        } else {
+            (void)puts(
+                "Automatic restoration was incomplete; inspect file versions."
+            );
+        }
+
+        return 0;
+    }
+
+    (void)puts(
+        "Function moved. Rebuilding symbol index..."
+    );
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts(
+        "Invalidating changed object files..."
+    );
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+
+    (void)puts(
+        "Running controlled build..."
+    );
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Move verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Function move completed successfully."
+        );
+        return 1;
+    }
+
+    (void)puts(
+        "Function move verification failed."
+    );
+
+    if (!rename_confirm_rollback()) {
+        (void)puts(
+            "Rollback declined. Project remains modified."
+        );
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts(
+            "Rollback was incomplete; inspect file versions."
+        );
+        return 0;
+    }
+
+    (void)puts(
+        "Previous module versions restored."
+    );
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Move rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Symbol index rebuild: %s\n",
+        reindex_ok ? "PASS" : "FAIL"
+    );
+    (void)printf(
+        "Controlled build:     %s\n",
+        build_ok ? "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        (void)puts(
+            "Function move rollback completed successfully."
+        );
+    } else {
+        (void)puts(
+            "Rollback completed, but verification still failed."
+        );
+    }
+
+    return 0;
+}
+

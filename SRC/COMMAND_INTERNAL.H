@@ -134,5 +134,9 @@ void command_delete_function_apply(agent_state *state,
                                    const char *arguments);
 void command_move_function(agent_state *state,
                            const char *arguments);
+void command_move_function_apply(agent_state *state,
+                                 const char *arguments);
+
+void move_test_helper(agent_state *state, const char *arguments);
 
 #endif /* OVMS_AGENT_COMMAND_INTERNAL_H */
