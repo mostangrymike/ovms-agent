@@ -10983,6 +10983,27 @@ typedef struct inline_function_info {
     unsigned long caller_line;
 } inline_function_info;
 
+#define INLINE_LOCAL_MAX 64U
+
+typedef struct inline_name_list {
+    char names[INLINE_LOCAL_MAX][SYMBOL_NAME_SIZE];
+    unsigned int used;
+} inline_name_list;
+
+typedef struct inline_collision_result {
+    inline_name_list helper_locals;
+    inline_name_list caller_names;
+    inline_name_list collisions;
+} inline_collision_result;
+
+static int inline_analyze_collisions(
+    const inline_function_info *info,
+    inline_collision_result *result);
+
+static void inline_print_collision_analysis(
+    const inline_collision_result *result);
+
+
 static int inline_find_definition(
     const char *symbol,
     inline_function_info *info)
@@ -11218,8 +11239,10 @@ void symbol_inline_function_preview(
     unsigned int checked;
     unsigned int changed;
     char caller_text[SYMBOL_LINE_SIZE];
+    inline_collision_result collisions;
 
     (void)memset(&info, 0, sizeof(info));
+    (void)memset(&collisions, 0, sizeof(collisions));
     caller_text[0] = '\0';
 
     if (state == NULL ||
@@ -11271,6 +11294,17 @@ void symbol_inline_function_preview(
     if (!inline_find_body_range(&info)) {
         (void)puts(
             "Unable to identify a complete function body."
+        );
+        return;
+    }
+
+    if (info.caller_count == 1U &&
+        strcmp(info.module, info.caller_module) == 0 &&
+        !inline_analyze_collisions(
+            &info,
+            &collisions)) {
+        (void)puts(
+            "Unable to complete local-name collision analysis."
         );
         return;
     }
@@ -11327,6 +11361,13 @@ void symbol_inline_function_preview(
         }
     }
 
+    if (info.caller_count == 1U &&
+        strcmp(info.module, info.caller_module) == 0) {
+        inline_print_collision_analysis(
+            &collisions
+        );
+    }
+
     (void)puts("");
     (void)puts("Inline eligibility");
     (void)puts("----------------------------------------");
@@ -11345,9 +11386,14 @@ void symbol_inline_function_preview(
         (void)puts(
             "  REQUIRES REVIEW - caller is in a different module"
         );
+    } else if (collisions.collisions.used > 0U) {
+        (void)puts(
+            "  BLOCKED - helper locals collide with caller names"
+        );
     } else {
         (void)puts(
-            "  SAFE TO PREVIEW - one caller in the same module"
+            "  SAFE TO PREVIEW - one caller in the same module "
+            "and no local-name collisions"
         );
     }
 
@@ -11820,6 +11866,481 @@ static int inline_replace_body_line(
     return 1;
 }
 
+
+static int inline_name_list_contains(
+    const inline_name_list *list,
+    const char *name)
+{
+    unsigned int index;
+
+    for (index = 0U;
+         index < list->used;
+         ++index) {
+        if (strcmp(list->names[index], name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int inline_name_list_add(
+    inline_name_list *list,
+    const char *name)
+{
+    if (name == NULL ||
+        *name == '\0' ||
+        strlen(name) >= SYMBOL_NAME_SIZE) {
+        return 0;
+    }
+
+    if (inline_name_list_contains(list, name)) {
+        return 1;
+    }
+
+    if (list->used >= INLINE_LOCAL_MAX) {
+        return 0;
+    }
+
+    (void)strcpy(
+        list->names[list->used],
+        name
+    );
+    ++list->used;
+    return 1;
+}
+
+static int inline_declaration_type_prefix(
+    const char *line)
+{
+    static const char *prefixes[] = {
+        "auto ", "char ", "const ", "double ", "enum ",
+        "FILE ", "float ", "int ", "long ", "register ",
+        "short ", "signed ", "size_t ", "static ",
+        "struct ", "union ", "unsigned ", "volatile ",
+        "agent_state ", "command_entry ", NULL
+    };
+    const char **prefix;
+    const char *position;
+
+    position = line;
+
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    for (prefix = prefixes;
+         *prefix != NULL;
+         ++prefix) {
+        if (strncmp(
+                position,
+                *prefix,
+                strlen(*prefix)) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int inline_extract_declared_names(
+    const char *line,
+    inline_name_list *names)
+{
+    char clean[SYMBOL_LINE_SIZE];
+    char *semicolon;
+    char *cursor;
+    int added;
+
+    if (line == NULL ||
+        names == NULL ||
+        !inline_declaration_type_prefix(line)) {
+        return 1;
+    }
+
+    (void)strncpy(
+        clean,
+        line,
+        sizeof(clean) - 1U
+    );
+    clean[sizeof(clean) - 1U] = '\0';
+
+    semicolon = strchr(clean, ';');
+
+    if (semicolon == NULL) {
+        return 1;
+    }
+
+    *semicolon = '\0';
+    cursor = clean;
+    added = 0;
+
+    while (*cursor != '\0') {
+        char *comma;
+        char *end;
+        char *start;
+        char name[SYMBOL_NAME_SIZE];
+        size_t length;
+
+        comma = strchr(cursor, ',');
+
+        if (comma != NULL) {
+            *comma = '\0';
+        }
+
+        end = cursor + strlen(cursor);
+
+        {
+            char *initializer;
+
+            initializer = strchr(cursor, '=');
+
+            if (initializer != NULL) {
+                end = initializer;
+            }
+        }
+
+        while (end > cursor &&
+               (end[-1] == ' ' ||
+                end[-1] == '\t' ||
+                end[-1] == '*' ||
+                end[-1] == ']')) {
+            if (end[-1] == ']') {
+                while (end > cursor &&
+                       end[-1] != '[') {
+                    --end;
+                }
+
+                if (end > cursor) {
+                    --end;
+                }
+            } else {
+                --end;
+            }
+        }
+
+        start = end;
+
+        while (start > cursor &&
+               (isalnum((unsigned char)start[-1]) ||
+                start[-1] == '_')) {
+            --start;
+        }
+
+        length = (size_t)(end - start);
+
+        if (length > 0U &&
+            length < sizeof(name) &&
+            (isalpha((unsigned char)*start) ||
+             *start == '_')) {
+            (void)memcpy(name, start, length);
+            name[length] = '\0';
+
+            if (!extract_identifier_is_keyword(name)) {
+                if (!inline_name_list_add(names, name)) {
+                    return 0;
+                }
+
+                added = 1;
+            }
+        }
+
+        if (comma == NULL) {
+            break;
+        }
+
+        cursor = comma + 1;
+    }
+
+    (void)added;
+    return 1;
+}
+
+static int inline_find_caller_function_range(
+    const inline_function_info *info,
+    unsigned long *start_line,
+    unsigned long *end_line)
+{
+    char caller_name[SYMBOL_NAME_SIZE];
+    unsigned long definition_line;
+    inline_function_info caller_info;
+
+    caller_name[0] = '\0';
+    definition_line = 0UL;
+
+    if (!extract_find_containing_function(
+            info->caller_module,
+            info->caller_line,
+            caller_name,
+            sizeof(caller_name),
+            &definition_line)) {
+        return 0;
+    }
+
+    (void)memset(&caller_info, 0, sizeof(caller_info));
+    (void)strncpy(
+        caller_info.symbol,
+        caller_name,
+        sizeof(caller_info.symbol) - 1U
+    );
+    (void)strncpy(
+        caller_info.module,
+        info->caller_module,
+        sizeof(caller_info.module) - 1U
+    );
+    caller_info.definition_line = definition_line;
+
+    if (!inline_find_body_range(&caller_info)) {
+        return 0;
+    }
+
+    *start_line = caller_info.body_start;
+    *end_line = caller_info.body_end;
+    return 1;
+}
+
+static int inline_collect_declared_names(
+    const char *path,
+    unsigned long start_line,
+    unsigned long end_line,
+    inline_name_list *names)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+
+        ++line_number;
+
+        if (line_number < start_line) {
+            continue;
+        }
+
+        if (line_number > end_line) {
+            break;
+        }
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(
+            clean,
+            &in_block_comment
+        );
+
+        if (!inline_extract_declared_names(
+                clean,
+                names)) {
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int inline_collect_caller_parameters(
+    const inline_function_info *info,
+    inline_name_list *names)
+{
+    char caller_name[SYMBOL_NAME_SIZE];
+    unsigned long definition_line;
+    inline_function_info caller_info;
+    char parameters[SYMBOL_LINE_SIZE * 2U];
+    char *cursor;
+
+    caller_name[0] = '\0';
+    definition_line = 0UL;
+
+    if (!extract_find_containing_function(
+            info->caller_module,
+            info->caller_line,
+            caller_name,
+            sizeof(caller_name),
+            &definition_line)) {
+        return 0;
+    }
+
+    (void)memset(&caller_info, 0, sizeof(caller_info));
+    (void)strncpy(
+        caller_info.symbol,
+        caller_name,
+        sizeof(caller_info.symbol) - 1U
+    );
+    (void)strncpy(
+        caller_info.module,
+        info->caller_module,
+        sizeof(caller_info.module) - 1U
+    );
+    caller_info.definition_line = definition_line;
+
+    if (!inline_read_signature(
+            &caller_info,
+            parameters,
+            sizeof(parameters))) {
+        return 0;
+    }
+
+    if (strcmp(parameters, "void") == 0 ||
+        *parameters == '\0') {
+        return 1;
+    }
+
+    cursor = parameters;
+
+    while (*cursor != '\0') {
+        char *comma;
+        char fragment[128];
+        size_t length;
+        char name[SYMBOL_NAME_SIZE];
+
+        comma = strchr(cursor, ',');
+
+        if (comma != NULL) {
+            length = (size_t)(comma - cursor);
+        } else {
+            length = strlen(cursor);
+        }
+
+        if (length >= sizeof(fragment)) {
+            return 0;
+        }
+
+        (void)memcpy(fragment, cursor, length);
+        fragment[length] = '\0';
+        inline_trim(fragment);
+
+        if (!inline_extract_parameter_name(
+                fragment,
+                name,
+                sizeof(name)) ||
+            !inline_name_list_add(
+                names,
+                name)) {
+            return 0;
+        }
+
+        if (comma == NULL) {
+            break;
+        }
+
+        cursor = comma + 1;
+    }
+
+    return 1;
+}
+
+static int inline_analyze_collisions(
+    const inline_function_info *info,
+    inline_collision_result *result)
+{
+    unsigned long caller_start;
+    unsigned long caller_end;
+    unsigned int index;
+
+    (void)memset(result, 0, sizeof(*result));
+
+    if (!inline_collect_declared_names(
+            info->module,
+            info->body_start,
+            info->body_end,
+            &result->helper_locals)) {
+        return 0;
+    }
+
+    if (!inline_find_caller_function_range(
+            info,
+            &caller_start,
+            &caller_end)) {
+        return 0;
+    }
+
+    if (!inline_collect_declared_names(
+            info->caller_module,
+            caller_start,
+            caller_end,
+            &result->caller_names) ||
+        !inline_collect_caller_parameters(
+            info,
+            &result->caller_names)) {
+        return 0;
+    }
+
+    for (index = 0U;
+         index < result->helper_locals.used;
+         ++index) {
+        const char *name;
+
+        name = result->helper_locals.names[index];
+
+        if (inline_name_list_contains(
+                &result->caller_names,
+                name)) {
+            if (!inline_name_list_add(
+                    &result->collisions,
+                    name)) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+static void inline_print_collision_analysis(
+    const inline_collision_result *result)
+{
+    unsigned int index;
+
+    (void)puts("");
+    (void)puts("Local-name collision analysis");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Helper locals: %u\n",
+        result->helper_locals.used
+    );
+    (void)printf(
+        "Caller names:  %u\n",
+        result->caller_names.used
+    );
+
+    if (result->collisions.used == 0U) {
+        (void)puts(
+            "Result:        PASS - no local-name collisions"
+        );
+        return;
+    }
+
+    (void)puts(
+        "Result:        BLOCKED - local-name collisions found"
+    );
+
+    for (index = 0U;
+         index < result->collisions.used;
+         ++index) {
+        (void)printf(
+            "  - %s\n",
+            result->collisions.names[index]
+        );
+    }
+}
+
 static int inline_build_expansion(
     const inline_function_info *info,
     const inline_parameter_list *mapping,
@@ -12071,6 +12592,7 @@ int symbol_inline_function_apply(
 {
     inline_function_info info;
     inline_parameter_list mapping;
+    inline_collision_result collisions;
     extract_text_buffer expansion;
     rename_transaction transaction;
     unsigned int checked;
@@ -12080,6 +12602,7 @@ int symbol_inline_function_apply(
 
     (void)memset(&info, 0, sizeof(info));
     (void)memset(&mapping, 0, sizeof(mapping));
+    (void)memset(&collisions, 0, sizeof(collisions));
     (void)memset(&expansion, 0, sizeof(expansion));
     (void)memset(&transaction, 0, sizeof(transaction));
 
@@ -12141,6 +12664,26 @@ int symbol_inline_function_apply(
     if (!inline_find_body_range(&info)) {
         (void)puts(
             "Unable to identify a complete function body."
+        );
+        return 0;
+    }
+
+    if (!inline_analyze_collisions(
+            &info,
+            &collisions)) {
+        (void)puts(
+            "Inline refused. Local-name collision analysis failed."
+        );
+        return 0;
+    }
+
+    inline_print_collision_analysis(
+        &collisions
+    );
+
+    if (collisions.collisions.used > 0U) {
+        (void)puts(
+            "Inline refused. Rename helper locals before applying."
         );
         return 0;
     }
@@ -12273,6 +12816,406 @@ int symbol_inline_function_apply(
         (void)puts(
             "Rollback completed, but verification still failed."
         );
+    }
+
+    return 0;
+}
+
+typedef struct delete_function_info {
+    char symbol[SYMBOL_NAME_SIZE];
+    char module[SYMBOL_PATH_SIZE];
+    unsigned long definition_line;
+    unsigned long body_start;
+    unsigned long body_end;
+    unsigned int caller_count;
+} delete_function_info;
+
+static int delete_find_definition(
+    const char *symbol,
+    delete_function_info *info)
+{
+    inline_function_info inline_info;
+
+    (void)memset(&inline_info, 0, sizeof(inline_info));
+
+    if (!inline_find_definition(symbol, &inline_info)) {
+        return 0;
+    }
+
+    (void)strncpy(info->symbol, symbol, sizeof(info->symbol) - 1U);
+    (void)strncpy(info->module, inline_info.module, sizeof(info->module) - 1U);
+    info->definition_line = inline_info.definition_line;
+    return 1;
+}
+
+static void delete_count_callers(
+    const char *symbol,
+    delete_function_info *info)
+{
+    inline_function_info inline_info;
+
+    (void)memset(&inline_info, 0, sizeof(inline_info));
+    (void)strncpy(inline_info.symbol, symbol, sizeof(inline_info.symbol) - 1U);
+    inline_count_callers(symbol, &inline_info);
+    info->caller_count = inline_info.caller_count;
+}
+
+static int delete_find_body_range(
+    delete_function_info *info)
+{
+    inline_function_info inline_info;
+
+    (void)memset(&inline_info, 0, sizeof(inline_info));
+    (void)strncpy(inline_info.symbol, info->symbol, sizeof(inline_info.symbol) - 1U);
+    (void)strncpy(inline_info.module, info->module, sizeof(inline_info.module) - 1U);
+    inline_info.definition_line = info->definition_line;
+
+    if (!inline_find_body_range(&inline_info)) {
+        return 0;
+    }
+
+    info->body_start = inline_info.body_start;
+    info->body_end = inline_info.body_end;
+    return 1;
+}
+
+static void delete_print_function(
+    const delete_function_info *info)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long end_line;
+
+    end_line = info->body_end + 1UL;
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number < info->definition_line) {
+            continue;
+        }
+
+        if (line_number > end_line) {
+            break;
+        }
+
+        (void)printf("%6lu  %s", line_number, line);
+
+        if (line[0] != '\0' &&
+            line[strlen(line) - 1U] != '\n') {
+            (void)puts("");
+        }
+    }
+
+    (void)fclose(file);
+}
+
+static int delete_write_transformed_file(
+    const delete_function_info *info)
+{
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long end_line;
+
+    end_line = info->body_end + 1UL;
+    file = fopen(info->module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_DELETE_FUNCTION.TMP", "w");
+
+    if (output == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    line_number = 0UL;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (line_number >= info->definition_line &&
+            line_number <= end_line) {
+            continue;
+        }
+
+        if (fputs(line, output) == EOF) {
+            goto delete_write_failure;
+        }
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        goto delete_close_failure;
+    }
+
+    output = NULL;
+    (void)fclose(file);
+    file = NULL;
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+
+        if (!rename_make_vms_filespec(
+                info->module,
+                filespec,
+                sizeof(filespec))) {
+            goto delete_close_failure;
+        }
+
+        (void)snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_DELETE_FUNCTION.TMP %s;",
+            filespec
+        );
+
+        status = system(command);
+        (void)remove("OVMS_DELETE_FUNCTION.TMP");
+
+        return status == 0 ||
+               (status & 1) != 0;
+    }
+
+delete_write_failure:
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+
+delete_close_failure:
+    if (file != NULL) {
+        (void)fclose(file);
+    }
+
+    (void)remove("OVMS_DELETE_FUNCTION.TMP");
+    return 0;
+}
+
+void symbol_delete_function_preview(
+    agent_state *state,
+    const char *symbol)
+{
+    delete_function_info info;
+    unsigned int checked;
+    unsigned int changed;
+
+    (void)memset(&info, 0, sizeof(info));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts("Function name must be a valid C identifier.");
+        return;
+    }
+
+    if (!symbol_manifest_current(&checked, &changed, 0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before DELETE/FUNCTION."
+        );
+        return;
+    }
+
+    if (!delete_find_definition(symbol, &info)) {
+        (void)printf("No definition found for %s.\n", symbol);
+        return;
+    }
+
+    delete_count_callers(symbol, &info);
+
+    if (!delete_find_body_range(&info)) {
+        (void)puts("Unable to identify a complete function body.");
+        return;
+    }
+
+    (void)printf("Delete-function preview: %s\n", symbol);
+    (void)puts("========================================");
+    (void)printf("Definition: %s line %lu\n", info.module, info.definition_line);
+    (void)printf("Callers:    %u\n", info.caller_count);
+
+    (void)puts("");
+    (void)puts("Function definition");
+    (void)puts("----------------------------------------");
+    delete_print_function(&info);
+
+    (void)puts("");
+    (void)puts("Delete eligibility");
+    (void)puts("----------------------------------------");
+
+    if (info.caller_count == 0U) {
+        (void)puts("  SAFE TO DELETE - no indexed callers");
+    } else {
+        (void)printf(
+            "  BLOCKED - %u indexed caller%s remain\n",
+            info.caller_count,
+            info.caller_count == 1U ? "" : "s"
+        );
+    }
+
+    (void)puts("");
+    (void)puts("Preview only. No files were modified.");
+}
+
+static int delete_confirm_apply(
+    const delete_function_info *info)
+{
+    char answer[32];
+
+    (void)puts("");
+    (void)puts("Guarded function deletion");
+    (void)puts("----------------------------------------");
+    (void)printf("Function: %s\n", info->symbol);
+    (void)printf("Module:   %s\n", info->module);
+    (void)printf("Lines:    %lu:%lu\n", info->definition_line, info->body_end + 1UL);
+    (void)printf("Delete function [y/N]? ");
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' || answer[0] == 'Y';
+}
+
+int symbol_delete_function_apply(
+    agent_state *state,
+    const char *symbol)
+{
+    delete_function_info info;
+    rename_transaction transaction;
+    unsigned int checked;
+    unsigned int changed;
+    int reindex_ok;
+    int build_ok;
+
+    (void)memset(&info, 0, sizeof(info));
+    (void)memset(&transaction, 0, sizeof(transaction));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return 0;
+    }
+
+    if (!rename_identifier_valid(symbol)) {
+        (void)puts("Function name must be a valid C identifier.");
+        return 0;
+    }
+
+    if (!symbol_manifest_current(&checked, &changed, 0)) {
+        (void)puts(
+            "Symbol index is missing or stale; "
+            "run REINDEX before DELETE/FUNCTION/APPLY."
+        );
+        return 0;
+    }
+
+    if (!delete_find_definition(symbol, &info)) {
+        (void)printf("No definition found for %s.\n", symbol);
+        return 0;
+    }
+
+    delete_count_callers(symbol, &info);
+
+    if (info.caller_count != 0U) {
+        (void)printf(
+            "Delete refused. %u indexed caller%s remain.\n",
+            info.caller_count,
+            info.caller_count == 1U ? "" : "s"
+        );
+        return 0;
+    }
+
+    if (!delete_find_body_range(&info)) {
+        (void)puts("Unable to identify a complete function body.");
+        return 0;
+    }
+
+    delete_print_function(&info);
+
+    if (!delete_confirm_apply(&info)) {
+        (void)puts("Function deletion cancelled.");
+        return 0;
+    }
+
+    (void)strcpy(transaction.files[0].path, info.module);
+    transaction.files[0].replacements = 1U;
+    transaction.file_count = 1U;
+    transaction.total_replacements = 1U;
+
+    if (!delete_write_transformed_file(&info)) {
+        (void)puts("Function deletion failed while writing the source file.");
+        return 0;
+    }
+
+    (void)puts("Function deleted. Rebuilding symbol index...");
+    reindex_ok = rename_run_reindex(state);
+
+    (void)puts("Invalidating changed object files...");
+    build_ok = reindex_ok && rename_force_recompile(&transaction);
+
+    (void)puts("Running controlled build...");
+    build_ok = build_ok ? rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Delete verification");
+    (void)puts("----------------------------------------");
+    (void)printf("Symbol index rebuild: %s\n", reindex_ok ? "PASS" : "FAIL");
+    (void)printf("Controlled build:     %s\n", build_ok ? "PASS" : "FAIL");
+
+    if (reindex_ok && build_ok) {
+        (void)puts("Function deletion completed successfully.");
+        return 1;
+    }
+
+    (void)puts("Function deletion verification failed.");
+
+    if (!rename_confirm_rollback()) {
+        (void)puts("Rollback declined. Project remains modified.");
+        return 0;
+    }
+
+    if (!rename_restore_transaction(&transaction)) {
+        (void)puts("Rollback was incomplete; inspect file versions.");
+        return 0;
+    }
+
+    (void)puts("Previous source version restored.");
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok && rename_force_recompile(&transaction);
+    build_ok = build_ok ? rename_run_controlled_build() : 0;
+
+    (void)puts("");
+    (void)puts("Delete rollback verification");
+    (void)puts("----------------------------------------");
+    (void)printf("Symbol index rebuild: %s\n", reindex_ok ? "PASS" : "FAIL");
+    (void)printf("Controlled build:     %s\n", build_ok ? "PASS" : "FAIL");
+
+    if (reindex_ok && build_ok) {
+        (void)puts("Function deletion rollback completed successfully.");
+    } else {
+        (void)puts("Rollback completed, but verification still failed.");
     }
 
     return 0;
