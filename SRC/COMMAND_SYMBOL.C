@@ -5,10 +5,6 @@
 #include "command_internal.h"
 #include "symbol_index.h"
 
-static const char *command_symbol_argument(const char *arguments,
-                                            const char *usage);
-
-
 static const command_entry symbol_commands[] = {
     { "REINDEX", "Rebuild the persistent C symbol index", command_reindex },
     { "INDEX/STATUS", "Display symbol-index statistics", command_index_status },
@@ -45,7 +41,9 @@ static const command_entry symbol_commands[] = {
     { "MOVE/FUNCTION", "Preview moving a function between modules", command_move_function },
     { "MOVE/FUNCTION/APPLY", "Move one function with verification", command_move_function_apply },
     { "DECLARATIONS/CHECK", "Audit static helper declaration order", command_declarations_check },
-    { "DECLARATIONS/FIX", "Insert missing static helper prototypes", command_declarations_fix }
+    { "DECLARATIONS/FIX", "Insert missing static helper prototypes", command_declarations_fix },
+    { "DECLARATIONS/FIX/AUTO", "Repair declaration order in verified batches", command_declarations_fix_auto },
+    { "DECLARATIONS/DIAGNOSE", "Explain declaration-fix generation", command_declarations_diagnose }
 };
 
 void command_register_symbol(void)
@@ -922,27 +920,175 @@ void command_declarations_fix(
 {
     char *cursor;
     char *module;
+    char *limit_text;
+    unsigned long limit_value;
+    char *end_pointer;
 
     if (arguments == NULL || *arguments == '\0') {
         (void)puts(
-            "Usage: DECLARATIONS/FIX module.c"
+            "Usage: DECLARATIONS/FIX module.c [limit]"
         );
         return;
     }
 
     cursor = (char *)arguments;
     module = command_next_argument(&cursor);
+    limit_text = command_next_argument(&cursor);
 
     if (module == NULL ||
         command_next_argument(&cursor) != NULL) {
         (void)puts(
-            "Usage: DECLARATIONS/FIX module.c"
+            "Usage: DECLARATIONS/FIX module.c [limit]"
         );
         return;
     }
 
-    (void)symbol_declaration_order_fix(
+    limit_value = 0UL;
+
+    if (limit_text != NULL) {
+        end_pointer = NULL;
+        limit_value = strtoul(
+            limit_text,
+            &end_pointer,
+            10
+        );
+
+        if (end_pointer == limit_text ||
+            *end_pointer != '\0' ||
+            limit_value == 0UL ||
+            limit_value > 2048UL) {
+            (void)puts(
+                "Limit must be an integer from 1 to 2048."
+            );
+            return;
+        }
+    }
+
+    (void)symbol_decl_fix_limited(
         state,
-        module
+        module,
+        (unsigned int)limit_value
+    );
+}
+
+
+void command_declarations_fix_auto(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+    char *batch_text;
+    unsigned long batch_value;
+    char *end_pointer;
+
+    if (arguments == NULL ||
+        *arguments == '\0') {
+        (void)puts(
+            "Usage: DECLARATIONS/FIX/AUTO "
+            "module.c [batch_size]"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+    batch_text = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: DECLARATIONS/FIX/AUTO "
+            "module.c [batch_size]"
+        );
+        return;
+    }
+
+    batch_value = 5UL;
+
+    if (batch_text != NULL) {
+        end_pointer = NULL;
+        batch_value = strtoul(
+            batch_text,
+            &end_pointer,
+            10
+        );
+
+        if (end_pointer == batch_text ||
+            *end_pointer != '\0' ||
+            batch_value == 0UL ||
+            batch_value > 100UL) {
+            (void)puts(
+                "Batch size must be an integer from 1 to 100."
+            );
+            return;
+        }
+    }
+
+    (void)symbol_decl_fix_auto(
+        state,
+        module,
+        (unsigned int)batch_value
+    );
+}
+
+
+void command_declarations_diagnose(
+    agent_state *state,
+    const char *arguments)
+{
+    char *cursor;
+    char *module;
+    char *limit_text;
+    unsigned long limit_value;
+    char *end_pointer;
+
+    if (arguments == NULL ||
+        *arguments == '\0') {
+        (void)puts(
+            "Usage: DECLARATIONS/DIAGNOSE "
+            "module.c [limit]"
+        );
+        return;
+    }
+
+    cursor = (char *)arguments;
+    module = command_next_argument(&cursor);
+    limit_text = command_next_argument(&cursor);
+
+    if (module == NULL ||
+        command_next_argument(&cursor) != NULL) {
+        (void)puts(
+            "Usage: DECLARATIONS/DIAGNOSE "
+            "module.c [limit]"
+        );
+        return;
+    }
+
+    limit_value = 5UL;
+
+    if (limit_text != NULL) {
+        end_pointer = NULL;
+        limit_value = strtoul(
+            limit_text,
+            &end_pointer,
+            10
+        );
+
+        if (end_pointer == limit_text ||
+            *end_pointer != '\0' ||
+            limit_value == 0UL ||
+            limit_value > 100UL) {
+            (void)puts(
+                "Limit must be an integer from 1 to 100."
+            );
+            return;
+        }
+    }
+
+    symbol_decl_fix_diagnose(
+        state,
+        module,
+        (unsigned int)limit_value
     );
 }

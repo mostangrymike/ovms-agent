@@ -87,4 +87,16 @@ void symbol_declaration_order_check(agent_state *state,
 int symbol_declaration_order_fix(agent_state *state,
                                  const char *module);
 
+int symbol_decl_fix_limited(agent_state *state,
+                                         const char *module,
+                                         unsigned int limit);
+
+int symbol_decl_fix_auto(agent_state *state,
+                         const char *module,
+                         unsigned int batch_size);
+
+void symbol_decl_fix_diagnose(agent_state *state,
+                              const char *module,
+                              unsigned int limit);
+
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */

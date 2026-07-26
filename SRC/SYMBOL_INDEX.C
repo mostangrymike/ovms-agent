@@ -15223,6 +15223,45 @@ static declaration_order_function *declaration_order_get(
     return entry;
 }
 
+
+static unsigned long declaration_order_visible_line(
+    const declaration_order_function *entry)
+{
+    if (entry == NULL) {
+        return 0UL;
+    }
+
+    if (entry->prototype_line == 0UL) {
+        return entry->definition_line;
+    }
+
+    if (entry->definition_line == 0UL) {
+        return entry->prototype_line;
+    }
+
+    return entry->prototype_line < entry->definition_line ?
+        entry->prototype_line :
+        entry->definition_line;
+}
+
+static int declaration_order_is_failure(
+    const declaration_order_function *entry)
+{
+    unsigned long visible_line;
+
+    if (entry == NULL ||
+        !entry->is_static ||
+        entry->first_call_line == 0UL) {
+        return 0;
+    }
+
+    visible_line =
+        declaration_order_visible_line(entry);
+
+    return visible_line == 0UL ||
+           entry->first_call_line < visible_line;
+}
+
 static int declaration_order_statement_name(
     const char *statement,
     char *name,
@@ -15543,12 +15582,10 @@ void symbol_declaration_order_check(
         }
 
         ++static_count;
-        visible_line = entry->prototype_line != 0UL ?
-            entry->prototype_line : entry->definition_line;
+        visible_line =
+            declaration_order_visible_line(entry);
 
-        if (entry->first_call_line != 0UL &&
-            (visible_line == 0UL ||
-             entry->first_call_line < visible_line)) {
+        if (declaration_order_is_failure(entry)) {
             ++failures;
             (void)printf(
                 "FAIL %-32s first call %lu, first declaration %lu\n",
@@ -15587,12 +15624,21 @@ typedef struct declaration_fix_item {
     char name[SYMBOL_NAME_SIZE];
     unsigned long definition_line;
     unsigned long first_call_line;
+    unsigned long insert_line;
     char prototype[SYMBOL_LINE_SIZE * 8U];
 } declaration_fix_item;
 
 typedef struct declaration_fix_list {
     declaration_fix_item entries[DECL_ORDER_MAX_FUNCTIONS];
     unsigned int used;
+    unsigned int total_candidates;
+    unsigned int skipped_existing;
+    unsigned int skipped_limit;
+    unsigned int failed_anchor;
+    unsigned int failed_signature;
+    char failed_name[SYMBOL_NAME_SIZE];
+    unsigned long failed_call_line;
+    unsigned long failed_definition_line;
 } declaration_fix_list;
 
 static int declaration_fix_extract_signature(
@@ -15729,14 +15775,286 @@ static int declaration_fix_extract_signature(
     return 1;
 }
 
+
+static void declaration_fix_normalize(
+    const char *text,
+    char *normalized,
+    size_t normalized_size)
+{
+    size_t used;
+    int pending_space;
+
+    used = 0U;
+    pending_space = 0;
+
+    while (*text != '\0' &&
+           used + 1U < normalized_size) {
+        unsigned char ch;
+
+        ch = (unsigned char)*text++;
+
+        if (ch == ' ' || ch == '\t' ||
+            ch == '\r' || ch == '\n') {
+            pending_space = used > 0U;
+            continue;
+        }
+
+        if (pending_space &&
+            used + 1U < normalized_size) {
+            normalized[used++] = ' ';
+            pending_space = 0;
+        }
+
+        normalized[used++] = (char)ch;
+    }
+
+    while (used > 0U &&
+           normalized[used - 1U] == ' ') {
+        --used;
+    }
+
+    normalized[used] = '\0';
+}
+
+static int declaration_fix_prototype_exists(
+    const char *path,
+    const char *prototype)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char statement[SYMBOL_LINE_SIZE * 16U];
+    char target[SYMBOL_LINE_SIZE * 16U];
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    statement[0] = '\0';
+    in_block_comment = 0;
+    declaration_fix_normalize(
+        prototype,
+        target,
+        sizeof(target)
+    );
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        char normalized[SYMBOL_LINE_SIZE * 16U];
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        if (strlen(statement) +
+            strlen(clean) + 2U >=
+            sizeof(statement)) {
+            statement[0] = '\0';
+        }
+
+        (void)strcat(statement, clean);
+        (void)strcat(statement, " ");
+
+        if (strchr(statement, ';') == NULL) {
+            continue;
+        }
+
+        declaration_fix_normalize(
+            statement,
+            normalized,
+            sizeof(normalized)
+        );
+
+        if (strcmp(normalized, target) == 0) {
+            (void)fclose(file);
+            return 1;
+        }
+
+        statement[0] = '\0';
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int declaration_fix_item_compare(
+    const void *left,
+    const void *right)
+{
+    const declaration_fix_item *a;
+    const declaration_fix_item *b;
+
+    a = (const declaration_fix_item *)left;
+    b = (const declaration_fix_item *)right;
+
+    if (a->insert_line < b->insert_line) {
+        return -1;
+    }
+
+    if (a->insert_line > b->insert_line) {
+        return 1;
+    }
+
+    if (a->first_call_line < b->first_call_line) {
+        return -1;
+    }
+
+    if (a->first_call_line > b->first_call_line) {
+        return 1;
+    }
+
+    return strcmp(a->name, b->name);
+}
+
+
+static int declaration_fix_find_anchor(
+    const char *path,
+    unsigned long first_call_line,
+    unsigned long *insert_line)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    char statement[SYMBOL_LINE_SIZE * 16U];
+    unsigned long line_number;
+    unsigned long statement_start;
+    unsigned long current_function_start;
+    int brace_depth;
+    int in_block_comment;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    statement[0] = '\0';
+    line_number = 0UL;
+    statement_start = 1UL;
+    current_function_start = 0UL;
+    brace_depth = 0;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        const char *position;
+
+        ++line_number;
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(
+            clean,
+            &in_block_comment
+        );
+
+        if (brace_depth == 0) {
+            if (statement[0] == '\0') {
+                statement_start = line_number;
+            }
+
+            if (strlen(statement) +
+                strlen(clean) + 2U <
+                sizeof(statement)) {
+                (void)strcat(statement, clean);
+                (void)strcat(statement, " ");
+            } else {
+                statement[0] = '\0';
+                statement_start = line_number;
+            }
+        }
+
+        position = clean;
+
+        while (*position != '\0') {
+            if (*position == '{') {
+                if (brace_depth == 0) {
+                    char *open_paren;
+                    char *close_paren;
+                    char *semicolon;
+
+                    open_paren = strchr(statement, '(');
+                    close_paren = strrchr(statement, ')');
+                    semicolon = strchr(statement, ';');
+
+                    if (open_paren != NULL &&
+                        close_paren != NULL &&
+                        close_paren > open_paren &&
+                        semicolon == NULL &&
+                        strstr(statement, "typedef") == NULL &&
+                        strstr(statement, "struct ") == NULL &&
+                        strstr(statement, "union ") == NULL &&
+                        strstr(statement, "enum ") == NULL) {
+                        current_function_start =
+                            statement_start;
+                    } else {
+                        current_function_start = 0UL;
+                    }
+
+                    statement[0] = '\0';
+                }
+
+                ++brace_depth;
+            } else if (*position == '}') {
+                if (brace_depth > 0) {
+                    --brace_depth;
+                }
+
+                if (brace_depth == 0) {
+                    current_function_start = 0UL;
+                    statement[0] = '\0';
+                    statement_start = line_number + 1UL;
+                }
+            }
+
+            ++position;
+        }
+
+        if (line_number == first_call_line) {
+            (void)fclose(file);
+
+            if (brace_depth <= 0 ||
+                current_function_start == 0UL ||
+                current_function_start > first_call_line) {
+                return 0;
+            }
+
+            *insert_line = current_function_start;
+            return 1;
+        }
+
+        if (brace_depth == 0 &&
+            (strchr(clean, ';') != NULL ||
+             strchr(clean, '}') != NULL)) {
+            statement[0] = '\0';
+            statement_start = line_number + 1UL;
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
 static int declaration_fix_collect(
     const char *path,
-    declaration_fix_list *fixes)
+    declaration_fix_list *fixes,
+    unsigned int limit)
 {
     declaration_order_table table;
+    declaration_fix_list candidates;
     unsigned int index;
 
     (void)memset(&table, 0, sizeof(table));
+    (void)memset(&candidates, 0, sizeof(candidates));
     (void)memset(fixes, 0, sizeof(*fixes));
 
     if (!declaration_order_collect_declarations(
@@ -15759,20 +16077,20 @@ static int declaration_fix_collect(
             continue;
         }
 
-        visible_line = entry->prototype_line != 0UL ?
-            entry->prototype_line : entry->definition_line;
+        visible_line =
+            declaration_order_visible_line(entry);
 
-        if (entry->first_call_line == 0UL ||
-            (visible_line != 0UL &&
-             entry->first_call_line >= visible_line)) {
+        if (!declaration_order_is_failure(entry)) {
             continue;
         }
 
-        if (fixes->used >= DECL_ORDER_MAX_FUNCTIONS) {
+        ++candidates.total_candidates;
+
+        if (candidates.used >= DECL_ORDER_MAX_FUNCTIONS) {
             return 0;
         }
 
-        item = &fixes->entries[fixes->used];
+        item = &candidates.entries[candidates.used];
         (void)strncpy(
             item->name,
             entry->name,
@@ -15781,55 +16099,115 @@ static int declaration_fix_collect(
         item->definition_line = entry->definition_line;
         item->first_call_line = entry->first_call_line;
 
+        if (!declaration_fix_find_anchor(
+                path,
+                entry->first_call_line,
+                &item->insert_line)) {
+            ++candidates.failed_anchor;
+            (void)strncpy(
+                candidates.failed_name,
+                entry->name,
+                sizeof(candidates.failed_name) - 1U
+            );
+            candidates.failed_call_line =
+                entry->first_call_line;
+            candidates.failed_definition_line =
+                entry->definition_line;
+            break;
+        }
+
         if (!declaration_fix_extract_signature(
                 path,
                 entry->name,
                 entry->definition_line,
                 item->prototype,
                 sizeof(item->prototype))) {
-            return 0;
+            ++candidates.failed_signature;
+            (void)strncpy(
+                candidates.failed_name,
+                entry->name,
+                sizeof(candidates.failed_name) - 1U
+            );
+            candidates.failed_call_line =
+                entry->first_call_line;
+            candidates.failed_definition_line =
+                entry->definition_line;
+            break;
         }
 
-        ++fixes->used;
+        if (declaration_fix_prototype_exists(
+                path,
+                item->prototype)) {
+            ++candidates.skipped_existing;
+            continue;
+        }
+
+        ++candidates.used;
     }
+
+    qsort(
+        candidates.entries,
+        candidates.used,
+        sizeof(candidates.entries[0]),
+        declaration_fix_item_compare
+    );
+
+    fixes->total_candidates = candidates.total_candidates;
+    fixes->skipped_existing = candidates.skipped_existing;
+    fixes->failed_anchor = candidates.failed_anchor;
+    fixes->failed_signature = candidates.failed_signature;
+    (void)strncpy(
+        fixes->failed_name,
+        candidates.failed_name,
+        sizeof(fixes->failed_name) - 1U
+    );
+    fixes->failed_call_line =
+        candidates.failed_call_line;
+    fixes->failed_definition_line =
+        candidates.failed_definition_line;
+
+    if (limit == 0U ||
+        limit > candidates.used) {
+        limit = candidates.used;
+    }
+
+    for (index = 0U; index < limit; ++index) {
+        fixes->entries[index] = candidates.entries[index];
+    }
+
+    fixes->used = limit;
+    fixes->skipped_limit =
+        candidates.used > limit ?
+        candidates.used - limit : 0U;
 
     return 1;
 }
 
-static unsigned long declaration_fix_insert_line(
-    const char *path)
+static int declaration_fix_write_group(
+    FILE *output,
+    const declaration_fix_list *fixes,
+    unsigned int *next_item,
+    unsigned long line_number)
 {
-    FILE *file;
-    char line[SYMBOL_LINE_SIZE];
-    unsigned long line_number;
-    unsigned long last_include;
-
-    file = fopen(path, "r");
-
-    if (file == NULL) {
-        return 0UL;
-    }
-
-    line_number = 0UL;
-    last_include = 0UL;
-
-    while (fgets(line, sizeof(line), file) != NULL) {
-        const char *position;
-
-        ++line_number;
-        position = line;
-
-        while (*position == ' ' || *position == '\t') {
-            ++position;
+    while (*next_item < fixes->used &&
+           fixes->entries[*next_item].insert_line == line_number) {
+        if (fputs(
+                fixes->entries[*next_item].prototype,
+                output) == EOF) {
+            return 0;
         }
 
-        if (strncmp(position, "#include", 8U) == 0) {
-            last_include = line_number;
+        ++*next_item;
+    }
+
+    if (*next_item > 0U &&
+        fixes->entries[*next_item - 1U].insert_line == line_number) {
+        if (fputc('\n', output) == EOF) {
+            return 0;
         }
     }
 
-    (void)fclose(file);
-    return last_include;
+    return 1;
 }
 
 static int declaration_fix_write_file(
@@ -15840,8 +16218,7 @@ static int declaration_fix_write_file(
     FILE *output;
     char line[SYMBOL_LINE_SIZE];
     unsigned long line_number;
-    unsigned long insert_line;
-    unsigned int index;
+    unsigned int next_item;
     char filespec[SYMBOL_PATH_SIZE + 16U];
     char command[SYMBOL_PATH_SIZE * 2U + 96U];
     int status;
@@ -15859,45 +16236,31 @@ static int declaration_fix_write_file(
         return 0;
     }
 
-    insert_line = declaration_fix_insert_line(path);
     line_number = 0UL;
-
-    if (insert_line == 0UL) {
-        for (index = 0U; index < fixes->used; ++index) {
-            if (fputs(fixes->entries[index].prototype, output) == EOF) {
-                goto decl_fix_failure;
-            }
-        }
-
-        if (fputc('\n', output) == EOF) {
-            goto decl_fix_failure;
-        }
-    }
+    next_item = 0U;
 
     while (fgets(line, sizeof(line), file) != NULL) {
         ++line_number;
 
-        if (fputs(line, output) == EOF) {
+        /*
+         * Insert immediately before the containing caller function.
+         * Types visible to that caller are therefore already declared.
+         */
+        if (!declaration_fix_write_group(
+                output,
+                fixes,
+                &next_item,
+                line_number)) {
             goto decl_fix_failure;
         }
 
-        if (line_number == insert_line) {
-            if (fputc('\n', output) == EOF) {
-                goto decl_fix_failure;
-            }
-
-            for (index = 0U; index < fixes->used; ++index) {
-                if (fputs(
-                        fixes->entries[index].prototype,
-                        output) == EOF) {
-                    goto decl_fix_failure;
-                }
-            }
-
-            if (fputc('\n', output) == EOF) {
-                goto decl_fix_failure;
-            }
+        if (fputs(line, output) == EOF) {
+            goto decl_fix_failure;
         }
+    }
+
+    if (next_item != fixes->used) {
+        goto decl_fix_failure;
     }
 
     if (fclose(output) != 0) {
@@ -15944,6 +16307,45 @@ decl_fix_close_failure:
     return 0;
 }
 
+
+static void declaration_fix_print_diagnostics(
+    const declaration_fix_list *fixes)
+{
+    if (fixes->failed_anchor == 0U &&
+        fixes->failed_signature == 0U) {
+        return;
+    }
+
+    (void)puts("");
+    (void)puts("Generation diagnostics");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Candidate:       %s\n",
+        fixes->failed_name[0] != '\0' ?
+            fixes->failed_name : "<unknown>"
+    );
+    (void)printf(
+        "First call line: %lu\n",
+        fixes->failed_call_line
+    );
+    (void)printf(
+        "Definition line: %lu\n",
+        fixes->failed_definition_line
+    );
+
+    if (fixes->failed_anchor > 0U) {
+        (void)puts(
+            "Failure: unable to locate a verified top-level caller anchor."
+        );
+    }
+
+    if (fixes->failed_signature > 0U) {
+        (void)puts(
+            "Failure: unable to extract a complete static function signature."
+        );
+    }
+}
+
 static int declaration_fix_confirm(
     const char *path,
     const declaration_fix_list *fixes)
@@ -15957,14 +16359,35 @@ static int declaration_fix_confirm(
     );
     (void)puts("========================================");
     (void)printf(
-        "Prototypes to add: %u\n",
+        "Candidates found:      %u\n",
+        fixes->total_candidates
+    );
+    (void)printf(
+        "Already present:       %u\n",
+        fixes->skipped_existing
+    );
+    (void)printf(
+        "Selected for this run: %u\n",
         fixes->used
     );
+    (void)printf(
+        "Deferred by limit:     %u\n",
+        fixes->skipped_limit
+    );
+
+    declaration_fix_print_diagnostics(fixes);
+
+    if (fixes->failed_anchor > 0U ||
+        fixes->failed_signature > 0U) {
+        return 0;
+    }
+
     (void)puts("");
 
     for (index = 0U; index < fixes->used; ++index) {
         (void)printf(
-            "%s",
+            "Before line %lu:\n%s",
+            fixes->entries[index].insert_line,
             fixes->entries[index].prototype
         );
     }
@@ -15980,9 +16403,10 @@ static int declaration_fix_confirm(
            answer[0] == 'Y';
 }
 
-int symbol_declaration_order_fix(
+int symbol_decl_fix_limited(
     agent_state *state,
-    const char *module)
+    const char *module,
+    unsigned int limit)
 {
     declaration_fix_list fixes;
     rename_transaction transaction;
@@ -16016,7 +16440,7 @@ int symbol_declaration_order_fix(
         return 0;
     }
 
-    if (!declaration_fix_collect(path, &fixes)) {
+    if (!declaration_fix_collect(path, &fixes, limit)) {
         (void)puts(
             "Unable to generate declaration fixes."
         );
@@ -16136,5 +16560,430 @@ int symbol_declaration_order_fix(
     }
 
     return 0;
+}
+
+int symbol_declaration_order_fix(
+    agent_state *state,
+    const char *module)
+{
+    return symbol_decl_fix_limited(
+        state,
+        module,
+        0U
+    );
+}
+
+static int declaration_fix_count_remaining(
+    const char *path,
+    unsigned int *remaining)
+{
+    declaration_fix_list fixes;
+
+    (void)memset(&fixes, 0, sizeof(fixes));
+
+    if (!declaration_fix_collect(
+            path,
+            &fixes,
+            0U)) {
+        return 0;
+    }
+
+    *remaining =
+        fixes.total_candidates -
+        fixes.skipped_existing;
+
+    return 1;
+}
+
+static int declaration_fix_apply_batch(
+    agent_state *state,
+    const char *path,
+    unsigned int batch_size,
+    unsigned int batch_number,
+    unsigned int *applied_count)
+{
+    declaration_fix_list fixes;
+    rename_transaction transaction;
+    int reindex_ok;
+    int build_ok;
+
+    (void)memset(&fixes, 0, sizeof(fixes));
+    (void)memset(&transaction, 0, sizeof(transaction));
+    *applied_count = 0U;
+
+    if (!declaration_fix_collect(
+            path,
+            &fixes,
+            batch_size)) {
+        (void)puts(
+            "Unable to generate declaration-fix batch."
+        );
+        return 0;
+    }
+
+    if (fixes.used == 0U) {
+        return 1;
+    }
+
+    (void)printf(
+        "Declaration batch %u\n",
+        batch_number
+    );
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Selected:  %u\n",
+        fixes.used
+    );
+    (void)printf(
+        "Deferred:  %u\n",
+        fixes.skipped_limit
+    );
+
+    (void)strcpy(
+        transaction.files[0].path,
+        path
+    );
+    transaction.files[0].replacements =
+        fixes.used;
+    transaction.file_count = 1U;
+    transaction.total_replacements =
+        fixes.used;
+
+    if (!declaration_fix_write_file(
+            path,
+            &fixes)) {
+        (void)puts(
+            "Batch write failed."
+        );
+        return 0;
+    }
+
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)printf(
+        "Batch %u result: %s\n",
+        batch_number,
+        reindex_ok && build_ok ?
+            "PASS" : "FAIL"
+    );
+
+    if (reindex_ok && build_ok) {
+        *applied_count = fixes.used;
+        return 1;
+    }
+
+    (void)puts(
+        "Batch failed. Restoring previous source version..."
+    );
+
+    if (!rename_restore_transaction(
+            &transaction)) {
+        (void)puts(
+            "Automatic rollback was incomplete."
+        );
+        return 0;
+    }
+
+    reindex_ok = rename_run_reindex(state);
+    build_ok = reindex_ok &&
+        rename_force_recompile(&transaction);
+    build_ok = build_ok ?
+        rename_run_controlled_build() : 0;
+
+    (void)printf(
+        "Batch rollback: %s\n",
+        reindex_ok && build_ok ?
+            "PASS" : "FAIL"
+    );
+
+    return 0;
+}
+
+static int declaration_fix_auto_confirm(
+    const char *path,
+    unsigned int batch_size,
+    unsigned int remaining)
+{
+    char answer[32];
+
+    (void)puts("");
+    (void)puts("Automatic declaration repair");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Module:        %s\n",
+        path
+    );
+    (void)printf(
+        "Batch size:    %u\n",
+        batch_size
+    );
+    (void)printf(
+        "Remaining:     %u\n",
+        remaining
+    );
+    (void)puts(
+        "Each batch will build and stop on the first failure."
+    );
+    (void)printf(
+        "Run automatic repair [y/N]? "
+    );
+    (void)fflush(stdout);
+
+    if (fgets(
+            answer,
+            sizeof(answer),
+            stdin) == NULL) {
+        return 0;
+    }
+
+    return answer[0] == 'y' ||
+           answer[0] == 'Y';
+}
+
+int symbol_decl_fix_auto(
+    agent_state *state,
+    const char *module,
+    unsigned int batch_size)
+{
+    char path[SYMBOL_PATH_SIZE];
+    unsigned int remaining;
+    unsigned int batch_number;
+    unsigned int total_applied;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts(
+            "OVMS_AGENT_ROOT is not defined."
+        );
+        return 0;
+    }
+
+    if (batch_size == 0U ||
+        batch_size > 100U) {
+        (void)puts(
+            "Automatic batch size must be from 1 to 100."
+        );
+        return 0;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path)) ||
+        !symbol_has_c_extension(path)) {
+        (void)puts(
+            "Module must be a project-relative .C file."
+        );
+        return 0;
+    }
+
+    if (!move_file_exists(path)) {
+        (void)printf(
+            "Unable to open %s.\n",
+            path
+        );
+        return 0;
+    }
+
+    if (!declaration_fix_count_remaining(
+            path,
+            &remaining)) {
+        (void)puts(
+            "Unable to count remaining declaration fixes."
+        );
+        return 0;
+    }
+
+    if (remaining == 0U) {
+        (void)puts(
+            "No declaration-order fixes are required."
+        );
+        return 1;
+    }
+
+    if (!declaration_fix_auto_confirm(
+            path,
+            batch_size,
+            remaining)) {
+        (void)puts(
+            "Automatic declaration repair cancelled."
+        );
+        return 0;
+    }
+
+    batch_number = 1U;
+    total_applied = 0U;
+
+    while (remaining > 0U) {
+        unsigned int applied;
+
+        applied = 0U;
+
+        if (!declaration_fix_apply_batch(
+                state,
+                path,
+                batch_size,
+                batch_number,
+                &applied)) {
+            (void)puts("");
+            (void)puts(
+                "Automatic declaration repair stopped."
+            );
+            (void)printf(
+                "Successfully applied before failure: %u\n",
+                total_applied
+            );
+            return 0;
+        }
+
+        if (applied == 0U) {
+            break;
+        }
+
+        total_applied += applied;
+
+        if (!declaration_fix_count_remaining(
+                path,
+                &remaining)) {
+            (void)puts(
+                "Unable to recount remaining fixes."
+            );
+            return 0;
+        }
+
+        (void)printf(
+            "Remaining after batch %u: %u\n",
+            batch_number,
+            remaining
+        );
+
+        ++batch_number;
+    }
+
+    (void)puts("");
+    (void)puts("Automatic declaration repair complete");
+    (void)puts("----------------------------------------");
+    (void)printf(
+        "Prototypes inserted: %u\n",
+        total_applied
+    );
+    (void)printf(
+        "Remaining failures:  %u\n",
+        remaining
+    );
+
+    return remaining == 0U;
+}
+
+void symbol_decl_fix_diagnose(
+    agent_state *state,
+    const char *module,
+    unsigned int limit)
+{
+    declaration_fix_list fixes;
+    char path[SYMBOL_PATH_SIZE];
+    unsigned int index;
+
+    (void)memset(&fixes, 0, sizeof(fixes));
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (!module_path_prepare(
+            module,
+            path,
+            sizeof(path)) ||
+        !symbol_has_c_extension(path)) {
+        (void)puts(
+            "Module must be a project-relative .C file."
+        );
+        return;
+    }
+
+    if (!move_file_exists(path)) {
+        (void)printf("Unable to open %s.\n", path);
+        return;
+    }
+
+    if (!declaration_fix_collect(
+            path,
+            &fixes,
+            limit)) {
+        (void)puts(
+            "Unable to scan declaration-fix candidates."
+        );
+        return;
+    }
+
+    (void)printf(
+        "Declaration-fix diagnostics: %s\n",
+        path
+    );
+    (void)puts("========================================");
+    (void)printf(
+        "Candidates found:      %u\n",
+        fixes.total_candidates
+    );
+    (void)printf(
+        "Already present:       %u\n",
+        fixes.skipped_existing
+    );
+    (void)printf(
+        "Selected for preview:  %u\n",
+        fixes.used
+    );
+    (void)printf(
+        "Deferred by limit:     %u\n",
+        fixes.skipped_limit
+    );
+
+    declaration_fix_print_diagnostics(&fixes);
+
+    if (fixes.failed_anchor > 0U ||
+        fixes.failed_signature > 0U) {
+        return;
+    }
+
+    (void)puts("");
+    (void)puts("Generated fixes");
+    (void)puts("----------------------------------------");
+
+    for (index = 0U;
+         index < fixes.used;
+         ++index) {
+        (void)printf(
+            "Candidate: %s\n",
+            fixes.entries[index].name
+        );
+        (void)printf(
+            "First call: %lu\n",
+            fixes.entries[index].first_call_line
+        );
+        (void)printf(
+            "Definition: %lu\n",
+            fixes.entries[index].definition_line
+        );
+        (void)printf(
+            "Insert before: %lu\n",
+            fixes.entries[index].insert_line
+        );
+        (void)printf(
+            "%s\n",
+            fixes.entries[index].prototype
+        );
+    }
+
+    (void)puts(
+        "Diagnostic preview only. No files were modified."
+    );
 }
 
