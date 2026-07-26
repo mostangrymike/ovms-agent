@@ -13246,6 +13246,10 @@ typedef struct move_function_info {
     move_string_list dependency_modules;
 } move_function_info;
 
+static void move_compute_required_includes(
+    move_function_info *info);
+
+
 static int move_list_contains(
     const move_string_list *list,
     const char *value)
@@ -13736,6 +13740,7 @@ void symbol_move_function_preview(
         return;
     }
 
+    move_compute_required_includes(&info);
     move_compute_missing_includes(&info);
 
     (void)printf("Move-function preview: %s\n", symbol);
@@ -13773,7 +13778,7 @@ void symbol_move_function_preview(
     );
 
     (void)puts("");
-    (void)puts("Source includes absent from destination");
+    (void)puts("Required includes absent from destination");
     (void)puts("----------------------------------------");
     move_print_list(
         &info.missing_includes,
@@ -14040,6 +14045,360 @@ static int move_shared_declaration_exists(
 
     (void)closedir(directory);
     return 0;
+}
+
+
+typedef struct move_identifier_usage {
+    move_string_list identifiers;
+} move_identifier_usage;
+
+static int move_collect_body_identifiers(
+    const move_function_info *info,
+    move_identifier_usage *usage)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int in_block_comment;
+
+    file = fopen(info->source_module, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    line_number = 0UL;
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+        const char *position;
+
+        ++line_number;
+
+        if (line_number < info->definition_line) {
+            continue;
+        }
+
+        if (line_number > info->body_end + 1UL) {
+            break;
+        }
+
+        (void)strncpy(clean, line, sizeof(clean) - 1U);
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+        position = clean;
+
+        while (*position != '\0') {
+            char name[SYMBOL_NAME_SIZE];
+            size_t length;
+
+            if (!(isalpha((unsigned char)*position) ||
+                  *position == '_')) {
+                ++position;
+                continue;
+            }
+
+            length = 0U;
+
+            while (isalnum((unsigned char)position[length]) ||
+                   position[length] == '_') {
+                ++length;
+            }
+
+            if (length < sizeof(name)) {
+                (void)memcpy(name, position, length);
+                name[length] = '\0';
+
+                if (!extract_identifier_is_keyword(name)) {
+                    if (!move_list_add(
+                            &usage->identifiers,
+                            name)) {
+                        (void)fclose(file);
+                        return 0;
+                    }
+                }
+            }
+
+            position += length;
+        }
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int move_header_basename(
+    const char *include_text,
+    char *name,
+    size_t name_size)
+{
+    const char *start;
+    const char *end;
+    const char *slash;
+    size_t length;
+
+    if (include_text == NULL ||
+        name == NULL ||
+        name_size == 0U) {
+        return 0;
+    }
+
+    start = include_text;
+
+    if (*start == '"' || *start == '<') {
+        ++start;
+    }
+
+    end = start + strlen(start);
+
+    while (end > start &&
+           (end[-1] == '"' || end[-1] == '>')) {
+        --end;
+    }
+
+    slash = end;
+
+    while (slash > start &&
+           slash[-1] != '/' &&
+           slash[-1] != ']' &&
+           slash[-1] != ':') {
+        --slash;
+    }
+
+    length = (size_t)(end - slash);
+
+    if (length == 0U || length >= name_size) {
+        return 0;
+    }
+
+    (void)memcpy(name, slash, length);
+    name[length] = '\0';
+    return 1;
+}
+
+static int move_system_header_required(
+    const char *include_text,
+    const move_identifier_usage *usage)
+{
+    static const struct {
+        const char *header;
+        const char *symbols[24];
+    } mappings[] = {
+        {
+            "stdio.h",
+            {
+                "FILE", "fopen", "fclose", "fgets", "fputs",
+                "printf", "fprintf", "snprintf", "puts", "putchar",
+                "EOF", NULL
+            }
+        },
+        {
+            "string.h",
+            {
+                "strlen", "strcmp", "strncmp", "strcpy", "strncpy",
+                "strcat", "strchr", "strrchr", "strstr", "memcpy",
+                "memmove", "memset", NULL
+            }
+        },
+        {
+            "stdlib.h",
+            {
+                "malloc", "calloc", "realloc", "free", "strtol",
+                "strtoul", "system", "exit", "EXIT_SUCCESS",
+                "EXIT_FAILURE", NULL
+            }
+        },
+        {
+            "ctype.h",
+            {
+                "isalpha", "isalnum", "isdigit", "isspace",
+                "toupper", "tolower", NULL
+            }
+        },
+        {
+            "errno.h",
+            {
+                "errno", "strerror", NULL
+            }
+        },
+        {
+            "stddef.h",
+            {
+                "size_t", "NULL", "ptrdiff_t", NULL
+            }
+        },
+        { NULL, { NULL } }
+    };
+    char header[SYMBOL_PATH_SIZE];
+    unsigned int map_index;
+
+    if (!move_header_basename(
+            include_text,
+            header,
+            sizeof(header))) {
+        return 1;
+    }
+
+    for (map_index = 0U;
+         mappings[map_index].header != NULL;
+         ++map_index) {
+        unsigned int symbol_index;
+
+        if (strcmp(
+                header,
+                mappings[map_index].header) != 0) {
+            continue;
+        }
+
+        for (symbol_index = 0U;
+             mappings[map_index].symbols[symbol_index] != NULL;
+             ++symbol_index) {
+            if (move_list_contains(
+                    &usage->identifiers,
+                    mappings[map_index].symbols[symbol_index])) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /*
+     * Unknown system headers remain conservative.
+     */
+    return include_text[0] == '<';
+}
+
+static int move_project_header_required(
+    const char *include_text,
+    const move_identifier_usage *usage)
+{
+    char header[SYMBOL_PATH_SIZE];
+    char path[SYMBOL_PATH_SIZE];
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    int in_block_comment;
+    unsigned int index;
+
+    if (!move_header_basename(
+            include_text,
+            header,
+            sizeof(header))) {
+        return 1;
+    }
+
+    (void)snprintf(
+        path,
+        sizeof(path),
+        "SRC/%s",
+        header
+    );
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 1;
+    }
+
+    in_block_comment = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        char clean[SYMBOL_LINE_SIZE];
+
+        (void)strncpy(
+            clean,
+            line,
+            sizeof(clean) - 1U
+        );
+        clean[sizeof(clean) - 1U] = '\0';
+        symbol_clean_line(clean, &in_block_comment);
+
+        for (index = 0U;
+             index < usage->identifiers.used;
+             ++index) {
+            const char *name;
+            const char *position;
+
+            name = usage->identifiers.values[index];
+            position = strstr(clean, name);
+
+            while (position != NULL) {
+                if (extract_exact_identifier_at(
+                        clean,
+                        position,
+                        name)) {
+                    (void)fclose(file);
+                    return 1;
+                }
+
+                position = strstr(position + 1, name);
+            }
+        }
+    }
+
+    (void)fclose(file);
+    return 0;
+}
+
+static int move_include_required(
+    const char *include_text,
+    const move_identifier_usage *usage)
+{
+    if (include_text == NULL || *include_text == '\0') {
+        return 0;
+    }
+
+    if (include_text[0] == '<') {
+        return move_system_header_required(
+            include_text,
+            usage
+        );
+    }
+
+    return move_project_header_required(
+        include_text,
+        usage
+    );
+}
+
+static void move_compute_required_includes(
+    move_function_info *info)
+{
+    move_identifier_usage usage;
+    move_string_list required;
+    unsigned int index;
+
+    (void)memset(&usage, 0, sizeof(usage));
+    (void)memset(&required, 0, sizeof(required));
+
+    if (!move_collect_body_identifiers(
+            info,
+            &usage)) {
+        /*
+         * Failure remains conservative: retain all source includes.
+         */
+        return;
+    }
+
+    for (index = 0U;
+         index < info->source_includes.used;
+         ++index) {
+        const char *include_name;
+
+        include_name = info->source_includes.values[index];
+
+        if (move_include_required(
+                include_name,
+                &usage)) {
+            (void)move_list_add(
+                &required,
+                include_name
+            );
+        }
+    }
+
+    info->source_includes = required;
 }
 
 static int move_destination_has_required_includes(
@@ -14526,6 +14885,7 @@ int symbol_move_function_apply(
         return 0;
     }
 
+    move_compute_required_includes(&info);
     move_compute_missing_includes(&info);
 
     if (!move_destination_has_required_includes(&info)) {
