@@ -9,6 +9,8 @@
 typedef struct edit_txn_file {
     char path[EDIT_TXN_PATH_SIZE];
     char *replacement_text;
+    char *original_text;
+    unsigned int existed_before;
     unsigned int written;
 } edit_txn_file;
 

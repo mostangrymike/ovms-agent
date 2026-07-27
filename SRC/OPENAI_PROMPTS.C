@@ -26,12 +26,18 @@ static const char prompt_plan[] =
         "of grep. Do not suggest gcc, make, ./program, grep, sed, awk, "
         "or other Unix shell commands unless the user explicitly requests "
         "Unix instructions. For a plan that can be executed automatically, "
-        "include exactly one machine-readable operation at the end using "
-        "these exact lines: BEGIN_OPERATION, type=replace_text, path=<one "
-        "project-relative file>, old_text=<one exact source line>, "
-        "new_text=<one replacement line>, END_OPERATION. Do not include "
-        "more than one operation. Omit the operation block if an exact "
-        "single-line replacement cannot be proven from tool output.";
+        "append a machine-readable operation section. First emit "
+        "operation_count=<N>, where N is the exact number of file "
+        "modifications. Then emit exactly one complete BEGIN_OPERATION "
+        "through END_OPERATION block for every modification. Each block must "
+        "contain type=replace_text, path=<project-relative file>, "
+        "old_text=<exact source text>, and new_text=<replacement text>. "
+        "There is no one-operation limit. Never describe an edit only in "
+        "prose; every edit listed under Files to modify or Ordered edits must "
+        "have a corresponding operation block. Every path must appear exactly "
+        "once. Do not claim a sandbox policy limits operation blocks. Omit the "
+        "entire operation section if exact replacements cannot be proven from "
+        "tool output.";
 
 static const char prompt_write[] =
         "You are a careful OpenVMS C coding agent operating inside a project "

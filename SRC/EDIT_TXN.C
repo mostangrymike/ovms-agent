@@ -5,7 +5,6 @@
 #include "edit_txn.h"
 #include "rms_write.h"
 
-#define EDIT_TXN_COMMAND_SIZE 1200U
 
 static char *edit_txn_copy_text(
     const char *text)
@@ -43,6 +42,64 @@ static int edit_txn_path_valid(
     return strlen(path) < EDIT_TXN_PATH_SIZE;
 }
 
+static char *edit_txn_read_text(const char *path)
+{
+    FILE *file;
+    char *text = NULL;
+    char buf[4096];
+    size_t size = 0;
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return NULL;
+    }
+
+    while (fgets(buf, sizeof(buf), file) != NULL) {
+        size_t len = strlen(buf);
+        char *new_text = (char *)realloc(text, size + len + 1U);
+        if (new_text == NULL) {
+            free(text);
+            (void)fclose(file);
+            return NULL;
+        }
+        text = new_text;
+        (void)memcpy(text + size, buf, len);
+        size += len;
+        text[size] = '\0';
+    }
+
+    if (ferror(file)) {
+        free(text);
+        (void)fclose(file);
+        return NULL;
+    }
+
+    (void)fclose(file);
+
+    if (text == NULL) {
+        text = (char *)malloc(1U);
+        if (text == NULL) {
+            return NULL;
+        }
+        text[0] = '\0';
+    }
+
+    return text;
+}
+
+static int edit_txn_file_exists(const char *path)
+{
+    FILE *file;
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
 static int edit_txn_find(
     const edit_txn *transaction,
     const char *path)
@@ -60,26 +117,6 @@ static int edit_txn_find(
     }
 
     return -1;
-}
-
-static int edit_txn_restore_one(
-    const char *path)
-{
-    char command[EDIT_TXN_COMMAND_SIZE];
-    int status;
-
-    (void)snprintf(
-        command,
-        sizeof(command),
-        "COPY/NOLOG %s;-1 %s",
-        path,
-        path
-    );
-
-    status = system(command);
-
-    return status == 0 ||
-           (status & 1) != 0;
 }
 
 void edit_txn_init(
@@ -139,6 +176,20 @@ int edit_txn_add(
 
     (void)strcpy(file->path, path);
     file->replacement_text = copy;
+    file->original_text = NULL;
+    file->existed_before = edit_txn_file_exists(path) ? 1U : 0U;
+
+    if (file->existed_before) {
+        file->original_text = edit_txn_read_text(path);
+
+        if (file->original_text == NULL) {
+            free(file->replacement_text);
+            file->replacement_text = NULL;
+            file->path[0] = '\0';
+            return 0;
+        }
+    }
+
     file->written = 0U;
     ++transaction->file_count;
 
@@ -205,7 +256,6 @@ int edit_txn_rollback(
     }
 
     success = 1;
-
     index = transaction->file_count;
 
     while (index > 0U) {
@@ -218,11 +268,21 @@ int edit_txn_rollback(
             continue;
         }
 
-        if (!edit_txn_restore_one(
-                file->path)) {
-            success = 0;
+        if (file->existed_before) {
+            if (file->original_text == NULL ||
+                !rms_replace_text_file(
+                    file->path,
+                    file->original_text)) {
+                success = 0;
+            } else {
+                file->written = 0U;
+            }
         } else {
-            file->written = 0U;
+            if (remove(file->path) != 0) {
+                success = 0;
+            } else {
+                file->written = 0U;
+            }
         }
     }
 
@@ -248,6 +308,13 @@ void edit_txn_dispose(
         );
         transaction->files[index].
             replacement_text = NULL;
+
+        free(
+            transaction->files[index].
+                original_text
+        );
+        transaction->files[index].
+            original_text = NULL;
     }
 
     (void)memset(
