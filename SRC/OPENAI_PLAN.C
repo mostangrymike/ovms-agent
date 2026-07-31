@@ -241,6 +241,7 @@ static int plan_write_contents(
     return 1;
 }
 
+#define openai_plan_save openai_plan_save_legacy
 int openai_plan_save(const char *goal,
                      const char *plan_text)
 {
@@ -305,6 +306,7 @@ int openai_plan_save(const char *goal,
     return success;
 }
 
+#define openai_plan_show openai_plan_show_legacy
 void openai_plan_show(void)
 {
     FILE *file;
@@ -328,7 +330,8 @@ void openai_plan_show(void)
 }
 
 
-int openai_plan_is_current(int verbose)
+#define openai_plan_file_current openai_plan_file_current_legacy
+int openai_plan_file_current(const char *plan_path, int verbose)
 {
     FILE *file;
     char line[1024];
@@ -339,7 +342,7 @@ int openai_plan_is_current(int verbose)
     unsigned int checked_files;
     int current;
 
-    file = fopen(OPENAI_PLAN_FILE, "r");
+    file = fopen(plan_path, "r");
 
     if (file == NULL) {
         if (verbose) {
@@ -502,11 +505,32 @@ int openai_plan_is_current(int verbose)
     return current;
 }
 
+#undef openai_plan_save
+#undef openai_plan_file_current
+#include "openai_plan_m138_integrity.inc"
+#include "openai_plan_m138_validate.inc"
+#undef openai_plan_show
+#undef openai_plan_clear
+#include "openai_plan_m139_lifecycle.inc"
+#include "openai_plan_m139_validate.inc"
+#include "openai_plan_m140_approval.inc"
+#include "openai_plan_m140_validate.inc"
+#include "openai_plan_m141_validate.inc"
+#include "openai_plan_m142_validate.inc"
+#include "openai_plan_m143_validate.inc"
+#include "openai_plan_m144_validate.inc"
+#include "openai_plan_m145_validate.inc"
+#include "openai_plan_m146_validate.inc"
+#include "openai_m148_validate.inc"
+#include "openai_m149_validate.inc"
+#include "openai_plan_current_wrapper.inc"
 void openai_plan_validate(void)
 {
     (void)openai_plan_is_current(1);
+    openai_plan_approval_report();
 }
 
+#define openai_plan_clear openai_plan_clear_legacy
 void openai_plan_clear(void)
 {
     char answer[32];

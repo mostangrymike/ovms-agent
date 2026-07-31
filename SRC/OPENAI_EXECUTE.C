@@ -19,8 +19,10 @@ typedef struct openai_saved_operation {
     char path[OPENAI_EXECUTE_PATH_SIZE];
     char old_text[OPENAI_EXECUTE_TEXT_SIZE];
     char new_text[OPENAI_EXECUTE_TEXT_SIZE];
+    int is_block;
 } openai_saved_operation;
 
+#include "openai_execute_read_text_block.inc"
 static int execute_copy_value(char *destination,
                               size_t destination_size,
                               const char *source)
@@ -51,6 +53,7 @@ static int execute_copy_value(char *destination,
 }
 
 static int execute_parse_operations(
+    const char *path,
     openai_saved_operation *operations,
     unsigned int operation_capacity,
     unsigned int *operation_count_out)
@@ -73,7 +76,7 @@ static int execute_parse_operations(
         return 0;
     }
 
-    file = fopen(OPENAI_PLAN_FILE, "r");
+    file = fopen(path, "r");
 
     if (file == NULL) {
         (void)puts("No saved implementation plan is available.");
@@ -89,40 +92,8 @@ static int execute_parse_operations(
     saw_path = 0;
     saw_old = 0;
     saw_new = 0;
-
     while (fgets(line, sizeof(line), file) != NULL) {
-        if (strncmp(line, "operation_count=", 16U) == 0) {
-            char *end_pointer;
-            unsigned long value;
-
-            if (saw_declared_count || in_operation) {
-                (void)puts(
-                    "Saved plan contains a misplaced or duplicate operation_count."
-                );
-                (void)fclose(file);
-                return 0;
-            }
-
-            end_pointer = NULL;
-            value = strtoul(line + 16, &end_pointer, 10);
-
-            if (end_pointer == line + 16 ||
-                value == 0UL ||
-                value > operation_capacity ||
-                (*end_pointer != '\n' &&
-                 *end_pointer != '\r' &&
-                 *end_pointer != '\0')) {
-                (void)puts(
-                    "Saved plan operation_count is invalid."
-                );
-                (void)fclose(file);
-                return 0;
-            }
-
-            declared_operation_count = (unsigned int)value;
-            saw_declared_count = 1;
-            continue;
-        }
+        #include "openai_execute_count_handler.inc"
 
         if (strcmp(line, "BEGIN_OPERATION\n") == 0 ||
             strcmp(line, "BEGIN_OPERATION\r\n") == 0) {
@@ -145,9 +116,7 @@ static int execute_parse_operations(
             continue;
         }
 
-        if (!in_operation) {
-            continue;
-        }
+        #include "openai_execute_toplevel_guard.inc"
 
         if (strcmp(line, "END_OPERATION\n") == 0 ||
             strcmp(line, "END_OPERATION\r\n") == 0) {
@@ -168,25 +137,9 @@ static int execute_parse_operations(
             continue;
         }
 
-        if (strncmp(line, "type=", 5U) == 0) {
-            char type[64];
-
-            if (!execute_copy_value(
-                    type,
-                    sizeof(type),
-                    line + 5) ||
-                strcmp(type, "replace_text") != 0) {
-                (void)puts(
-                    "Saved operation type is unsupported; "
-                    "only replace_text is allowed."
-                );
-                (void)fclose(file);
-                return 0;
-            }
-
-            saw_type = 1;
-            continue;
-        }
+        #include "openai_execute_after_new_guard.inc"
+        #include "openai_execute_type_handler.inc"
+        #include "openai_execute_path_precheck.inc"
 
         if (strncmp(line, "path=", 5U) == 0) {
             if (!execute_copy_value(
@@ -204,7 +157,13 @@ static int execute_parse_operations(
             continue;
         }
 
-        if (strncmp(line, "old_text=", 9U) == 0) {
+        #include "openai_execute_block_misuse_guard.inc"
+        #include "openai_execute_block_handlers.inc"
+        #include "openai_execute_legacy_misuse_guard.inc"
+        #include "openai_execute_legacy_prechecks.inc"
+
+        if (!operation->is_block &&
+            strncmp(line, "old_text=", 9U) == 0) {
             if (!execute_copy_value(
                     operation->old_text,
                     sizeof(operation->old_text),
@@ -220,7 +179,8 @@ static int execute_parse_operations(
             continue;
         }
 
-        if (strncmp(line, "new_text=", 9U) == 0) {
+        if (!operation->is_block &&
+            strncmp(line, "new_text=", 9U) == 0) {
             if (!execute_copy_value(
                     operation->new_text,
                     sizeof(operation->new_text),
@@ -236,13 +196,9 @@ static int execute_parse_operations(
             continue;
         }
 
-        (void)puts(
-            "Saved operation contains an unsupported or malformed line."
-        );
-        (void)fclose(file);
-        return 0;
-    }
-
+        #include "openai_execute_fallback_m100.inc"
+        }
+    
     (void)fclose(file);
 
     if (in_operation ||
@@ -276,6 +232,7 @@ static int execute_parse_operations(
     return 1;
 }
 
+#include "openai_execute_validate.inc"
 
 static char *execute_build_replacement(
     const openai_saved_operation *operation)
@@ -421,6 +378,11 @@ static int execute_stage_operations(
     return 1;
 }
 
+#include "openai_execute_chained_stage.inc"
+#include "openai_execute_stage_validate.inc"
+#include "openai_execute_dry_validate.inc"
+#include "openai_execute_stage_expect_failure.inc"
+#include "openai_execute_rollback_validate.inc"
 static int execute_mark_consumed(void)
 {
     FILE *input;
@@ -479,12 +441,97 @@ static int execute_mark_consumed(void)
 
     if (rename("OVMS_AGENT_PLAN_NEW.TXT",
                OPENAI_PLAN_FILE) != 0) {
+        (void)printf("Warning: could not rename OVMS_AGENT_PLAN_NEW.TXT to %s: %s\n", OPENAI_PLAN_FILE, strerror(errno));
         return 0;
     }
-
     return 1;
 }
 
+#include "openai_execute_write_text_block.inc"
+#include "openai_execute_m108_writers.inc"
+static int execute_save_ops_to(
+    const char *path,
+    const openai_saved_operation *operations,
+    unsigned int operation_count)
+{
+    FILE *f;
+    unsigned int i;
+    int success;
+
+    if (path == NULL ||
+        *path == '\0' ||
+        operations == NULL) {
+        return 0;
+    }
+
+    f = fopen(path, "w");
+
+    if (f == NULL) {
+        return 0;
+    }
+
+    success = 1;
+
+    if (fprintf(f, "operation_count=%u\n",
+                operation_count) < 0) {
+        success = 0;
+    }
+
+    for (i = 0U; i < operation_count && success; ++i) {
+        if (fprintf(f, "BEGIN_OPERATION\n") < 0) {
+            success = 0;
+            break;
+        }
+
+        if (fprintf(f, "type=replace_block\n") < 0) {
+            success = 0;
+            break;
+        }
+
+        if (fprintf(f, "path=%s\n",
+                    operations[i].path) < 0) {
+            success = 0;
+            break;
+        }
+
+        if (!execute_write_text_block(
+                f,
+                "BEGIN_OLD_TEXT",
+                "END_OLD_TEXT",
+                operations[i].old_text)) {
+            success = 0;
+            break;
+        }
+
+        if (!execute_write_text_block(
+                f,
+                "BEGIN_NEW_TEXT",
+                "END_NEW_TEXT",
+                operations[i].new_text)) {
+            success = 0;
+            break;
+        }
+
+        if (fprintf(f, "END_OPERATION\n") < 0) {
+            success = 0;
+            break;
+        }
+    }
+
+    if (fclose(f) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
+#include "openai_execute_m107_validate.inc"
+#include "openai_exec_m135_validate.inc"
+#include "openai_execute_dry_run.inc"
+#include "openai_exec_m136_consume.inc"
+#include "openai_exec_m136_validate.inc"
+#include "openai_exec_m137_recovery.inc"
+#include "openai_exec_m137_validate.inc"
 void openai_plan_execute(agent_state *state)
 {
     openai_saved_operation *operations;
@@ -504,6 +551,19 @@ void openai_plan_execute(agent_state *state)
         (void)puts("OVMS_AGENT_ROOT is not defined.");
         return;
     }
+
+    if (!execute_plan_recover()) {
+        openai_plan_recovery_sync(OPENAI_PLAN_FILE);
+        (void)puts("Unable to recover plan-consumption artifacts.");
+        openai_log_event(
+            "AGENT/EXECUTE",
+            "plan_recovery_failed",
+            0
+        );
+        return;
+    }
+
+    openai_plan_recovery_sync(OPENAI_PLAN_FILE);
 
     if (!openai_plan_is_current(1)) {
         (void)puts(
@@ -544,6 +604,7 @@ void openai_plan_execute(agent_state *state)
     operation_count = 0U;
 
     if (!execute_parse_operations(
+            OPENAI_PLAN_FILE,
             operations,
             OPENAI_EXECUTE_MAX_OPERATIONS,
             &operation_count)) {
@@ -575,7 +636,7 @@ void openai_plan_execute(agent_state *state)
 
     edit_txn_init(transaction);
 
-    if (!execute_stage_operations(
+    if (!execute_stage_operations_chained(
             transaction,
             operations,
             operation_count)) {
@@ -590,6 +651,28 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
+    if (!openai_plan_approval_valid(OPENAI_PLAN_FILE)) {
+        if (openai_approval_invalidated) {
+            (void)puts(
+                "Saved plan approval was invalidated; run AGENT/APPROVE again.");
+        } else {
+            (void)puts(
+                "Saved plan execution requires AGENT/APPROVE.");
+        }
+        edit_txn_dispose(transaction);
+        free(transaction);
+        free(operations);
+        openai_log_event(
+            "AGENT/EXECUTE",
+            "approval_required",
+            0
+        );
+        return;
+    }
+
+    /* Approval consumed before first project write. */
+    openai_plan_approval_consume();
+
     (void)printf(
         "Executing %u saved operations as one transaction.\n",
         operation_count
@@ -598,8 +681,10 @@ void openai_plan_execute(agent_state *state)
     write_ok = edit_txn_write(transaction);
 
     if (!write_ok) {
-        (void)puts(
-            "Plan-wide write failed. Transaction rollback was attempted."
+        rollback_ok = edit_txn_rollback(transaction);
+        (void)printf(
+            "Plan-wide write failed. Transaction rollback: %s\n",
+            rollback_ok ? "PASS" : "FAIL"
         );
         edit_txn_dispose(transaction);
         free(transaction);
@@ -607,7 +692,7 @@ void openai_plan_execute(agent_state *state)
         openai_log_event(
             "AGENT/EXECUTE",
             "write_failed",
-            0
+            rollback_ok
         );
         return;
     }
@@ -639,6 +724,19 @@ void openai_plan_execute(agent_state *state)
             build_status
         );
 
+        if (!execute_save_build_to(
+                "OVMS_AGENT_FAILED_BUILD.TXT",
+                build_output)) {
+            (void)puts("Warning: unable to save failed build output.");
+        }
+
+        if (!execute_save_ops_to(
+                "OVMS_AGENT_FAILED_OPERATIONS.TXT",
+                operations,
+                operation_count)) {
+            (void)puts("Warning: unable to save failed operation evidence.");
+        }
+
         rollback_ok =
             edit_txn_rollback(transaction);
 
@@ -654,6 +752,12 @@ void openai_plan_execute(agent_state *state)
                 "rollback_failed",
             rollback_ok
         );
+
+        openai_last_build_known = 1;
+        openai_last_build_status = build_status;
+        openai_last_rollback = rollback_ok ? OPENAI_ROLLBACK_SUCCEEDED : OPENAI_ROLLBACK_FAILED;
+        openai_last_workflow = OPENAI_WORKFLOW_EXECUTE;
+        openai_state_save();
 
         if (build_output != NULL) {
             (void)puts("");
@@ -690,6 +794,11 @@ void openai_plan_execute(agent_state *state)
         build_status
     );
 
+    openai_last_build_known = 1;
+    openai_last_build_status = build_status;
+    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    openai_state_save();
+
     if (build_output != NULL) {
         (void)puts("");
         (void)puts(build_output);
@@ -700,7 +809,9 @@ void openai_plan_execute(agent_state *state)
     free(transaction);
     free(operations);
 
-    if (execute_mark_consumed()) {
+    openai_plan_approval_clear();
+
+    if (execute_mark_consumed_safe()) {
         (void)puts("Saved plan marked consumed.");
         openai_log_event(
             "AGENT/EXECUTE",

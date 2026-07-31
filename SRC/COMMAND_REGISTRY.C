@@ -3,7 +3,7 @@
 
 #include "command_internal.h"
 
-#define COMMAND_REGISTRY_MAX 64U
+#define COMMAND_REGISTRY_MAX 96U
 
 static command_entry command_registry[COMMAND_REGISTRY_MAX];
 static size_t command_registry_used;
@@ -59,6 +59,7 @@ void command_registry_initialize(void)
 
     command_register_core();
     command_register_project();
+    command_register_symbol();
     command_register_agent();
 
     command_registry_ready = 1;

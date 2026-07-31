@@ -27,6 +27,8 @@ const char *openai_workflow_name(int workflow)
         return "AGENT/CREATE";
     case OPENAI_WORKFLOW_PLAN:
         return "AGENT/PLAN";
+    case OPENAI_WORKFLOW_EXECUTE:
+        return "AGENT/EXECUTE";
     default:
         return "none";
     }
@@ -88,26 +90,34 @@ void openai_status(const agent_state *state)
     );
 
     (void)printf(
-        "Last workflow:            %s\n",
-        openai_workflow_name(openai_last_workflow)
+        "Last persisted workflow:  %s\n",
+        openai_persist_workflow(
+            openai_state_valid,
+            openai_saved_workflow)
     );
 
-    if (openai_last_build_known) {
+    if (!openai_state_valid) {
+        (void)puts(
+            "Last persisted build:     unavailable"
+        );
+    } else if (openai_saved_build_known) {
         (void)printf(
-            "Last build:               %s (status %d)\n",
-            (openai_last_build_status & 1) != 0 ?
+            "Last persisted build:     %s (status %d)\n",
+            (openai_saved_build_status & 1) != 0 ?
                 "success" : "failure",
-            openai_last_build_status
+            openai_saved_build_status
         );
     } else {
         (void)puts(
-            "Last build:               not run in this process"
+            "Last persisted build:     not recorded"
         );
     }
 
     (void)printf(
-        "Last rollback:            %s\n",
-        openai_rollback_name(openai_last_rollback)
+        "Last persisted rollback:  %s\n",
+        openai_persist_rollback(
+            openai_state_valid,
+            openai_saved_rollback)
     );
 
     (void)printf(
@@ -120,11 +130,26 @@ void openai_status(const agent_state *state)
         openai_state_valid ? "yes" : "no"
     );
 
+    (void)printf(
+        "Persistent state source:  %s\n",
+        openai_state_source_name(
+            openai_state_valid,
+            openai_state_recovered)
+    );
+
+    (void)printf(
+        "Last state save attempt: %s\n",
+        openai_state_save_name(
+            openai_state_save_known,
+            openai_state_save_succeeded)
+    );
+
+    openai_plan_approval_report();
     (void)puts("");
     (void)puts("Enabled modes:");
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
     (void)puts(
-        "  AGENT, AGENT/PLAN, AGENT/EXECUTE, AGENT/WRITE, "
+        "  AGENT, AGENT/PLAN, AGENT/APPROVE, AGENT/EXECUTE, AGENT/WRITE, "
         "AGENT/CREATE, AGENT/BUILD"
     );
     (void)puts("  AGENT/FIX, AGENT/RETRY, AGENT/SELFTEST");
@@ -139,7 +164,7 @@ void openai_status(const agent_state *state)
     (void)puts("  Failed supervised fixes may offer local rollback.");
 }
 
-void openai_selftest_report(const char *name,
+static void openai_selftest_report(const char *name,
                                    int passed,
                                    unsigned int *passed_count,
                                    unsigned int *failed_count)
@@ -156,6 +181,8 @@ void openai_selftest_report(const char *name,
         ++(*failed_count);
     }
 }
+
+#include "openai_selftest_file_exists.inc"
 
 unsigned int openai_run_selftest(agent_state *state)
 {
@@ -180,6 +207,11 @@ unsigned int openai_run_selftest(agent_state *state)
         "\"arguments\":\"{\\\"path\\\":\\\"SRC/MAIN.C\\\"}\""
         "}]"
         "}";
+    static const char malformed_json[] =
+        "{\"output\":[{\"type\":\"output_text\","
+        "\"text\":\"unterminated}";
+    static const char integer_arguments[] =
+        "{\"start_line\":12,\"end_line\":34}";
     const char *object;
     const char *value;
     char *decoded;
@@ -187,6 +219,13 @@ unsigned int openai_run_selftest(agent_state *state)
     char *call_id;
     char *arguments;
     FILE *build_file;
+    const openai_tool_descriptor *read_descriptor;
+    const openai_tool_descriptor *replace_descriptor;
+    const openai_tool_descriptor *build_descriptor;
+    openai_file_cache_entry test_cache[OPENAI_AGENT_CACHE_SIZE];
+    const char *cached_text;
+    char *malformed_text;
+    long integer_value;
     unsigned int passed_count;
     unsigned int failed_count;
 
@@ -243,6 +282,100 @@ unsigned int openai_run_selftest(agent_state *state)
     openai_selftest_report(
         "ordinary source not sensitive",
         !openai_path_is_sensitive("SRC/OPENAI.C"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "lowercase key filename blocked",
+        openai_path_is_sensitive("config/server.key"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "object listing entry hidden",
+        openai_listing_entry_hidden("OPENAI_AGENT.OBJ"),
+        &passed_count,
+        &failed_count
+    );
+
+    read_descriptor = openai_tool_find("read_file");
+    replace_descriptor = openai_tool_find("replace_text");
+    build_descriptor = openai_tool_find("run_build");
+
+    openai_selftest_report(
+        "read tool registry metadata",
+        read_descriptor != NULL &&
+        read_descriptor->kind == OPENAI_TOOL_READ_FILE &&
+        read_descriptor->allows_read &&
+        !read_descriptor->allows_write &&
+        !read_descriptor->requires_confirmation,
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "write tool registry metadata",
+        replace_descriptor != NULL &&
+        replace_descriptor->kind == OPENAI_TOOL_REPLACE_TEXT &&
+        !replace_descriptor->allows_read &&
+        replace_descriptor->allows_write &&
+        replace_descriptor->requires_confirmation &&
+        openai_tool_is_replace(replace_descriptor),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "build tool registry metadata",
+        build_descriptor != NULL &&
+        build_descriptor->kind == OPENAI_TOOL_RUN_BUILD &&
+        build_descriptor->requires_build,
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "unknown tool rejected",
+        openai_tool_find("not_a_real_tool") == NULL,
+        &passed_count,
+        &failed_count
+    );
+
+    openai_cache_init(test_cache);
+    openai_selftest_report(
+        "cache store and lookup",
+        openai_cache_store(
+            test_cache,
+            "SRC/SELFTEST.C",
+            "cached self-test text") &&
+        (cached_text = openai_cache_lookup(
+            test_cache,
+            "SRC/SELFTEST.C")) != NULL &&
+        strcmp(cached_text, "cached self-test text") == 0,
+        &passed_count,
+        &failed_count
+    );
+    openai_cache_free(test_cache);
+
+    malformed_text = extract_output_text_from_json(malformed_json);
+    openai_selftest_report(
+        "malformed JSON rejected",
+        malformed_text == NULL,
+        &passed_count,
+        &failed_count
+    );
+    free(malformed_text);
+
+    integer_value = 0L;
+    openai_selftest_report(
+        "integer JSON extraction",
+        extract_integer_argument(
+            integer_arguments,
+            "end_line",
+            &integer_value) &&
+        integer_value == 34L,
         &passed_count,
         &failed_count
     );
@@ -334,6 +467,96 @@ unsigned int openai_run_selftest(agent_state *state)
     if (build_file != NULL) {
         (void)fclose(build_file);
     }
+    #include "openai_test_operation_count.inc"
+    #include "openai_test_missing_end.inc"
+    #include "openai_test_bad_type.inc"
+    #include "openai_test_dup_type.inc"
+    #include "openai_test_dup_field_path.inc"
+    #include "openai_test_block_before_type.inc"
+    #include "openai_test_path_before_type.inc"
+    #include "openai_test_new_before_old.inc"
+    #include "openai_test_path_after_old.inc"
+    #include "openai_test_type_after_old.inc"
+    #include "openai_test_field_after_new.inc"
+    #include "openai_test_nested_begin.inc"
+    #include "openai_test_second_count.inc"
+    #include "openai_test_count_after_begin.inc"
+    #include "openai_test_field_before_begin.inc"
+    #include "openai_test_block_outside.inc"
+    #include "openai_test_trailing_syntax.inc"
+    #include "openai_test_prose_only_ops.inc"
+    #include "openai_test_legacy_with_block.inc"
+    #include "openai_test_block_with_text.inc"
+    #include "openai_test_unexpected_field.inc"
+    #include "openai_test_unexpected_toplevel.inc"
+    #include "openai_test_valid_preamble.inc"
+    #include "openai_test_blank_between_ops.inc"
+    #include "openai_test_two_valid_ops.inc"
+    #include "openai_test_m103.inc"
+    #include "openai_test_m106.inc"
+    #include "openai_test_m107.inc"
+    #include "openai_test_m108.inc"
+    #include "openai_test_m109.inc"
+    #include "openai_test_m110.inc"
+    #include "openai_test_m111.inc"
+    #include "openai_test_m112.inc"
+    #include "openai_test_m113.inc"
+    #include "openai_test_m114.inc"
+    #include "openai_test_m115.inc"
+    #include "openai_test_m116.inc"
+    #include "openai_test_m117.inc"
+    #include "openai_test_m118.inc"
+    #include "openai_test_m119.inc"
+    #include "openai_test_m120.inc"
+    #include "openai_test_m121.inc"
+    #include "openai_test_m122.inc"
+    #include "openai_test_m123.inc"
+    #include "openai_test_m124.inc"
+    #include "openai_test_m125.inc"
+    #include "openai_test_m126.inc"
+    #include "openai_test_m127.inc"
+    #include "openai_test_m128.inc"
+    #include "openai_test_m129.inc"
+    #include "openai_test_m130.inc"
+    #include "openai_test_m131.inc"
+    #include "openai_test_m132.inc"
+    #include "openai_test_m133.inc"
+    #include "openai_test_m134.inc"
+    #include "openai_test_m135.inc"
+    #include "openai_test_m136.inc"
+    #include "openai_test_m137.inc"
+    #include "openai_test_m138.inc"
+    #include "openai_test_m139.inc"
+    #include "openai_test_m140.inc"
+    #include "openai_test_m141.inc"
+    #include "openai_test_m142.inc"
+    #include "openai_test_m143.inc"
+    #include "openai_test_m144.inc"
+    #include "openai_test_m145.inc"
+    #include "openai_test_m146.inc"
+    #include "openai_test_m147.inc"
+    #include "openai_test_m148.inc"
+    #include "openai_test_m149.inc"
+    #include "openai_test_block_before_path.inc"
+    #include "openai_test_multiline.inc"
+    #include "openai_test_dup_path.inc"
+    #include "openai_test_same_file_chain.inc"
+    #include "openai_test_dry_stage.inc"
+    #include "openai_test_dry_unchanged.inc"
+    #include "openai_test_dry_stale.inc"
+    #include "openai_test_dry_missing.inc"
+    #include "openai_test_dry_nonunique.inc"
+    #include "openai_test_failed_same_file_chain.inc"
+    #include "openai_test_nonunique_chain.inc"
+    #include "openai_test_oversized_count.inc"
+    #include "openai_test_multiline_block.inc"
+    #include "openai_test_block_missing_old_end.inc"
+    #include "openai_test_block_missing_new_end.inc"
+    #include "openai_test_block_empty_old.inc"
+    #include "openai_test_block_with_legacy_type.inc"
+    #include "openai_test_block_mixed_legacy.inc"
+    #include "openai_test_block_escaped_end.inc"
+    #include "openai_test_block_empty_new.inc"
 
     (void)puts("------------------------------------");
     (void)printf(

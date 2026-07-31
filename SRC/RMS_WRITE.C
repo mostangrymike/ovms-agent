@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unixio.h>
 
 #include "rms_write.h"
 
@@ -60,7 +61,7 @@ int rms_path_requires_record_writer(
 }
 
 static int rms_write_emit_record(
-    FILE *file,
+    int file_descriptor,
     const char *record,
     size_t length)
 {
@@ -68,28 +69,25 @@ static int rms_write_emit_record(
         return 0;
     }
 
-    if (length == 0U) {
-        return fputc('\n', file) != EOF;
-    }
-
     /*
-     * On OpenVMS record files, the C RTL treats each fwrite item as
-     * an RMS record.  Use one item whose size is the complete logical
-     * line.  fwrite(record, 1, length, file) creates length one-byte
-     * records and produces one-character-per-line output.
+     * On OpenVMS record files, one write() call emits one RMS record.
      */
-    if (fwrite(record, length, 1U, file) != 1U) {
-        return 0;
+    if (length == 0U) {
+        return write(file_descriptor, "", 0U) >= 0;
     }
 
-    return 1;
+    return write(
+        file_descriptor,
+        record,
+        length
+    ) == (int)length;
 }
 
 int rms_write_text_file(
     const char *path,
     const char *text)
 {
-    FILE *file;
+    int file_descriptor;
     const char *start;
     const char *position;
 
@@ -97,14 +95,14 @@ int rms_write_text_file(
         return 0;
     }
 
-    file = fopen(
+    file_descriptor = creat(
         path,
-        "w",
-        "rfm=var",
-        "rat=cr"
+        0,
+        "rat=cr",
+        "rfm=var"
     );
 
-    if (file == NULL) {
+    if (file_descriptor < 0) {
         return 0;
     }
 
@@ -123,10 +121,10 @@ int rms_write_text_file(
             }
 
             if (!rms_write_emit_record(
-                    file,
+                    file_descriptor,
                     start,
                     length)) {
-                (void)fclose(file);
+                (void)close(file_descriptor);
                 return 0;
             }
 
@@ -148,15 +146,15 @@ int rms_write_text_file(
         }
 
         if (!rms_write_emit_record(
-                file,
+                file_descriptor,
                 start,
                 length)) {
-            (void)fclose(file);
+            (void)close(file_descriptor);
             return 0;
         }
     }
 
-    return fclose(file) == 0;
+    return close(file_descriptor) == 0;
 }
 
 int rms_replace_text_file(

@@ -10,6 +10,7 @@ static const char prompt_read_only[] =
         "Do not request paths outside the project. Produce a concise final "
         "answer as soon as sufficient evidence has been collected.";
 
+#if 0
 static const char prompt_plan[] =
         "You are a careful OpenVMS software implementation planner operating "
         "inside a project sandbox. You have read-only tools only: "
@@ -32,12 +33,20 @@ static const char prompt_plan[] =
         "through END_OPERATION block for every modification. Each block must "
         "contain type=replace_text, path=<project-relative file>, "
         "old_text=<exact source text>, and new_text=<replacement text>. "
-        "There is no one-operation limit. Never describe an edit only in "
+        "There is no one-operation limit. The old_text and new_text fields "
+        "must each contain exactly one physical line. Never emit multiline "
+        "values or whole-file replacements. Never describe an edit only in "
         "prose; every edit listed under Files to modify or Ordered edits must "
         "have a corresponding operation block. Every path must appear exactly "
-        "once. Do not claim a sandbox policy limits operation blocks. Omit the "
-        "entire operation section if exact replacements cannot be proven from "
+        "once. Do not claim a sandbox policy limits operation blocks. If a "
+        "requested change cannot be represented as one or more single-line "
+        "replace_text operations, omit the entire operation section and "
+        "explain that the change exceeds the current execution format. Omit "
+        "the operation section if exact replacements cannot be proven from "
         "tool output.";
+#endif
+
+#include "openai_prompt_plan_m90.inc"
 
 static const char prompt_write[] =
         "You are a careful OpenVMS C coding agent operating inside a project "

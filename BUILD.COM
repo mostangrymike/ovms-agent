@@ -2,91 +2,119 @@ $!===========================================================
 $! BUILD.COM - Build OVMS Agent
 $!===========================================================
 $ SET NOON
+$
 $ SAVED_DEFAULT = F$ENVIRONMENT("DEFAULT")
 $ PROCEDURE = F$ENVIRONMENT("PROCEDURE")
 $ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
-                F$PARSE(PROCEDURE,,,"DIRECTORY")
+F$PARSE(PROCEDURE,,,"DIRECTORY")
+$
 $ SET DEFAULT 'PROJECT_DIR'
 $ FINAL_STATUS = 1
+$
 $ WRITE SYS$OUTPUT "Building OVMS Agent Version 2..."
+$
 $ IF F$SEARCH("[]BUILD.DIR;*") .EQS. ""
 $ THEN
 $     CREATE/DIRECTORY [.BUILD]
+$     IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $ ENDIF
+$
+$!-----------------------------------------------------------
+$! Build modular OpenAI subsystem.
+$!
+$! RMS_WRITE.OBJ and EDIT_TXN.OBJ are built by this procedure
+$! and listed in OPENAI_MODULES.OPT. Do not compile or link
+$! them separately in this file.
+$!-----------------------------------------------------------
 $ @BUILD_OPENAI_MODULES
-$! M60 BUILD.COM additions
-$! Add before copying/linking option files:
-$ CC/OBJECT=[.BUILD]EDIT_TXN.OBJ -
-     /STANDARD=C99 -
-     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-     /INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]EDIT_TXN.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$ CC/OBJECT=[.BUILD]RMS_WRITE.OBJ -
-     /STANDARD=C99 -
-     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-     /INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]RMS_WRITE.C
-$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR 
+$
+$!-----------------------------------------------------------
+$! Build core modules.
+$!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]EDIT.OBJ -
-     /STANDARD=C99 -
-     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-     /INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]EDIT.C
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]EDIT.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$ CC/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-     /OBJECT=[.BUILD]MAIN.OBJ -
-     /STANDARD=C99 -
-     /INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]MAIN.C
+$
+$ CC/OBJECT=[.BUILD]MAIN.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]MAIN.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$ CC/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-      /OBJECT=[.BUILD]AGENT.OBJ -
-     /STANDARD=C99 -
-     /INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]AGENT.C
+$
+$ CC/OBJECT=[.BUILD]AGENT.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]AGENT.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$!-----------------------------------------------------------
+$! Build command subsystem.
+$!-----------------------------------------------------------
 $ @BUILD_COMMAND_MODULES
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$!-----------------------------------------------------------
+$! Build remaining project modules.
+$!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]PROJECT.OBJ -
-     /STANDARD=C99 -
-/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -     
-/INCLUDE_DIRECTORY=([.SRC]) -
-     [.SRC]PROJECT.C
-$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$ CC/OBJECT=[.BUILD]UTIL.OBJ -
-     /STANDARD=C99 -
-     /INCLUDE_DIRECTORY=([.SRC]) -
+/STANDARD=C99 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-     [.SRC]UTIL.C
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]PROJECT.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ CC/OBJECT=[.BUILD]UTIL.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]UTIL.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$!-----------------------------------------------------------
+$! Copy linker options files into BUILD.
+$!-----------------------------------------------------------
 $ COPY/NOLOG COMMAND_MODULES.OPT [.BUILD]COMMAND_MODULES.OPT
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
 $ COPY/NOLOG OPENAI_MODULES.OPT [.BUILD]OPENAI_MODULES.OPT
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$!-----------------------------------------------------------
+$! Link final executable.
+$!
+$! RMS_WRITE.OBJ and EDIT_TXN.OBJ are supplied exactly once
+$! through OPENAI_MODULES.OPT.
+$!-----------------------------------------------------------
 $ LINK/EXECUTABLE=[.BUILD]OVMS_AGENT.EXE -
-     [.BUILD]MAIN.OBJ, -
-     [.BUILD]RMS_WRITE.OBJ, -
-     [.BUILD]AGENT.OBJ, -                 
-     [.BUILD]RMS_WRITE.OBJ, -
-     [.BUILD]EDIT_TXN.OBJ, -
-     COMMAND_MODULES.OPT/OPTIONS, -
-     [.BUILD]PROJECT.OBJ, -
-     OPENAI_MODULES.OPT/OPTIONS, -
-     [.BUILD]EDIT.OBJ, -
-     [.BUILD]UTIL.OBJ
+[.BUILD]MAIN.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$
 $ IF .NOT. $STATUS
 $ THEN
 $     FINAL_STATUS = $STATUS
 $     WRITE SYS$ERROR "Link failed."
 $     GOTO FINISH
 $ ENDIF
+$
 $ WRITE SYS$OUTPUT "Build completed successfully."
 $ WRITE SYS$OUTPUT "Run with: $ @OVMS_AGENT"
 $ GOTO FINISH
+$
 $ COMPILE_ERROR:
 $ FINAL_STATUS = $STATUS
 $ WRITE SYS$ERROR "Compilation failed."
+$
 $ FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
 $ EXIT 'FINAL_STATUS'

@@ -180,3 +180,5 @@ char *command_next_argument(char **cursor)
 
     return start;
 }
+
+#include "command_m147_guard.inc"

@@ -2,7 +2,14 @@
 #include "openai.h"
 #include "openai_execute.h"
 #include "openai_plan.h"
+#include "openai_repair.h"
 #include "openai_state.h"
+#include "openai_internal.h"
+
+#include "command_agent_execute_dry.inc"
+static void command_agent_approve(
+    agent_state *state,
+    const char *arguments);
 
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
@@ -21,12 +28,16 @@ static const command_entry agent_commands[] = {
     { "AGENT/LOG/CLEAR", "Clear the active activity log with confirmation", command_agent_log_clear },
     { "AGENT/METRICS", "Summarize structured activity metrics", command_agent_metrics },
     { "AGENT/STATE", "Display validated persistent workflow state", command_agent_state },
+    { "AGENT/MEMORY", "Show recent stored agent history", command_agent_memory },
     { "AGENT/STATE/CLEAR", "Clear persisted workflow state with confirmation", command_agent_state_clear },
     { "AGENT/CREATE", "Create one new confirmed project file: AGENT/CREATE goal", command_agent_create },
     { "AGENT/PLAN", "Create a read-only implementation plan: AGENT/PLAN goal", command_agent_plan },
     { "AGENT/PLAN/SHOW", "Display the saved implementation plan", command_agent_plan_show },
     { "AGENT/PLAN/CLEAR", "Clear the saved implementation plan with confirmation", command_agent_plan_clear },
     { "AGENT/PLAN/VALIDATE", "Validate saved-plan file fingerprints", command_agent_plan_validate },
+    { "AGENT/REPAIR/PLAN", "Create a repair plan from the last failed build", command_agent_repair_plan },
+    { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
+    { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
@@ -76,7 +87,30 @@ void command_agent_execute(agent_state *state,
     openai_plan_execute(state);
 }
 
+void command_agent_repair_plan(agent_state *state,
+                               const char *arguments)
+{
+    (void)arguments;
+    openai_repair_plan(state);
+}
+
+#include "command_agent_m147_guard.inc"
+
+static void command_agent_approve(
+    agent_state *state,
+    const char *arguments)
+{
+    (void)state;
+
+    if (!command_agent_approve_args(arguments)) {
+        return;
+    }
+
+    openai_plan_approve();
+}
+
 void command_agent_create(agent_state *state,
+
                           const char *arguments)
 {
     openai_agent_create(state, arguments);
@@ -90,6 +124,14 @@ void command_agent_state(agent_state *state,
     openai_show_state();
 }
 
+void command_agent_memory(agent_state *state,
+                          const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_memory();
+}
+
 void command_agent_state_clear(agent_state *state,
                                const char *arguments)
 {
@@ -97,7 +139,6 @@ void command_agent_state_clear(agent_state *state,
     (void)arguments;
     openai_clear_state();
 }
-
 void command_agent_metrics(agent_state *state,
                            const char *arguments)
 {
@@ -206,3 +247,5 @@ void command_ask(agent_state *state,
 {
     openai_ask(state, arguments);
 }
+
+#include "command_m147_validate.inc"

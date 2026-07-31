@@ -116,6 +116,7 @@ void command_agent_log_clear(agent_state *state, const char *arguments);
 void command_agent_metrics(agent_state *state, const char *arguments);
 void command_agent_state(agent_state *state, const char *arguments);
 void command_agent_state_clear(agent_state *state, const char *arguments);
+void command_agent_memory(agent_state *state, const char *arguments);
 void command_agent_create(agent_state *state, const char *arguments);
 void command_agent_plan(agent_state *state, const char *arguments);
 void command_agent_plan_show(agent_state *state, const char *arguments);
@@ -123,6 +124,8 @@ void command_agent_plan_clear(agent_state *state, const char *arguments);
 void command_agent_plan_validate(agent_state *state,
                                  const char *arguments);
 void command_agent_execute(agent_state *state, const char *arguments);
+
+void command_agent_repair_plan(agent_state *state, const char *arguments);
 
 void command_inline_function(agent_state *state,
                              const char *arguments);
