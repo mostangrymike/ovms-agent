@@ -539,6 +539,7 @@ unsigned int openai_run_selftest(agent_state *state)
     #include "openai_test_m149.inc"
     #include "openai_test_m150.inc"
     #include "openai_test_m150b.inc"
+    #include "openai_test_m150c.inc"
     #include "openai_test_block_before_path.inc"
     #include "openai_test_multiline.inc"
     #include "openai_test_dup_path.inc"

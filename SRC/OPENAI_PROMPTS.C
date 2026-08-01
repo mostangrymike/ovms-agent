@@ -47,6 +47,7 @@ static const char prompt_plan[] =
 #endif
 
 #include "openai_prompt_plan_m90.inc"
+#include "openai_m150c_validate.inc"
 
 static const char prompt_write[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
