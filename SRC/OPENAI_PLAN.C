@@ -523,6 +523,7 @@ int openai_plan_file_current(const char *plan_path, int verbose)
 #include "openai_plan_m146_validate.inc"
 #include "openai_m148_validate.inc"
 #include "openai_m149_validate.inc"
+#include "openai_m150_validate.inc"
 #include "openai_plan_current_wrapper.inc"
 void openai_plan_validate(void)
 {

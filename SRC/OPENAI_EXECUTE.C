@@ -20,6 +20,7 @@ typedef struct openai_saved_operation {
     char old_text[OPENAI_EXECUTE_TEXT_SIZE];
     char new_text[OPENAI_EXECUTE_TEXT_SIZE];
     int is_block;
+    int is_create;
 } openai_saved_operation;
 
 #include "openai_execute_read_text_block.inc"
@@ -122,8 +123,8 @@ static int execute_parse_operations(
             strcmp(line, "END_OPERATION\r\n") == 0) {
             if (!saw_type ||
                 !saw_path ||
-                !saw_old ||
-                !saw_new) {
+                !saw_new ||
+                (!operation->is_create && !saw_old)) {
                 (void)puts(
                     "Saved plan contains an incomplete operation."
                 );

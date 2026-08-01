@@ -25,12 +25,17 @@
 
             if (strcmp(type, "replace_text") == 0) {
                 operation->is_block = 0;
+                operation->is_create = 0;
             } else if (strcmp(type, "replace_block") == 0) {
                 operation->is_block = 1;
+                operation->is_create = 0;
+            } else if (strcmp(type, "create_file") == 0) {
+                operation->is_block = 1;
+                operation->is_create = 1;
             } else {
                 (void)puts(
-                    "Saved operation type is unsupported; "
-                    "only replace_text and replace_block are allowed."
+                    "Saved operation type is unsupported; only replace_text, "
+                    "replace_block, and create_file are allowed."
                 );
                 (void)fclose(file);
                 return 0;

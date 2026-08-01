@@ -3,6 +3,7 @@
             if (!saw_type ||
                 !saw_path ||
                 !operation->is_block ||
+                operation->is_create ||
                 saw_old ||
                 saw_new ||
                 !execute_read_text_block(
@@ -28,7 +29,7 @@
             if (!saw_type ||
                 !saw_path ||
                 !operation->is_block ||
-                !saw_old ||
+                (!operation->is_create && !saw_old) ||
                 saw_new ||
                 !execute_read_text_block(
                     file,

@@ -103,6 +103,14 @@ static int execute_stage_operations_chained(
         char *working_content;
         int already_processed;
 
+        if (operations[index].is_create) {
+            (void)printf(
+                "create_file execution is not enabled in M150A: %s\n",
+                operations[index].path
+            );
+            return 0;
+        }
+
         already_processed = 0;
 
         for (prior_index = 0U;
@@ -149,6 +157,15 @@ static int execute_stage_operations_chained(
                     operations[apply_index].path,
                     operations[index].path) != 0) {
                 continue;
+            }
+
+            if (operations[apply_index].is_create) {
+                free(working_content);
+                (void)printf(
+                    "create_file execution is not enabled in M150A: %s\n",
+                    operations[apply_index].path
+                );
+                return 0;
             }
 
             next_content =
