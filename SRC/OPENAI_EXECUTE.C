@@ -533,6 +533,7 @@ static int execute_save_ops_to(
 #include "openai_exec_m136_validate.inc"
 #include "openai_exec_m137_recovery.inc"
 #include "openai_exec_m137_validate.inc"
+#include "openai_m150b_validate.inc"
 void openai_plan_execute(agent_state *state)
 {
     openai_saved_operation *operations;

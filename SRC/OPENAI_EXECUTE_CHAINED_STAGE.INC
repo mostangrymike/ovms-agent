@@ -82,6 +82,72 @@ static char *execute_apply_replacement_to_content(
     return replacement;
 }
 
+static int execute_target_exists(
+    const char *path)
+{
+    FILE *file;
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    (void)fclose(file);
+    return 1;
+}
+
+static int execute_create_precheck(
+    const openai_saved_operation *operations,
+    unsigned int operation_count)
+{
+    unsigned int index;
+    unsigned int other_index;
+
+    for (index = 0U;
+         index < operation_count;
+         ++index) {
+        if (!operations[index].is_create) {
+            continue;
+        }
+
+        if (!openai_path_is_safe(operations[index].path) ||
+            openai_path_is_sensitive(operations[index].path)) {
+            (void)printf(
+                "Saved plan create_file refused for path: %s\n",
+                operations[index].path
+            );
+            return 0;
+        }
+
+        if (execute_target_exists(
+                operations[index].path)) {
+            (void)printf(
+                "Saved plan create_file target already exists: %s\n",
+                operations[index].path
+            );
+            return 0;
+        }
+
+        for (other_index = 0U;
+             other_index < operation_count;
+             ++other_index) {
+            if (other_index != index &&
+                strcmp(
+                    operations[index].path,
+                    operations[other_index].path) == 0) {
+                (void)printf(
+                    "Saved plan create_file path is reused: %s\n",
+                    operations[index].path
+                );
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
 static int execute_stage_operations_chained(
     edit_txn *transaction,
     const openai_saved_operation *operations,
@@ -97,6 +163,12 @@ static int execute_stage_operations_chained(
         return 0;
     }
 
+    if (!execute_create_precheck(
+            operations,
+            operation_count)) {
+        return 0;
+    }
+
     for (index = 0U;
          index < operation_count;
          ++index) {
@@ -104,11 +176,18 @@ static int execute_stage_operations_chained(
         int already_processed;
 
         if (operations[index].is_create) {
-            (void)printf(
-                "create_file execution is not enabled in M150A: %s\n",
-                operations[index].path
-            );
-            return 0;
+            if (!edit_txn_add(
+                    transaction,
+                    operations[index].path,
+                    operations[index].new_text)) {
+                (void)printf(
+                    "Unable to stage create_file operation for %s.\n",
+                    operations[index].path
+                );
+                return 0;
+            }
+
+            continue;
         }
 
         already_processed = 0;
@@ -157,15 +236,6 @@ static int execute_stage_operations_chained(
                     operations[apply_index].path,
                     operations[index].path) != 0) {
                 continue;
-            }
-
-            if (operations[apply_index].is_create) {
-                free(working_content);
-                (void)printf(
-                    "create_file execution is not enabled in M150A: %s\n",
-                    operations[apply_index].path
-                );
-                return 0;
             }
 
             next_content =
