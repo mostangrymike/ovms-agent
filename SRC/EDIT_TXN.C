@@ -5,6 +5,39 @@
 #include "edit_txn.h"
 #include "rms_write.h"
 
+extern int fgetname(FILE *, char *);
+
+static int edit_txn_get_spec(
+    const char *path,
+    char *spec,
+    size_t spec_size)
+{
+    FILE *file;
+    int status;
+
+    if (path == NULL ||
+        spec == NULL ||
+        spec_size == 0U) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    status = fgetname(file, spec);
+
+    (void)fclose(file);
+
+    if (status == 0) {
+        return 0;
+    }
+
+    spec[spec_size - 1U] = '\0';
+    return 1;
+}
+
 
 static char *edit_txn_copy_text(
     const char *text)
@@ -177,6 +210,7 @@ int edit_txn_add(
     (void)strcpy(file->path, path);
     file->replacement_text = copy;
     file->original_text = NULL;
+    file->original_spec[0] = '\0';
     file->existed_before = edit_txn_file_exists(path) ? 1U : 0U;
 
     if (file->existed_before) {
@@ -185,6 +219,18 @@ int edit_txn_add(
         if (file->original_text == NULL) {
             free(file->replacement_text);
             file->replacement_text = NULL;
+            file->path[0] = '\0';
+            return 0;
+        }
+
+        if (!edit_txn_get_spec(
+                path,
+                file->original_spec,
+                sizeof file->original_spec)) {
+            free(file->replacement_text);
+            file->replacement_text = NULL;
+            free(file->original_text);
+            file->original_text = NULL;
             file->path[0] = '\0';
             return 0;
         }
@@ -269,13 +315,32 @@ int edit_txn_rollback(
         }
 
         if (file->existed_before) {
-            if (file->original_text == NULL ||
-                !rms_replace_text_file(
-                    file->path,
-                    file->original_text)) {
+            if (file->original_text == NULL) {
                 success = 0;
             } else {
-                file->written = 0U;
+                char current_spec[EDIT_TXN_PATH_SIZE];
+
+                for (;;) {
+                    if (!edit_txn_get_spec(
+                            file->path,
+                            current_spec,
+                            sizeof current_spec)) {
+                        success = 0;
+                        break;
+                    }
+
+                    if (strcmp(
+                            current_spec,
+                            file->original_spec) == 0) {
+                        file->written = 0U;
+                        break;
+                    }
+
+                    if (remove(current_spec) != 0) {
+                        success = 0;
+                        break;
+                    }
+                }
             }
         } else {
             if (remove(file->path) != 0) {
