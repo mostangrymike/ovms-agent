@@ -1,6 +1,152 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "edit_txn.h"
+
+extern int fgetname(FILE *, char *);
+
+static void cleanup_seed(void)
+{
+    for (;;) {
+        if (remove("TXN_ROLLBACK_SEED.DAT") != 0) {
+            break;
+        }
+    }
+}
+static int test_existing_version(void)
+{
+    edit_txn transaction;
+    FILE *file = NULL;
+    char original_spec[EDIT_TXN_PATH_SIZE];
+    char current_spec[EDIT_TXN_PATH_SIZE];
+    char line[64];
+
+    cleanup_seed();
+
+    file = fopen("TXN_ROLLBACK_SEED.DAT", "w", "ctx=stm");
+    if (file == NULL) {
+        (void)puts("Failed to create seed file.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fputs("ORIGINAL LINE\n", file) == EOF) {
+        if (fclose(file) != 0) {
+            file = NULL;
+            (void)puts("Failed to close seed file after write failure.");
+            cleanup_seed();
+            return EXIT_FAILURE;
+        }
+        file = NULL;
+        (void)puts("Failed to write to seed file.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        file = NULL;
+        (void)puts("Failed to close seed file after write.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    file = fopen("TXN_ROLLBACK_SEED.DAT", "r", "ctx=stm");
+    if (file == NULL) {
+        (void)puts("Failed to reopen seed file.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, original_spec) == 0) {
+        if (fclose(file) != 0) {
+            file = NULL;
+            (void)puts("Failed to close seed file after fgetname failure.");
+            cleanup_seed();
+            return EXIT_FAILURE;
+        }
+        file = NULL;
+        (void)puts("fgetname failed on seed file.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        file = NULL;
+        (void)puts("Failed to close seed file after fgetname.");
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_ROLLBACK_SEED.DAT",
+                      "MODIFIED LINE\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_rollback(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    file = fopen("TXN_ROLLBACK_SEED.DAT", "r", "ctx=stm");
+    if (file == NULL) {
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, current_spec) == 0) {
+        (void)fclose(file);
+        file = NULL;
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(original_spec, current_spec) != 0) {
+        if (file != NULL) {
+            (void)fclose(file);
+            file = NULL;
+        }
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) == NULL) {
+        if (file != NULL) {
+            (void)fclose(file);
+            file = NULL;
+        }
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(line, "ORIGINAL LINE\n") != 0) {
+        if (file != NULL) {
+            (void)fclose(file);
+            file = NULL;
+        }
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) != NULL) {
+        if (file != NULL) {
+            (void)fclose(file);
+            file = NULL;
+        }
+        cleanup_seed();
+        return EXIT_FAILURE;
+    }
+
+    (void)fclose(file);
+    file = NULL;
+
+    cleanup_seed();
+    return EXIT_SUCCESS;
+}
 
 int main(void)
 {
@@ -24,6 +170,11 @@ int main(void)
     if (file != NULL) {
         (void)fclose(file);
         (void)puts("Created file still exists after rollback.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_existing_version() != EXIT_SUCCESS) {
+        (void)puts("Existing version rollback test failed.");
         return EXIT_FAILURE;
     }
 
