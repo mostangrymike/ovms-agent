@@ -3,8 +3,6 @@
 #include <string.h>
 #include "edit_txn.h"
 
-extern int fgetname(FILE *, char *);
-
 static void cleanup_seed(void)
 {
     for (;;) {
