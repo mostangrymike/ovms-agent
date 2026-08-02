@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unixio.h>
+#include <stat.h>
+#include <rms.h>
+#include <errno.h>
 
 #include "rms_write.h"
 
@@ -83,26 +86,14 @@ static int rms_write_emit_record(
     ) == (int)length;
 }
 
-int rms_write_text_file(
-    const char *path,
+static int rms_write_records(
+    int file_descriptor,
     const char *text)
 {
-    int file_descriptor;
     const char *start;
     const char *position;
 
-    if (path == NULL || text == NULL) {
-        return 0;
-    }
-
-    file_descriptor = creat(
-        path,
-        0,
-        "rat=cr",
-        "rfm=var"
-    );
-
-    if (file_descriptor < 0) {
+    if (text == NULL) {
         return 0;
     }
 
@@ -124,7 +115,6 @@ int rms_write_text_file(
                     file_descriptor,
                     start,
                     length)) {
-                (void)close(file_descriptor);
                 return 0;
             }
 
@@ -149,9 +139,42 @@ int rms_write_text_file(
                 file_descriptor,
                 start,
                 length)) {
-            (void)close(file_descriptor);
             return 0;
         }
+    }
+
+    return 1;
+}
+
+int rms_write_text_file(
+    const char *path,
+    const char *text)
+{
+    int file_descriptor;
+    int ok;
+
+    if (path == NULL || text == NULL) {
+        return 0;
+    }
+
+    file_descriptor = creat(
+        path,
+        0,
+        "rat=cr",
+        "rfm=var"
+    );
+
+    if (file_descriptor < 0) {
+        return 0;
+    }
+
+    ok = rms_write_records(
+        file_descriptor,
+        text);
+
+    if (!ok) {
+        (void)close(file_descriptor);
+        return 0;
     }
 
     return close(file_descriptor) == 0;
@@ -161,10 +184,6 @@ int rms_replace_text_file(
     const char *path,
     const char *text)
 {
-    char temporary[RMS_WRITE_PATH_SIZE];
-    char command[RMS_WRITE_COMMAND_SIZE];
-    int status;
-
     if (path == NULL || text == NULL) {
         return 0;
     }
@@ -184,31 +203,84 @@ int rms_replace_text_file(
         }
 
         return fclose(file) == 0;
+    } else {
+        struct stat stat_buffer;
+        int have_stat;
+        int file_descriptor;
+        int ok;
+
+        errno = 0;
+        have_stat = stat(path, &stat_buffer);
+
+        if (have_stat == 0) {
+            switch (stat_buffer.st_fab_rfm) {
+            case FAB$C_STM:
+            case FAB$C_STMLF:
+            case FAB$C_STMCR:
+                {
+                    FILE *file;
+
+                    file = fopen(path, "w");
+
+                    if (file == NULL) {
+                        return 0;
+                    }
+
+                    if (fputs(text, file) == EOF) {
+                        (void)fclose(file);
+                        return 0;
+                    }
+
+                    return fclose(file) == 0;
+                }
+
+            default:
+                file_descriptor = creat(
+                    path,
+                    0
+                );
+
+                if (file_descriptor < 0) {
+                    return 0;
+                }
+
+                ok = rms_write_records(
+                    file_descriptor,
+                    text);
+
+                if (!ok) {
+                    (void)close(file_descriptor);
+                    return 0;
+                }
+
+                return close(file_descriptor) == 0;
+            }
+        } else {
+            if (errno == ENOENT) {
+                file_descriptor = creat(
+                    path,
+                    0,
+                    "rat=cr",
+                    "rfm=var"
+                );
+
+                if (file_descriptor < 0) {
+                    return 0;
+                }
+
+                ok = rms_write_records(
+                    file_descriptor,
+                    text);
+
+                if (!ok) {
+                    (void)close(file_descriptor);
+                    return 0;
+                }
+
+                return close(file_descriptor) == 0;
+            }
+
+            return 0;
+        }
     }
-
-    (void)snprintf(
-        temporary,
-        sizeof(temporary),
-        "OVMS_RMS_SAFE.TMP"
-    );
-
-    if (!rms_write_text_file(
-            temporary,
-            text)) {
-        return 0;
-    }
-
-    (void)snprintf(
-        command,
-        sizeof(command),
-        "COPY/NOLOG %s %s",
-        temporary,
-        path
-    );
-
-    status = system(command);
-    (void)remove(temporary);
-
-    return status == 0 ||
-           (status & 1) != 0;
 }
