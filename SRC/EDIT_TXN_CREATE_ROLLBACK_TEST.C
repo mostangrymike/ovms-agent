@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stat.h>
+#include <rms.h>
+#include "rms_write.h"
 #include "edit_txn.h"
 
 static void cleanup_seed(void)
@@ -146,6 +149,161 @@ static int test_existing_version(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_stream_lf_test(void)
+{
+    for (;;) {
+        if (remove("TXN_STREAM_LF_TEST.COM") != 0) {
+            break;
+        }
+    }
+}
+
+static int verify_one_line(const char *spec, const char *expected)
+{
+    FILE *file = NULL;
+    char line[256];
+
+    file = fopen(spec, "r", "ctx=stm");
+    if (file == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) == NULL) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(line, expected) != 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) != NULL) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static int create_stream_lf_seed(char *original_spec)
+{
+    FILE *file = NULL;
+    struct stat st;
+
+    cleanup_stream_lf_test();
+
+    file = fopen("TXN_STREAM_LF_TEST.COM", "w", "ctx=stm");
+    if (file == NULL) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (fputs("ORIGINAL LINE\n", file) == EOF) {
+        (void)fclose(file);
+        file = NULL;
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        file = NULL;
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    if (stat("TXN_STREAM_LF_TEST.COM", &st) != 0) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (st.st_fab_rfm != FAB$C_STMLF) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_STREAM_LF_TEST.COM", "r", "ctx=stm");
+    if (file == NULL) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, original_spec) == 0) {
+        (void)fclose(file);
+        file = NULL;
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        file = NULL;
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    return EXIT_SUCCESS;
+}
+
+static int verify_stream_lf_versions(const char *original_spec)
+{
+    struct stat st;
+
+    if (stat("TXN_STREAM_LF_TEST.COM", &st) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    if (st.st_fab_rfm != FAB$C_STMLF) {
+        return EXIT_FAILURE;
+    }
+
+    if (verify_one_line("TXN_STREAM_LF_TEST.COM", "REPLACEMENT LINE\n") != EXIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    if (stat(original_spec, &st) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    if (st.st_fab_rfm != FAB$C_STMLF) {
+        return EXIT_FAILURE;
+    }
+
+    if (verify_one_line(original_spec, "ORIGINAL LINE\n") != EXIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static int test_stream_lf_replacement(void)
+{
+    char original_spec[EDIT_TXN_PATH_SIZE];
+
+    if (create_stream_lf_seed(original_spec) != EXIT_SUCCESS) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (rms_replace_text_file("TXN_STREAM_LF_TEST.COM","REPLACEMENT LINE\n") == 0) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    if (verify_stream_lf_versions(original_spec) != EXIT_SUCCESS) {
+        cleanup_stream_lf_test();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_stream_lf_test();
+    return EXIT_SUCCESS;
+}
+
 int main(void)
 {
     edit_txn transaction;
@@ -173,6 +331,11 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_stream_lf_replacement() != EXIT_SUCCESS) {
+        (void)puts("Stream_LF replacement test failed.");
         return EXIT_FAILURE;
     }
 
