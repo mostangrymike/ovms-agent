@@ -189,7 +189,6 @@ static int verify_one_line(const char *spec, const char *expected)
 
     return EXIT_SUCCESS;
 }
-
 static int create_stream_lf_seed(char *original_spec)
 {
     FILE *file = NULL;
@@ -281,6 +280,50 @@ static int verify_stream_lf_versions(const char *original_spec)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_multi_file_commit(void)
+{
+    for (;;) {
+        if (remove("TXN_MULTI_ONE.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_MULTI_TWO.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_multi_file_commit(void)
+{
+    edit_txn transaction;
+
+    cleanup_multi_file_commit();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_MULTI_ONE.DAT", "ONE LINE\n") ||
+        !edit_txn_add(&transaction, "TXN_MULTI_TWO.DAT", "TWO LINE\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_multi_file_commit();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_MULTI_ONE.DAT", "ONE LINE\n") != EXIT_SUCCESS ||
+        verify_one_line("TXN_MULTI_TWO.DAT", "TWO LINE\n") != EXIT_SUCCESS) {
+        cleanup_multi_file_commit();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_multi_file_commit();
+    return EXIT_SUCCESS;
+}
+
 static int test_stream_lf_replacement(void)
 {
     char original_spec[EDIT_TXN_PATH_SIZE];
@@ -329,11 +372,15 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (test_multi_file_commit() != EXIT_SUCCESS) {
+        (void)puts("Multi-file commit test failed.");
+        return EXIT_FAILURE;
+    }
+
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
         return EXIT_FAILURE;
     }
-
     if (test_stream_lf_replacement() != EXIT_SUCCESS) {
         (void)puts("Stream_LF replacement test failed.");
         return EXIT_FAILURE;
