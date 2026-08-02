@@ -128,6 +128,17 @@ $     WRITE SYS$ERROR "Link failed for EDIT_TXN_CREATE_ROLLBACK_TEST.EXE."
 $     GOTO FINISH
 $ ENDIF
 $
+$!-----------------------------------------------------------
+$! Run regression test EDIT_TXN_CREATE_ROLLBACK_TEST.
+$!-----------------------------------------------------------
+$ RUN [.BUILD]EDIT_TXN_CREATE_ROLLBACK_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test EDIT_TXN_CREATE_ROLLBACK_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
 $ WRITE SYS$OUTPUT "Build completed successfully."
 $ WRITE SYS$OUTPUT "Run with: $ @OVMS_AGENT"
 $ GOTO FINISH
