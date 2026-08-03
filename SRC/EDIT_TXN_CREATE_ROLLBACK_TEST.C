@@ -588,9 +588,106 @@ static int test_existing_multi_file_failure(void)
     cleanup_existing_multi_failure();
     return EXIT_SUCCESS;
 }
-static int test_stream_lf_replacement(void)
+
+static void cleanup_mixed_multi_failure(void)
 {
-    char original_spec[EDIT_TXN_PATH_SIZE];
+    for (;;) {
+        if (remove("TXN_MIX_EXIST.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_MIX_NEW.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_MIX_FAIL.OPT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_mixed_multi_file_failure(void)
+{
+    edit_txn transaction;
+    char *long_text;
+    size_t long_len = 32768;
+    size_t i;
+    char spec_exist[EDIT_TXN_PATH_SIZE];
+    FILE *file;
+
+    cleanup_mixed_multi_failure();
+
+    if (create_existing_multi_seed("TXN_MIX_EXIST.DAT", "MIX ORIGINAL\n", spec_exist) != EXIT_SUCCESS) {
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    long_text = malloc(long_len + 2);
+    if (long_text == NULL) {
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    for (i = 0; i < long_len; i++) {
+        long_text[i] = 'X';
+    }
+    long_text[long_len] = '\n';
+    long_text[long_len + 1] = '\0';
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_MIX_EXIST.DAT", "MIX REPLACED\n") ||
+        !edit_txn_add(&transaction, "TXN_MIX_NEW.DAT", "MIX NEW\n") ||
+        !edit_txn_add(&transaction, "TXN_MIX_FAIL.OPT", long_text) ||
+        edit_txn_write(&transaction)) {
+        /* We expect edit_txn_write to fail. */
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    free(long_text);
+    edit_txn_dispose(&transaction);
+
+    file = fopen("TXN_MIX_EXIST.DAT", "r", "ctx=stm");
+    if (file == NULL) {
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (verify_existing_multi_seed("TXN_MIX_EXIST.DAT", spec_exist, "MIX ORIGINAL\n") != EXIT_SUCCESS) {
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_MIX_NEW.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_MIX_FAIL.OPT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_mixed_multi_failure();
+    return EXIT_SUCCESS;
+}
+static int test_stream_lf_replacement(void){    char original_spec[EDIT_TXN_PATH_SIZE];
 
     if (create_stream_lf_seed(original_spec) != EXIT_SUCCESS) {
         cleanup_stream_lf_test();
@@ -633,6 +730,11 @@ int main(void)
     if (file != NULL) {
         (void)fclose(file);
         (void)puts("Created file still exists after rollback.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_mixed_multi_file_failure() != EXIT_SUCCESS) {
+        (void)puts("Mixed multi-file failure rollback test failed.");
         return EXIT_FAILURE;
     }
 
