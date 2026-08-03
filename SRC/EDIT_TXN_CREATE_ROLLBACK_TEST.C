@@ -950,6 +950,56 @@ static int test_case_duplicate(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_equivalent_duplicate(void)
+{
+    for (;;) {
+        if (remove("TXN_EQUIV.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_equivalent_duplicate(void)
+{
+    edit_txn transaction;
+
+    cleanup_equivalent_duplicate();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_EQUIV.DAT",
+                      "ORIGINAL EQUIVALENT ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_equivalent_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "[]TXN_EQUIV.DAT",
+                     "BRACKET DUPLICATE\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_equivalent_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_equivalent_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_EQUIV.DAT",
+                        "ORIGINAL EQUIVALENT ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_equivalent_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_equivalent_duplicate();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1098,6 +1148,12 @@ int main(void)
         (void)puts("Existing version rollback test failed.");
         return EXIT_FAILURE;
     }
+
+    if (test_equivalent_duplicate() != EXIT_SUCCESS) {
+        (void)puts("Equivalent-path duplicate test failed.");
+        return EXIT_FAILURE;
+    }
+
     if (test_case_duplicate() != EXIT_SUCCESS) {
         (void)puts("Case-duplicate recovery test failed.");
         return EXIT_FAILURE;

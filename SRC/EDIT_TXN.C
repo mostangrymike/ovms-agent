@@ -144,6 +144,14 @@ static int edit_txn_path_equal(
         return 0;
     }
 
+    if (left[0] == '[' && left[1] == ']') {
+        left += 2;
+    }
+
+    if (right[0] == '[' && right[1] == ']') {
+        right += 2;
+    }
+
     while (*left != '\0' && *right != '\0') {
         left_char = (unsigned char)*left;
         right_char = (unsigned char)*right;
