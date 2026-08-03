@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <ctype.h>
 #include "edit_txn.h"
 #include "rms_write.h"
 
@@ -133,6 +133,32 @@ static int edit_txn_file_exists(const char *path)
     return 1;
 }
 
+static int edit_txn_path_equal(
+    const char *left,
+    const char *right)
+{
+    unsigned char left_char;
+    unsigned char right_char;
+
+    if (left == NULL || right == NULL) {
+        return 0;
+    }
+
+    while (*left != '\0' && *right != '\0') {
+        left_char = (unsigned char)*left;
+        right_char = (unsigned char)*right;
+
+        if (toupper(left_char) != toupper(right_char)) {
+            return 0;
+        }
+
+        ++left;
+        ++right;
+    }
+
+    return *left == '\0' && *right == '\0';
+}
+
 static int edit_txn_find(
     const edit_txn *transaction,
     const char *path)
@@ -142,9 +168,9 @@ static int edit_txn_find(
     for (index = 0U;
          index < transaction->file_count;
          ++index) {
-        if (strcmp(
+        if (edit_txn_path_equal(
                 transaction->files[index].path,
-                path) == 0) {
+                path)) {
             return (int)index;
         }
     }

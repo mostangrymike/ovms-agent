@@ -900,6 +900,56 @@ static int test_duplicate_add_recovery(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_case_duplicate(void)
+{
+    for (;;) {
+        if (remove("TXN_CASE_DUP.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_case_duplicate(void)
+{
+    edit_txn transaction;
+
+    cleanup_case_duplicate();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_CASE_DUP.DAT",
+                      "ORIGINAL CASE ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_case_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "txn_case_dup.dat",
+                     "LOWERCASE DUPLICATE\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_case_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_case_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_CASE_DUP.DAT",
+                        "ORIGINAL CASE ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_case_duplicate();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_case_duplicate();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1046,6 +1096,10 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+    if (test_case_duplicate() != EXIT_SUCCESS) {
+        (void)puts("Case-duplicate recovery test failed.");
         return EXIT_FAILURE;
     }
     if (test_duplicate_add_recovery() != EXIT_SUCCESS) {
