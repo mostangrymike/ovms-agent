@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unixio.h>
 #include <stat.h>
 #include <rms.h>
 #include "rms_write.h"
@@ -249,6 +250,82 @@ static int create_stream_lf_seed(char *original_spec)
     return EXIT_SUCCESS;
 }
 
+static int create_existing_multi_seed(const char *path, const char *text, char *exact_spec)
+{
+    FILE *file = NULL;
+
+    file = fopen(path, "w", "ctx=stm");
+    if (file == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    if (fputs(text, file) == EOF) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    file = fopen(path, "r", "ctx=stm");
+    if (file == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, exact_spec) == 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    return EXIT_SUCCESS;
+}
+
+static int create_existing_record_seed(const char *path, const char *text, char *exact_spec)
+{
+    int fd;
+    int written;
+    FILE *file = NULL;
+
+    fd = creat(path, 0, "rat=cr", "rfm=var");
+    if (fd == -1) {
+        return EXIT_FAILURE;
+    }
+
+    written = write(fd, text, strlen(text));
+    if (written != (int)strlen(text)) {
+        (void)close(fd);
+        return EXIT_FAILURE;
+    }
+
+    if (close(fd) == -1) {
+        return EXIT_FAILURE;
+    }
+
+    file = fopen(path, "r", "ctx=stm");
+    if (file == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, exact_spec) == 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        return EXIT_FAILURE;
+    }
+    file = NULL;
+
+    return EXIT_SUCCESS;
+}
+
 static int verify_stream_lf_versions(const char *original_spec)
 {
     struct stat st;
@@ -393,6 +470,124 @@ static int test_multi_file_failure(void)
     return EXIT_SUCCESS;
 }
 
+static int verify_existing_multi_seed(const char *path, const char *exact_spec, const char *expected_text)
+{
+    FILE *file = NULL;
+    char name[EDIT_TXN_PATH_SIZE];
+    char line[256];
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    if (fgetname(file, name) == 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(name, exact_spec) != 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) == NULL) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(line, expected_text) != 0) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fgets(line, sizeof line, file) != NULL) {
+        (void)fclose(file);
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(file) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static void cleanup_existing_multi_failure(void)
+{
+    for (;;) {
+        if (remove("TXN_EXIST_ONE.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_EXIST_TWO.OPT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_existing_multi_file_failure(void)
+{
+    edit_txn transaction;
+    char *long_text;
+    size_t long_len = 32768;
+    size_t i;
+    char spec_one[EDIT_TXN_PATH_SIZE];
+    char spec_two[EDIT_TXN_PATH_SIZE];
+
+    cleanup_existing_multi_failure();
+
+    if (create_existing_multi_seed("TXN_EXIST_ONE.DAT", "ONE ORIGINAL\n", spec_one) != EXIT_SUCCESS) {
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (create_existing_record_seed("TXN_EXIST_TWO.OPT", "TWO ORIGINAL\n", spec_two) != EXIT_SUCCESS) {
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    long_text = malloc(long_len + 2);
+    if (long_text == NULL) {
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    for (i = 0; i < long_len; i++) {
+        long_text[i] = 'X';
+    }
+    long_text[long_len] = '\n';
+    long_text[long_len + 1] = '\0';
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_EXIST_ONE.DAT", "ONE REPLACED\n") ||
+        !edit_txn_add(&transaction, "TXN_EXIST_TWO.OPT", long_text) ||
+        edit_txn_write(&transaction)) {
+        /* We expect edit_txn_write to fail. */
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    free(long_text);
+    edit_txn_dispose(&transaction);
+
+    if (verify_existing_multi_seed("TXN_EXIST_ONE.DAT", spec_one, "ONE ORIGINAL\n") != EXIT_SUCCESS) {
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (verify_existing_multi_seed("TXN_EXIST_TWO.OPT", spec_two, "TWO ORIGINAL\n") != EXIT_SUCCESS) {
+        cleanup_existing_multi_failure();
+        return EXIT_FAILURE;
+    }
+    cleanup_existing_multi_failure();
+    return EXIT_SUCCESS;
+}
 static int test_stream_lf_replacement(void)
 {
     char original_spec[EDIT_TXN_PATH_SIZE];
@@ -438,6 +633,11 @@ int main(void)
     if (file != NULL) {
         (void)fclose(file);
         (void)puts("Created file still exists after rollback.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_existing_multi_file_failure() != EXIT_SUCCESS) {
+        (void)puts("Existing multi-file failure rollback test failed.");
         return EXIT_FAILURE;
     }
 
