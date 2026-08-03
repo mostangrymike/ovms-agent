@@ -159,6 +159,15 @@ static void cleanup_stream_lf_test(void)
     }
 }
 
+static void cleanup_invalid_add_recovery(void)
+{
+    for (;;) {
+        if (remove("TXN_VALID_AFTER_INVALID.DAT") != 0) {
+            break;
+        }
+    }
+}
+
 static int verify_one_line(const char *spec, const char *expected)
 {
     FILE *file = NULL;
@@ -190,6 +199,44 @@ static int verify_one_line(const char *spec, const char *expected)
 
     return EXIT_SUCCESS;
 }
+
+static int test_invalid_add_recovery(void)
+{
+    edit_txn transaction;
+
+    cleanup_invalid_add_recovery();
+
+    edit_txn_init(&transaction);
+
+    if (edit_txn_add(&transaction, "", "SHOULD NOT MATTER\n") ||
+        edit_txn_add(&transaction, "../BAD.DAT", "SHOULD NOT MATTER\n") ||
+        edit_txn_add(&transaction, "SYS$DISK:BAD.DAT", "SHOULD NOT MATTER\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_invalid_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_add(&transaction, "TXN_VALID_AFTER_INVALID.DAT",
+                      "VALID AFTER INVALID\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_invalid_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_VALID_AFTER_INVALID.DAT",
+                        "VALID AFTER INVALID\n") != EXIT_SUCCESS) {
+        cleanup_invalid_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_invalid_add_recovery();
+    return EXIT_SUCCESS;
+}
+
 static int create_stream_lf_seed(char *original_spec)
 {
     FILE *file = NULL;
@@ -949,6 +996,14 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+    if (test_invalid_add_recovery() != EXIT_SUCCESS) {
+        (void)puts("Invalid-add recovery test failed.");
+        return EXIT_FAILURE;
+    }
+    if (test_add_limit_failure() != EXIT_SUCCESS) {
+        (void)puts("Add-limit failure test failed.");
         return EXIT_FAILURE;
     }
     if (test_stream_lf_replacement() != EXIT_SUCCESS) {
