@@ -264,6 +264,9 @@ int edit_txn_write(
         if (!rms_replace_text_file(
                 file->path,
                 file->replacement_text)) {
+            if (edit_txn_file_exists(file->path)) {
+                file->written = 1U;
+            }
             (void)edit_txn_rollback(
                 transaction
             );

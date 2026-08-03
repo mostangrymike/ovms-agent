@@ -295,6 +295,21 @@ static void cleanup_multi_file_commit(void)
     }
 }
 
+static void cleanup_multi_file_failure(void)
+{
+    for (;;) {
+        if (remove("TXN_FAIL_ONE.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_FAIL_TWO.OPT") != 0) {
+            break;
+        }
+    }
+}
+
 static int test_multi_file_commit(void)
 {
     edit_txn transaction;
@@ -321,6 +336,60 @@ static int test_multi_file_commit(void)
     }
 
     cleanup_multi_file_commit();
+    return EXIT_SUCCESS;
+}
+
+static int test_multi_file_failure(void)
+{
+    edit_txn transaction;
+    char *long_text;
+    size_t long_len = 32768;
+    size_t i;
+    FILE *file;
+
+    cleanup_multi_file_failure();
+
+    long_text = malloc(long_len + 2);
+    if (long_text == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    for (i = 0; i < long_len; i++) {
+        long_text[i] = 'X';
+    }
+    long_text[long_len] = '\n';
+    long_text[long_len + 1] = '\0';
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_FAIL_ONE.DAT", "ONE LINE\n") ||
+        !edit_txn_add(&transaction, "TXN_FAIL_TWO.OPT", long_text) ||
+        edit_txn_write(&transaction)) {
+        /* We expect edit_txn_write to fail. */
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_multi_file_failure();
+        return EXIT_FAILURE;
+    }
+
+    free(long_text);
+    edit_txn_dispose(&transaction);
+
+    file = fopen("TXN_FAIL_ONE.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_multi_file_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_FAIL_TWO.OPT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_multi_file_failure();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_multi_file_failure();
     return EXIT_SUCCESS;
 }
 
@@ -369,6 +438,11 @@ int main(void)
     if (file != NULL) {
         (void)fclose(file);
         (void)puts("Created file still exists after rollback.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_multi_file_failure() != EXIT_SUCCESS) {
+        (void)puts("Multi-file failure rollback test failed.");
         return EXIT_FAILURE;
     }
 
