@@ -850,6 +850,56 @@ static int test_large_mixed_multi_failure(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_duplicate_add_recovery(void)
+{
+    for (;;) {
+        if (remove("TXN_DUPLICATE_ADD.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_duplicate_add_recovery(void)
+{
+    edit_txn transaction;
+
+    cleanup_duplicate_add_recovery();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_DUPLICATE_ADD.DAT",
+                      "ORIGINAL ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_duplicate_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "TXN_DUPLICATE_ADD.DAT",
+                     "DUPLICATE ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_duplicate_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_duplicate_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_DUPLICATE_ADD.DAT",
+                        "ORIGINAL ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_duplicate_add_recovery();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_duplicate_add_recovery();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -996,6 +1046,10 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+    if (test_duplicate_add_recovery() != EXIT_SUCCESS) {
+        (void)puts("Duplicate-add recovery test failed.");
         return EXIT_FAILURE;
     }
     if (test_invalid_add_recovery() != EXIT_SUCCESS) {
