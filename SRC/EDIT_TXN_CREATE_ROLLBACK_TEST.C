@@ -651,6 +651,15 @@ static int test_mixed_multi_file_failure(void)
         return EXIT_FAILURE;
     }
 
+    if (!edit_txn_rollback(&transaction) ||
+        edit_txn_write(&transaction) ||
+        edit_txn_commit(&transaction)) {
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_mixed_multi_failure();
+        return EXIT_FAILURE;
+    }
+
     free(long_text);
     edit_txn_dispose(&transaction);
 
