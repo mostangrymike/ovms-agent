@@ -803,6 +803,77 @@ static int test_large_mixed_multi_failure(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_add_limit_failure(void)
+{
+    int i;
+    char name[32];
+
+    for (i = 0; i <= 31; i++) {
+        (void)sprintf(name, "TXN_ADD_LIMIT_%02d.DAT", i);
+        for (;;) {
+            if (remove(name) != 0) {
+                break;
+            }
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_ADD_LIMIT_OVER.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_add_limit_failure(void)
+{
+    edit_txn transaction;
+    int i;
+    char name[32];
+    FILE *file;
+
+    cleanup_add_limit_failure();
+
+    edit_txn_init(&transaction);
+
+    for (i = 0; i < 32; i++) {
+        (void)sprintf(name, "TXN_ADD_LIMIT_%02d.DAT", i);
+        if (!edit_txn_add(&transaction, name, "LIMIT TEST\n")) {
+            edit_txn_dispose(&transaction);
+            cleanup_add_limit_failure();
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (edit_txn_add(&transaction, "TXN_ADD_LIMIT_OVER.DAT", "OVER LIMIT\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_add_limit_failure();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+    edit_txn_dispose(&transaction);
+
+    for (i = 0; i < 32; i++) {
+        (void)sprintf(name, "TXN_ADD_LIMIT_%02d.DAT", i);
+        file = fopen(name, "r", "ctx=stm");
+        if (file != NULL) {
+            (void)fclose(file);
+            cleanup_add_limit_failure();
+            return EXIT_FAILURE;
+        }
+    }
+
+    file = fopen("TXN_ADD_LIMIT_OVER.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_add_limit_failure();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_add_limit_failure();
+    return EXIT_SUCCESS;
+}
+
 static int test_stream_lf_replacement(void)
 {
     char original_spec[EDIT_TXN_PATH_SIZE];
