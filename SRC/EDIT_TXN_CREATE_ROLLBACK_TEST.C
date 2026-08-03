@@ -687,7 +687,9 @@ static int test_mixed_multi_file_failure(void)
     cleanup_mixed_multi_failure();
     return EXIT_SUCCESS;
 }
-static int test_stream_lf_replacement(void){    char original_spec[EDIT_TXN_PATH_SIZE];
+static int test_stream_lf_replacement(void)
+{
+    char original_spec[EDIT_TXN_PATH_SIZE];
 
     if (create_stream_lf_seed(original_spec) != EXIT_SUCCESS) {
         cleanup_stream_lf_test();
