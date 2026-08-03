@@ -687,8 +687,114 @@ static int test_mixed_multi_file_failure(void)
     cleanup_mixed_multi_failure();
     return EXIT_SUCCESS;
 }
-static int test_stream_lf_replacement(void)
+
+static void cleanup_large_mixed_failure(void)
 {
+    for (;;) {
+        if (remove("TXN_LARGE_EXIST_ONE.DAT") != 0) break;
+    }
+    for (;;) {
+        if (remove("TXN_LARGE_EXIST_TWO.DAT") != 0) break;
+    }
+    for (;;) {
+        if (remove("TXN_LARGE_NEW_ONE.DAT") != 0) break;
+    }
+    for (;;) {
+        if (remove("TXN_LARGE_NEW_TWO.DAT") != 0) break;
+    }
+    for (;;) {
+        if (remove("TXN_LARGE_FAIL.OPT") != 0) break;
+    }
+}
+
+static int test_large_mixed_multi_failure(void)
+{
+    edit_txn transaction;
+    char *long_text;
+    size_t long_len = 32768;
+    size_t i;
+    char spec_exist_one[EDIT_TXN_PATH_SIZE];
+    char spec_exist_two[EDIT_TXN_PATH_SIZE];
+    FILE *file;
+
+    cleanup_large_mixed_failure();
+
+    if (create_existing_multi_seed("TXN_LARGE_EXIST_ONE.DAT", "LARGE ONE ORIGINAL\n", spec_exist_one) != EXIT_SUCCESS) {
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (create_existing_multi_seed("TXN_LARGE_EXIST_TWO.DAT", "LARGE TWO ORIGINAL\n", spec_exist_two) != EXIT_SUCCESS) {
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    long_text = malloc(long_len + 2);
+    if (long_text == NULL) {
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    for (i = 0; i < long_len; i++) {
+        long_text[i] = 'X';
+    }
+    long_text[long_len] = '\n';
+    long_text[long_len + 1] = '\0';
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_LARGE_EXIST_ONE.DAT", "LARGE ONE REPLACED\n") ||
+        !edit_txn_add(&transaction, "TXN_LARGE_EXIST_TWO.DAT", "LARGE TWO REPLACED\n") ||
+        !edit_txn_add(&transaction, "TXN_LARGE_NEW_ONE.DAT", "LARGE NEW ONE\n") ||
+        !edit_txn_add(&transaction, "TXN_LARGE_NEW_TWO.DAT", "LARGE NEW TWO\n") ||
+        !edit_txn_add(&transaction, "TXN_LARGE_FAIL.OPT", long_text) ||
+        edit_txn_write(&transaction)) {
+        /* We expect edit_txn_write to fail. */
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    free(long_text);
+    edit_txn_dispose(&transaction);
+
+    if (verify_existing_multi_seed("TXN_LARGE_EXIST_ONE.DAT", spec_exist_one, "LARGE ONE ORIGINAL\n") != EXIT_SUCCESS) {
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    if (verify_existing_multi_seed("TXN_LARGE_EXIST_TWO.DAT", spec_exist_two, "LARGE TWO ORIGINAL\n") != EXIT_SUCCESS) {
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_LARGE_NEW_ONE.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_LARGE_NEW_TWO.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_LARGE_FAIL.OPT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_large_mixed_failure();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_large_mixed_failure();
+    return EXIT_SUCCESS;
+}
+
+static int test_stream_lf_replacement(void){
     char original_spec[EDIT_TXN_PATH_SIZE];
 
     if (create_stream_lf_seed(original_spec) != EXIT_SUCCESS) {
@@ -732,6 +838,11 @@ int main(void)
     if (file != NULL) {
         (void)fclose(file);
         (void)puts("Created file still exists after rollback.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_large_mixed_multi_failure() != EXIT_SUCCESS) {
+        (void)puts("Large mixed multi-file failure rollback test failed.");
         return EXIT_FAILURE;
     }
 
