@@ -1150,6 +1150,66 @@ static int test_combined_reverse(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_dup_recovery_multi(void)
+{
+    for (;;) {
+        if (remove("TXN_DUP_RECOVER_ONE.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_DUP_RECOVER_TWO.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_dup_recovery_multi(void)
+{
+    edit_txn transaction;
+
+    cleanup_dup_recovery_multi();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_RECOVER_ONE.DAT",
+                      "FIRST VALID ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_dup_recovery_multi();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "[]txn_dup_recover_one.dat",
+                     "REJECTED DUPLICATE\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_dup_recovery_multi();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_RECOVER_TWO.DAT",
+                      "SECOND VALID ENTRY\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_dup_recovery_multi();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_DUP_RECOVER_ONE.DAT",
+                        "FIRST VALID ENTRY\n") != EXIT_SUCCESS ||
+        verify_one_line("TXN_DUP_RECOVER_TWO.DAT",
+                        "SECOND VALID ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_dup_recovery_multi();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_dup_recovery_multi();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1296,6 +1356,11 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_dup_recovery_multi() != EXIT_SUCCESS) {
+        (void)puts("Duplicate-recovery multi-file test failed.");
         return EXIT_FAILURE;
     }
 
