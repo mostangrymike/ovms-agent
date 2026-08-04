@@ -1542,6 +1542,12 @@ static void cleanup_committed_state(void)
             break;
         }
     }
+
+    for (;;) {
+        if (remove("TXN_COMMITTED_REUSE.DAT") != 0) {
+            break;
+        }
+    }
 }
 
 static int test_committed_state(void)
@@ -1572,8 +1578,24 @@ static int test_committed_state(void)
 
     edit_txn_dispose(&transaction);
 
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction,
+                      "TXN_COMMITTED_REUSE.DAT",
+                      "COMMITTED REUSE ENTRY\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_committed_state();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
     if (verify_one_line("TXN_COMMITTED_STATE.DAT",
-                        "COMMITTED STATE ENTRY\n") != EXIT_SUCCESS) {
+                        "COMMITTED STATE ENTRY\n") != EXIT_SUCCESS ||
+        verify_one_line("TXN_COMMITTED_REUSE.DAT",
+                        "COMMITTED REUSE ENTRY\n") != EXIT_SUCCESS) {
         cleanup_committed_state();
         return EXIT_FAILURE;
     }
