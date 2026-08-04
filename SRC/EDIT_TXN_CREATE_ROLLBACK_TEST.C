@@ -1210,6 +1210,81 @@ static int test_dup_recovery_multi(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_existing_dup_recovery(void)
+{
+    for (;;) {
+        if (remove("TXN_DUP_EXIST_ONE.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_DUP_EXIST_TWO.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_existing_dup_recovery(void)
+{
+    edit_txn transaction;
+    char original_spec[EDIT_TXN_PATH_SIZE];
+
+    cleanup_existing_dup_recovery();
+
+    if (create_existing_multi_seed(
+            "TXN_DUP_EXIST_ONE.DAT",
+            "ORIGINAL EXISTING ENTRY\n",
+            original_spec) != EXIT_SUCCESS) {
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_EXIST_ONE.DAT",
+                      "REPLACED EXISTING ENTRY\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "[]txn_dup_exist_one.dat",
+                     "REJECTED DUPLICATE\n")) {
+        edit_txn_dispose(&transaction);
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_EXIST_TWO.DAT",
+                      "SECOND VALID ENTRY\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_DUP_EXIST_ONE.DAT",
+                        "REPLACED EXISTING ENTRY\n") != EXIT_SUCCESS ||
+        verify_one_line("TXN_DUP_EXIST_TWO.DAT",
+                        "SECOND VALID ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    if (verify_one_line(original_spec,
+                        "ORIGINAL EXISTING ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_existing_dup_recovery();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_existing_dup_recovery();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1356,6 +1431,11 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_existing_dup_recovery() != EXIT_SUCCESS) {
+        (void)puts("Existing duplicate-recovery test failed.");
         return EXIT_FAILURE;
     }
 
