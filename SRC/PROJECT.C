@@ -11,6 +11,7 @@
 #define TREE_MAX_DEPTH 16
 #define GREP_MAX_DEPTH 16
 #define GREP_MAX_MATCHES 100UL
+#define GREP_CONTEXT_MAX 20U
 
 static int path_is_safe(const char *path);
 static int normalize_project_path(const char *input,
@@ -366,17 +367,44 @@ static int grep_file_type(const char *name)
            strcmp(extension, "TXT") == 0;
 }
 
+static void grep_print_line(const char *path,
+                            unsigned long line_number,
+                            const char *text,
+                            int is_match)
+{
+    (void)printf("%s%c%lu%c%s",
+                 path,
+                 is_match ? ':' : '-',
+                 line_number,
+                 is_match ? ':' : '-',
+                 text);
+
+    if (strchr(text, '\n') == NULL) {
+        (void)putchar('\n');
+    }
+}
+
 static void grep_one_file(const char *path,
                           const char *pattern,
+                          unsigned int context,
                           unsigned long *matches)
 {
     FILE *file;
     char buffer[READ_BUFFER_SIZE];
+    char previous[GREP_CONTEXT_MAX][READ_BUFFER_SIZE];
+    unsigned long previous_line[GREP_CONTEXT_MAX];
+    unsigned int previous_used;
+    unsigned int previous_next;
+    unsigned int after_remaining;
     unsigned long line_number;
+    unsigned long last_printed;
+    unsigned int index;
+    unsigned int slot;
 
     if (path == NULL ||
         pattern == NULL ||
         matches == NULL ||
+        context > GREP_CONTEXT_MAX ||
         *matches >= GREP_MAX_MATCHES) {
         return;
     }
@@ -386,21 +414,76 @@ static void grep_one_file(const char *path,
         return;
     }
 
+    previous_used = 0U;
+    previous_next = 0U;
+    after_remaining = 0U;
     line_number = 1UL;
+    last_printed = 0UL;
 
     while (*matches < GREP_MAX_MATCHES &&
            fgets(buffer, sizeof(buffer), file) != NULL) {
-        if (text_contains_ignore_case(buffer, pattern)) {
-            (void)printf("%s:%lu:%s",
-                         path,
-                         line_number,
-                         buffer);
+        int is_match;
 
-            if (strchr(buffer, '\n') == NULL) {
-                (void)putchar('\n');
+        is_match = text_contains_ignore_case(buffer,
+                                             pattern);
+
+        if (is_match) {
+            /*
+             * Print buffered lines preceding this match. Lines that
+             * were already printed as trailing context are skipped.
+             */
+            for (index = 0U;
+                 index < previous_used;
+                 ++index) {
+                if (previous_used < context) {
+                    slot = index;
+                } else {
+                    slot = (previous_next + index) % context;
+                }
+
+                if (previous_line[slot] > last_printed) {
+                    grep_print_line(path,
+                                    previous_line[slot],
+                                    previous[slot],
+                                    0);
+                    last_printed = previous_line[slot];
+                }
+            }
+
+            if (line_number > last_printed) {
+                grep_print_line(path,
+                                line_number,
+                                buffer,
+                                1);
+                last_printed = line_number;
             }
 
             ++*matches;
+            after_remaining = context;
+        } else if (after_remaining != 0U) {
+            if (line_number > last_printed) {
+                grep_print_line(path,
+                                line_number,
+                                buffer,
+                                0);
+                last_printed = line_number;
+            }
+
+            --after_remaining;
+        }
+
+        if (context != 0U) {
+            (void)strcpy(previous[previous_next],
+                         buffer);
+            previous_line[previous_next] =
+                line_number;
+
+            previous_next =
+                (previous_next + 1U) % context;
+
+            if (previous_used < context) {
+                ++previous_used;
+            }
         }
 
         ++line_number;
@@ -412,6 +495,7 @@ static void grep_one_file(const char *path,
 static void project_grep_walk(const char *path,
                               const char *pattern,
                               unsigned int depth,
+                              unsigned int context,
                               unsigned long *matches)
 {
     DIR *directory;
@@ -420,6 +504,7 @@ static void project_grep_walk(const char *path,
     if (path == NULL ||
         pattern == NULL ||
         matches == NULL ||
+        context > GREP_CONTEXT_MAX ||
         depth > GREP_MAX_DEPTH ||
         *matches >= GREP_MAX_MATCHES) {
         return;
@@ -459,9 +544,13 @@ static void project_grep_walk(const char *path,
             project_grep_walk(child_path,
                               pattern,
                               depth + 1U,
+                              context,
                               matches);
         } else if (grep_file_type(entry->d_name)) {
-            grep_one_file(child_path, pattern, matches);
+            grep_one_file(child_path,
+                          pattern,
+                          context,
+                          matches); 
         }
     }
 
@@ -470,7 +559,8 @@ static void project_grep_walk(const char *path,
 
 void project_grep(const agent_state *state,
                   const char *pattern,
-                  const char *path)
+                  const char *path,
+                  unsigned int context)
 {
     unsigned long matches;
     char normalized[NORMALIZED_PATH_SIZE];
@@ -495,12 +585,18 @@ void project_grep(const agent_state *state,
         project_grep_walk("SRC",
                           pattern,
                           0U,
+                          context,
                           &matches);
 
+        if (context > GREP_CONTEXT_MAX) {
+        (void)puts("GREP context is out of range.");
+        return;
+    }
         if (matches < GREP_MAX_MATCHES) {
             project_grep_walk("DOC",
                               pattern,
                               0U,
+                              context,
                               &matches);
         }
 
@@ -508,6 +604,7 @@ void project_grep(const agent_state *state,
             project_grep_walk("TEST",
                               pattern,
                               0U,
+                              context,
                               &matches);
         }
     } else {
@@ -528,6 +625,7 @@ void project_grep(const agent_state *state,
             project_grep_walk(normalized,
                               pattern,
                               0U,
+                              context,
                               &matches);
         } else {
             file = fopen(normalized, "r");
@@ -551,6 +649,7 @@ void project_grep(const agent_state *state,
 
             grep_one_file(normalized,
                           pattern,
+                          context,
                           &matches);
         }
     }
