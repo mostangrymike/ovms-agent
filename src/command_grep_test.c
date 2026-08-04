@@ -16,6 +16,7 @@ static char recorded_pattern[TEST_PATTERN_SIZE];
 static char recorded_path[TEST_PATH_SIZE];
 static unsigned int recorded_context;
 static unsigned long recorded_limit;
+static int recorded_case_sensitive;
 
 static void remove_all(const char *path)
 {
@@ -96,6 +97,7 @@ static void reset_recording(void)
     recorded_path[0] = '\0';
     recorded_context = 0U;
     recorded_limit = 0UL;
+    recorded_case_sensitive = 0;
 }
 
 static int run_command(agent_state *state,
@@ -130,12 +132,14 @@ static int run_command(agent_state *state,
 static int verify_call(const char *pattern,
                        const char *path,
                        unsigned int context,
-                       unsigned long limit)
+                       unsigned long limit,
+                       int case_sensitive)
 {
     if (grep_calls != 1U ||
         strcmp(recorded_pattern, pattern) != 0 ||
         recorded_context != context ||
-        recorded_limit != limit) {
+        recorded_limit != limit ||
+        recorded_case_sensitive != case_sensitive) {
         return 0;
     }
 
@@ -151,7 +155,9 @@ static int test_valid(agent_state *state,
                       const char *pattern,
                       const char *path,
                       unsigned int context,
-                      unsigned long limit)
+                      unsigned long limit,
+                      int case_sensitive)
+
 {
     char *output;
     int result;
@@ -165,7 +171,8 @@ static int test_valid(agent_state *state,
     result = verify_call(pattern,
                          path,
                          context,
-                         limit);
+                         limit,
+                         case_sensitive);
 
     free(output);
     return result;
@@ -198,7 +205,8 @@ void project_grep(const agent_state *state,
                   const char *pattern,
                   const char *path,
                   unsigned int context,
-                  unsigned long match_limit)
+                  unsigned long match_limit,
+                  int case_sensitive)
 {
     (void)state;
 
@@ -224,6 +232,7 @@ void project_grep(const agent_state *state,
 
     recorded_context = context;
     recorded_limit = match_limit;
+    recorded_case_sensitive = case_sensitive;
 }
 
 /*
@@ -339,31 +348,59 @@ int main(void)
                    "token",
                    NULL,
                    0U,
-                   3UL) &&
+                   3UL, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3",
                    "token",
                    "SRC",
                    0U,
-                   3UL) &&
+                   3UL, 0) &&
         test_valid(&state,
                    "\"token\" SRC /CONTEXT=2 /LIMIT=3",
                    "token",
                    "SRC",
                    2U,
-                   3UL) &&
+                   3UL, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3 /CONTEXT=2",
                    "token",
                    "SRC",
                    2U,
-                   3UL) &&
+                   3UL, 0) &&
         test_valid(&state,
                    "\"token\" SRC",
                    "token",
                    "SRC",
                    0U,
-                   100UL) &&
+                   100UL, 0) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /CASE=SENSITIVE",
+            "Token",
+            "SRC",
+            0U,
+            100UL,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /CASE=INSENSITIVE",
+            "Token",
+            "SRC",
+            0U,
+            100UL,
+            0
+        ) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /LIMIT=3 "
+            "/CASE=SENSITIVE /CONTEXT=2",
+            "Token",
+            "SRC",
+            2U,
+            3UL,
+            1
+        ) &&
         test_invalid(&state,
                      "\"token\" /LIMIT=0",
                      "Limit must be an integer from 1 to 100.") &&
@@ -384,8 +421,19 @@ int main(void)
                      "GREP path must precede qualifiers.") &&
         test_invalid(
             &state,
+            "\"token\" /CASE=INVALID",
+            "Case must be SENSITIVE or INSENSITIVE."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" /CASE=SENSITIVE "
+            "/CASE=INSENSITIVE",
+            "Duplicate /CASE qualifier."
+        ) &&
+        test_invalid(
+            &state,
             "\"token\" SRC /UNKNOWN=3",
-            "Only /CONTEXT=n and /LIMIT=n are supported."
+            "Only /CONTEXT=n, /LIMIT=n, and /CASE=value are supported."
         );
 
     remove_all(TEST_OUTPUT);

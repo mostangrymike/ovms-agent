@@ -17,7 +17,7 @@ static const command_entry project_commands[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
-    { "GREP","Search project files: GREP \"text\" [path] ""[/CONTEXT=n] [/LIMIT=n]",command_grep },
+    { "GREP","Search project files: GREP \"text\" [path] ""[/CONTEXT=n] [/LIMIT=n] [CASE=value",command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -89,20 +89,22 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *items[3];
+    char *items[4];
     char *path;
     char *end;
     unsigned long context_value;
     unsigned long limit_value;
     unsigned int context_seen;
     unsigned int limit_seen;
+    unsigned int case_seen;
     unsigned int item_count;
     unsigned int index;
+    int case_sensitive;
 
     if (arguments == NULL || *arguments == '\0') {
         (void)puts(
             "Usage: GREP \"text\" [path] "
-            "[/CONTEXT=n] [/LIMIT=n]"
+            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value]"
         );
         return;
     }
@@ -116,10 +118,9 @@ void command_grep(agent_state *state,
     cursor = work;
 
     pattern = command_next_argument(&cursor);
-
     item_count = 0U;
 
-    while (item_count < 3U) {
+    while (item_count < 4U) {
         items[item_count] =
             command_next_argument(&cursor);
 
@@ -135,7 +136,7 @@ void command_grep(agent_state *state,
         command_next_argument(&cursor) != NULL) {
         (void)puts(
             "Usage: GREP \"text\" [path] "
-            "[/CONTEXT=n] [/LIMIT=n]"
+            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value]"
         );
         return;
     }
@@ -143,8 +144,10 @@ void command_grep(agent_state *state,
     path = NULL;
     context_value = 0UL;
     limit_value = 100UL;
+    case_sensitive = 0;
     context_seen = 0U;
     limit_seen = 0U;
+    case_seen = 0U;
 
     for (index = 0U; index < item_count; ++index) {
         char *item;
@@ -154,7 +157,8 @@ void command_grep(agent_state *state,
         if (item[0] != '/') {
             if (path != NULL ||
                 context_seen ||
-                limit_seen) {
+                limit_seen ||
+                case_seen) {
                 (void)puts(
                     "GREP path must precede qualifiers."
                 );
@@ -218,10 +222,35 @@ void command_grep(agent_state *state,
             }
 
             limit_seen = 1U;
+        } else if (strncmp(item,
+                           "/CASE=",
+                           6U) == 0) {
+            if (case_seen) {
+                (void)puts(
+                    "Duplicate /CASE qualifier."
+                );
+                return;
+            }
+
+            if (strcmp(item + 6,
+                       "SENSITIVE") == 0) {
+                case_sensitive = 1;
+            } else if (strcmp(item + 6,
+                              "INSENSITIVE") == 0) {
+                case_sensitive = 0;
+            } else {
+                (void)puts(
+                    "Case must be SENSITIVE "
+                    "or INSENSITIVE."
+                );
+                return;
+            }
+
+            case_seen = 1U;
         } else {
             (void)puts(
-                "Only /CONTEXT=n and /LIMIT=n "
-                "are supported."
+                "Only /CONTEXT=n, /LIMIT=n, "
+                "and /CASE=value are supported."
             );
             return;
         }
@@ -239,7 +268,8 @@ void command_grep(agent_state *state,
         pattern,
         path,
         (unsigned int)context_value,
-        limit_value
+        limit_value,
+        case_sensitive
     );
 }
 

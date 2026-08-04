@@ -603,7 +603,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, basic_pattern, NULL, 0U, 100UL);
+    project_grep(&state, basic_pattern, NULL, 0U, 100UL, 0);
     (void)fflush(stdout);
 
     if (freopen("M188_GREP_LIMIT.OUT",
@@ -615,7 +615,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, limit_pattern, NULL, 0U, 100UL);
+    project_grep(&state, limit_pattern, NULL, 0U, 100UL, 0);
     (void)fflush(stdout);
 
     if (!write_context_file(
@@ -639,24 +639,24 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "DOC",
-                  0U, 100UL);
+                  0U, 100UL, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "SRC/M188_GREP_A.C", 0U, 100UL);
+                 "SRC/M188_GREP_A.C", 0U, 100UL, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "[.SRC]M188_GREP_A.C", 0U, 100UL);
+                 "[.SRC]M188_GREP_A.C", 0U, 100UL, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "M189_MISSING_PATH", 0U, 100UL);
+                 "M189_MISSING_PATH", 0U, 100UL, 0);
 
     project_grep(&state,
                  basic_pattern,
                  "../SRC",
-                 0U, 100UL);
+                 0U, 100UL, 0);
 
     (void)fflush(stdout);
 
@@ -672,7 +672,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 2U, 100UL);
+                 2U, 100UL, 0);
 
     (void)fflush(stdout);
 
@@ -688,7 +688,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 0U, 100UL);
+                 0U, 100UL, 0);
 
     (void)fflush(stdout);
 
@@ -704,7 +704,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 20U, 100UL);
+                 20U, 100UL, 0);
 
     (void)fflush(stdout);
     (void)fclose(stdout);
