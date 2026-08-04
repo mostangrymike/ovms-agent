@@ -1378,6 +1378,8 @@ static int test_dup_failure_rollback(void)
 
     free(long_text);
     edit_txn_dispose(&transaction);
+    edit_txn_dispose(&transaction);
+
 
     if (verify_existing_multi_seed(
             "TXN_DUP_FAIL_EXIST.DAT",
