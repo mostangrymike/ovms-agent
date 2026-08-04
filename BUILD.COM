@@ -169,6 +169,38 @@ $     FINAL_STATUS = $STATUS
 $     WRITE SYS$ERROR "Regression test PROJECT_GREP_TEST.EXE failed."
 $     GOTO FINISH
 $ ENDIF
+$!-----------------------------------------------------------
+$! Build COMMAND_GREP_TEST.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]COMMAND_GREP_TEST.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]COMMAND_GREP_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]COMMAND_GREP_TEST.EXE -
+[.BUILD]COMMAND_GREP_TEST.OBJ, -
+[.BUILD]COMMAND_PROJECT.OBJ, -
+[.BUILD]COMMAND.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for COMMAND_GREP_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
+$! Run COMMAND_GREP_TEST.
+$!-----------------------------------------------------------
+$ RUN [.BUILD]COMMAND_GREP_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test COMMAND_GREP_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
 $
 $ WRITE SYS$OUTPUT "Build completed successfully."
 $ WRITE SYS$OUTPUT "Run with: $ @OVMS_AGENT"
