@@ -1367,6 +1367,15 @@ static int test_dup_failure_rollback(void)
         return EXIT_FAILURE;
     }
 
+    if (!edit_txn_rollback(&transaction) ||
+        edit_txn_write(&transaction) ||
+        edit_txn_commit(&transaction)) {
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
     free(long_text);
     edit_txn_dispose(&transaction);
 
