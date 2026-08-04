@@ -17,6 +17,7 @@ static const command_entry project_commands[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
+    { "GREP", "Search project files: GREP \"text\"", command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -80,6 +81,45 @@ void command_edit(agent_state *state,
                   const char *arguments)
 {
     edit_run(state, arguments);
+}
+
+void command_grep(agent_state *state,
+                  const char *arguments)
+{
+    char work[OVMS_AGENT_INPUT_SIZE];
+    char *cursor;
+    char *pattern;
+    char *extra;
+
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: GREP \"text\"");
+        return;
+    }
+
+    if (strlen(arguments) >= sizeof(work)) {
+        (void)puts("GREP arguments are too long.");
+        return;
+    }
+
+    (void)strcpy(work, arguments);
+    cursor = work;
+
+    pattern = command_next_argument(&cursor);
+    extra = command_next_argument(&cursor);
+
+    if (pattern == NULL ||
+        *pattern == '\0' ||
+        extra != NULL) {
+        (void)puts("Usage: GREP \"text\"");
+        return;
+    }
+
+    if (!command_decode_escapes(pattern)) {
+        (void)puts("Invalid escape sequence in GREP text.");
+        return;
+    }
+
+    project_grep(state, pattern);
 }
 
 void command_search(agent_state *state,

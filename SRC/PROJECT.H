@@ -20,8 +20,11 @@ void project_search(const agent_state *state,
                     const char *pattern);
 void project_tree(const agent_state *state,
                   const char *path);
-#endif
+void project_grep(const agent_state *state,
+                  const char *pattern);
 int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,
                   const char *new_text);
+
+#endif

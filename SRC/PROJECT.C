@@ -9,6 +9,8 @@
 #define READ_BUFFER_SIZE 1024
 #define NORMALIZED_PATH_SIZE 1024
 #define TREE_MAX_DEPTH 16
+#define GREP_MAX_DEPTH 16
+#define GREP_MAX_MATCHES 100UL
 
 static int path_is_safe(const char *path);
 static int normalize_project_path(const char *input,
@@ -326,6 +328,194 @@ static int text_contains_ignore_case(const char *text,
     }
 
     return 0;
+}
+
+static int grep_file_type(const char *name)
+{
+    const char *dot;
+    char extension[8];
+    size_t index;
+
+    if (name == NULL) {
+        return 0;
+    }
+
+    dot = strrchr(name, '.');
+    if (dot == NULL || dot[1] == '\0') {
+        return 0;
+    }
+
+    ++dot;
+    index = 0U;
+
+    while (dot[index] != '\0' &&
+           dot[index] != ';' &&
+           index + 1U < sizeof(extension)) {
+        extension[index] =
+            (char)toupper((unsigned char)dot[index]);
+        ++index;
+    }
+
+    extension[index] = '\0';
+
+    return strcmp(extension, "C") == 0 ||
+           strcmp(extension, "H") == 0 ||
+           strcmp(extension, "COM") == 0 ||
+           strcmp(extension, "OPT") == 0 ||
+           strcmp(extension, "MD") == 0 ||
+           strcmp(extension, "TXT") == 0;
+}
+
+static void grep_one_file(const char *path,
+                          const char *pattern,
+                          unsigned long *matches)
+{
+    FILE *file;
+    char buffer[READ_BUFFER_SIZE];
+    unsigned long line_number;
+
+    if (path == NULL ||
+        pattern == NULL ||
+        matches == NULL ||
+        *matches >= GREP_MAX_MATCHES) {
+        return;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return;
+    }
+
+    line_number = 1UL;
+
+    while (*matches < GREP_MAX_MATCHES &&
+           fgets(buffer, sizeof(buffer), file) != NULL) {
+        if (text_contains_ignore_case(buffer, pattern)) {
+            (void)printf("%s:%lu:%s",
+                         path,
+                         line_number,
+                         buffer);
+
+            if (strchr(buffer, '\n') == NULL) {
+                (void)putchar('\n');
+            }
+
+            ++*matches;
+        }
+
+        ++line_number;
+    }
+
+    (void)fclose(file);
+}
+
+static void project_grep_walk(const char *path,
+                              const char *pattern,
+                              unsigned int depth,
+                              unsigned long *matches)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    if (path == NULL ||
+        pattern == NULL ||
+        matches == NULL ||
+        depth > GREP_MAX_DEPTH ||
+        *matches >= GREP_MAX_MATCHES) {
+        return;
+    }
+
+    directory = opendir(path);
+    if (directory == NULL) {
+        return;
+    }
+
+    while (*matches < GREP_MAX_MATCHES &&
+           (entry = readdir(directory)) != NULL) {
+        char child_path[NORMALIZED_PATH_SIZE];
+        DIR *child_directory;
+
+        if (hide_default_entry(entry->d_name) ||
+            strncmp(entry->d_name, ".git", 4U) == 0 ||
+            strncmp(entry->d_name, "^.git", 5U) == 0 ||
+            strcmp(entry->d_name, "build") == 0 ||
+            strcmp(entry->d_name, "backup_modular") == 0 ||
+            strcmp(entry->d_name, "m150a_backup") == 0 ||
+            strcmp(entry->d_name, "m150a_stage") == 0) {
+            continue;
+        }
+
+        if (!tree_join_path(path,
+                            entry->d_name,
+                            child_path,
+                            sizeof(child_path))) {
+            continue;
+        }
+
+        child_directory = opendir(child_path);
+
+        if (child_directory != NULL) {
+            (void)closedir(child_directory);
+            project_grep_walk(child_path,
+                              pattern,
+                              depth + 1U,
+                              matches);
+        } else if (grep_file_type(entry->d_name)) {
+            grep_one_file(child_path, pattern, matches);
+        }
+    }
+
+    (void)closedir(directory);
+}
+
+void project_grep(const agent_state *state,
+                  const char *pattern)
+{
+    unsigned long matches;
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    if (pattern == NULL || *pattern == '\0') {
+        (void)puts("GREP text cannot be empty.");
+        return;
+    }
+
+    matches = 0UL;
+
+    project_grep_walk("SRC",
+                      pattern,
+                      0U,
+                      &matches);
+
+    if (matches < GREP_MAX_MATCHES) {
+        project_grep_walk("DOC",
+                          pattern,
+                          0U,
+                          &matches);
+    }
+
+    if (matches < GREP_MAX_MATCHES) {
+        project_grep_walk("TEST",
+                          pattern,
+                          0U,
+                          &matches);
+    }
+
+    if (matches >= GREP_MAX_MATCHES) {
+        (void)printf(
+            "%lu matches shown; result limit reached.\n",
+            matches
+        );
+    } else {
+        (void)printf("%lu match%s found.\n",
+                     matches,
+                     matches == 1UL ? "" : "es");
+    }
 }
 
 void project_show_root(const agent_state *state)

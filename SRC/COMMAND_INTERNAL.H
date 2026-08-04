@@ -39,6 +39,7 @@ void command_list(agent_state *state, const char *arguments);
 void command_tree(agent_state *state, const char *arguments);
 void command_read(agent_state *state, const char *arguments);
 void command_search(agent_state *state, const char *arguments);
+void command_grep(agent_state *state, const char *arguments);
 void command_edit(agent_state *state, const char *arguments);
 void command_patch(agent_state *state, const char *arguments);
 void command_build(agent_state *state, const char *arguments);
