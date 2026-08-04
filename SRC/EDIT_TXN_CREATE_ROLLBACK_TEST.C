@@ -1314,6 +1314,11 @@ static void cleanup_dup_failure_rollback(void)
             break;
         }
     }
+    for (;;) {
+        if (remove("TXN_DUP_FAIL_REUSE_ROLL.DAT") != 0) {
+            break;
+        }
+    }
 }
 
 static int test_dup_failure_rollback(void)
@@ -1424,6 +1429,29 @@ static int test_dup_failure_rollback(void)
 
     if (verify_one_line("TXN_DUP_FAIL_REUSE_TWO.DAT",
                         "SECOND REUSED ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction,
+                      "TXN_DUP_FAIL_REUSE_ROLL.DAT",
+                      "ROLLED BACK REUSE ENTRY\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_rollback(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    file = fopen("TXN_DUP_FAIL_REUSE_ROLL.DAT",
+                 "r",
+                 "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
         cleanup_dup_failure_rollback();
         return EXIT_FAILURE;
     }
