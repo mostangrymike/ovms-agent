@@ -21,7 +21,8 @@ void project_search(const agent_state *state,
 void project_tree(const agent_state *state,
                   const char *path);
 void project_grep(const agent_state *state,
-                  const char *pattern);
+                  const char *pattern,
+                  const char *path);
 int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,

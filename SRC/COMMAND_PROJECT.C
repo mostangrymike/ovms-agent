@@ -17,7 +17,7 @@ static const command_entry project_commands[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
-    { "GREP", "Search project files: GREP \"text\"", command_grep },
+    { "GREP", "Search project files: GREP \"text\" [path]", command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -89,10 +89,11 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
+    char *path;
     char *extra;
 
     if (arguments == NULL || *arguments == '\0') {
-        (void)puts("Usage: GREP \"text\"");
+        (void)puts("Usage: GREP \"text\" [path]");
         return;
     }
 
@@ -105,12 +106,13 @@ void command_grep(agent_state *state,
     cursor = work;
 
     pattern = command_next_argument(&cursor);
+    path = command_next_argument(&cursor);
     extra = command_next_argument(&cursor);
 
     if (pattern == NULL ||
         *pattern == '\0' ||
         extra != NULL) {
-        (void)puts("Usage: GREP \"text\"");
+        (void)puts("Usage: GREP \"text\" [path]");
         return;
     }
 
@@ -119,7 +121,7 @@ void command_grep(agent_state *state,
         return;
     }
 
-    project_grep(state, pattern);
+    project_grep(state, pattern, path);
 }
 
 void command_search(agent_state *state,

@@ -469,9 +469,13 @@ static void project_grep_walk(const char *path,
 }
 
 void project_grep(const agent_state *state,
-                  const char *pattern)
+                  const char *pattern,
+                  const char *path)
 {
     unsigned long matches;
+    char normalized[NORMALIZED_PATH_SIZE];
+    DIR *directory;
+    FILE *file;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -487,23 +491,68 @@ void project_grep(const agent_state *state,
 
     matches = 0UL;
 
-    project_grep_walk("SRC",
-                      pattern,
-                      0U,
-                      &matches);
-
-    if (matches < GREP_MAX_MATCHES) {
-        project_grep_walk("DOC",
+    if (path == NULL || *path == '\0') {
+        project_grep_walk("SRC",
                           pattern,
                           0U,
                           &matches);
-    }
 
-    if (matches < GREP_MAX_MATCHES) {
-        project_grep_walk("TEST",
+        if (matches < GREP_MAX_MATCHES) {
+            project_grep_walk("DOC",
+                              pattern,
+                              0U,
+                              &matches);
+        }
+
+        if (matches < GREP_MAX_MATCHES) {
+            project_grep_walk("TEST",
+                              pattern,
+                              0U,
+                              &matches);
+        }
+    } else {
+        if (!normalize_project_path(path,
+                                    normalized,
+                                    sizeof(normalized))) {
+            (void)puts(
+                "Unsafe or invalid project-relative path."
+            );
+            return;
+        }
+
+        directory = opendir(normalized);
+
+        if (directory != NULL) {
+            (void)closedir(directory);
+
+            project_grep_walk(normalized,
+                              pattern,
+                              0U,
+                              &matches);
+        } else {
+            file = fopen(normalized, "r");
+
+            if (file == NULL) {
+                (void)printf("Unable to search %s: %s\n",
+                             path,
+                             strerror(errno));
+                return;
+            }
+
+            (void)fclose(file);
+
+            if (!grep_file_type(normalized)) {
+                (void)printf(
+                    "Unsupported GREP file type: %s\n",
+                    path
+                );
+                return;
+            }
+
+            grep_one_file(normalized,
                           pattern,
-                          0U,
                           &matches);
+        }
     }
 
     if (matches >= GREP_MAX_MATCHES) {
@@ -517,7 +566,7 @@ void project_grep(const agent_state *state,
                      matches == 1UL ? "" : "es");
     }
 }
-
+                  
 void project_show_root(const agent_state *state)
 {
     if (state == NULL ||

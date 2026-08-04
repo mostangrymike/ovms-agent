@@ -30,6 +30,7 @@ static void cleanup_files(void)
     remove_all("M188_GREP_SKIP.C");
     remove_all("M188_GREP_BASIC.OUT");
     remove_all("M188_GREP_LIMIT.OUT");
+    remove_all("M189_GREP_PATH.OUT");
 }
 
 static int write_text(const char *path,
@@ -178,6 +179,49 @@ static int contains_ignore_case(const char *text,
     return 0;
 }
 
+static unsigned long count_ignore_case(const char *text,
+                                       const char *pattern)
+{
+    const unsigned char *position;
+    size_t pattern_length;
+    unsigned long count;
+
+    if (text == NULL ||
+        pattern == NULL ||
+        *pattern == '\0') {
+        return 0UL;
+    }
+
+    pattern_length = strlen(pattern);
+    count = 0UL;
+    position = (const unsigned char *)text;
+
+    while (*position != (unsigned char)'\0') {
+        const unsigned char *left;
+        const unsigned char *right;
+
+        left = position;
+        right = (const unsigned char *)pattern;
+
+        while (*left != (unsigned char)'\0' &&
+               *right != (unsigned char)'\0' &&
+               tolower((int)*left) ==
+                   tolower((int)*right)) {
+            ++left;
+            ++right;
+        }
+
+        if (*right == (unsigned char)'\0') {
+            ++count;
+            position += pattern_length;
+        } else {
+            ++position;
+        }
+    }
+
+    return count;
+}
+
 static unsigned long count_text(const char *text,
                                 const char *pattern)
 {
@@ -296,6 +340,58 @@ static int verify_limit(const char *output,
     return 1;
 }
 
+static int verify_targeted(const char *output,
+                           const char *pattern)
+{
+    if (output == NULL || pattern == NULL) {
+        return 0;
+    }
+
+    /*
+     * Directory search should find only the DOC fixture.
+     * The source fixture appears twice: once through a Unix-style
+     * path and once through an OpenVMS-style relative path.
+     */
+    if (count_ignore_case(
+            output,
+            "DOC/M188_GREP_B.MD:1:") != 1UL ||
+        count_ignore_case(
+            output,
+            "SRC/M188_GREP_A.C:2:") != 2UL) {
+        return 0;
+    }
+
+    if (contains_ignore_case(
+            output,
+            "TEST/M188_GREP_C.TXT")) {
+        return 0;
+    }
+
+    if (count_text(output,
+                   pattern) != 3UL) {
+        return 0;
+    }
+
+    if (count_text(output,
+                   "1 match found.") != 3UL) {
+        return 0;
+    }
+
+    if (!contains_ignore_case(
+            output,
+            "Unable to search M189_MISSING_PATH:")) {
+        return 0;
+    }
+
+    if (!contains_ignore_case(
+            output,
+            "Unsafe or invalid project-relative path.")) {
+        return 0;
+    }
+
+    return 1;
+}
+
 int main(void)
 {
     agent_state state;
@@ -303,6 +399,7 @@ int main(void)
     char limit_pattern[64];
     char *basic_output;
     char *limit_output;
+    char *path_output;
     int result;
 
     cleanup_files();
@@ -337,7 +434,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, basic_pattern);
+    project_grep(&state, basic_pattern, NULL);
     (void)fflush(stdout);
 
     if (freopen("M188_GREP_LIMIT.OUT",
@@ -349,20 +446,55 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, limit_pattern);
+    project_grep(&state, limit_pattern, NULL);
+    (void)fflush(stdout);
+
+    if (freopen("M189_GREP_PATH.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(stderr,
+                      "Unable to capture path GREP output.\n");
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 basic_pattern,
+                 "DOC");
+
+    project_grep(&state,
+                 basic_pattern,
+                 "SRC/M188_GREP_A.C");
+
+    project_grep(&state,
+                 basic_pattern,
+                 "[.SRC]M188_GREP_A.C");
+
+    project_grep(&state,
+                 basic_pattern,
+                 "M189_MISSING_PATH");
+
+    project_grep(&state,
+                 basic_pattern,
+                 "../SRC");
+
     (void)fflush(stdout);
     (void)fclose(stdout);
 
     basic_output = read_output("M188_GREP_BASIC.OUT");
     limit_output = read_output("M188_GREP_LIMIT.OUT");
+    path_output = read_output("M189_GREP_PATH.OUT");
 
     result = verify_basic(basic_output,
                           basic_pattern) &&
              verify_limit(limit_output,
-                          limit_pattern);
+                          limit_pattern) &&
+             verify_targeted(path_output,
+                             basic_pattern);
 
     free(basic_output);
     free(limit_output);
+    free(path_output);
     cleanup_files();
 
     if (!result) {
