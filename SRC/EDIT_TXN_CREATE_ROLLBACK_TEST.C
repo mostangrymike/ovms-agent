@@ -1535,6 +1535,53 @@ static int test_dup_failure_rollback(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_committed_state(void)
+{
+    for (;;) {
+        if (remove("TXN_COMMITTED_STATE.DAT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_committed_state(void)
+{
+    edit_txn transaction;
+
+    cleanup_committed_state();
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction,
+                      "TXN_COMMITTED_STATE.DAT",
+                      "COMMITTED STATE ENTRY\n") ||
+        !edit_txn_write(&transaction) ||
+        !edit_txn_commit(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_committed_state();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_rollback(&transaction) ||
+        edit_txn_commit(&transaction) ||
+        edit_txn_write(&transaction)) {
+        edit_txn_dispose(&transaction);
+        cleanup_committed_state();
+        return EXIT_FAILURE;
+    }
+
+    edit_txn_dispose(&transaction);
+
+    if (verify_one_line("TXN_COMMITTED_STATE.DAT",
+                        "COMMITTED STATE ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_committed_state();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_committed_state();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1681,6 +1728,11 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_committed_state() != EXIT_SUCCESS) {
+        (void)puts("Committed-state invariant test failed.");
         return EXIT_FAILURE;
     }
 
