@@ -1285,6 +1285,117 @@ static int test_existing_dup_recovery(void)
     return EXIT_SUCCESS;
 }
 
+static void cleanup_dup_failure_rollback(void)
+{
+    for (;;) {
+        if (remove("TXN_DUP_FAIL_EXIST.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_DUP_FAIL_NEW.DAT") != 0) {
+            break;
+        }
+    }
+
+    for (;;) {
+        if (remove("TXN_DUP_FAIL_LONG.OPT") != 0) {
+            break;
+        }
+    }
+}
+
+static int test_dup_failure_rollback(void)
+{
+    edit_txn transaction;
+    char original_spec[EDIT_TXN_PATH_SIZE];
+    char *long_text;
+    size_t long_len = 32768;
+    size_t i;
+    FILE *file;
+
+    cleanup_dup_failure_rollback();
+
+    if (create_existing_multi_seed(
+            "TXN_DUP_FAIL_EXIST.DAT",
+            "ORIGINAL FAILURE ENTRY\n",
+            original_spec) != EXIT_SUCCESS) {
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    long_text = malloc(long_len + 2);
+    if (long_text == NULL) {
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    for (i = 0; i < long_len; ++i) {
+        long_text[i] = 'X';
+    }
+
+    long_text[long_len] = '\n';
+    long_text[long_len + 1] = '\0';
+
+    edit_txn_init(&transaction);
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_FAIL_EXIST.DAT",
+                      "REPLACED FAILURE ENTRY\n")) {
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    if (edit_txn_add(&transaction, "[]txn_dup_fail_exist.dat",
+                     "REJECTED DUPLICATE\n")) {
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    if (!edit_txn_add(&transaction, "TXN_DUP_FAIL_NEW.DAT",
+                      "NEW FAILURE ENTRY\n") ||
+        !edit_txn_add(&transaction, "TXN_DUP_FAIL_LONG.OPT",
+                      long_text) ||
+        edit_txn_write(&transaction)) {
+        free(long_text);
+        edit_txn_dispose(&transaction);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    free(long_text);
+    edit_txn_dispose(&transaction);
+
+    if (verify_existing_multi_seed(
+            "TXN_DUP_FAIL_EXIST.DAT",
+            original_spec,
+            "ORIGINAL FAILURE ENTRY\n") != EXIT_SUCCESS) {
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_DUP_FAIL_NEW.DAT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    file = fopen("TXN_DUP_FAIL_LONG.OPT", "r", "ctx=stm");
+    if (file != NULL) {
+        (void)fclose(file);
+        cleanup_dup_failure_rollback();
+        return EXIT_FAILURE;
+    }
+
+    cleanup_dup_failure_rollback();
+    return EXIT_SUCCESS;
+}
+
 static void cleanup_add_limit_failure(void)
 {
     int i;
@@ -1431,6 +1542,11 @@ int main(void)
 
     if (test_existing_version() != EXIT_SUCCESS) {
         (void)puts("Existing version rollback test failed.");
+        return EXIT_FAILURE;
+    }
+
+    if (test_dup_failure_rollback() != EXIT_SUCCESS) {
+        (void)puts("Duplicate failure rollback test failed.");
         return EXIT_FAILURE;
     }
 
