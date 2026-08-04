@@ -17,7 +17,7 @@ static const command_entry project_commands[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
-    { "GREP","Search project files: GREP \"text\" [path] ""[/CONTEXT=n] [/LIMIT=n] [CASE=value",command_grep },
+    { "GREP","Search project files: GREP \"text\" [path] ""[/CONTEXT=n] [/LIMIT=n] [/CASE=value]",command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
