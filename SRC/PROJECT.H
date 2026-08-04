@@ -23,7 +23,8 @@ void project_tree(const agent_state *state,
 void project_grep(const agent_state *state,
                   const char *pattern,
                   const char *path,
-                  unsigned int context);
+                  unsigned int context,
+                  unsigned long match_limit);
 int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,

@@ -17,7 +17,7 @@ static const command_entry project_commands[] = {
     { "GITSTATUS", "Display Git status", command_gitstatus },
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
-    { "GREP","Search project files: GREP \"text\" [path] [/CONTEXT=n]",command_grep },
+    { "GREP","Search project files: GREP \"text\" [path] ""[/CONTEXT=n] [/LIMIT=n]",command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -89,17 +89,20 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *second;
-    char *third;
-    char *extra;
+    char *items[3];
     char *path;
-    char *qualifier;
     char *end;
     unsigned long context_value;
+    unsigned long limit_value;
+    unsigned int context_seen;
+    unsigned int limit_seen;
+    unsigned int item_count;
+    unsigned int index;
 
     if (arguments == NULL || *arguments == '\0') {
         (void)puts(
-            "Usage: GREP \"text\" [path] [/CONTEXT=n]"
+            "Usage: GREP \"text\" [path] "
+            "[/CONTEXT=n] [/LIMIT=n]"
         );
         return;
     }
@@ -113,71 +116,131 @@ void command_grep(agent_state *state,
     cursor = work;
 
     pattern = command_next_argument(&cursor);
-    second = command_next_argument(&cursor);
-    third = command_next_argument(&cursor);
-    extra = command_next_argument(&cursor);
+
+    item_count = 0U;
+
+    while (item_count < 3U) {
+        items[item_count] =
+            command_next_argument(&cursor);
+
+        if (items[item_count] == NULL) {
+            break;
+        }
+
+        ++item_count;
+    }
 
     if (pattern == NULL ||
         *pattern == '\0' ||
-        extra != NULL) {
+        command_next_argument(&cursor) != NULL) {
         (void)puts(
-            "Usage: GREP \"text\" [path] [/CONTEXT=n]"
+            "Usage: GREP \"text\" [path] "
+            "[/CONTEXT=n] [/LIMIT=n]"
         );
         return;
     }
 
-    path = second;
-    qualifier = third;
-
-    if (second != NULL && second[0] == '/') {
-        path = NULL;
-        qualifier = second;
-
-        if (third != NULL) {
-            (void)puts(
-                "Usage: GREP \"text\" [path] [/CONTEXT=n]"
-            );
-            return;
-        }
-    }
-
+    path = NULL;
     context_value = 0UL;
+    limit_value = 100UL;
+    context_seen = 0U;
+    limit_seen = 0U;
 
-    if (qualifier != NULL) {
-        util_uppercase(qualifier);
+    for (index = 0U; index < item_count; ++index) {
+        char *item;
 
-        if (strncmp(qualifier,
-                    "/CONTEXT=",
-                    9U) != 0) {
-            (void)puts(
-                "Only /CONTEXT=n is supported."
-            );
-            return;
+        item = items[index];
+
+        if (item[0] != '/') {
+            if (path != NULL ||
+                context_seen ||
+                limit_seen) {
+                (void)puts(
+                    "GREP path must precede qualifiers."
+                );
+                return;
+            }
+
+            path = item;
+            continue;
         }
 
-        context_value = strtoul(qualifier + 9,
-                               &end,
-                               10);
+        util_uppercase(item);
 
-        if (end == qualifier + 9 ||
-            *end != '\0' ||
-            context_value > 20UL) {
+        if (strncmp(item,
+                    "/CONTEXT=",
+                    9U) == 0) {
+            if (context_seen) {
+                (void)puts(
+                    "Duplicate /CONTEXT qualifier."
+                );
+                return;
+            }
+
+            context_value = strtoul(item + 9,
+                                   &end,
+                                   10);
+
+            if (end == item + 9 ||
+                *end != '\0' ||
+                context_value > 20UL) {
+                (void)puts(
+                    "Context must be an integer "
+                    "from 0 to 20."
+                );
+                return;
+            }
+
+            context_seen = 1U;
+        } else if (strncmp(item,
+                           "/LIMIT=",
+                           7U) == 0) {
+            if (limit_seen) {
+                (void)puts(
+                    "Duplicate /LIMIT qualifier."
+                );
+                return;
+            }
+
+            limit_value = strtoul(item + 7,
+                                 &end,
+                                 10);
+
+            if (end == item + 7 ||
+                *end != '\0' ||
+                limit_value == 0UL ||
+                limit_value > 100UL) {
+                (void)puts(
+                    "Limit must be an integer "
+                    "from 1 to 100."
+                );
+                return;
+            }
+
+            limit_seen = 1U;
+        } else {
             (void)puts(
-                "Context must be an integer from 0 to 20."
+                "Only /CONTEXT=n and /LIMIT=n "
+                "are supported."
             );
             return;
         }
     }
 
     if (!command_decode_escapes(pattern)) {
-        (void)puts("Invalid escape sequence in GREP text.");
+        (void)puts(
+            "Invalid escape sequence in GREP text."
+        );
         return;
     }
 
-    project_grep(state,
-                 pattern,
-                 path,
-                 (unsigned int)context_value);
+    project_grep(
+        state,
+        pattern,
+        path,
+        (unsigned int)context_value,
+        limit_value
+    );
 }
 
 void command_search(agent_state *state,

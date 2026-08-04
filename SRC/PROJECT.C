@@ -387,6 +387,7 @@ static void grep_print_line(const char *path,
 static void grep_one_file(const char *path,
                           const char *pattern,
                           unsigned int context,
+                          unsigned long match_limit,
                           unsigned long *matches)
 {
     FILE *file;
@@ -405,7 +406,9 @@ static void grep_one_file(const char *path,
         pattern == NULL ||
         matches == NULL ||
         context > GREP_CONTEXT_MAX ||
-        *matches >= GREP_MAX_MATCHES) {
+        match_limit == 0UL ||
+        match_limit > GREP_MAX_MATCHES ||
+        *matches >= match_limit) {
         return;
     }
 
@@ -420,7 +423,7 @@ static void grep_one_file(const char *path,
     line_number = 1UL;
     last_printed = 0UL;
 
-    while (*matches < GREP_MAX_MATCHES &&
+    while (*matches < match_limit &&   
            fgets(buffer, sizeof(buffer), file) != NULL) {
         int is_match;
 
@@ -496,6 +499,7 @@ static void project_grep_walk(const char *path,
                               const char *pattern,
                               unsigned int depth,
                               unsigned int context,
+                              unsigned long match_limit,
                               unsigned long *matches)
 {
     DIR *directory;
@@ -505,8 +509,10 @@ static void project_grep_walk(const char *path,
         pattern == NULL ||
         matches == NULL ||
         context > GREP_CONTEXT_MAX ||
+        match_limit == 0UL ||
+        match_limit > GREP_MAX_MATCHES ||
         depth > GREP_MAX_DEPTH ||
-        *matches >= GREP_MAX_MATCHES) {
+        *matches >= match_limit) {
         return;
     }
 
@@ -515,7 +521,7 @@ static void project_grep_walk(const char *path,
         return;
     }
 
-    while (*matches < GREP_MAX_MATCHES &&
+    while (*matches < match_limit &&
            (entry = readdir(directory)) != NULL) {
         char child_path[NORMALIZED_PATH_SIZE];
         DIR *child_directory;
@@ -545,12 +551,14 @@ static void project_grep_walk(const char *path,
                               pattern,
                               depth + 1U,
                               context,
-                              matches);
+                              match_limit,
+                              matches);            
         } else if (grep_file_type(entry->d_name)) {
             grep_one_file(child_path,
                           pattern,
                           context,
-                          matches); 
+                          match_limit,
+                          matches);
         }
     }
 
@@ -560,7 +568,8 @@ static void project_grep_walk(const char *path,
 void project_grep(const agent_state *state,
                   const char *pattern,
                   const char *path,
-                  unsigned int context)
+                  unsigned int context,
+                  unsigned long match_limit)
 {
     unsigned long matches;
     char normalized[NORMALIZED_PATH_SIZE];
@@ -570,12 +579,29 @@ void project_grep(const agent_state *state,
     if (state == NULL ||
         state->project_root == NULL ||
         *state->project_root == '\0') {
-        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        (void)puts(
+            "OVMS_AGENT_ROOT is not defined."
+        );
         return;
     }
 
     if (pattern == NULL || *pattern == '\0') {
         (void)puts("GREP text cannot be empty.");
+        return;
+    }
+
+    if (context > GREP_CONTEXT_MAX) {
+        (void)puts(
+            "GREP context is out of range."
+        );
+        return;
+    }
+
+    if (match_limit == 0UL ||
+        match_limit > GREP_MAX_MATCHES) {
+        (void)puts(
+            "GREP match limit is out of range."
+        );
         return;
     }
 
@@ -586,33 +612,34 @@ void project_grep(const agent_state *state,
                           pattern,
                           0U,
                           context,
+                          match_limit,
                           &matches);
 
-        if (context > GREP_CONTEXT_MAX) {
-        (void)puts("GREP context is out of range.");
-        return;
-    }
-        if (matches < GREP_MAX_MATCHES) {
+        if (matches < match_limit) {
             project_grep_walk("DOC",
                               pattern,
                               0U,
                               context,
+                              match_limit,
                               &matches);
         }
 
-        if (matches < GREP_MAX_MATCHES) {
+        if (matches < match_limit) {
             project_grep_walk("TEST",
                               pattern,
                               0U,
                               context,
+                              match_limit,
                               &matches);
         }
     } else {
-        if (!normalize_project_path(path,
-                                    normalized,
-                                    sizeof(normalized))) {
+        if (!normalize_project_path(
+                path,
+                normalized,
+                sizeof(normalized))) {
             (void)puts(
-                "Unsafe or invalid project-relative path."
+                "Unsafe or invalid "
+                "project-relative path."
             );
             return;
         }
@@ -626,14 +653,17 @@ void project_grep(const agent_state *state,
                               pattern,
                               0U,
                               context,
+                              match_limit,
                               &matches);
         } else {
             file = fopen(normalized, "r");
 
             if (file == NULL) {
-                (void)printf("Unable to search %s: %s\n",
-                             path,
-                             strerror(errno));
+                (void)printf(
+                    "Unable to search %s: %s\n",
+                    path,
+                    strerror(errno)
+                );
                 return;
             }
 
@@ -650,19 +680,24 @@ void project_grep(const agent_state *state,
             grep_one_file(normalized,
                           pattern,
                           context,
+                          match_limit,
                           &matches);
         }
     }
 
-    if (matches >= GREP_MAX_MATCHES) {
+    if (matches >= match_limit) {
         (void)printf(
-            "%lu matches shown; result limit reached.\n",
-            matches
+            "%lu match%s shown; "
+            "result limit reached.\n",
+            matches,
+            matches == 1UL ? "" : "es"
         );
     } else {
-        (void)printf("%lu match%s found.\n",
-                     matches,
-                     matches == 1UL ? "" : "es");
+        (void)printf(
+            "%lu match%s found.\n",
+            matches,
+            matches == 1UL ? "" : "es"
+        );
     }
 }
                   
