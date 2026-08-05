@@ -738,7 +738,7 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  2U, 100UL, 0);
-     (void)fflush(stdout);    
+    (void)fflush(stdout);
     if (freopen("M194_GREP_SENSITIVE.OUT",
                 "w",
                 stdout) == NULL) {
@@ -756,7 +756,7 @@ int main(void)
                  0U,
                  100UL,
                  1);
-     (void)fflush(stdout);
+    (void)fflush(stdout);
 
     if (freopen("M194_GREP_INSENSITIVE.OUT",
                 "w",
