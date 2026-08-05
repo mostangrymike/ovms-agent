@@ -35,6 +35,9 @@ static void cleanup_files(void)
     remove_all("M190_GREP_CONTEXT.OUT");
     remove_all("M190_GREP_ZERO.OUT");
     remove_all("M190_GREP_MAX.OUT");
+    remove_all("TEST/M194_GREP_CASE.TXT");
+    remove_all("M194_GREP_SENSITIVE.OUT");
+    remove_all("M194_GREP_INSENSITIVE.OUT");
 }
 
 static int write_text(const char *path,
@@ -149,6 +152,17 @@ static int write_context_file(const char *path,
     }
 
     return 1;
+}
+
+static int write_case_file(const char *path)
+{
+    return write_text(
+        path,
+        "CaseMarker exact case\n"
+        "casemarker lowercase\n"
+        "CASEMARKER uppercase\n"
+        "unrelated line\n"
+    );
 }
 
 static char *read_output(const char *path)
@@ -558,6 +572,54 @@ static int verify_max_context(const char *output,
     return 1;
 }
 
+static int verify_case_matching(
+    const char *sensitive_output,
+    const char *insensitive_output)
+{
+    if (sensitive_output == NULL ||
+        insensitive_output == NULL) {
+        return 0;
+    }
+
+    /*
+     * Sensitive search must match only the exact-case line.
+     */
+    if (count_text(sensitive_output,
+                   "CaseMarker") != 1UL ||
+        strstr(sensitive_output,
+               "casemarker lowercase") != NULL ||
+        strstr(sensitive_output,
+               "CASEMARKER uppercase") != NULL ||
+        !contains_ignore_case(
+            sensitive_output,
+            "1 match found.")) {
+        return 0;
+    }
+
+    /*
+     * Insensitive search must match all three case variants.
+     */
+    if (count_ignore_case(
+            insensitive_output,
+            "casemarker") != 3UL ||
+        !contains_ignore_case(
+            insensitive_output,
+            "M194_GREP_CASE.TXT:1:") ||
+        !contains_ignore_case(
+            insensitive_output,
+            "M194_GREP_CASE.TXT:2:") ||
+        !contains_ignore_case(
+            insensitive_output,
+            "M194_GREP_CASE.TXT:3:") ||
+        !contains_ignore_case(
+            insensitive_output,
+            "3 matches found.")) {
+        return 0;
+    }
+
+    return 1;
+}
+
 int main(void)
 {
     agent_state state;
@@ -569,6 +631,8 @@ int main(void)
     char *context_output;
     char *zero_output;
     char *max_output;
+    char *sensitive_output;
+    char *insensitive_output;
     int result;
 
     cleanup_files();
@@ -581,7 +645,8 @@ int main(void)
 
     if (!prepare_basic(basic_pattern) ||
         !write_limit_file("TEST/M188_GREP_LIMIT.TXT",
-                          limit_pattern)) {
+                          limit_pattern) ||
+        !write_case_file("TEST/M194_GREP_CASE.TXT")) {
         cleanup_files();
         (void)fprintf(stderr,
                       "GREP test fixture creation failed.\n");
@@ -673,7 +738,44 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  2U, 100UL, 0);
+        if (freopen("M194_GREP_SENSITIVE.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(
+            stderr,
+            "Unable to capture case-sensitive output.\n"
+        );
+        return EXIT_FAILURE;
+    }
 
+    project_grep(&state,
+                 "CaseMarker",
+                 "TEST/M194_GREP_CASE.TXT",
+                 0U,
+                 100UL,
+                 1);
+
+    if (freopen("M194_GREP_INSENSITIVE.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(
+            stderr,
+            "Unable to capture case-insensitive output.\n"
+        );
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 "CaseMarker",
+                 "TEST/M194_GREP_CASE.TXT",
+                 0U,
+                 100UL,
+                 0);
+
+    (void)fflush(stdout);
+    (void)fflush(stdout);
     (void)fflush(stdout);
 
     if (freopen("M190_GREP_ZERO.OUT",
@@ -715,6 +817,10 @@ int main(void)
     context_output = read_output("M190_GREP_CONTEXT.OUT");
     zero_output = read_output("M190_GREP_ZERO.OUT");
     max_output = read_output("M190_GREP_MAX.OUT");
+    sensitive_output =
+        read_output("M194_GREP_SENSITIVE.OUT");
+    insensitive_output =
+        read_output("M194_GREP_INSENSITIVE.OUT");
 
     result = verify_basic(basic_output,
                           basic_pattern) &&
@@ -726,15 +832,20 @@ int main(void)
                             basic_pattern) &&
              verify_zero_context(zero_output,
                                  basic_pattern) &&
-             verify_max_context(max_output,
-                                basic_pattern);
-
+               verify_max_context(max_output,
+                                  basic_pattern) &&
+               verify_case_matching(
+                   sensitive_output,
+                   insensitive_output
+               );
     free(basic_output);
     free(limit_output);
     free(path_output);
     free(context_output);
     free(zero_output);
     free(max_output);
+    free(sensitive_output);
+    free(insensitive_output);
     cleanup_files();
 
     if (!result) {
