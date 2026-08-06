@@ -331,6 +331,65 @@ static int text_contains_ignore_case(const char *text,
     return 0;
 }
 
+static int grep_name_matches(const char *name,
+                             const char *pattern)
+{
+    unsigned char name_ch;
+    unsigned char pattern_ch;
+
+    if (name == NULL) {
+        return 0;
+    }
+
+    if (pattern == NULL || *pattern == '\0') {
+        return 1;
+    }
+
+    while (*pattern != '\0') {
+        if (*pattern == '*') {
+            while (*pattern == '*') {
+                ++pattern;
+            }
+
+            if (*pattern == '\0') {
+                return 1;
+            }
+
+            while (*name != '\0' &&
+                   *name != ';') {
+                if (grep_name_matches(name, pattern)) {
+                    return 1;
+                }
+                ++name;
+            }
+
+            return 0;
+        }
+
+        if (*name == '\0' || *name == ';') {
+            return 0;
+        }
+
+        if (*pattern != '%') {
+            name_ch = (unsigned char)toupper(
+                (unsigned char)*name
+            );
+            pattern_ch = (unsigned char)toupper(
+                (unsigned char)*pattern
+            );
+
+            if (name_ch != pattern_ch) {
+                return 0;
+            }
+        }
+
+        ++name;
+        ++pattern;
+    }
+
+    return *name == '\0' || *name == ';';
+}
+
 static int grep_file_type(const char *name)
 {
     const char *dot;
@@ -528,6 +587,7 @@ static void project_grep_walk(const char *path,
                               int case_sensitive,
                               int count_only,
                               int files_only,
+                              const char *name_pattern,
                               unsigned long *matches,
                               unsigned long *files)
 {
@@ -589,9 +649,12 @@ static void project_grep_walk(const char *path,
                               case_sensitive,
                               count_only,
                               files_only,
+                              name_pattern,
                               matches,
                               files);
-        } else if (grep_file_type(entry->d_name)) {
+        } else if (grep_file_type(entry->d_name) &&
+                   grep_name_matches(entry->d_name,
+                                     name_pattern)) {
             if (grep_one_file(child_path,
                               pattern,
                               context,
@@ -616,7 +679,8 @@ void project_grep(const agent_state *state,
                   unsigned long match_limit,
                   int case_sensitive,
                   int count_only,
-                  int files_only)
+                  int files_only,
+                  const char *name_pattern)
 {
     unsigned long matches;
     unsigned long files;
@@ -681,6 +745,7 @@ void project_grep(const agent_state *state,
                           case_sensitive,
                           count_only,
                           files_only,
+                          name_pattern,
                           &matches,
                           &files);
 
@@ -695,6 +760,7 @@ void project_grep(const agent_state *state,
                               case_sensitive,
                               count_only,
                               files_only,
+                              name_pattern,
                               &matches,
                               &files);
         }
@@ -710,6 +776,7 @@ void project_grep(const agent_state *state,
                               case_sensitive,
                               count_only,
                               files_only,
+                              name_pattern,
                               &matches,
                               &files);
         }
@@ -738,6 +805,7 @@ void project_grep(const agent_state *state,
                               case_sensitive,
                               count_only,
                               files_only,
+                              name_pattern,
                               &matches,
                               &files);
         } else {
@@ -760,6 +828,25 @@ void project_grep(const agent_state *state,
                     path
                 );
                 return;
+            }
+
+            {
+                const char *file_name;
+
+                file_name = strrchr(normalized, '/');
+                file_name = file_name == NULL
+                    ? normalized
+                    : file_name + 1;
+
+                if (!grep_name_matches(file_name,
+                                       name_pattern)) {
+                    if (files_only) {
+                        (void)puts("0 matching files found.");
+                    } else {
+                        (void)puts("0 matches found.");
+                    }
+                    return;
+                }
             }
 
             if (grep_one_file(normalized,
