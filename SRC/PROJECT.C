@@ -589,6 +589,7 @@ static void project_grep_walk(const char *path,
                               int files_only,
                               const char *name_pattern,
                               const char *exclude_pattern,
+                              unsigned int max_depth,
                               unsigned long *matches,
                               unsigned long *files)
 {
@@ -602,7 +603,8 @@ static void project_grep_walk(const char *path,
         context > GREP_CONTEXT_MAX ||
         match_limit == 0UL ||
         match_limit > GREP_MAX_MATCHES ||
-        depth > GREP_MAX_DEPTH ||
+        max_depth > GREP_MAX_DEPTH ||
+        depth > max_depth ||
         (files_only
             ? *files >= match_limit
             : *matches >= match_limit)) {
@@ -642,18 +644,22 @@ static void project_grep_walk(const char *path,
 
         if (child_directory != NULL) {
             (void)closedir(child_directory);
-            project_grep_walk(child_path,
-                              pattern,
-                              depth + 1U,
-                              context,
-                              match_limit,
-                              case_sensitive,
-                              count_only,
-                              files_only,
-                              name_pattern,
-                              exclude_pattern,
-                              matches,
-                              files);
+
+            if (depth < max_depth) {
+                project_grep_walk(child_path,
+                                  pattern,
+                                  depth + 1U,
+                                  context,
+                                  match_limit,
+                                  case_sensitive,
+                                  count_only,
+                                  files_only,
+                                  name_pattern,
+                                  exclude_pattern,
+                                  max_depth,
+                                  matches,
+                                  files);
+            }
         } else if (grep_file_type(entry->d_name) &&
                    grep_name_matches(entry->d_name,
                                      name_pattern) &&
@@ -686,7 +692,8 @@ void project_grep(const agent_state *state,
                   int count_only,
                   int files_only,
                   const char *name_pattern,
-                  const char *exclude_pattern)
+                  const char *exclude_pattern,
+                  unsigned int max_depth)
 {
     unsigned long matches;
     unsigned long files;
@@ -711,6 +718,13 @@ void project_grep(const agent_state *state,
     if (context > GREP_CONTEXT_MAX) {
         (void)puts(
             "GREP context is out of range."
+        );
+        return;
+    }
+
+    if (max_depth > GREP_MAX_DEPTH) {
+        (void)puts(
+            "GREP depth is out of range."
         );
         return;
     }
@@ -753,6 +767,7 @@ void project_grep(const agent_state *state,
                           files_only,
                           name_pattern,
                           exclude_pattern,
+                          max_depth,
                           &matches,
                           &files);
 
@@ -769,6 +784,7 @@ void project_grep(const agent_state *state,
                               files_only,
                               name_pattern,
                               exclude_pattern,
+                              max_depth,
                               &matches,
                               &files);
         }
@@ -786,6 +802,7 @@ void project_grep(const agent_state *state,
                               files_only,
                               name_pattern,
                               exclude_pattern,
+                              max_depth,
                               &matches,
                               &files);
         }
@@ -816,6 +833,7 @@ void project_grep(const agent_state *state,
                               files_only,
                               name_pattern,
                               exclude_pattern,
+                              max_depth,
                               &matches,
                               &files);
         } else {

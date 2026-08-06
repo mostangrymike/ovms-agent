@@ -18,7 +18,7 @@ static const command_entry project_commands[] = {
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
     { "GREP", "Search project files: GREP \"text\" [path] [/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern]", command_grep },
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]", command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -90,13 +90,14 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *items[8];
+    char *items[9];
     char *path;
     char *name_pattern;
     char *exclude_pattern;
     char *end;
     unsigned long context_value;
     unsigned long limit_value;
+    unsigned long depth_value;
     unsigned int context_seen;
     unsigned int limit_seen;
     unsigned int case_seen;
@@ -104,6 +105,7 @@ void command_grep(agent_state *state,
     unsigned int files_seen;
     unsigned int name_seen;
     unsigned int exclude_seen;
+    unsigned int depth_seen;
     unsigned int item_count;
     unsigned int index;
     int case_sensitive;
@@ -114,7 +116,7 @@ void command_grep(agent_state *state,
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern]"
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]"
         );
         return;
     }
@@ -130,7 +132,7 @@ void command_grep(agent_state *state,
     pattern = command_next_argument(&cursor);
     item_count = 0U;
 
-    while (item_count < 8U) {
+    while (item_count < 9U) {
         items[item_count] =
             command_next_argument(&cursor);
 
@@ -147,7 +149,7 @@ void command_grep(agent_state *state,
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern]"
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]"
         );
         return;
     }
@@ -157,6 +159,7 @@ void command_grep(agent_state *state,
     exclude_pattern = NULL;
     context_value = 0UL;
     limit_value = 100UL;
+    depth_value = 16UL;
     case_sensitive = 0;
     count_only = 0;
     files_only = 0;
@@ -167,6 +170,7 @@ void command_grep(agent_state *state,
     files_seen = 0U;
     name_seen = 0U;
     exclude_seen = 0U;
+    depth_seen = 0U;
 
     for (index = 0U; index < item_count; ++index) {
         char *item;
@@ -181,7 +185,8 @@ void command_grep(agent_state *state,
                 count_seen ||
                 files_seen ||
                 name_seen ||
-                exclude_seen) {
+                exclude_seen ||
+                depth_seen) {
                 (void)puts(
                     "GREP path must precede qualifiers."
                 );
@@ -352,11 +357,41 @@ void command_grep(agent_state *state,
                 "/EXCLUDE requires a wildcard pattern."
             );
             return;
+        } else if (strncmp(item,
+                           "/DEPTH=",
+                           7U) == 0) {
+            if (depth_seen) {
+                (void)puts(
+                    "Duplicate /DEPTH qualifier."
+                );
+                return;
+            }
+
+            depth_value = strtoul(item + 7,
+                                 &end,
+                                 10);
+
+            if (end == item + 7 ||
+                *end != '\0' ||
+                depth_value > 16UL) {
+                (void)puts(
+                    "Depth must be an integer "
+                    "from 0 to 16."
+                );
+                return;
+            }
+
+            depth_seen = 1U;
+        } else if (strcmp(item, "/DEPTH") == 0) {
+            (void)puts(
+                "/DEPTH requires an integer value."
+            );
+            return;
         } else {
             (void)puts(
                 "Only /CONTEXT=n, /LIMIT=n, /CASE=value, "
-                "/COUNT, /FILES, /NAME=pattern, and "
-                "/EXCLUDE=pattern are supported."
+                "/COUNT, /FILES, /NAME=pattern, "
+                "/EXCLUDE=pattern, and /DEPTH=n are supported."
             );
             return;
         }
@@ -400,7 +435,8 @@ void command_grep(agent_state *state,
         count_only,
         files_only,
         name_pattern,
-        exclude_pattern
+        exclude_pattern,
+        (unsigned int)depth_value
     );
 }
 

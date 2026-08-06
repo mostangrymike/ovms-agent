@@ -29,7 +29,8 @@ void project_grep(const agent_state *state,
                   int count_only,
                   int files_only,
                   const char *name_pattern,
-                  const char *exclude_pattern);
+                  const char *exclude_pattern,
+                  unsigned int max_depth);
 int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,
