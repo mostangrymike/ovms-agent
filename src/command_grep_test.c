@@ -318,6 +318,16 @@ void project_grep(const agent_state *state,
 }
 
 /*
+ * Link-only stub required by COMMAND.OBJ for AGENT/REPAIR.
+ */
+void openai_agent_repair(agent_state *state,
+                         const char *goal)
+{
+    (void)state;
+    (void)goal;
+}
+
+/*
  * Link-only stubs required by COMMAND_PROJECT.OBJ.
  */
 const command_entry *command_find(const char *name)

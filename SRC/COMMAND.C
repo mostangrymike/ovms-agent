@@ -10,6 +10,9 @@
 
 
 
+void openai_agent_repair(agent_state *state,
+                         const char *goal);
+
 static edit_txn command_changeset_transaction;
 static int command_changeset_active = 0;
 
@@ -503,6 +506,13 @@ void command_prompt(void)
 
 
 
+void command_agent_repair(agent_state *state,
+                          const char *arguments)
+{
+    openai_agent_repair(state, arguments);
+}
+
+
 void command_execute(agent_state *state, char *input)
 {
     const command_entry *entry;
@@ -540,6 +550,11 @@ void command_execute(agent_state *state, char *input)
 
     if (strcmp(command, "RUN") == 0) {
         command_run(state, arguments);
+        return;
+    }
+
+    if (strcmp(command, "AGENT/REPAIR") == 0) {
+        command_agent_repair(state, arguments);
         return;
     }
 
