@@ -99,6 +99,7 @@ static void reset_recording(void)
     recorded_context = 0U;
     recorded_limit = 0UL;
     recorded_case_sensitive = 0;
+    recorded_count_only = 0;
 }
 
 static int run_command(agent_state *state,

@@ -621,6 +621,15 @@ static int verify_case_matching(
     return 1;
 }
 
+static int verify_count_output(const char *output)
+{
+    return output != NULL &&
+           strstr(output, "2 matches found.") != NULL &&
+           strstr(output, "TEST/M190_GREP_CONTEXT.TXT:") == NULL &&
+           strstr(output, "first match") == NULL &&
+           strstr(output, "second match") == NULL;
+}
+
 int main(void)
 {
     agent_state state;
@@ -858,7 +867,9 @@ int main(void)
                verify_case_matching(
                    sensitive_output,
                    insensitive_output
-               );
+               ) &&
+               verify_count_output(count_output);
+
     free(basic_output);
     free(limit_output);
     free(path_output);
