@@ -1,4 +1,5 @@
 #include "openai_internal.h"
+#include "openai_execute.h"
 
 const char *openai_workflow_name(int workflow)
 {

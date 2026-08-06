@@ -23,6 +23,105 @@ typedef struct openai_saved_operation {
     int is_create;
 } openai_saved_operation;
 
+static int execute_operation_marker(
+    const char *line,
+    size_t line_length,
+    const char *marker)
+{
+    size_t marker_length;
+
+    if (line == NULL || marker == NULL) {
+        return 0;
+    }
+
+    while (line_length > 0U &&
+           (line[line_length - 1U] == '\n' ||
+            line[line_length - 1U] == '\r')) {
+        --line_length;
+    }
+
+    marker_length = strlen(marker);
+
+    return line_length == marker_length &&
+           memcmp(line, marker, marker_length) == 0;
+}
+
+int openai_execute_count_ops(
+    const char *plan_text,
+    unsigned int *operation_count_out)
+{
+    const char *line_start;
+    const char *cursor;
+    unsigned int operation_count;
+    int in_operation;
+
+    if (plan_text == NULL ||
+        operation_count_out == NULL) {
+        return 0;
+    }
+
+    line_start = plan_text;
+    cursor = plan_text;
+    operation_count = 0U;
+    in_operation = 0;
+
+    for (;;) {
+        if (*cursor == '\n' || *cursor == '\0') {
+            size_t line_length;
+
+            line_length =
+                (size_t)(cursor - line_start);
+
+            if (*cursor == '\n') {
+                ++line_length;
+            }
+
+            if (execute_operation_marker(
+                    line_start,
+                    line_length,
+                    "BEGIN_OPERATION")) {
+                if (in_operation) {
+                    return 0;
+                }
+
+                in_operation = 1;
+            } else if (execute_operation_marker(
+                           line_start,
+                           line_length,
+                           "END_OPERATION")) {
+                if (!in_operation) {
+                    return 0;
+                }
+
+                ++operation_count;
+
+                if (operation_count >
+                    OPENAI_EXECUTE_MAX_OPERATIONS) {
+                    return 0;
+                }
+
+                in_operation = 0;
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    if (in_operation) {
+        return 0;
+    }
+
+    *operation_count_out = operation_count;
+    return 1;
+}
+
 #include "openai_execute_read_text_block.inc"
 static int execute_copy_value(char *destination,
                               size_t destination_size,

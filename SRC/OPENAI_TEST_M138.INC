@@ -86,3 +86,106 @@
         &failed_count
     );
 }
+{
+    int ok;
+
+    ok = openai_m195_normalize_one();
+
+    openai_selftest_report(
+        "M195 incorrect count normalized",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_normalize_two();
+
+    openai_selftest_report(
+        "M195 two operations counted",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_normalize_correct();
+
+    openai_selftest_report(
+        "M195 correct count preserved",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_norm_inspect();
+
+    openai_selftest_report(
+        "M195 inspection plan preserved",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_reject_missing();
+
+    openai_selftest_report(
+        "M195 missing count rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_reject_duplicate();
+
+    openai_selftest_report(
+        "M195 duplicate count rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_reject_markers();
+
+    openai_selftest_report(
+        "M195 invalid markers rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m195_failure_preserves();
+
+    openai_selftest_report(
+        "M195 rejection preserves saved plan",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}

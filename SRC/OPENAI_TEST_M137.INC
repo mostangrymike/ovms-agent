@@ -12,12 +12,18 @@
         fresh,
         backup);
 
-    while (remove(plan) == 0) {
-    }
-    while (remove(fresh) == 0) {
-    }
-    while (remove(backup) == 0) {
-    }
+while (remove(plan) == 0) {
+}
+while (remove(fresh) == 0) {
+}
+while (remove(backup) == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_PLAN.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_NEW.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
+}
 
     openai_selftest_report(
         "successful consumption cleans temporary files",
@@ -41,12 +47,18 @@
         fresh,
         backup);
 
-    while (remove(plan) == 0) {
-    }
-    while (remove(fresh) == 0) {
-    }
-    while (remove(backup) == 0) {
-    }
+while (remove(plan) == 0) {
+}
+while (remove(fresh) == 0) {
+}
+while (remove(backup) == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_PLAN.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_NEW.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
+}
 
     openai_selftest_report(
         "failed consumption restores approved plan",
@@ -63,8 +75,10 @@
 
     ok = openai_m137_consumed_rejected(plan);
 
-    while (remove(plan) == 0) {
-    }
+while (remove(plan) == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_CONSUMED.TMP.CHK") == 0) {
+}
 
     openai_selftest_report(
         "consumed plan cannot execute again",
@@ -88,12 +102,18 @@
         fresh,
         backup);
 
-    while (remove(plan) == 0) {
-    }
-    while (remove(fresh) == 0) {
-    }
-    while (remove(backup) == 0) {
-    }
+while (remove(plan) == 0) {
+}
+while (remove(fresh) == 0) {
+}
+while (remove(backup) == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_RECOVER.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_RECOVER_NEW.TMP.CHK") == 0) {
+}
+while (remove("OVMS_AGENT_TEST_M137_RECOVER_OLD.TMP.CHK") == 0) {
+}
 
     openai_selftest_report(
         "stale-plan checks ignore recovery artifacts",

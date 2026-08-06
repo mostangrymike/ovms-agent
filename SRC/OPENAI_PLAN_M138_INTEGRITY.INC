@@ -284,6 +284,173 @@ static int openai_plan_restore_old(void)
     return 1;
 }
 
+static char *openai_m195_normalize_count(
+    const char *plan_text)
+{
+    static const char prefix[] =
+        "operation_count=";
+    const char *cursor;
+    const char *line_start;
+    const char *count_start;
+    const char *count_end;
+    unsigned int actual_count;
+    unsigned int count_lines;
+    size_t prefix_length;
+    size_t original_length;
+    size_t old_length;
+    size_t replacement_length;
+    size_t new_length;
+    size_t before_length;
+    char replacement[64];
+    char *normalized;
+    int replacement_count;
+
+    if (plan_text == NULL) {
+        return NULL;
+    }
+
+    if (!openai_execute_count_ops(
+            plan_text,
+            &actual_count)) {
+        (void)puts(
+            "Implementation plan was not saved because "
+            "its operation-block markers are invalid.");
+        return NULL;
+    }
+
+    prefix_length = strlen(prefix);
+    count_lines = 0U;
+    count_start = NULL;
+    count_end = NULL;
+    line_start = plan_text;
+    cursor = plan_text;
+
+    for (;;) {
+        if (*cursor == '\n' ||
+            *cursor == '\0') {
+            const char *content_end;
+            size_t content_length;
+
+            content_end = cursor;
+
+            if (content_end > line_start &&
+                content_end[-1] == '\r') {
+                --content_end;
+            }
+
+            content_length =
+                (size_t)(content_end - line_start);
+
+            if (content_length >= prefix_length &&
+                memcmp(
+                    line_start,
+                    prefix,
+                    prefix_length) == 0) {
+                ++count_lines;
+
+                if (count_lines == 1U) {
+                    count_start = line_start;
+                    count_end = content_end;
+                }
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    if (count_lines > 1U) {
+        (void)puts(
+            "Implementation plan was not saved because "
+            "it contains multiple operation_count lines.");
+        return NULL;
+    }
+
+    if (actual_count > 0U &&
+        count_lines == 0U) {
+        (void)puts(
+            "Implementation plan was not saved because "
+            "executable operations require operation_count.");
+        return NULL;
+    }
+
+    original_length = strlen(plan_text);
+
+    if (count_lines == 0U) {
+        normalized =
+            (char *)malloc(original_length + 1U);
+
+        if (normalized == NULL) {
+            return NULL;
+        }
+
+        (void)memcpy(
+            normalized,
+            plan_text,
+            original_length + 1U);
+
+        return normalized;
+    }
+
+    replacement_count = snprintf(
+        replacement,
+        sizeof(replacement),
+        "operation_count=%u",
+        actual_count);
+
+    if (replacement_count <= 0 ||
+        (size_t)replacement_count >=
+            sizeof(replacement)) {
+        return NULL;
+    }
+
+    replacement_length =
+        (size_t)replacement_count;
+    old_length =
+        (size_t)(count_end - count_start);
+    new_length =
+        original_length -
+        old_length +
+        replacement_length;
+
+    normalized =
+        (char *)malloc(new_length + 1U);
+
+    if (normalized == NULL) {
+        return NULL;
+    }
+
+    before_length =
+        (size_t)(count_start - plan_text);
+
+    (void)memcpy(
+        normalized,
+        plan_text,
+        before_length);
+
+    (void)memcpy(
+        normalized + before_length,
+        replacement,
+        replacement_length);
+
+    (void)memcpy(
+        normalized +
+            before_length +
+            replacement_length,
+        count_end,
+        original_length -
+            (size_t)(count_end - plan_text) +
+            1U);
+
+    return normalized;
+}
+
 int openai_plan_save(
     const char *goal,
     const char *plan_text)
@@ -291,9 +458,17 @@ int openai_plan_save(
     const char *old_plan = "OVMS_AGENT_PLAN_SAVE_OLD.TXT";
     const char *old_check = "OVMS_AGENT_PLAN_SAVE_OLD.CHK";
     const char *check_path = "OVMS_AGENT_PLAN.TXT.CHK";
+    char *normalized_plan;    
     int had_plan;
     int had_check;
     int result;
+
+    normalized_plan =
+        openai_m195_normalize_count(plan_text);
+
+    if (normalized_plan == NULL) {
+        return 0;
+    }
 
     had_plan = rename(
         OPENAI_PLAN_FILE,
@@ -305,7 +480,9 @@ int openai_plan_save(
 
     result = openai_plan_save_legacy(
         goal,
-        plan_text);
+        normalized_plan);
+
+    free(normalized_plan);
 
     if (result) {
         result = openai_plan_checksum_write(

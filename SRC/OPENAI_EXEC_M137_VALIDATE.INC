@@ -43,18 +43,16 @@ int openai_m137_success_cleanup(
 {
     int result;
 
-    while (remove(plan_path) == 0) {
-    }
-    while (remove(new_path) == 0) {
-    }
-    while (remove(backup_path) == 0) {
-    }
+    execute_remove_pair(plan_path);
+    execute_remove_pair(new_path);
+    execute_remove_pair(backup_path);
 
     if (!openai_m137_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
-            "file_count=0\n")) {
+            "file_count=0\n") ||
+        !openai_plan_checksum_write(plan_path)) {
         return 0;
     }
 
@@ -71,7 +69,8 @@ int openai_m137_success_cleanup(
         !execute_plan_file_exists(backup_path) &&
         openai_m137_contains(
             plan_path,
-            "status=consumed");
+            "status=consumed") &&
+        openai_plan_checksum_valid(plan_path);
 }
 
 int openai_m137_failure_restore(
@@ -81,18 +80,16 @@ int openai_m137_failure_restore(
 {
     int result;
 
-    while (remove(plan_path) == 0) {
-    }
-    while (remove(new_path) == 0) {
-    }
-    while (remove(backup_path) == 0) {
-    }
+    execute_remove_pair(plan_path);
+    execute_remove_pair(new_path);
+    execute_remove_pair(backup_path);
 
     if (!openai_m137_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
-            "file_count=0\n")) {
+            "file_count=0\n") ||
+        !openai_plan_checksum_write(plan_path)) {
         return 0;
     }
 
@@ -109,26 +106,29 @@ int openai_m137_failure_restore(
         !execute_plan_file_exists(backup_path) &&
         openai_m137_contains(
             plan_path,
-            "status=active");
+            "status=active") &&
+        openai_plan_checksum_valid(plan_path);
 }
 
 int openai_m137_consumed_rejected(
     const char *plan_path)
 {
-    while (remove(plan_path) == 0) {
-    }
+    execute_remove_pair(plan_path);
 
     if (!openai_m137_write_text(
             plan_path,
             "format=1\n"
             "status=consumed\n"
-            "file_count=0\n")) {
+            "file_count=0\n") ||
+        !openai_plan_checksum_write(plan_path)) {
         return 0;
     }
 
-    return !openai_plan_file_current(
-        plan_path,
-        0);
+    return
+        openai_plan_checksum_valid(plan_path) &&
+        !openai_plan_file_current(
+            plan_path,
+            0);
 }
 
 int openai_m137_artifact_recovery(
@@ -138,12 +138,9 @@ int openai_m137_artifact_recovery(
 {
     int result;
 
-    while (remove(plan_path) == 0) {
-    }
-    while (remove(new_path) == 0) {
-    }
-    while (remove(backup_path) == 0) {
-    }
+    execute_remove_pair(plan_path);
+    execute_remove_pair(new_path);
+    execute_remove_pair(backup_path);
 
     if (!openai_m137_write_text(
             new_path,
@@ -173,6 +170,7 @@ int openai_m137_artifact_recovery(
         openai_m137_contains(
             plan_path,
             "status=consumed") &&
+        openai_plan_checksum_valid(plan_path) &&
         !openai_plan_file_current(
             plan_path,
             0);
