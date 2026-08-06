@@ -384,13 +384,14 @@ static void grep_print_line(const char *path,
     }
 }
 
-static void grep_one_file(const char *path,
-                          const char *pattern,
-                          unsigned int context,
-                          unsigned long match_limit,
-                          int case_sensitive,
-                          int count_only,
-                          unsigned long *matches)
+static int grep_one_file(const char *path,
+                         const char *pattern,
+                         unsigned int context,
+                         unsigned long match_limit,
+                         int case_sensitive,
+                         int count_only,
+                         int files_only,
+                         unsigned long *matches)
 {
     FILE *file;
     char buffer[READ_BUFFER_SIZE];
@@ -403,6 +404,7 @@ static void grep_one_file(const char *path,
     unsigned long last_printed;
     unsigned int index;
     unsigned int slot;
+    int file_matched;
 
     if (path == NULL ||
         pattern == NULL ||
@@ -410,13 +412,13 @@ static void grep_one_file(const char *path,
         context > GREP_CONTEXT_MAX ||
         match_limit == 0UL ||
         match_limit > GREP_MAX_MATCHES ||
-        *matches >= match_limit) {
-        return;
+        (!files_only && *matches >= match_limit)) {
+        return 0;
     }
 
     file = fopen(path, "r");
     if (file == NULL) {
-        return;
+        return 0;
     }
 
     previous_used = 0U;
@@ -424,8 +426,9 @@ static void grep_one_file(const char *path,
     after_remaining = 0U;
     line_number = 1UL;
     last_printed = 0UL;
+    file_matched = 0;
 
-    while (*matches < match_limit &&   
+    while ((files_only || *matches < match_limit) &&
            fgets(buffer, sizeof(buffer), file) != NULL) {
         int is_match;
 
@@ -439,6 +442,11 @@ static void grep_one_file(const char *path,
         }
 
         if (is_match) {
+            if (files_only) {
+                file_matched = 1;
+                break;
+            }
+
             /*
              * Print buffered lines preceding this match. Lines that
              * were already printed as trailing context are skipped.
@@ -504,6 +512,12 @@ static void grep_one_file(const char *path,
     }
 
     (void)fclose(file);
+
+    if (files_only && file_matched) {
+        (void)puts(path);
+    }
+
+    return file_matched;
 }
 
 static void project_grep_walk(const char *path,
@@ -513,7 +527,9 @@ static void project_grep_walk(const char *path,
                               unsigned long match_limit,
                               int case_sensitive,
                               int count_only,
-                              unsigned long *matches)
+                              int files_only,
+                              unsigned long *matches,
+                              unsigned long *files)
 {
     DIR *directory;
     struct dirent *entry;
@@ -521,11 +537,14 @@ static void project_grep_walk(const char *path,
     if (path == NULL ||
         pattern == NULL ||
         matches == NULL ||
+        files == NULL ||
         context > GREP_CONTEXT_MAX ||
         match_limit == 0UL ||
         match_limit > GREP_MAX_MATCHES ||
         depth > GREP_MAX_DEPTH ||
-        *matches >= match_limit) {
+        (files_only
+            ? *files >= match_limit
+            : *matches >= match_limit)) {
         return;
     }
 
@@ -534,7 +553,9 @@ static void project_grep_walk(const char *path,
         return;
     }
 
-    while (*matches < match_limit &&
+    while ((files_only
+                ? *files < match_limit
+                : *matches < match_limit) &&
            (entry = readdir(directory)) != NULL) {
         char child_path[NORMALIZED_PATH_SIZE];
         DIR *child_directory;
@@ -567,15 +588,21 @@ static void project_grep_walk(const char *path,
                               match_limit,
                               case_sensitive,
                               count_only,
-                              matches);            
+                              files_only,
+                              matches,
+                              files);
         } else if (grep_file_type(entry->d_name)) {
-            grep_one_file(child_path,
-                          pattern,
-                          context,
-                          match_limit,
-                          case_sensitive,
-                          count_only,
-                          matches);
+            if (grep_one_file(child_path,
+                              pattern,
+                              context,
+                              match_limit,
+                              case_sensitive,
+                              count_only,
+                              files_only,
+                              matches) &&
+                files_only) {
+                ++*files;
+            }
         }
     }
 
@@ -588,9 +615,11 @@ void project_grep(const agent_state *state,
                   unsigned int context,
                   unsigned long match_limit,
                   int case_sensitive,
-                  int count_only)
+                  int count_only,
+                  int files_only)
 {
     unsigned long matches;
+    unsigned long files;
     char normalized[NORMALIZED_PATH_SIZE];
     DIR *directory;
     FILE *file;
@@ -624,7 +653,24 @@ void project_grep(const agent_state *state,
         return;
     }
 
+    if (files_only && count_only) {
+        (void)puts(
+            "GREP files-only mode is not compatible "
+            "with count-only mode."
+        );
+        return;
+    }
+
+    if (files_only && context != 0U) {
+        (void)puts(
+            "GREP files-only mode is not compatible "
+            "with context output."
+        );
+        return;
+    }
+
     matches = 0UL;
+    files = 0UL;
 
     if (path == NULL || *path == '\0') {
         project_grep_walk("SRC",
@@ -634,9 +680,13 @@ void project_grep(const agent_state *state,
                           match_limit,
                           case_sensitive,
                           count_only,
-                          &matches);
+                          files_only,
+                          &matches,
+                          &files);
 
-        if (matches < match_limit) {
+        if (files_only
+                ? files < match_limit
+                : matches < match_limit) {
             project_grep_walk("DOC",
                               pattern,
                               0U,
@@ -644,10 +694,14 @@ void project_grep(const agent_state *state,
                               match_limit,
                               case_sensitive,
                               count_only,
-                              &matches);
+                              files_only,
+                              &matches,
+                              &files);
         }
 
-        if (matches < match_limit) {
+        if (files_only
+                ? files < match_limit
+                : matches < match_limit) {
             project_grep_walk("TEST",
                               pattern,
                               0U,
@@ -655,7 +709,9 @@ void project_grep(const agent_state *state,
                               match_limit,
                               case_sensitive,
                               count_only,
-                              &matches);
+                              files_only,
+                              &matches,
+                              &files);
         }
     } else {
         if (!normalize_project_path(
@@ -681,7 +737,9 @@ void project_grep(const agent_state *state,
                               match_limit,
                               case_sensitive,
                               count_only,
-                              &matches);
+                              files_only,
+                              &matches,
+                              &files);
         } else {
             file = fopen(normalized, "r");
 
@@ -704,17 +762,36 @@ void project_grep(const agent_state *state,
                 return;
             }
 
-            grep_one_file(normalized,
-                          pattern,
-                          context,
-                          match_limit,
-                          case_sensitive,
-                          count_only,
-                          &matches);
+            if (grep_one_file(normalized,
+                              pattern,
+                              context,
+                              match_limit,
+                              case_sensitive,
+                              count_only,
+                              files_only,
+                              &matches) &&
+                files_only) {
+                ++files;
+            }
         }
     }
 
-    if (matches >= match_limit) {
+    if (files_only) {
+        if (files >= match_limit) {
+            (void)printf(
+                "%lu matching file%s shown; "
+                "result limit reached.\n",
+                files,
+                files == 1UL ? "" : "s"
+            );
+        } else {
+            (void)printf(
+                "%lu matching file%s found.\n",
+                files,
+                files == 1UL ? "" : "s"
+            );
+        }
+    } else if (matches >= match_limit) {
         (void)printf(
             "%lu match%s shown; "
             "result limit reached.\n",
@@ -729,7 +806,7 @@ void project_grep(const agent_state *state,
         );
     }
 }
-                  
+
 void project_show_root(const agent_state *state)
 {
     if (state == NULL ||

@@ -18,6 +18,7 @@ static unsigned int recorded_context;
 static unsigned long recorded_limit;
 static int recorded_case_sensitive;
 static int recorded_count_only;
+static int recorded_files_only;
 
 static void remove_all(const char *path)
 {
@@ -100,6 +101,7 @@ static void reset_recording(void)
     recorded_limit = 0UL;
     recorded_case_sensitive = 0;
     recorded_count_only = 0;
+    recorded_files_only = 0;
 }
 
 static int run_command(agent_state *state,
@@ -136,14 +138,16 @@ static int verify_call(const char *pattern,
                        unsigned int context,
                        unsigned long limit,
                        int case_sensitive,
-                       int count_only)
+                       int count_only,
+                       int files_only)
 {
     if (grep_calls != 1U ||
         strcmp(recorded_pattern, pattern) != 0 ||
         recorded_context != context ||
         recorded_limit != limit ||
         recorded_case_sensitive != case_sensitive ||
-        recorded_count_only != count_only) {
+        recorded_count_only != count_only ||
+        recorded_files_only != files_only) {
         return 0;
     }
 
@@ -161,8 +165,8 @@ static int test_valid(agent_state *state,
                       unsigned int context,
                       unsigned long limit,
                       int case_sensitive,
-                      int count_only)
-
+                      int count_only,
+                      int files_only)
 {
     char *output;
     int result;
@@ -178,7 +182,8 @@ static int test_valid(agent_state *state,
                          context,
                          limit,
                          case_sensitive,
-                         count_only);
+                         count_only,
+                         files_only);
 
     free(output);
     return result;
@@ -213,7 +218,8 @@ void project_grep(const agent_state *state,
                   unsigned int context,
                   unsigned long match_limit,
                   int case_sensitive,
-                  int count_only)
+                  int count_only,
+                  int files_only)
 {
     (void)state;
 
@@ -241,6 +247,7 @@ void project_grep(const agent_state *state,
     recorded_limit = match_limit;
     recorded_case_sensitive = case_sensitive;
     recorded_count_only = count_only;
+    recorded_files_only = files_only;
 }
 
 /*
@@ -356,31 +363,31 @@ int main(void)
                    "token",
                    NULL,
                    0U,
-                   3UL, 0, 0) &&
+                   3UL, 0, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3",
                    "token",
                    "SRC",
                    0U,
-                   3UL, 0, 0) &&
+                   3UL, 0, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /CONTEXT=2 /LIMIT=3",
                    "token",
                    "SRC",
                    2U,
-                   3UL, 0, 0) &&
+                   3UL, 0, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3 /CONTEXT=2",
                    "token",
                    "SRC",
                    2U,
-                   3UL, 0, 0) &&
+                   3UL, 0, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC",
                    "token",
                    "SRC",
                    0U,
-                   100UL, 0, 0) &&
+                   100UL, 0, 0, 0) &&
         test_valid(
             &state,
             "\"Token\" SRC /CASE=SENSITIVE",
@@ -389,6 +396,7 @@ int main(void)
             0U,
             100UL,
             1,
+            0,
             0
         ) &&
         test_valid(
@@ -398,6 +406,7 @@ int main(void)
             "SRC",
             0U,
             100UL,
+            0,
             0,
             0
         ) &&
@@ -410,6 +419,7 @@ int main(void)
             2U,
             3UL,
             1,
+            0,
             0
         ) &&
         test_valid(
@@ -420,7 +430,8 @@ int main(void)
             0U,
             100UL,
             0,
-            1
+            1,
+            0
         ) &&
         test_valid(
             &state,
@@ -430,7 +441,8 @@ int main(void)
             0U,
             100UL,
             1,
-            1
+            1,
+            0
         ) &&
         test_valid(
             &state,
@@ -439,6 +451,40 @@ int main(void)
             "SRC",
             0U,
             3UL,
+            0,
+            1,
+            0
+        ) &&
+        test_valid(
+            &state,
+            "\"token\" SRC /FILES",
+            "token",
+            "SRC",
+            0U,
+            100UL,
+            0,
+            0,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /FILES /CASE=SENSITIVE",
+            "Token",
+            "SRC",
+            0U,
+            100UL,
+            1,
+            0,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"token\" SRC /LIMIT=2 /FILES",
+            "token",
+            "SRC",
+            0U,
+            2UL,
+            0,
             0,
             1
         ) &&
@@ -498,8 +544,43 @@ int main(void)
         ) &&
         test_invalid(
             &state,
+            "\"token\" SRC /FILES /FILES",
+            "Duplicate /FILES qualifier."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /FILES=YES",
+            "/FILES does not take a value."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" /FILES SRC",
+            "GREP path must precede qualifiers."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /FILES /CONTEXT=1",
+            "/FILES is not compatible with /CONTEXT."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /CONTEXT=1 /FILES",
+            "/FILES is not compatible with /CONTEXT."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /FILES /COUNT",
+            "/FILES is not compatible with /COUNT."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /COUNT /FILES",
+            "/FILES is not compatible with /COUNT."
+        ) &&
+        test_invalid(
+            &state,
             "\"token\" SRC /UNKNOWN=3",
-            "Only /CONTEXT=n, /LIMIT=n, /CASE=value, and /COUNT are supported."
+            "Only /CONTEXT=n, /LIMIT=n, /CASE=value, /COUNT, and /FILES are supported."
         );
 
     remove_all(TEST_OUTPUT);
