@@ -1,12 +1,45 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "agent.h"
 
+static int agent_value_is_true(const char *value)
+{
+    char normalized[8];
+    size_t index;
+
+    if (value == NULL || *value == '\0') {
+        return 0;
+    }
+
+    index = 0U;
+
+    while (value[index] != '\0' &&
+           index + 1U < sizeof(normalized)) {
+        normalized[index] =
+            (char)toupper((unsigned char)value[index]);
+        ++index;
+    }
+
+    if (value[index] != '\0') {
+        return 0;
+    }
+
+    normalized[index] = '\0';
+
+    return strcmp(normalized, "YES") == 0 ||
+           strcmp(normalized, "TRUE") == 0 ||
+           strcmp(normalized, "1") == 0 ||
+           strcmp(normalized, "ON") == 0;
+}
+
 int agent_initialize(agent_state *state)
 {
     const char *api_key;
+    const char *dcl_enabled;
 
     if (state == NULL) {
         return 0;
@@ -15,11 +48,12 @@ int agent_initialize(agent_state *state)
     state->running = 1;
     state->project_root = getenv("OVMS_AGENT_ROOT");
     api_key = getenv("OPENAI_API_KEY");
+    dcl_enabled = getenv("OVMS_AGENT_DCL_ENABLED");
 
     state->api_key_defined =
         api_key != NULL && *api_key != '\0';
     state->write_enabled = 0;
-    state->dcl_enabled = 0;
+    state->dcl_enabled = agent_value_is_true(dcl_enabled);
 
     if (state->project_root != NULL &&
         *state->project_root != '\0') {

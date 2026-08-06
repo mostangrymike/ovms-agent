@@ -32,6 +32,7 @@ int command_decode_escapes(char *text);
 void command_help(agent_state *state, const char *arguments);
 void command_version(agent_state *state, const char *arguments);
 void command_quit(agent_state *state, const char *arguments);
+void command_run(agent_state *state, const char *arguments);
 
 void command_root(agent_state *state, const char *arguments);
 void command_status(agent_state *state, const char *arguments);

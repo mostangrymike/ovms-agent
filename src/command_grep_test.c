@@ -3,11 +3,14 @@
 #include <string.h>
 
 #include "agent.h"
+#include "command.h"
 #include "command_internal.h"
 #include "edit.h"
 #include "project.h"
 
 #define TEST_OUTPUT "M192_COMMAND_GREP.OUT"
+#define RUN_TEST_OUTPUT "M202_COMMAND_RUN.OUT"
+#define RUN_TEST_INPUT "M202_COMMAND_RUN.IN"
 #define TEST_PATH_SIZE 256
 #define TEST_PATTERN_SIZE 256
 
@@ -408,6 +411,142 @@ int project_patch(const agent_state *state,
     (void)old_text;
     (void)new_text;
     return 1;
+}
+
+
+static int write_test_input(const char *text)
+{
+    FILE *file;
+
+    file = fopen(RUN_TEST_INPUT, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (text != NULL && fputs(text, file) == EOF) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    return fclose(file) == 0;
+}
+
+static int capture_run(agent_state *state,
+                       const char *arguments,
+                       const char *input,
+                       char **output)
+{
+    FILE *stream;
+
+    if (state == NULL || arguments == NULL || output == NULL) {
+        return 0;
+    }
+
+    *output = NULL;
+    remove_all(RUN_TEST_OUTPUT);
+    remove_all(RUN_TEST_INPUT);
+
+    if (!write_test_input(input)) {
+        return 0;
+    }
+
+    stream = freopen(RUN_TEST_INPUT, "r", stdin);
+    if (stream == NULL) {
+        return 0;
+    }
+
+    stream = freopen(RUN_TEST_OUTPUT, "w", stdout);
+    if (stream == NULL) {
+        (void)fclose(stdin);
+        return 0;
+    }
+
+    command_run(state, arguments);
+
+    (void)fflush(stdout);
+    (void)fclose(stdout);
+    (void)fclose(stdin);
+
+    *output = read_output(RUN_TEST_OUTPUT);
+    return *output != NULL;
+}
+
+static int test_run_policy(agent_state *state)
+{
+    char *output;
+    int result;
+
+    state->dcl_enabled = 0;
+    if (!capture_run(state,
+                     "\"SHOW TIME\"",
+                     "",
+                     &output)) {
+        return 0;
+    }
+    result = contains_text(output,
+                           "DCL execution is disabled.");
+    free(output);
+    if (!result) {
+        return 0;
+    }
+
+    state->dcl_enabled = 1;
+    if (!capture_run(state,
+                     "\"DELETE TEST.TXT\"",
+                     "",
+                     &output)) {
+        return 0;
+    }
+    result = contains_text(
+        output,
+        "RUN command refused by the safety policy.");
+    free(output);
+    if (!result) {
+        return 0;
+    }
+
+    if (!capture_run(state,
+                     "\"GIT commit -m test\"",
+                     "",
+                     &output)) {
+        return 0;
+    }
+    result = contains_text(
+        output,
+        "RUN command refused by the safety policy.");
+    free(output);
+    if (!result) {
+        return 0;
+    }
+
+    if (!capture_run(state,
+                     "\"SHOW DEFAULT; SHOW TIME\"",
+                     "",
+                     &output)) {
+        return 0;
+    }
+    result = contains_text(
+        output,
+        "RUN command refused by the safety policy.");
+    free(output);
+    if (!result) {
+        return 0;
+    }
+
+    if (!capture_run(state,
+                     "\"SHOW TIME\"",
+                     "N\n",
+                     &output)) {
+        return 0;
+    }
+    result = contains_text(output, "Command: SHOW TIME") &&
+             contains_text(output, "Command cancelled.");
+    free(output);
+
+    state->dcl_enabled = 0;
+    remove_all(RUN_TEST_OUTPUT);
+    remove_all(RUN_TEST_INPUT);
+    return result;
 }
 
 int main(void)
@@ -898,7 +1037,8 @@ int main(void)
             &state,
             "\"token\" SRC /UNKNOWN=3",
             "Only /CONTEXT=n, /LIMIT=n, /CASE=value, /COUNT, /FILES, /NAME=pattern, /EXCLUDE=pattern, /DEPTH=n, and /WORD are supported."
-        );
+        ) &&
+        test_run_policy(&state);
 
     remove_all(TEST_OUTPUT);
 
