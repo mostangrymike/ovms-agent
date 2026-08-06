@@ -5,8 +5,259 @@
 
 #include "command.h"
 #include "command_internal.h"
+#include "edit_txn.h"
 #include "util.h"
 
+
+
+static edit_txn command_changeset_transaction;
+static int command_changeset_active = 0;
+
+static void command_changeset_reset(void)
+{
+    if (command_changeset_active) {
+        edit_txn_dispose(&command_changeset_transaction);
+    }
+
+    command_changeset_active = 0;
+}
+
+static void command_changeset_show(void)
+{
+    unsigned int index;
+
+    if (!command_changeset_active) {
+        (void)puts("No change set is active.");
+        return;
+    }
+
+    (void)printf(
+        "Change set contains %u operation%s.\n",
+        command_changeset_transaction.file_count,
+        command_changeset_transaction.file_count == 1U ? "" : "s"
+    );
+
+    for (index = 0U;
+         index < command_changeset_transaction.file_count;
+         ++index) {
+        const edit_txn_file *file;
+
+        file = &command_changeset_transaction.files[index];
+
+        (void)printf(
+            "%u. %s %s\n",
+            index + 1U,
+            file->existed_before ? "REPLACE" : "CREATE",
+            file->path
+        );
+    }
+}
+
+void command_changeset(agent_state *state, const char *arguments)
+{
+    char work[OVMS_AGENT_INPUT_SIZE];
+    char *cursor;
+    char *operation;
+    char *path;
+    char *text;
+    char *extra;
+    char answer[32];
+
+    if (state == NULL) {
+        return;
+    }
+
+    if (arguments == NULL || *arguments == '\0' ||
+        strlen(arguments) >= sizeof(work)) {
+        (void)puts(
+            "Usage: CHANGESET BEGIN | ADD path \"text\" | "
+            "SHOW | APPLY | CANCEL"
+        );
+        return;
+    }
+
+    (void)strcpy(work, arguments);
+    cursor = work;
+    operation = command_next_argument(&cursor);
+
+    if (operation == NULL) {
+        (void)puts(
+            "Usage: CHANGESET BEGIN | ADD path \"text\" | "
+            "SHOW | APPLY | CANCEL"
+        );
+        return;
+    }
+
+    util_uppercase(operation);
+
+    if (strcmp(operation, "BEGIN") == 0) {
+        extra = command_next_argument(&cursor);
+
+        if (extra != NULL) {
+            (void)puts("Usage: CHANGESET BEGIN");
+            return;
+        }
+
+        if (command_changeset_active) {
+            (void)puts(
+                "A change set is already active. "
+                "Use CHANGESET CANCEL first."
+            );
+            return;
+        }
+
+        edit_txn_init(&command_changeset_transaction);
+        command_changeset_active = 1;
+        (void)puts("Change set started.");
+        return;
+    }
+
+    if (strcmp(operation, "ADD") == 0) {
+        if (!command_changeset_active) {
+            (void)puts(
+                "No change set is active. "
+                "Use CHANGESET BEGIN first."
+            );
+            return;
+        }
+
+        path = command_next_argument(&cursor);
+        text = command_next_argument(&cursor);
+        extra = command_next_argument(&cursor);
+
+        if (path == NULL || text == NULL || extra != NULL) {
+            (void)puts(
+                "Usage: CHANGESET ADD path \"replacement text\""
+            );
+            return;
+        }
+
+        if (!command_decode_escapes(text)) {
+            (void)puts(
+                "Invalid escape sequence in replacement text."
+            );
+            return;
+        }
+
+        if (!edit_txn_add(
+                &command_changeset_transaction,
+                path,
+                text)) {
+            (void)puts(
+                "Unable to add change-set operation. "
+                "Check the path, duplicate targets, and file limit."
+            );
+            return;
+        }
+
+        (void)printf(
+            "Added %s operation for %s.\n",
+            command_changeset_transaction.
+                files[command_changeset_transaction.file_count - 1U].
+                existed_before ? "replacement" : "creation",
+            path
+        );
+        return;
+    }
+
+    if (strcmp(operation, "SHOW") == 0) {
+        extra = command_next_argument(&cursor);
+
+        if (extra != NULL) {
+            (void)puts("Usage: CHANGESET SHOW");
+            return;
+        }
+
+        command_changeset_show();
+        return;
+    }
+
+    if (strcmp(operation, "CANCEL") == 0) {
+        extra = command_next_argument(&cursor);
+
+        if (extra != NULL) {
+            (void)puts("Usage: CHANGESET CANCEL");
+            return;
+        }
+
+        if (!command_changeset_active) {
+            (void)puts("No change set is active.");
+            return;
+        }
+
+        command_changeset_reset();
+        (void)puts("Change set cancelled.");
+        return;
+    }
+
+    if (strcmp(operation, "APPLY") == 0) {
+        extra = command_next_argument(&cursor);
+
+        if (extra != NULL) {
+            (void)puts("Usage: CHANGESET APPLY");
+            return;
+        }
+
+        if (!command_changeset_active) {
+            (void)puts("No change set is active.");
+            return;
+        }
+
+        if (!state->write_enabled) {
+            (void)puts("Write access is disabled.");
+            return;
+        }
+
+        if (command_changeset_transaction.file_count == 0U) {
+            (void)puts("The active change set is empty.");
+            return;
+        }
+
+        command_changeset_show();
+        (void)fputs("Apply complete change set [y/N]? ", stdout);
+        (void)fflush(stdout);
+
+        if (fgets(answer, sizeof(answer), stdin) == NULL ||
+            (answer[0] != 'Y' && answer[0] != 'y')) {
+            (void)puts("Change set application cancelled.");
+            return;
+        }
+
+        if (!edit_txn_write(&command_changeset_transaction)) {
+            (void)puts(
+                "Change set failed. All completed operations "
+                "were rolled back."
+            );
+            command_changeset_reset();
+            return;
+        }
+
+        if (!edit_txn_commit(&command_changeset_transaction)) {
+            (void)edit_txn_rollback(
+                &command_changeset_transaction
+            );
+            (void)puts(
+                "Unable to commit change set. "
+                "All operations were rolled back."
+            );
+            command_changeset_reset();
+            return;
+        }
+
+        (void)printf(
+            "Applied %u change-set operation%s.\n",
+            command_changeset_transaction.file_count,
+            command_changeset_transaction.file_count == 1U ? "" : "s"
+        );
+        command_changeset_reset();
+        return;
+    }
+
+    (void)puts(
+        "Usage: CHANGESET BEGIN | ADD path \"text\" | "
+        "SHOW | APPLY | CANCEL"
+    );
+}
 
 #define RUN_OUTPUT_FILE "OVMS_AGENT_RUN_OUTPUT.TXT"
 #define RUN_PROCEDURE_FILE "OVMS_AGENT_RUN.COM"
@@ -289,6 +540,11 @@ void command_execute(agent_state *state, char *input)
 
     if (strcmp(command, "RUN") == 0) {
         command_run(state, arguments);
+        return;
+    }
+
+    if (strcmp(command, "CHANGESET") == 0) {
+        command_changeset(state, arguments);
         return;
     }
 

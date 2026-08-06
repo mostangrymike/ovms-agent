@@ -40,6 +40,7 @@ int agent_initialize(agent_state *state)
 {
     const char *api_key;
     const char *dcl_enabled;
+    const char *write_enabled;
 
     if (state == NULL) {
         return 0;
@@ -49,10 +50,11 @@ int agent_initialize(agent_state *state)
     state->project_root = getenv("OVMS_AGENT_ROOT");
     api_key = getenv("OPENAI_API_KEY");
     dcl_enabled = getenv("OVMS_AGENT_DCL_ENABLED");
+    write_enabled = getenv("OVMS_AGENT_WRITE_ENABLED");
 
     state->api_key_defined =
         api_key != NULL && *api_key != '\0';
-    state->write_enabled = 0;
+    state->write_enabled = agent_value_is_true(write_enabled);
     state->dcl_enabled = agent_value_is_true(dcl_enabled);
 
     if (state->project_root != NULL &&
