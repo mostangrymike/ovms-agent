@@ -588,6 +588,7 @@ static void project_grep_walk(const char *path,
                               int count_only,
                               int files_only,
                               const char *name_pattern,
+                              const char *exclude_pattern,
                               unsigned long *matches,
                               unsigned long *files)
 {
@@ -650,11 +651,15 @@ static void project_grep_walk(const char *path,
                               count_only,
                               files_only,
                               name_pattern,
+                              exclude_pattern,
                               matches,
                               files);
         } else if (grep_file_type(entry->d_name) &&
                    grep_name_matches(entry->d_name,
-                                     name_pattern)) {
+                                     name_pattern) &&
+                   (exclude_pattern == NULL ||
+                    !grep_name_matches(entry->d_name,
+                                       exclude_pattern))) {
             if (grep_one_file(child_path,
                               pattern,
                               context,
@@ -680,7 +685,8 @@ void project_grep(const agent_state *state,
                   int case_sensitive,
                   int count_only,
                   int files_only,
-                  const char *name_pattern)
+                  const char *name_pattern,
+                  const char *exclude_pattern)
 {
     unsigned long matches;
     unsigned long files;
@@ -746,6 +752,7 @@ void project_grep(const agent_state *state,
                           count_only,
                           files_only,
                           name_pattern,
+                          exclude_pattern,
                           &matches,
                           &files);
 
@@ -761,6 +768,7 @@ void project_grep(const agent_state *state,
                               count_only,
                               files_only,
                               name_pattern,
+                              exclude_pattern,
                               &matches,
                               &files);
         }
@@ -777,6 +785,7 @@ void project_grep(const agent_state *state,
                               count_only,
                               files_only,
                               name_pattern,
+                              exclude_pattern,
                               &matches,
                               &files);
         }
@@ -806,6 +815,7 @@ void project_grep(const agent_state *state,
                               count_only,
                               files_only,
                               name_pattern,
+                              exclude_pattern,
                               &matches,
                               &files);
         } else {
@@ -839,7 +849,10 @@ void project_grep(const agent_state *state,
                     : file_name + 1;
 
                 if (!grep_name_matches(file_name,
-                                       name_pattern)) {
+                                        name_pattern) ||
+                    (exclude_pattern != NULL &&
+                     grep_name_matches(file_name,
+                                       exclude_pattern))) {
                     if (files_only) {
                         (void)puts("0 matching files found.");
                     } else {

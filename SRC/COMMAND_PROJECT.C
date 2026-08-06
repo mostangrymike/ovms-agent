@@ -18,7 +18,7 @@ static const command_entry project_commands[] = {
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
     { "GREP", "Search project files: GREP \"text\" [path] [/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern]", command_grep },
+            "[/NAME=pattern] [/EXCLUDE=pattern]", command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -90,9 +90,10 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *items[7];
+    char *items[8];
     char *path;
     char *name_pattern;
+    char *exclude_pattern;
     char *end;
     unsigned long context_value;
     unsigned long limit_value;
@@ -102,6 +103,7 @@ void command_grep(agent_state *state,
     unsigned int count_seen;
     unsigned int files_seen;
     unsigned int name_seen;
+    unsigned int exclude_seen;
     unsigned int item_count;
     unsigned int index;
     int case_sensitive;
@@ -112,7 +114,7 @@ void command_grep(agent_state *state,
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern]"
+            "[/NAME=pattern] [/EXCLUDE=pattern]"
         );
         return;
     }
@@ -128,7 +130,7 @@ void command_grep(agent_state *state,
     pattern = command_next_argument(&cursor);
     item_count = 0U;
 
-    while (item_count < 7U) {
+    while (item_count < 8U) {
         items[item_count] =
             command_next_argument(&cursor);
 
@@ -145,13 +147,14 @@ void command_grep(agent_state *state,
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern]"
+            "[/NAME=pattern] [/EXCLUDE=pattern]"
         );
         return;
     }
 
     path = NULL;
     name_pattern = NULL;
+    exclude_pattern = NULL;
     context_value = 0UL;
     limit_value = 100UL;
     case_sensitive = 0;
@@ -163,6 +166,7 @@ void command_grep(agent_state *state,
     count_seen = 0U;
     files_seen = 0U;
     name_seen = 0U;
+    exclude_seen = 0U;
 
     for (index = 0U; index < item_count; ++index) {
         char *item;
@@ -176,7 +180,8 @@ void command_grep(agent_state *state,
                 case_seen ||
                 count_seen ||
                 files_seen ||
-                name_seen) {
+                name_seen ||
+                exclude_seen) {
                 (void)puts(
                     "GREP path must precede qualifiers."
                 );
@@ -323,10 +328,35 @@ void command_grep(agent_state *state,
                 "/NAME requires a wildcard pattern."
             );
             return;
+        } else if (strncmp(item,
+                           "/EXCLUDE=",
+                           9U) == 0) {
+            if (exclude_seen) {
+                (void)puts(
+                    "Duplicate /EXCLUDE qualifier."
+                );
+                return;
+            }
+
+            if (item[9] == '\0') {
+                (void)puts(
+                    "/EXCLUDE requires a wildcard pattern."
+                );
+                return;
+            }
+
+            exclude_pattern = item + 9;
+            exclude_seen = 1U;
+        } else if (strcmp(item, "/EXCLUDE") == 0) {
+            (void)puts(
+                "/EXCLUDE requires a wildcard pattern."
+            );
+            return;
         } else {
             (void)puts(
                 "Only /CONTEXT=n, /LIMIT=n, /CASE=value, "
-                "/COUNT, /FILES, and /NAME=pattern are supported."
+                "/COUNT, /FILES, /NAME=pattern, and "
+                "/EXCLUDE=pattern are supported."
             );
             return;
         }
@@ -369,7 +399,8 @@ void command_grep(agent_state *state,
         case_sensitive,
         count_only,
         files_only,
-        name_pattern
+        name_pattern,
+        exclude_pattern
     );
 }
 

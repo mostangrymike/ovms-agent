@@ -46,6 +46,7 @@ static void cleanup_files(void)
     remove_all("M197_GREP_FILES_LIMIT.OUT");
     remove_all("M198_GREP_NAME.OUT");
     remove_all("M198_GREP_NAME_FILES.OUT");
+    remove_all("M199_GREP_EXCLUDE.OUT");
 }
 
 static int write_text(const char *path,
@@ -743,6 +744,26 @@ static int verify_name_output(const char *output,
                                 "1 matching file found.");
 }
 
+static int verify_exclude_output(const char *output,
+                                 const char *pattern)
+{
+    if (output == NULL || pattern == NULL) {
+        return 0;
+    }
+
+    return contains_ignore_case(output,
+                                "SRC/M188_GREP_A.C") &&
+           contains_ignore_case(output,
+                                "DOC/M188_GREP_B.MD") &&
+           contains_ignore_case(output,
+                                "TEST/M188_GREP_C.TXT") &&
+           !contains_ignore_case(output,
+                                 "M190_GREP_CONTEXT.TXT") &&
+           count_text(output, pattern) == 3UL &&
+           contains_ignore_case(output,
+                                "3 matches found.");
+}
+
 int main(void)
 {
     agent_state state;
@@ -762,6 +783,7 @@ int main(void)
     char *files_limit_output;
     char *name_output;
     char *name_files_output;
+    char *exclude_output;
     int result;
 
     cleanup_files();
@@ -802,7 +824,8 @@ int main(void)
     }
 
     project_grep(&state, basic_pattern, NULL, 0U, 100UL, 0, 0, 0,
-    NULL);
+    NULL,
+                  NULL);
     (void)fflush(stdout);
 
     if (freopen("M188_GREP_LIMIT.OUT",
@@ -815,7 +838,8 @@ int main(void)
     }
 
     project_grep(&state, limit_pattern, NULL, 0U, 100UL, 0, 0, 0,
-    NULL);
+    NULL,
+                  NULL);
     (void)fflush(stdout);
 
     if (!write_context_file(
@@ -840,28 +864,33 @@ int main(void)
                  basic_pattern,
                  "DOC",
                   0U, 100UL, 0, 0, 0,
-                      NULL);
+                      NULL,
+                  NULL);
 
     project_grep(&state,
                  basic_pattern,
                  "SRC/M188_GREP_A.C", 0U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     project_grep(&state,
                  basic_pattern,
                  "[.SRC]M188_GREP_A.C", 0U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     project_grep(&state,
                  basic_pattern,
                  "M189_MISSING_PATH", 0U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     project_grep(&state,
                  basic_pattern,
                  "../SRC",
                  0U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -878,7 +907,8 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  2U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
     (void)fflush(stdout);
     if (freopen("M194_GREP_SENSITIVE.OUT",
                 "w",
@@ -898,7 +928,8 @@ int main(void)
                  100UL,
                  1,
                  0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
     (void)fflush(stdout);
 
     if (freopen("M194_GREP_INSENSITIVE.OUT",
@@ -919,7 +950,8 @@ int main(void)
                  100UL,
                  0,
                  0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -936,7 +968,8 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  0U, 100UL, 0, 1, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -953,7 +986,8 @@ int main(void)
                  files_pattern,
                  NULL,
                  0U, 100UL, 0, 0, 1,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -972,7 +1006,8 @@ int main(void)
                  files_pattern,
                  NULL,
                  0U, 2UL, 0, 0, 1,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -989,7 +1024,8 @@ int main(void)
                  files_pattern,
                  NULL,
                  0U, 100UL, 0, 0, 0,
-                 "*.C");
+                 "*.C",
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -1008,7 +1044,8 @@ int main(void)
                  files_pattern,
                  NULL,
                  0U, 100UL, 0, 0, 1,
-                 "*.MD");
+                 "*.MD",
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -1025,7 +1062,8 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  0U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
 
     (void)fflush(stdout);
 
@@ -1042,7 +1080,26 @@ int main(void)
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
                  20U, 100UL, 0, 0, 0,
-                     NULL);
+                     NULL,
+                  NULL);
+
+    (void)fflush(stdout);
+
+    if (freopen("M199_GREP_EXCLUDE.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(stderr,
+                      "Unable to capture exclude output.\n");
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 basic_pattern,
+                 NULL,
+                 0U, 100UL, 0, 0, 0,
+                 NULL,
+                 "M19*");
 
     (void)fflush(stdout);
     (void)fclose(stdout);
@@ -1064,6 +1121,8 @@ int main(void)
     name_output = read_output("M198_GREP_NAME.OUT");
     name_files_output =
         read_output("M198_GREP_NAME_FILES.OUT");
+    exclude_output =
+        read_output("M199_GREP_EXCLUDE.OUT");
 
     result = verify_basic(basic_output,
                           basic_pattern) &&
@@ -1087,7 +1146,9 @@ int main(void)
                                    files_pattern) &&
                verify_name_output(name_output,
                                   name_files_output,
-                                  files_pattern);
+                                  files_pattern) &&
+               verify_exclude_output(exclude_output,
+                                     basic_pattern);
 
     free(basic_output);
     free(limit_output);
@@ -1102,6 +1163,7 @@ int main(void)
     free(files_limit_output);
     free(name_output);
     free(name_files_output);
+    free(exclude_output);
     cleanup_files();
 
     if (!result) {
