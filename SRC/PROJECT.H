@@ -25,7 +25,8 @@ void project_grep(const agent_state *state,
                   const char *path,
                   unsigned int context,
                   unsigned long match_limit,
-                  int case_sensitive);
+                  int case_sensitive,
+                  int count_only);
 int project_patch(const agent_state *state,
                   const char *path,
                   const char *old_text,

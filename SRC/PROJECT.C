@@ -389,6 +389,7 @@ static void grep_one_file(const char *path,
                           unsigned int context,
                           unsigned long match_limit,
                           int case_sensitive,
+                          int count_only,
                           unsigned long *matches)
 {
     FILE *file;
@@ -451,7 +452,8 @@ static void grep_one_file(const char *path,
                     slot = (previous_next + index) % context;
                 }
 
-                if (previous_line[slot] > last_printed) {
+                if (!count_only &&
+                    previous_line[slot] > last_printed) {
                     grep_print_line(path,
                                     previous_line[slot],
                                     previous[slot],
@@ -460,7 +462,8 @@ static void grep_one_file(const char *path,
                 }
             }
 
-            if (line_number > last_printed) {
+            if (!count_only &&
+                line_number > last_printed) {
                 grep_print_line(path,
                                 line_number,
                                 buffer,
@@ -471,7 +474,8 @@ static void grep_one_file(const char *path,
             ++*matches;
             after_remaining = context;
         } else if (after_remaining != 0U) {
-            if (line_number > last_printed) {
+            if (!count_only &&
+                line_number > last_printed) {
                 grep_print_line(path,
                                 line_number,
                                 buffer,
@@ -508,6 +512,7 @@ static void project_grep_walk(const char *path,
                               unsigned int context,
                               unsigned long match_limit,
                               int case_sensitive,
+                              int count_only,
                               unsigned long *matches)
 {
     DIR *directory;
@@ -561,6 +566,7 @@ static void project_grep_walk(const char *path,
                               context,
                               match_limit,
                               case_sensitive,
+                              count_only,
                               matches);            
         } else if (grep_file_type(entry->d_name)) {
             grep_one_file(child_path,
@@ -568,6 +574,7 @@ static void project_grep_walk(const char *path,
                           context,
                           match_limit,
                           case_sensitive,
+                          count_only,
                           matches);
         }
     }
@@ -580,7 +587,8 @@ void project_grep(const agent_state *state,
                   const char *path,
                   unsigned int context,
                   unsigned long match_limit,
-                  int case_sensitive)
+                  int case_sensitive,
+                  int count_only)
 {
     unsigned long matches;
     char normalized[NORMALIZED_PATH_SIZE];
@@ -625,6 +633,7 @@ void project_grep(const agent_state *state,
                           context,
                           match_limit,
                           case_sensitive,
+                          count_only,
                           &matches);
 
         if (matches < match_limit) {
@@ -634,6 +643,7 @@ void project_grep(const agent_state *state,
                               context,
                               match_limit,
                               case_sensitive,
+                              count_only,
                               &matches);
         }
 
@@ -644,6 +654,7 @@ void project_grep(const agent_state *state,
                               context,
                               match_limit,
                               case_sensitive,
+                              count_only,
                               &matches);
         }
     } else {
@@ -669,6 +680,7 @@ void project_grep(const agent_state *state,
                               context,
                               match_limit,
                               case_sensitive,
+                              count_only,
                               &matches);
         } else {
             file = fopen(normalized, "r");
@@ -697,6 +709,7 @@ void project_grep(const agent_state *state,
                           context,
                           match_limit,
                           case_sensitive,
+                          count_only,
                           &matches);
         }
     }

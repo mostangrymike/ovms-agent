@@ -89,7 +89,7 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *items[4];
+    char *items[5];
     char *path;
     char *end;
     unsigned long context_value;
@@ -97,14 +97,16 @@ void command_grep(agent_state *state,
     unsigned int context_seen;
     unsigned int limit_seen;
     unsigned int case_seen;
+    unsigned int count_seen;
     unsigned int item_count;
     unsigned int index;
     int case_sensitive;
+    int count_only;
 
     if (arguments == NULL || *arguments == '\0') {
         (void)puts(
             "Usage: GREP \"text\" [path] "
-            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value]"
+            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT]"
         );
         return;
     }
@@ -120,7 +122,7 @@ void command_grep(agent_state *state,
     pattern = command_next_argument(&cursor);
     item_count = 0U;
 
-    while (item_count < 4U) {
+    while (item_count < 5U) {
         items[item_count] =
             command_next_argument(&cursor);
 
@@ -136,7 +138,7 @@ void command_grep(agent_state *state,
         command_next_argument(&cursor) != NULL) {
         (void)puts(
             "Usage: GREP \"text\" [path] "
-            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value]"
+            "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT]"
         );
         return;
     }
@@ -145,9 +147,11 @@ void command_grep(agent_state *state,
     context_value = 0UL;
     limit_value = 100UL;
     case_sensitive = 0;
+    count_only = 0;
     context_seen = 0U;
     limit_seen = 0U;
     case_seen = 0U;
+    count_seen = 0U;
 
     for (index = 0U; index < item_count; ++index) {
         char *item;
@@ -158,7 +162,8 @@ void command_grep(agent_state *state,
             if (path != NULL ||
                 context_seen ||
                 limit_seen ||
-                case_seen) {
+                case_seen ||
+                count_seen) {
                 (void)puts(
                     "GREP path must precede qualifiers."
                 );
@@ -247,13 +252,37 @@ void command_grep(agent_state *state,
             }
 
             case_seen = 1U;
+        } else if (strcmp(item, "/COUNT") == 0) {
+            if (count_seen) {
+                (void)puts(
+                    "Duplicate /COUNT qualifier."
+                );
+                return;
+            }
+
+            count_only = 1;
+            count_seen = 1U;
+        } else if (strncmp(item,
+                           "/COUNT=",
+                           7U) == 0) {
+            (void)puts(
+                "/COUNT does not take a value."
+            );
+            return;
         } else {
             (void)puts(
                 "Only /CONTEXT=n, /LIMIT=n, "
-                "and /CASE=value are supported."
+                "/CASE=value, and /COUNT are supported."
             );
             return;
         }
+    }
+
+    if (count_seen && context_value != 0UL) {
+        (void)puts(
+            "/COUNT is not compatible with /CONTEXT."
+        );
+        return;
     }
 
     if (!command_decode_escapes(pattern)) {
@@ -269,7 +298,8 @@ void command_grep(agent_state *state,
         path,
         (unsigned int)context_value,
         limit_value,
-        case_sensitive
+        case_sensitive,
+        count_only
     );
 }
 
