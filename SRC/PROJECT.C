@@ -331,6 +331,73 @@ static int text_contains_ignore_case(const char *text,
     return 0;
 }
 
+
+static int text_is_word_character(unsigned char ch)
+{
+    return isalnum((int)ch) || ch == (unsigned char)'_';
+}
+
+static int text_contains_word(const char *text,
+                              const char *pattern,
+                              int case_sensitive)
+{
+    const unsigned char *start;
+    size_t pattern_length;
+
+    if (text == NULL ||
+        pattern == NULL ||
+        *pattern == '\0') {
+        return 0;
+    }
+
+    pattern_length = strlen(pattern);
+
+    for (start = (const unsigned char *)text;
+         *start != (unsigned char)'\0';
+         ++start) {
+        size_t index;
+        int equal;
+
+        if (start != (const unsigned char *)text &&
+            text_is_word_character(start[-1])) {
+            continue;
+        }
+
+        equal = 1;
+
+        for (index = 0U; index < pattern_length; ++index) {
+            unsigned char left;
+            unsigned char right;
+
+            left = start[index];
+            right = (unsigned char)pattern[index];
+
+            if (left == (unsigned char)'\0') {
+                equal = 0;
+                break;
+            }
+
+            if (case_sensitive) {
+                if (left != right) {
+                    equal = 0;
+                    break;
+                }
+            } else if (tolower((int)left) !=
+                       tolower((int)right)) {
+                equal = 0;
+                break;
+            }
+        }
+
+        if (equal &&
+            !text_is_word_character(start[pattern_length])) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static int grep_name_matches(const char *name,
                              const char *pattern)
 {
@@ -450,6 +517,7 @@ static int grep_one_file(const char *path,
                          int case_sensitive,
                          int count_only,
                          int files_only,
+                         int word_only,
                          unsigned long *matches)
 {
     FILE *file;
@@ -491,7 +559,13 @@ static int grep_one_file(const char *path,
            fgets(buffer, sizeof(buffer), file) != NULL) {
         int is_match;
 
-        if (case_sensitive) {
+        if (word_only) {
+            is_match = text_contains_word(
+                buffer,
+                pattern,
+                case_sensitive
+            );
+        } else if (case_sensitive) {
             is_match = strstr(buffer, pattern) != NULL;
         } else {
             is_match = text_contains_ignore_case(
@@ -590,6 +664,7 @@ static void project_grep_walk(const char *path,
                               const char *name_pattern,
                               const char *exclude_pattern,
                               unsigned int max_depth,
+                              int word_only,
                               unsigned long *matches,
                               unsigned long *files)
 {
@@ -657,6 +732,7 @@ static void project_grep_walk(const char *path,
                                   name_pattern,
                                   exclude_pattern,
                                   max_depth,
+                                  word_only,
                                   matches,
                                   files);
             }
@@ -673,6 +749,7 @@ static void project_grep_walk(const char *path,
                               case_sensitive,
                               count_only,
                               files_only,
+                              word_only,
                               matches) &&
                 files_only) {
                 ++*files;
@@ -693,7 +770,8 @@ void project_grep(const agent_state *state,
                   int files_only,
                   const char *name_pattern,
                   const char *exclude_pattern,
-                  unsigned int max_depth)
+                  unsigned int max_depth,
+                  int word_only)
 {
     unsigned long matches;
     unsigned long files;
@@ -768,6 +846,7 @@ void project_grep(const agent_state *state,
                           name_pattern,
                           exclude_pattern,
                           max_depth,
+                          word_only,
                           &matches,
                           &files);
 
@@ -785,6 +864,7 @@ void project_grep(const agent_state *state,
                               name_pattern,
                               exclude_pattern,
                               max_depth,
+                              word_only,
                               &matches,
                               &files);
         }
@@ -803,6 +883,7 @@ void project_grep(const agent_state *state,
                               name_pattern,
                               exclude_pattern,
                               max_depth,
+                              word_only,
                               &matches,
                               &files);
         }
@@ -834,6 +915,7 @@ void project_grep(const agent_state *state,
                               name_pattern,
                               exclude_pattern,
                               max_depth,
+                              word_only,
                               &matches,
                               &files);
         } else {
@@ -887,6 +969,7 @@ void project_grep(const agent_state *state,
                               case_sensitive,
                               count_only,
                               files_only,
+                              word_only,
                               &matches) &&
                 files_only) {
                 ++files;

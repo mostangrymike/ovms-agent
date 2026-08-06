@@ -18,7 +18,7 @@ static const command_entry project_commands[] = {
     { "GITDIFF", "Display uncommitted source changes", command_gitdiff },
     { "EDIT", "Edit a file: EDIT file", command_edit },
     { "GREP", "Search project files: GREP \"text\" [path] [/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]", command_grep },
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n] [/WORD]", command_grep },
     { "SEARCH", "Search a file: SEARCH file \"text\"", command_search },
     { "PATCH", "Replace exact text: PATCH file \"old\" \"new\"", command_patch }
 };
@@ -90,7 +90,7 @@ void command_grep(agent_state *state,
     char work[OVMS_AGENT_INPUT_SIZE];
     char *cursor;
     char *pattern;
-    char *items[9];
+    char *items[10];
     char *path;
     char *name_pattern;
     char *exclude_pattern;
@@ -106,17 +106,19 @@ void command_grep(agent_state *state,
     unsigned int name_seen;
     unsigned int exclude_seen;
     unsigned int depth_seen;
+    unsigned int word_seen;
     unsigned int item_count;
     unsigned int index;
     int case_sensitive;
     int count_only;
     int files_only;
+    int word_only;
 
     if (arguments == NULL || *arguments == '\0') {
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]"
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n] [/WORD]"
         );
         return;
     }
@@ -132,7 +134,7 @@ void command_grep(agent_state *state,
     pattern = command_next_argument(&cursor);
     item_count = 0U;
 
-    while (item_count < 9U) {
+    while (item_count < 10U) {
         items[item_count] =
             command_next_argument(&cursor);
 
@@ -149,7 +151,7 @@ void command_grep(agent_state *state,
         (void)puts(
             "Usage: GREP \"text\" [path] "
             "[/CONTEXT=n] [/LIMIT=n] [/CASE=value] [/COUNT] [/FILES] "
-            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n]"
+            "[/NAME=pattern] [/EXCLUDE=pattern] [/DEPTH=n] [/WORD]"
         );
         return;
     }
@@ -163,6 +165,7 @@ void command_grep(agent_state *state,
     case_sensitive = 0;
     count_only = 0;
     files_only = 0;
+    word_only = 0;
     context_seen = 0U;
     limit_seen = 0U;
     case_seen = 0U;
@@ -171,6 +174,7 @@ void command_grep(agent_state *state,
     name_seen = 0U;
     exclude_seen = 0U;
     depth_seen = 0U;
+    word_seen = 0U;
 
     for (index = 0U; index < item_count; ++index) {
         char *item;
@@ -186,7 +190,8 @@ void command_grep(agent_state *state,
                 files_seen ||
                 name_seen ||
                 exclude_seen ||
-                depth_seen) {
+                depth_seen ||
+                word_seen) {
                 (void)puts(
                     "GREP path must precede qualifiers."
                 );
@@ -387,11 +392,28 @@ void command_grep(agent_state *state,
                 "/DEPTH requires an integer value."
             );
             return;
+        } else if (strcmp(item, "/WORD") == 0) {
+            if (word_seen) {
+                (void)puts(
+                    "Duplicate /WORD qualifier."
+                );
+                return;
+            }
+
+            word_only = 1;
+            word_seen = 1U;
+        } else if (strncmp(item,
+                           "/WORD=",
+                           6U) == 0) {
+            (void)puts(
+                "/WORD does not take a value."
+            );
+            return;
         } else {
             (void)puts(
                 "Only /CONTEXT=n, /LIMIT=n, /CASE=value, "
                 "/COUNT, /FILES, /NAME=pattern, "
-                "/EXCLUDE=pattern, and /DEPTH=n are supported."
+                "/EXCLUDE=pattern, /DEPTH=n, and /WORD are supported."
             );
             return;
         }
@@ -436,7 +458,8 @@ void command_grep(agent_state *state,
         files_only,
         name_pattern,
         exclude_pattern,
-        (unsigned int)depth_value
+        (unsigned int)depth_value,
+        word_only
     );
 }
 

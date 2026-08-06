@@ -51,6 +51,9 @@ static void cleanup_files(void)
     remove_all("SRC/M200_DEPTH_CHILD.C");
     remove_all("M200_GREP_DEPTH_ZERO.OUT");
     remove_all("M200_GREP_DEPTH_ONE.OUT");
+    remove_all("TEST/M201_GREP_WORD.TXT");
+    remove_all("M201_GREP_WORD.OUT");
+    remove_all("M201_GREP_WORD_CASE.OUT");
 }
 
 static int write_text(const char *path,
@@ -234,6 +237,19 @@ static int prepare_depth(const char *pattern)
                       root_text) &&
            write_text("SRC/M200_DEPTH_CHILD.C",
                       child_text);
+}
+
+static int write_word_file(const char *path)
+{
+    return write_text(
+        path,
+        "project standalone\n"
+        "project_grep identifier\n"
+        "projects plural\n"
+        "myproject prefixed\n"
+        "(project) punctuation\n"
+        "PROJECT uppercase\n"
+    );
 }
 
 static char *read_output(const char *path)
@@ -813,6 +829,42 @@ static int verify_depth_output(const char *zero_output,
            count_text(one_output, pattern) == 2UL;
 }
 
+static int verify_word_output(
+    const char *insensitive_output,
+    const char *sensitive_output)
+{
+    if (insensitive_output == NULL ||
+        sensitive_output == NULL) {
+        return 0;
+    }
+
+    if (strstr(insensitive_output,
+               "M201_GREP_WORD.TXT:1:") == NULL ||
+        strstr(insensitive_output,
+               "M201_GREP_WORD.TXT:5:") == NULL ||
+        strstr(insensitive_output,
+               "M201_GREP_WORD.TXT:6:") == NULL ||
+        strstr(insensitive_output,
+               "project_grep identifier") != NULL ||
+        strstr(insensitive_output,
+               "projects plural") != NULL ||
+        strstr(insensitive_output,
+               "myproject prefixed") != NULL ||
+        strstr(insensitive_output,
+               "3 matches found.") == NULL) {
+        return 0;
+    }
+
+    return strstr(sensitive_output,
+                  "M201_GREP_WORD.TXT:1:") != NULL &&
+           strstr(sensitive_output,
+                  "M201_GREP_WORD.TXT:5:") != NULL &&
+           strstr(sensitive_output,
+                  "M201_GREP_WORD.TXT:6:") == NULL &&
+           strstr(sensitive_output,
+                  "2 matches found.") != NULL;
+}
+
 int main(void)
 {
     agent_state state;
@@ -835,6 +887,8 @@ int main(void)
     char *exclude_output;
     char *depth_zero_output;
     char *depth_one_output;
+    char *word_output;
+    char *word_case_output;
     char depth_pattern[64];
     int result;
 
@@ -882,7 +936,8 @@ int main(void)
     project_grep(&state, basic_pattern, NULL, 0U, 100UL, 0, 0, 0,
     NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
     (void)fflush(stdout);
 
     if (freopen("M188_GREP_LIMIT.OUT",
@@ -897,7 +952,8 @@ int main(void)
     project_grep(&state, limit_pattern, NULL, 0U, 100UL, 0, 0, 0,
     NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
     (void)fflush(stdout);
 
     if (!write_context_file(
@@ -924,28 +980,32 @@ int main(void)
                   0U, 100UL, 0, 0, 0,
                       NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     project_grep(&state,
                  basic_pattern,
                  "SRC/M188_GREP_A.C", 0U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     project_grep(&state,
                  basic_pattern,
                  "[.SRC]M188_GREP_A.C", 0U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     project_grep(&state,
                  basic_pattern,
                  "M189_MISSING_PATH", 0U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     project_grep(&state,
                  basic_pattern,
@@ -953,7 +1013,8 @@ int main(void)
                  0U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -972,7 +1033,8 @@ int main(void)
                  2U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
     (void)fflush(stdout);
     if (freopen("M194_GREP_SENSITIVE.OUT",
                 "w",
@@ -994,7 +1056,8 @@ int main(void)
                  0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
     (void)fflush(stdout);
 
     if (freopen("M194_GREP_INSENSITIVE.OUT",
@@ -1017,7 +1080,8 @@ int main(void)
                  0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1036,7 +1100,8 @@ int main(void)
                  0U, 100UL, 0, 1, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1055,7 +1120,8 @@ int main(void)
                  0U, 100UL, 0, 0, 1,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1076,7 +1142,8 @@ int main(void)
                  0U, 2UL, 0, 0, 1,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1095,7 +1162,8 @@ int main(void)
                  0U, 100UL, 0, 0, 0,
                  "*.C",
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1116,7 +1184,8 @@ int main(void)
                  0U, 100UL, 0, 0, 1,
                  "*.MD",
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1135,7 +1204,8 @@ int main(void)
                  0U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1154,7 +1224,8 @@ int main(void)
                  20U, 100UL, 0, 0, 0,
                      NULL,
                   NULL,
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1173,7 +1244,8 @@ int main(void)
                  0U, 100UL, 0, 0, 0,
                  NULL,
                  "M19*",
-                  16U);
+                  16U,
+            0);
 
     (void)fflush(stdout);
 
@@ -1187,7 +1259,8 @@ int main(void)
     }
 
     project_grep(&state, depth_pattern, ".", 0U, 100UL, 0, 0, 0,
-                 NULL, NULL, 0U);
+                 NULL, NULL, 0U,
+            0);
     (void)fflush(stdout);
 
     if (freopen("M200_GREP_DEPTH_ONE.OUT",
@@ -1200,7 +1273,54 @@ int main(void)
     }
 
     project_grep(&state, depth_pattern, ".", 0U, 100UL, 0, 0, 0,
-                 NULL, NULL, 1U);
+                 NULL, NULL, 1U,
+            0);
+    (void)fflush(stdout);
+
+    if (freopen("M201_GREP_WORD.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(stderr,
+                      "Unable to capture word output.\n");
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 "project",
+                 "TEST/M201_GREP_WORD.TXT",
+                 0U,
+                 100UL,
+                 0,
+                 0,
+                 0,
+                 NULL,
+                 NULL,
+                 16U,
+                 1);
+    (void)fflush(stdout);
+
+    if (freopen("M201_GREP_WORD_CASE.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(stderr,
+                      "Unable to capture word case output.\n");
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 "project",
+                 "TEST/M201_GREP_WORD.TXT",
+                 0U,
+                 100UL,
+                 1,
+                 0,
+                 0,
+                 NULL,
+                 NULL,
+                 16U,
+                 1);
     (void)fflush(stdout);
     (void)fclose(stdout);
 
@@ -1227,6 +1347,9 @@ int main(void)
         read_output("M200_GREP_DEPTH_ZERO.OUT");
     depth_one_output =
         read_output("M200_GREP_DEPTH_ONE.OUT");
+    word_output = read_output("M201_GREP_WORD.OUT");
+    word_case_output =
+        read_output("M201_GREP_WORD_CASE.OUT");
 
     result = verify_basic(basic_output,
                           basic_pattern) &&
@@ -1273,6 +1396,8 @@ int main(void)
     free(exclude_output);
     free(depth_zero_output);
     free(depth_one_output);
+    free(word_output);
+    free(word_case_output);
     cleanup_files();
 
     if (!result) {

@@ -22,6 +22,7 @@ static int recorded_files_only;
 static char recorded_name_pattern[TEST_PATTERN_SIZE];
 static char recorded_exclude_pattern[TEST_PATTERN_SIZE];
 static unsigned int recorded_max_depth;
+static int recorded_word_only;
 
 static void remove_all(const char *path)
 {
@@ -108,6 +109,7 @@ static void reset_recording(void)
     recorded_name_pattern[0] = '\0';
     recorded_exclude_pattern[0] = '\0';
     recorded_max_depth = 0U;
+    recorded_word_only = 0;
 }
 
 static int run_command(agent_state *state,
@@ -148,7 +150,8 @@ static int verify_call(const char *pattern,
                        int files_only,
                        const char *name_pattern,
                        const char *exclude_pattern,
-                       unsigned int max_depth)
+                       unsigned int max_depth,
+                       int word_only)
 {
     if (grep_calls != 1U ||
         strcmp(recorded_pattern, pattern) != 0 ||
@@ -157,7 +160,8 @@ static int verify_call(const char *pattern,
         recorded_case_sensitive != case_sensitive ||
         recorded_count_only != count_only ||
         recorded_files_only != files_only ||
-        recorded_max_depth != max_depth) {
+        recorded_max_depth != max_depth ||
+        recorded_word_only != word_only) {
         return 0;
     }
 
@@ -197,7 +201,8 @@ static int test_valid(agent_state *state,
                       int files_only,
                       const char *name_pattern,
                       const char *exclude_pattern,
-                      unsigned int max_depth)
+                      unsigned int max_depth,
+                      int word_only)
 {
     char *output;
     int result;
@@ -217,7 +222,8 @@ static int test_valid(agent_state *state,
                          files_only,
                          name_pattern,
                          exclude_pattern,
-                         max_depth);
+                         max_depth,
+                         word_only);
 
     free(output);
     return result;
@@ -256,7 +262,8 @@ void project_grep(const agent_state *state,
                   int files_only,
                   const char *name_pattern,
                   const char *exclude_pattern,
-                  unsigned int max_depth)
+                  unsigned int max_depth,
+                  int word_only)
 {
     (void)state;
 
@@ -286,6 +293,7 @@ void project_grep(const agent_state *state,
     recorded_count_only = count_only;
     recorded_files_only = files_only;
     recorded_max_depth = max_depth;
+    recorded_word_only = word_only;
 
     if (name_pattern != NULL) {
         (void)strncpy(recorded_name_pattern,
@@ -422,7 +430,8 @@ int main(void)
                    3UL, 0, 0, 0,
                        NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3",
                    "token",
@@ -431,7 +440,8 @@ int main(void)
                    3UL, 0, 0, 0,
                        NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(&state,
                    "\"token\" SRC /CONTEXT=2 /LIMIT=3",
                    "token",
@@ -440,7 +450,8 @@ int main(void)
                    3UL, 0, 0, 0,
                        NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3 /CONTEXT=2",
                    "token",
@@ -449,7 +460,8 @@ int main(void)
                    3UL, 0, 0, 0,
                        NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(&state,
                    "\"token\" SRC",
                    "token",
@@ -458,7 +470,8 @@ int main(void)
                    100UL, 0, 0, 0,
                        NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"Token\" SRC /CASE=SENSITIVE",
@@ -471,7 +484,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"Token\" SRC /CASE=INSENSITIVE",
@@ -484,7 +498,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"Token\" SRC /LIMIT=3 "
@@ -498,7 +513,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /COUNT",
@@ -511,7 +527,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"Token\" SRC /COUNT /CASE=SENSITIVE",
@@ -524,7 +541,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /LIMIT=3 /COUNT",
@@ -537,7 +555,8 @@ int main(void)
             0,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /FILES",
@@ -550,7 +569,8 @@ int main(void)
             1,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"Token\" SRC /FILES /CASE=SENSITIVE",
@@ -563,7 +583,8 @@ int main(void)
             1,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /LIMIT=2 /FILES",
@@ -576,7 +597,8 @@ int main(void)
             1,
             NULL,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /NAME=*.C",
@@ -590,7 +612,8 @@ int main(void)
             "*.C"
         ,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /FILES /NAME=PROJECT%.C",
@@ -604,7 +627,8 @@ int main(void)
             "PROJECT%.C"
         ,
             NULL,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /EXCLUDE=*TEST*",
@@ -618,7 +642,8 @@ int main(void)
             NULL,
             "*TEST*"
         ,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /NAME=*.C /EXCLUDE=*TEST*",
@@ -632,7 +657,8 @@ int main(void)
             "*.C",
             "*TEST*"
         ,
-            16U) &&
+            16U,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /DEPTH=0",
@@ -646,7 +672,8 @@ int main(void)
             NULL,
             NULL,
             0U
-        ) &&
+        ,
+            0) &&
         test_valid(
             &state,
             "\"token\" SRC /DEPTH=16 /NAME=*.C",
@@ -660,6 +687,38 @@ int main(void)
             "*.C",
             NULL,
             16U
+        ,
+            0) &&
+        test_valid(
+            &state,
+            "\"token\" SRC /WORD",
+            "token",
+            "SRC",
+            0U,
+            100UL,
+            0,
+            0,
+            0,
+            NULL,
+            NULL,
+            16U,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /WORD /CASE=SENSITIVE /FILES "
+            "/NAME=*.C /EXCLUDE=*TEST* /DEPTH=0",
+            "Token",
+            "SRC",
+            0U,
+            100UL,
+            1,
+            0,
+            1,
+            "*.C",
+            "*TEST*",
+            0U,
+            1
         ) &&
         test_invalid(&state,
                      "\"token\" /LIMIT=0",
@@ -822,8 +881,23 @@ int main(void)
         ) &&
         test_invalid(
             &state,
+            "\"token\" SRC /WORD /WORD",
+            "Duplicate /WORD qualifier."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /WORD=YES",
+            "/WORD does not take a value."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" /WORD SRC",
+            "GREP path must precede qualifiers."
+        ) &&
+        test_invalid(
+            &state,
             "\"token\" SRC /UNKNOWN=3",
-            "Only /CONTEXT=n, /LIMIT=n, /CASE=value, /COUNT, /FILES, /NAME=pattern, /EXCLUDE=pattern, and /DEPTH=n are supported."
+            "Only /CONTEXT=n, /LIMIT=n, /CASE=value, /COUNT, /FILES, /NAME=pattern, /EXCLUDE=pattern, /DEPTH=n, and /WORD are supported."
         );
 
     remove_all(TEST_OUTPUT);
