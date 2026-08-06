@@ -38,6 +38,7 @@ static void cleanup_files(void)
     remove_all("TEST/M194_GREP_CASE.TXT");
     remove_all("M194_GREP_SENSITIVE.OUT");
     remove_all("M194_GREP_INSENSITIVE.OUT");
+    remove_all("M196_GREP_COUNT.OUT");
 }
 
 static int write_text(const char *path,
@@ -633,6 +634,7 @@ int main(void)
     char *max_output;
     char *sensitive_output;
     char *insensitive_output;
+    char *count_output;
     int result;
 
     cleanup_files();
@@ -668,7 +670,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, basic_pattern, NULL, 0U, 100UL, 0);
+    project_grep(&state, basic_pattern, NULL, 0U, 100UL, 0, 0);
     (void)fflush(stdout);
 
     if (freopen("M188_GREP_LIMIT.OUT",
@@ -680,7 +682,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    project_grep(&state, limit_pattern, NULL, 0U, 100UL, 0);
+    project_grep(&state, limit_pattern, NULL, 0U, 100UL, 0, 0);
     (void)fflush(stdout);
 
     if (!write_context_file(
@@ -704,24 +706,24 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "DOC",
-                  0U, 100UL, 0);
+                  0U, 100UL, 0, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "SRC/M188_GREP_A.C", 0U, 100UL, 0);
+                 "SRC/M188_GREP_A.C", 0U, 100UL, 0, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "[.SRC]M188_GREP_A.C", 0U, 100UL, 0);
+                 "[.SRC]M188_GREP_A.C", 0U, 100UL, 0, 0);
 
     project_grep(&state,
                  basic_pattern,
-                 "M189_MISSING_PATH", 0U, 100UL, 0);
+                 "M189_MISSING_PATH", 0U, 100UL, 0, 0);
 
     project_grep(&state,
                  basic_pattern,
                  "../SRC",
-                 0U, 100UL, 0);
+                 0U, 100UL, 0, 0);
 
     (void)fflush(stdout);
 
@@ -737,7 +739,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 2U, 100UL, 0);
+                 2U, 100UL, 0, 0);
     (void)fflush(stdout);
     if (freopen("M194_GREP_SENSITIVE.OUT",
                 "w",
@@ -755,7 +757,8 @@ int main(void)
                  "TEST/M194_GREP_CASE.TXT",
                  0U,
                  100UL,
-                 1);
+                 1,
+                 0);
     (void)fflush(stdout);
 
     if (freopen("M194_GREP_INSENSITIVE.OUT",
@@ -774,7 +777,24 @@ int main(void)
                  "TEST/M194_GREP_CASE.TXT",
                  0U,
                  100UL,
+                 0,
                  0);
+
+    (void)fflush(stdout);
+
+    if (freopen("M196_GREP_COUNT.OUT",
+                "w",
+                stdout) == NULL) {
+        cleanup_files();
+        (void)fprintf(stderr,
+                      "Unable to capture count-only output.\n");
+        return EXIT_FAILURE;
+    }
+
+    project_grep(&state,
+                 basic_pattern,
+                 "TEST/M190_GREP_CONTEXT.TXT",
+                 0U, 100UL, 0, 1);
 
     (void)fflush(stdout);
 
@@ -790,7 +810,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 0U, 100UL, 0);
+                 0U, 100UL, 0, 0);
 
     (void)fflush(stdout);
 
@@ -806,7 +826,7 @@ int main(void)
     project_grep(&state,
                  basic_pattern,
                  "TEST/M190_GREP_CONTEXT.TXT",
-                 20U, 100UL, 0);
+                 20U, 100UL, 0, 0);
 
     (void)fflush(stdout);
     (void)fclose(stdout);
@@ -821,6 +841,7 @@ int main(void)
         read_output("M194_GREP_SENSITIVE.OUT");
     insensitive_output =
         read_output("M194_GREP_INSENSITIVE.OUT");
+    count_output = read_output("M196_GREP_COUNT.OUT");
 
     result = verify_basic(basic_output,
                           basic_pattern) &&
@@ -846,6 +867,7 @@ int main(void)
     free(max_output);
     free(sensitive_output);
     free(insensitive_output);
+    free(count_output);
     cleanup_files();
 
     if (!result) {

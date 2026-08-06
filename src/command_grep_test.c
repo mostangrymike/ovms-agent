@@ -17,6 +17,7 @@ static char recorded_path[TEST_PATH_SIZE];
 static unsigned int recorded_context;
 static unsigned long recorded_limit;
 static int recorded_case_sensitive;
+static int recorded_count_only;
 
 static void remove_all(const char *path)
 {
@@ -133,13 +134,15 @@ static int verify_call(const char *pattern,
                        const char *path,
                        unsigned int context,
                        unsigned long limit,
-                       int case_sensitive)
+                       int case_sensitive,
+                       int count_only)
 {
     if (grep_calls != 1U ||
         strcmp(recorded_pattern, pattern) != 0 ||
         recorded_context != context ||
         recorded_limit != limit ||
-        recorded_case_sensitive != case_sensitive) {
+        recorded_case_sensitive != case_sensitive ||
+        recorded_count_only != count_only) {
         return 0;
     }
 
@@ -156,7 +159,8 @@ static int test_valid(agent_state *state,
                       const char *path,
                       unsigned int context,
                       unsigned long limit,
-                      int case_sensitive)
+                      int case_sensitive,
+                      int count_only)
 
 {
     char *output;
@@ -172,7 +176,8 @@ static int test_valid(agent_state *state,
                          path,
                          context,
                          limit,
-                         case_sensitive);
+                         case_sensitive,
+                         count_only);
 
     free(output);
     return result;
@@ -206,7 +211,8 @@ void project_grep(const agent_state *state,
                   const char *path,
                   unsigned int context,
                   unsigned long match_limit,
-                  int case_sensitive)
+                  int case_sensitive,
+                  int count_only)
 {
     (void)state;
 
@@ -233,6 +239,7 @@ void project_grep(const agent_state *state,
     recorded_context = context;
     recorded_limit = match_limit;
     recorded_case_sensitive = case_sensitive;
+    recorded_count_only = count_only;
 }
 
 /*
@@ -348,31 +355,31 @@ int main(void)
                    "token",
                    NULL,
                    0U,
-                   3UL, 0) &&
+                   3UL, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3",
                    "token",
                    "SRC",
                    0U,
-                   3UL, 0) &&
+                   3UL, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /CONTEXT=2 /LIMIT=3",
                    "token",
                    "SRC",
                    2U,
-                   3UL, 0) &&
+                   3UL, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC /LIMIT=3 /CONTEXT=2",
                    "token",
                    "SRC",
                    2U,
-                   3UL, 0) &&
+                   3UL, 0, 0) &&
         test_valid(&state,
                    "\"token\" SRC",
                    "token",
                    "SRC",
                    0U,
-                   100UL, 0) &&
+                   100UL, 0, 0) &&
         test_valid(
             &state,
             "\"Token\" SRC /CASE=SENSITIVE",
@@ -380,7 +387,8 @@ int main(void)
             "SRC",
             0U,
             100UL,
-            1
+            1,
+            0
         ) &&
         test_valid(
             &state,
@@ -389,6 +397,7 @@ int main(void)
             "SRC",
             0U,
             100UL,
+            0,
             0
         ) &&
         test_valid(
@@ -399,6 +408,37 @@ int main(void)
             "SRC",
             2U,
             3UL,
+            1,
+            0
+        ) &&
+        test_valid(
+            &state,
+            "\"token\" SRC /COUNT",
+            "token",
+            "SRC",
+            0U,
+            100UL,
+            0,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"Token\" SRC /COUNT /CASE=SENSITIVE",
+            "Token",
+            "SRC",
+            0U,
+            100UL,
+            1,
+            1
+        ) &&
+        test_valid(
+            &state,
+            "\"token\" SRC /LIMIT=3 /COUNT",
+            "token",
+            "SRC",
+            0U,
+            3UL,
+            0,
             1
         ) &&
         test_invalid(&state,
@@ -432,8 +472,33 @@ int main(void)
         ) &&
         test_invalid(
             &state,
+            "\"token\" SRC /COUNT /COUNT",
+            "Duplicate /COUNT qualifier."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /COUNT=YES",
+            "/COUNT does not take a value."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" /COUNT SRC",
+            "GREP path must precede qualifiers."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /COUNT /CONTEXT=1",
+            "/COUNT is not compatible with /CONTEXT."
+        ) &&
+        test_invalid(
+            &state,
+            "\"token\" SRC /CONTEXT=1 /COUNT",
+            "/COUNT is not compatible with /CONTEXT."
+        ) &&
+        test_invalid(
+            &state,
             "\"token\" SRC /UNKNOWN=3",
-            "Only /CONTEXT=n, /LIMIT=n, and /CASE=value are supported."
+            "Only /CONTEXT=n, /LIMIT=n, /CASE=value, and /COUNT are supported."
         );
 
     remove_all(TEST_OUTPUT);
