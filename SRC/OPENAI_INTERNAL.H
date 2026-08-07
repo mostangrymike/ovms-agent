@@ -310,6 +310,9 @@ void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_repair(agent_state *state, const char *goal);
 void openai_test_set_repair_plan(const char *plan_text,
                                  int auto_approve);
+void openai_test_set_repair_plans(const char *plan_text1,
+                                  const char *plan_text2,
+                                  int auto_approve);
 void openai_test_set_build_hook(openai_test_build_hook_fn hook);
 char *openai_build_repair_prompt(const char *goal,
                                  const char *build_output);
