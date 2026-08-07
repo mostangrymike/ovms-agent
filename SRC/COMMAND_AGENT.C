@@ -222,6 +222,17 @@ void command_agent_project_ctx(
 void command_agent_project_refresh(
     agent_state *state, const char *arguments);
 
+void command_agent_git_status2(
+    agent_state *state, const char *arguments);
+void command_agent_git_diff2(
+    agent_state *state, const char *arguments);
+void command_agent_git_changed(
+    agent_state *state, const char *arguments);
+void command_agent_git_context(
+    agent_state *state, const char *arguments);
+void command_agent_git_refresh(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -323,6 +334,11 @@ static const command_entry agent_commands[] = {
     { "AGENT/PROJECT/BUILD", "Show likely build/control files", command_agent_project_build },
     { "AGENT/PROJECT/CONTEXT", "Show repository context injected into agent runs", command_agent_project_ctx },
     { "AGENT/PROJECT/REFRESH", "Refresh cached repository map", command_agent_project_refresh },
+    { "AGENT/GIT/STATUS", "Show cached bounded Git working-tree status", command_agent_git_status2 },
+    { "AGENT/GIT/DIFF", "Show cached bounded unstaged Git diff", command_agent_git_diff2 },
+    { "AGENT/GIT/CHANGED", "Show changed paths from Git status", command_agent_git_changed },
+    { "AGENT/GIT/CONTEXT", "Show Git context injected into agent runs", command_agent_git_context },
+    { "AGENT/GIT/REFRESH", "Refresh cached Git status and diff", command_agent_git_refresh },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -605,6 +621,36 @@ void command_agent_project_refresh(agent_state *state, const char *arguments)
 {
     (void)arguments;
     openai_project_refresh_cmd(state);
+}
+
+void command_agent_git_status2(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_git_status(state);
+}
+
+void command_agent_git_diff2(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_git_diff(state);
+}
+
+void command_agent_git_changed(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_git_changed(state);
+}
+
+void command_agent_git_context(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_git_context(state);
+}
+
+void command_agent_git_refresh(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_git_refresh_cmd(state);
 }
 
 void command_agent_repair_status(agent_state *state,

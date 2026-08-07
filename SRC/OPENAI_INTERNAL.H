@@ -720,4 +720,24 @@ void openai_show_project_map(const agent_state *state,
 void openai_show_project_ctx(const agent_state *state);
 void openai_project_refresh_cmd(const agent_state *state);
 
+int openai_git_refresh(const agent_state *state);
+int openai_git_status_text(const agent_state *state,
+                           char *output, size_t output_size);
+int openai_git_diff_text(const agent_state *state,
+                         char *output, size_t output_size);
+int openai_git_changed_text(const agent_state *state,
+                            char *output, size_t output_size);
+int openai_git_context(const agent_state *state,
+                       char *output, size_t output_size);
+int openai_git_compose(const agent_state *state,
+                       const char *goal,
+                       char *output, size_t output_size);
+void openai_show_git_status(const agent_state *state);
+void openai_show_git_diff(const agent_state *state);
+void openai_show_git_changed(const agent_state *state);
+void openai_show_git_context(const agent_state *state);
+void openai_git_refresh_cmd(const agent_state *state);
+void openai_test_git_data(const char *status_text,
+                          const char *diff_text);
+
 #endif /* OPENAI_INTERNAL_H */

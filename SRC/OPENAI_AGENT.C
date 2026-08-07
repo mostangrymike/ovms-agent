@@ -13,7 +13,8 @@ static void openai_agent_instr(agent_state *state,
                                int workflow)
 {
     char instr_goal[12288];
-    char model_goal[24576];
+    char project_goal[24576];
+    char model_goal[32768];
 
     if (!openai_instr_compose(
             state, goal, instr_goal, sizeof(instr_goal))) {
@@ -22,8 +23,14 @@ static void openai_agent_instr(agent_state *state,
     }
 
     if (!openai_project_compose(
-            state, instr_goal, model_goal, sizeof(model_goal))) {
+            state, instr_goal, project_goal, sizeof(project_goal))) {
         (void)puts("Unable to compose repository map.");
+        return;
+    }
+
+    if (!openai_git_compose(
+            state, project_goal, model_goal, sizeof(model_goal))) {
+        (void)puts("Unable to compose Git context.");
         return;
     }
 
