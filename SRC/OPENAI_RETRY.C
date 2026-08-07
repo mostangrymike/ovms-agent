@@ -5,6 +5,17 @@
 #include "openai_internal.h"
 
 
+
+static const char *openai_test_repair_plan_text = NULL;
+static int openai_test_repair_auto_approve = 0;
+
+void openai_test_set_repair_plan(const char *plan_text,
+                                 int auto_approve)
+{
+    openai_test_repair_plan_text = plan_text;
+    openai_test_repair_auto_approve = auto_approve;
+}
+
 char *openai_build_repair_prompt(const char *goal,
                                  const char *build_output)
 {
@@ -243,7 +254,17 @@ void openai_agent_repair(agent_state *state, const char *goal)
         "Current build fails. Creating one transactional repair plan..."
     );
 
-    openai_agent_plan(state, combined_goal);
+    if (openai_test_repair_plan_text != NULL) {
+        if (!openai_plan_save(
+                combined_goal,
+                openai_test_repair_plan_text)) {
+            (void)puts(
+                "AGENT/REPAIR test hook could not save deterministic plan."
+            );
+        }
+    } else {
+        openai_agent_plan(state, combined_goal);
+    }
 
     free(combined_goal);
     free(build_output);
@@ -261,7 +282,12 @@ void openai_agent_repair(agent_state *state, const char *goal)
      * openai_plan_approve displays the complete saved plan and obtains the
      * workflow's single user confirmation.
      */
-    openai_plan_approve();
+    if (openai_test_repair_plan_text != NULL &&
+        openai_test_repair_auto_approve) {
+        (void)openai_plan_approve_file("OVMS_AGENT_PLAN.TXT");
+    } else {
+        openai_plan_approve();
+    }
 
     if (!openai_plan_approved) {
         (void)puts("AGENT/REPAIR cancelled before any project write.");

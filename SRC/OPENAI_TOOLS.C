@@ -2,6 +2,14 @@
 #include "edit_txn.h"
 
 
+
+static openai_test_build_hook_fn openai_test_build_hook = NULL;
+
+void openai_test_set_build_hook(openai_test_build_hook_fn hook)
+{
+    openai_test_build_hook = hook;
+}
+
 static int openai_write_complete_text_txn(
     const char *path,
     const char *replacement_text)
@@ -1381,6 +1389,10 @@ openai_replace_result execute_replace_text_tool(
 char *execute_run_build_tool(int *build_status)
 {
     char command[256];
+
+    if (openai_test_build_hook != NULL) {
+        return openai_test_build_hook(build_status);
+    }
     char *output;
     size_t length;
     int status;

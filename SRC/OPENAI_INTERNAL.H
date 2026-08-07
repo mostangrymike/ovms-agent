@@ -27,6 +27,8 @@
 #include "openai_state.h"
 #include "project.h"
 
+typedef char *(*openai_test_build_hook_fn)(int *build_status);
+
 #define OPENAI_REQUEST_FILE  "OVMS_AGENT_REQUEST.JSON"
 #define OPENAI_RESPONSE_FILE "OVMS_AGENT_RESPONSE.JSON"
 #define OPENAI_HEADERS_FILE  "OVMS_AGENT_HEADERS.TXT"
@@ -306,6 +308,9 @@ void openai_agent_create(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
 void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_repair(agent_state *state, const char *goal);
+void openai_test_set_repair_plan(const char *plan_text,
+                                 int auto_approve);
+void openai_test_set_build_hook(openai_test_build_hook_fn hook);
 char *openai_build_repair_prompt(const char *goal,
                                  const char *build_output);
 const char *openai_workflow_name(int workflow);
