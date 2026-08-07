@@ -10,6 +10,50 @@ static const char *openai_test_repair_plan_text = NULL;
 static const char *openai_test_repair_plan_text2 = NULL;
 static int openai_test_repair_auto_approve = 0;
 static unsigned int openai_test_repair_plan_index = 0U;
+static char *openai_test_repair_prompt1 = NULL;
+static char *openai_test_repair_prompt2 = NULL;
+
+static void openai_test_clear_repair_prompts(void)
+{
+    free(openai_test_repair_prompt1);
+    free(openai_test_repair_prompt2);
+    openai_test_repair_prompt1 = NULL;
+    openai_test_repair_prompt2 = NULL;
+}
+
+static void openai_test_capture_repair_prompt(unsigned int attempt,
+                                              const char *prompt)
+{
+    char **destination;
+
+    if (prompt == NULL) {
+        return;
+    }
+
+    if (attempt == 1U) {
+        destination = &openai_test_repair_prompt1;
+    } else if (attempt == 2U) {
+        destination = &openai_test_repair_prompt2;
+    } else {
+        return;
+    }
+
+    free(*destination);
+    *destination = openai_duplicate_text(prompt);
+}
+
+const char *openai_test_get_repair_prompt(unsigned int attempt)
+{
+    if (attempt == 1U) {
+        return openai_test_repair_prompt1;
+    }
+
+    if (attempt == 2U) {
+        return openai_test_repair_prompt2;
+    }
+
+    return NULL;
+}
 
 void openai_test_set_repair_plan(const char *plan_text,
                                  int auto_approve)
@@ -18,6 +62,7 @@ void openai_test_set_repair_plan(const char *plan_text,
     openai_test_repair_plan_text2 = NULL;
     openai_test_repair_auto_approve = auto_approve;
     openai_test_repair_plan_index = 0U;
+    openai_test_clear_repair_prompts();
 }
 
 void openai_test_set_repair_plans(const char *plan_text1,
@@ -28,6 +73,7 @@ void openai_test_set_repair_plans(const char *plan_text1,
     openai_test_repair_plan_text2 = plan_text2;
     openai_test_repair_auto_approve = auto_approve;
     openai_test_repair_plan_index = 0U;
+    openai_test_clear_repair_prompts();
 }
 
 static const char *openai_test_next_repair_plan(void)
@@ -46,6 +92,24 @@ static const char *openai_test_next_repair_plan(void)
 
     ++openai_test_repair_plan_index;
     return plan_text;
+}
+
+static char *openai_saved_plan_body(const char *saved_plan)
+{
+    static const char marker[] = "\n[plan]\n";
+    const char *body;
+
+    if (saved_plan == NULL) {
+        return NULL;
+    }
+
+    body = strstr(saved_plan, marker);
+    if (body == NULL) {
+        return NULL;
+    }
+
+    body += strlen(marker);
+    return openai_duplicate_text(body);
 }
 
 char *openai_build_repair_prompt(const char *goal,
@@ -88,6 +152,116 @@ char *openai_build_repair_prompt(const char *goal,
     (void)strcat(combined_goal, build_output);
 
     return combined_goal;
+}
+
+
+static char *openai_quote_plan_context(const char *plan)
+{
+    static const char prefix[] = "PRIOR> ";
+    const char *source;
+    char *quoted;
+    char *destination;
+    size_t line_count;
+    size_t size;
+
+    if (plan == NULL) {
+        return NULL;
+    }
+
+    line_count = 1U;
+    for (source = plan; *source != '\0'; ++source) {
+        if (*source == '\n') {
+            ++line_count;
+        }
+    }
+
+    size =
+        strlen(plan) +
+        line_count * strlen(prefix) +
+        1U;
+
+    quoted = (char *)malloc(size);
+    if (quoted == NULL) {
+        return NULL;
+    }
+
+    source = plan;
+    destination = quoted;
+
+    (void)memcpy(destination, prefix, strlen(prefix));
+    destination += strlen(prefix);
+
+    while (*source != '\0') {
+        *destination++ = *source;
+
+        if (*source == '\n' && source[1] != '\0') {
+            (void)memcpy(destination, prefix, strlen(prefix));
+            destination += strlen(prefix);
+        }
+
+        ++source;
+    }
+
+    *destination = '\0';
+    return quoted;
+}
+
+char *openai_build_retry_prompt(const char *goal,
+                                const char *build_output,
+                                const char *previous_plan)
+{
+    static const char introduction[] =
+        "Create the second and final deterministic transactional repair "
+        "plan. The first repair attempt was applied atomically, the rebuild "
+        "still failed, and the complete first transaction was rolled back. "
+        "Use the prior plan and the new build diagnostics as evidence. "
+        "Do not repeat the same ineffective repair. Inspect current project "
+        "files before finalizing a different coherent fix. Do not run a "
+        "build or write files directly. This is the final allowed repair "
+        "attempt.\n\nOriginal user goal:\n";
+    static const char plan_label[] =
+        "\n\nFirst repair plan that was rolled back:\n";
+    static const char result_label[] =
+        "\n\nBuild diagnostics after first repair attempt:\n";
+    char *quoted_plan;
+    char *prompt;
+    size_t size;
+
+    if (goal == NULL ||
+        build_output == NULL ||
+        previous_plan == NULL) {
+        return NULL;
+    }
+
+    quoted_plan = openai_quote_plan_context(previous_plan);
+    if (quoted_plan == NULL) {
+        return NULL;
+    }
+
+    size =
+        strlen(introduction) +
+        strlen(goal) +
+        strlen(plan_label) +
+        strlen(quoted_plan) +
+        strlen(result_label) +
+        strlen(build_output) +
+        1U;
+
+    prompt = (char *)malloc(size);
+    if (prompt == NULL) {
+        free(quoted_plan);
+        return NULL;
+    }
+
+    (void)strcpy(prompt, introduction);
+    (void)strcat(prompt, goal);
+    (void)strcat(prompt, plan_label);
+    (void)strcat(prompt, quoted_plan);
+    (void)strcat(prompt, result_label);
+    (void)strcat(prompt, build_output);
+
+    free(quoted_plan);
+    return prompt;
 }
 
 void openai_agent_retry(agent_state *state, const char *goal)
@@ -196,6 +370,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
 {
     char *build_output;
     char *combined_goal;
+    char *previous_plan;
     const char *test_plan;
     unsigned int attempt;
     int build_status;
@@ -271,15 +446,31 @@ void openai_agent_repair(agent_state *state, const char *goal)
         return;
     }
 
+    previous_plan = NULL;
+
     for (attempt = 1U; attempt <= 2U; ++attempt) {
-        combined_goal =
-            openai_build_repair_prompt(goal, build_output);
+        if (attempt == 1U) {
+            combined_goal =
+                openai_build_repair_prompt(goal, build_output);
+        } else {
+            combined_goal =
+                openai_build_retry_prompt(
+                    goal,
+                    build_output,
+                    previous_plan
+                );
+        }
 
         if (combined_goal == NULL) {
             (void)puts("Insufficient memory for repair prompt.");
             free(build_output);
             openai_log_event("AGENT/REPAIR", "allocation_failed", 0);
+            free(previous_plan);
             return;
+        }
+
+        if (using_test_plans) {
+            openai_test_capture_repair_prompt(attempt, combined_goal);
         }
 
         (void)printf(
@@ -303,6 +494,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                     "test_plan_sequence_ended",
                     (int)attempt
                 );
+                free(previous_plan);
                 return;
             }
 
@@ -324,8 +516,33 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "AGENT/REPAIR stopped because no current deterministic plan "
                 "was produced."
             );
+            free(previous_plan);
             openai_log_event("AGENT/REPAIR", "plan_missing", (int)attempt);
             return;
+        }
+
+        if (attempt == 1U) {
+            char *saved_plan;
+
+            saved_plan =
+                openai_read_text_file("OVMS_AGENT_PLAN.TXT");
+
+            free(previous_plan);
+            previous_plan =
+                openai_saved_plan_body(saved_plan);
+            free(saved_plan);
+
+            if (previous_plan == NULL) {
+                (void)puts(
+                    "AGENT/REPAIR could not snapshot the first repair plan."
+                );
+                openai_log_event(
+                    "AGENT/REPAIR",
+                    "prior_plan_snapshot_failed",
+                    1
+                );
+                return;
+            }
         }
 
         if (using_test_plans &&
@@ -344,6 +561,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "approval_declined",
                 (int)attempt
             );
+            free(previous_plan);
             return;
         }
 
@@ -372,6 +590,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "repair_succeeded",
                 (int)attempt
             );
+            free(previous_plan);
             return;
         }
 
@@ -386,6 +605,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "unsafe_retry_state",
                 (int)attempt
             );
+            free(previous_plan);
             return;
         }
 
@@ -399,6 +619,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "retry_limit_reached",
                 2
             );
+            free(previous_plan);
             return;
         }
 
@@ -415,12 +636,13 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "retry_diagnostics_missing",
                 (int)attempt
             );
+            free(previous_plan);
             return;
         }
 
         (void)puts(
             "First repair attempt failed and was rolled back. "
-            "Using the new build diagnostics for attempt 2."
+            "Attempt 2 will receive the first plan and new diagnostics."
         );
 
         openai_plan_approval_clear();

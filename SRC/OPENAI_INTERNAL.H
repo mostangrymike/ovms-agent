@@ -316,6 +316,10 @@ void openai_test_set_repair_plans(const char *plan_text1,
 void openai_test_set_build_hook(openai_test_build_hook_fn hook);
 char *openai_build_repair_prompt(const char *goal,
                                  const char *build_output);
+char *openai_build_retry_prompt(const char *goal,
+                                       const char *build_output,
+                                       const char *previous_plan);
+const char *openai_test_get_repair_prompt(unsigned int attempt);
 const char *openai_workflow_name(int workflow);
 const char *openai_rollback_name(int rollback_state);
 void openai_status(const agent_state *state);
