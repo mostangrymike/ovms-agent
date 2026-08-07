@@ -43,6 +43,10 @@ void command_agent_repair_info(
     agent_state *state,
     const char *arguments);
 
+void command_agent_repair_check(
+    agent_state *state,
+    const char *arguments);
+
 void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
@@ -80,6 +84,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/STATS", "Show aggregate statistics for recent repair runs", command_agent_repair_stats },
     { "AGENT/REPAIR/CONFIG", "Show resolved repair history configuration", command_agent_repair_config },
     { "AGENT/REPAIR/HISTORY/INFO", "Show persisted repair history metadata", command_agent_repair_info },
+    { "AGENT/REPAIR/HISTORY/CHECK", "Check persisted repair history integrity", command_agent_repair_check },
     { "AGENT/REPAIR/HISTORY/CLEAR", "Clear persisted repair history with explicit confirmation", command_agent_repair_clear },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
@@ -199,6 +204,14 @@ void command_agent_repair_info(agent_state *state,
     (void)state;
     (void)arguments;
     openai_show_repair_info();
+}
+
+void command_agent_repair_check(agent_state *state,
+                                const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_check();
 }
 
 void command_agent_repair_clear(agent_state *state,

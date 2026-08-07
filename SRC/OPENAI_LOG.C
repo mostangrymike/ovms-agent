@@ -546,6 +546,182 @@ void openai_test_set_history_limit(unsigned int limit)
 }
 
 
+static int openai_repair_line_candidate(const char *line)
+{
+    if (line == NULL) {
+        return 0;
+    }
+
+    return
+        strstr(
+            line,
+            "workflow=AGENT/REPAIR event=repair_attempt "
+        ) != NULL;
+}
+
+static int openai_plan_token_valid(const char *line)
+{
+    const char *plan;
+    unsigned int index;
+
+    if (line == NULL) {
+        return 0;
+    }
+
+    plan = strstr(line, " plan=");
+    if (plan == NULL) {
+        return 0;
+    }
+
+    plan += 6;
+
+    for (index = 0U; index < 8U; ++index) {
+        unsigned char ch;
+
+        ch = (unsigned char)plan[index];
+
+        if (!((ch >= (unsigned char)'0' &&
+               ch <= (unsigned char)'9') ||
+              (ch >= (unsigned char)'A' &&
+               ch <= (unsigned char)'F') ||
+              (ch >= (unsigned char)'a' &&
+               ch <= (unsigned char)'f'))) {
+            return 0;
+        }
+    }
+
+    return plan[8] == ' ';
+}
+
+static int openai_repair_outcome_valid(const char *outcome)
+{
+    if (outcome == NULL) {
+        return 0;
+    }
+
+    return
+        strcmp(outcome, "committed") == 0 ||
+        strcmp(outcome, "rolled_back") == 0 ||
+        strcmp(outcome, "unsafe") == 0;
+}
+
+int openai_repair_check_text(char *output,
+                             size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_attempt_record parsed;
+    unsigned int record_count;
+    unsigned int run_count;
+    unsigned int malformed_count;
+    unsigned int sequence_errors;
+    unsigned int outcome_errors;
+    unsigned int plan_errors;
+    int active_run;
+    int saw_attempt2;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    record_count = 0U;
+    run_count = 0U;
+    malformed_count = 0U;
+    sequence_errors = 0U;
+    outcome_errors = 0U;
+    plan_errors = 0U;
+    active_run = 0;
+    saw_attempt2 = 0;
+
+    file = fopen(openai_activity_path(), "r");
+
+    if (file != NULL) {
+        while (fgets(line, sizeof(line), file) != NULL) {
+            if (!openai_repair_line_candidate(line)) {
+                continue;
+            }
+
+            ++record_count;
+
+            if (!openai_parse_repair_record(line, &parsed)) {
+                ++malformed_count;
+                continue;
+            }
+
+            if (!openai_plan_token_valid(line)) {
+                ++plan_errors;
+            }
+
+            if (!openai_repair_outcome_valid(parsed.outcome)) {
+                ++outcome_errors;
+            }
+
+            if (parsed.attempt == 1U) {
+                ++run_count;
+                active_run = 1;
+                saw_attempt2 = 0;
+            } else if (parsed.attempt == 2U) {
+                if (!active_run || saw_attempt2) {
+                    ++sequence_errors;
+                } else {
+                    saw_attempt2 = 1;
+                }
+            } else {
+                ++sequence_errors;
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history check\n"
+        "-------------------------------\n"
+        "Records scanned:     %u\n"
+        "Runs scanned:        %u\n"
+        "Malformed records:   %u\n"
+        "Sequence errors:     %u\n"
+        "Outcome errors:      %u\n"
+        "Plan hash errors:    %u\n"
+        "Integrity:           %s\n",
+        record_count,
+        run_count,
+        malformed_count,
+        sequence_errors,
+        outcome_errors,
+        plan_errors,
+        (malformed_count == 0U &&
+         sequence_errors == 0U &&
+         outcome_errors == 0U &&
+         plan_errors == 0U) ? "PASS" : "FAIL"
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_repair_check(void)
+{
+    char report[2048];
+
+    if (!openai_repair_check_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to check AGENT/REPAIR history."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+
 int openai_repair_info_text(char *output,
                             size_t output_size)
 {
