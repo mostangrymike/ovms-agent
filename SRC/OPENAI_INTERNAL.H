@@ -117,6 +117,9 @@ void openai_show_repair_status(void);
 int openai_repair_history_text(char *output,
                                size_t output_size);
 void openai_show_repair_history(void);
+int openai_repair_failures_text(char *output,
+                                size_t output_size);
+void openai_show_repair_failures(void);
 int openai_repair_show_text(unsigned long plan_hash,
                             char *output,
                             size_t output_size);
