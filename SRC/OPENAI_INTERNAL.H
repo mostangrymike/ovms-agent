@@ -627,4 +627,33 @@ void openai_session_delete_cmd(const char *arguments);
 void openai_test_session_paths(const char *data_path,
                                const char *current_path);
 
+int openai_session_current_id(char id[9]);
+
+int openai_tool_run(agent_state *state, const char *arguments);
+void openai_tool_run_cmd(agent_state *state, const char *arguments);
+int openai_tool_last_text(char *output, size_t output_size);
+int openai_tool_hist_text(char *output, size_t output_size);
+void openai_show_tool_last(void);
+void openai_show_tool_hist(void);
+int openai_tool_clear(const char *arguments);
+void openai_tool_clear_cmd(const char *arguments);
+
+int openai_session_hist_text(const char *arguments,
+                             char *output, size_t output_size);
+void openai_show_session_hist(const char *arguments);
+int openai_session_export(const char *arguments);
+void openai_session_export_cmd(const char *arguments);
+int openai_session_exec(agent_state *state, const char *arguments);
+void openai_session_exec_cmd(agent_state *state, const char *arguments);
+
+int openai_exec_resume(agent_state *state, const char *goal);
+void openai_exec_resume_cmd(agent_state *state, const char *goal);
+int openai_exec_fork(agent_state *state, const char *arguments);
+void openai_exec_fork_cmd(agent_state *state, const char *arguments);
+
+void openai_tx_note_exec(const char *name,
+                         const char *goal,
+                         const char *status);
+void openai_test_tx_path(const char *path);
+
 #endif /* OPENAI_INTERNAL_H */

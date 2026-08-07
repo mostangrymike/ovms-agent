@@ -418,6 +418,9 @@ int openai_parity_text(char *output, size_t output_size)
         "Persistent sessions:  available\n"
         "Session resume/fork:  available\n"
         "Archive lifecycle:    available\n"
+        "Session transcripts:   available\n"
+        "Direct tool runner:    available\n"
+        "Resume/fork execution: available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
@@ -455,6 +458,7 @@ void openai_exec_goal(agent_state *state, const char *goal)
             (void)puts("Unable to persist current session goal.");
             return;
         }
+        openai_tx_note_exec("EXEC", goal, "started");
         openai_agent(state, goal);
         return;
     }
@@ -471,6 +475,8 @@ void openai_exec_goal(agent_state *state, const char *goal)
         (void)puts("Unable to persist current session goal.");
         return;
     }
+
+    openai_tx_note_exec("EXEC", goal, "started");
 
     openai_agent_mode(
         state, goal, 1, 0, OPENAI_WORKFLOW_WRITE
@@ -491,6 +497,7 @@ void openai_exec_dry(agent_state *state, const char *goal)
         return;
     }
 
+    openai_tx_note_exec("DRY", goal, "started");
     openai_agent_plan(state, goal);
 }
 

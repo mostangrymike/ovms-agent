@@ -846,6 +846,11 @@ int openai_session_delete(const char *arguments)
     return 1;
 }
 
+int openai_session_current_id(char id[9])
+{
+    return openai_session_current(id);
+}
+
 int openai_session_current_text(char *output,
                                 size_t output_size)
 {

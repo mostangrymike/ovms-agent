@@ -171,6 +171,25 @@ void command_agent_session_delete(
 void command_agent_session_current(
     agent_state *state, const char *arguments);
 
+void command_agent_session_hist(
+    agent_state *state, const char *arguments);
+void command_agent_session_export2(
+    agent_state *state, const char *arguments);
+void command_agent_session_exec(
+    agent_state *state, const char *arguments);
+void command_agent_tool_run(
+    agent_state *state, const char *arguments);
+void command_agent_tool_last(
+    agent_state *state, const char *arguments);
+void command_agent_tool_hist(
+    agent_state *state, const char *arguments);
+void command_agent_tool_clear(
+    agent_state *state, const char *arguments);
+void command_agent_exec_resume(
+    agent_state *state, const char *arguments);
+void command_agent_exec_fork(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -248,6 +267,15 @@ static const command_entry agent_commands[] = {
     { "AGENT/SESSION/UNARCHIVE", "Unarchive a persistent session", command_agent_session_unarc },
     { "AGENT/SESSION/DELETE", "Delete a persistent session", command_agent_session_delete },
     { "AGENT/SESSION/CURRENT", "Show the current persistent session", command_agent_session_current },
+    { "AGENT/SESSION/HISTORY", "Show the persistent transcript for a session", command_agent_session_hist },
+    { "AGENT/SESSION/EXPORT", "Export one persistent session transcript", command_agent_session_export2 },
+    { "AGENT/SESSION/EXEC", "Resume a session and execute a goal", command_agent_session_exec },
+    { "AGENT/TOOL/RUN", "Run one approved built-in tool directly", command_agent_tool_run },
+    { "AGENT/TOOL/LAST", "Show the last persisted tool invocation", command_agent_tool_last },
+    { "AGENT/TOOL/HISTORY", "Show recent persisted tool invocations", command_agent_tool_hist },
+    { "AGENT/TOOL/CLEAR", "Clear persisted tool/session transcript history", command_agent_tool_clear },
+    { "AGENT/EXEC/RESUME", "Execute a goal in the current session", command_agent_exec_resume },
+    { "AGENT/EXEC/FORK", "Fork the current session and execute a goal", command_agent_exec_fork },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -396,6 +424,51 @@ void command_agent_session_delete(agent_state *state, const char *arguments)
 void command_agent_session_current(agent_state *state, const char *arguments)
 {
     (void)state; (void)arguments; openai_show_session_current();
+}
+
+void command_agent_session_hist(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_session_hist(arguments);
+}
+
+void command_agent_session_export2(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_export_cmd(arguments);
+}
+
+void command_agent_session_exec(agent_state *state, const char *arguments)
+{
+    openai_session_exec_cmd(state, arguments);
+}
+
+void command_agent_tool_run(agent_state *state, const char *arguments)
+{
+    openai_tool_run_cmd(state, arguments);
+}
+
+void command_agent_tool_last(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_tool_last();
+}
+
+void command_agent_tool_hist(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_tool_hist();
+}
+
+void command_agent_tool_clear(agent_state *state, const char *arguments)
+{
+    (void)state; openai_tool_clear_cmd(arguments);
+}
+
+void command_agent_exec_resume(agent_state *state, const char *arguments)
+{
+    openai_exec_resume_cmd(state, arguments);
+}
+
+void command_agent_exec_fork(agent_state *state, const char *arguments)
+{
+    openai_exec_fork_cmd(state, arguments);
 }
 
 void command_agent_repair_status(agent_state *state,
