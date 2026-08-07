@@ -136,6 +136,8 @@ int openai_test_repair_config_text(const char *value,
                                    char *output,
                                    size_t output_size);
 void openai_show_repair_config(void);
+int openai_clear_repair_history(int approved);
+void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);
 void openai_test_set_history_limit(unsigned int limit);
 void openai_test_set_log_path(const char *path);

@@ -1190,6 +1190,172 @@ void openai_show_repair_failures(void)
 }
 
 
+static int openai_is_repair_record_line(const char *line)
+{
+    if (line == NULL) {
+        return 0;
+    }
+
+    return
+        strstr(line, " workflow=AGENT/REPAIR ") != NULL &&
+        strstr(line, " event=repair_attempt ") != NULL;
+}
+
+int openai_clear_repair_history(int approved)
+{
+    FILE *file;
+    char *contents;
+    long length;
+    size_t count;
+    char *position;
+    char *line_start;
+    unsigned int removed;
+
+    if (!approved) {
+        return 0;
+    }
+
+    file = fopen(openai_activity_path(), "rb");
+    if (file == NULL) {
+        return 1;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    length = ftell(file);
+    if (length < 0L) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    if (fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    contents = (char *)malloc((size_t)length + 1U);
+    if (contents == NULL) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    count = fread(contents, 1U, (size_t)length, file);
+    if (ferror(file)) {
+        free(contents);
+        (void)fclose(file);
+        return 0;
+    }
+
+    contents[count] = '\0';
+
+    if (fclose(file) != 0) {
+        free(contents);
+        return 0;
+    }
+
+    file = fopen(openai_activity_path(), "w");
+    if (file == NULL) {
+        free(contents);
+        return 0;
+    }
+
+    removed = 0U;
+    line_start = contents;
+    position = contents;
+
+    while (*position != '\0') {
+        if (*position == '\n') {
+            char saved;
+
+            saved = position[1];
+            position[1] = '\0';
+
+            if (openai_is_repair_record_line(line_start)) {
+                ++removed;
+            } else if (fputs(line_start, file) == EOF) {
+                position[1] = saved;
+                free(contents);
+                (void)fclose(file);
+                return 0;
+            }
+
+            position[1] = saved;
+            line_start = position + 1;
+        }
+
+        ++position;
+    }
+
+    if (*line_start != '\0') {
+        if (openai_is_repair_record_line(line_start)) {
+            ++removed;
+        } else if (fputs(line_start, file) == EOF) {
+            free(contents);
+            (void)fclose(file);
+            return 0;
+        }
+    }
+
+    free(contents);
+
+    if (fclose(file) != 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+void openai_clear_repair_cmd(void)
+{
+    char answer[64];
+    size_t length;
+
+    (void)puts(
+        "This removes persisted AGENT/REPAIR attempt records "
+        "from the active activity log."
+    );
+    (void)puts(
+        "Other activity-log entries, source files, saved plans, "
+        "and state are preserved."
+    );
+    (void)printf(
+        "Type CLEAR REPAIR HISTORY to confirm: "
+    );
+    (void)fflush(stdout);
+
+    if (fgets(answer, sizeof(answer), stdin) == NULL) {
+        (void)putchar('\n');
+        return;
+    }
+
+    length = strlen(answer);
+    while (length > 0U &&
+           (answer[length - 1U] == '\n' ||
+            answer[length - 1U] == '\r')) {
+        answer[length - 1U] = '\0';
+        --length;
+    }
+
+    if (strcmp(answer, "CLEAR REPAIR HISTORY") != 0) {
+        (void)puts("Repair history clear cancelled.");
+        return;
+    }
+
+    if (!openai_clear_repair_history(1)) {
+        (void)printf(
+            "Unable to clear repair history from %s: %s\n",
+            openai_activity_path(),
+            strerror(errno)
+        );
+        return;
+    }
+
+    (void)puts("Persisted repair history cleared.");
+}
+
 static int openai_format_repair_config(const char *value,
                                        char *output,
                                        size_t output_size)
