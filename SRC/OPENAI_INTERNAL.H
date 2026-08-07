@@ -142,6 +142,18 @@ void openai_show_repair_info(void);
 int openai_repair_check_text(char *output,
                              size_t output_size);
 void openai_show_repair_check(void);
+int openai_repair_diag_text(char *output,
+                            size_t output_size);
+void openai_show_repair_diag(void);
+int openai_repair_count_text(char *output,
+                             size_t output_size);
+void openai_show_repair_count(void);
+int openai_repair_latest_text(char *output,
+                              size_t output_size);
+void openai_show_repair_latest(void);
+int openai_repair_oldest_text(char *output,
+                              size_t output_size);
+void openai_show_repair_oldest(void);
 int openai_clear_repair_history(int approved);
 void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);

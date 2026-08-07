@@ -47,6 +47,22 @@ void command_agent_repair_check(
     agent_state *state,
     const char *arguments);
 
+void command_agent_repair_diag(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_repair_count(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_repair_latest(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_repair_oldest(
+    agent_state *state,
+    const char *arguments);
+
 void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
@@ -85,6 +101,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/CONFIG", "Show resolved repair history configuration", command_agent_repair_config },
     { "AGENT/REPAIR/HISTORY/INFO", "Show persisted repair history metadata", command_agent_repair_info },
     { "AGENT/REPAIR/HISTORY/CHECK", "Check persisted repair history integrity", command_agent_repair_check },
+    { "AGENT/REPAIR/HISTORY/DIAG", "Show combined repair history diagnostics", command_agent_repair_diag },
+    { "AGENT/REPAIR/HISTORY/COUNT", "Show concise persisted repair counts", command_agent_repair_count },
+    { "AGENT/REPAIR/HISTORY/LATEST", "Show the newest persisted repair run", command_agent_repair_latest },
+    { "AGENT/REPAIR/HISTORY/OLDEST", "Show the oldest persisted repair run", command_agent_repair_oldest },
     { "AGENT/REPAIR/HISTORY/CLEAR", "Clear persisted repair history with explicit confirmation", command_agent_repair_clear },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
@@ -212,6 +232,38 @@ void command_agent_repair_check(agent_state *state,
     (void)state;
     (void)arguments;
     openai_show_repair_check();
+}
+
+void command_agent_repair_diag(agent_state *state,
+                               const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_diag();
+}
+
+void command_agent_repair_count(agent_state *state,
+                                const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_count();
+}
+
+void command_agent_repair_latest(agent_state *state,
+                                 const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_latest();
+}
+
+void command_agent_repair_oldest(agent_state *state,
+                                 const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_oldest();
 }
 
 void command_agent_repair_clear(agent_state *state,

@@ -723,6 +723,381 @@ void openai_show_repair_check(void)
 
 
 int openai_repair_info_text(char *output,
+                            size_t output_size);
+
+int openai_repair_diag_text(char *output,
+                            size_t output_size)
+{
+    char information[2048];
+    char check[2048];
+    const char *info_body;
+    const char *check_body;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    if (!openai_repair_info_text(
+            information,
+            sizeof(information)) ||
+        !openai_repair_check_text(
+            check,
+            sizeof(check))) {
+        return 0;
+    }
+
+    info_body = strchr(information, '\n');
+    if (info_body == NULL) {
+        return 0;
+    }
+    info_body = strchr(info_body + 1, '\n');
+    if (info_body == NULL) {
+        return 0;
+    }
+    ++info_body;
+
+    check_body = strchr(check, '\n');
+    if (check_body == NULL) {
+        return 0;
+    }
+    check_body = strchr(check_body + 1, '\n');
+    if (check_body == NULL) {
+        return 0;
+    }
+    ++check_body;
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history diagnostics\n"
+        "-------------------------------------\n"
+        "%s\n"
+        "%s",
+        info_body,
+        check_body
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_repair_diag(void)
+{
+    char report[4096];
+
+    if (!openai_repair_diag_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to build AGENT/REPAIR diagnostics."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_repair_count_text(char *output,
+                             size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_attempt_record parsed;
+    unsigned int record_count;
+    unsigned int run_count;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    record_count = 0U;
+    run_count = 0U;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file != NULL) {
+        while (fgets(line, sizeof(line), file) != NULL) {
+            if (!openai_parse_repair_record(line, &parsed)) {
+                continue;
+            }
+
+            ++record_count;
+            if (parsed.attempt == 1U) {
+                ++run_count;
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history count\n"
+        "-------------------------------\n"
+        "Repair records: %u\n"
+        "Repair runs:    %u\n",
+        record_count,
+        run_count
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_repair_count(void)
+{
+    char report[512];
+
+    if (!openai_repair_count_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to count AGENT/REPAIR history."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+static int openai_edge_run_text(int newest,
+                                char *output,
+                                size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    char timestamp[32];
+    char current_time[32];
+    char selected_time[32];
+    openai_repair_attempt_record parsed;
+    openai_repair_attempt_record current[2];
+    openai_repair_attempt_record selected[2];
+    unsigned int current_count;
+    unsigned int selected_count;
+    int have_current;
+    int have_selected;
+    int written;
+    size_t used;
+    unsigned int index;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    current_time[0] = '\0';
+    selected_time[0] = '\0';
+    (void)memset(current, 0, sizeof(current));
+    (void)memset(selected, 0, sizeof(selected));
+    current_count = 0U;
+    selected_count = 0U;
+    have_current = 0;
+    have_selected = 0;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            /*
+             * A new attempt 1 closes the previous run.
+             * For newest, keep replacing the selected run.
+             * For oldest, capture only the first completed run.
+             */
+            if (have_current) {
+                if (newest || !have_selected) {
+                    selected[0] = current[0];
+                    selected[1] = current[1];
+                    selected_count = current_count;
+                    (void)strncpy(
+                        selected_time,
+                        current_time,
+                        sizeof(selected_time) - 1U
+                    );
+                    selected_time[
+                        sizeof(selected_time) - 1U
+                    ] = '\0';
+                    have_selected = 1;
+                }
+            }
+
+            (void)memset(current, 0, sizeof(current));
+            current[0] = parsed;
+            current_count = 1U;
+            have_current = 1;
+            current_time[0] = '\0';
+
+            if (sscanf(line, "%31s", timestamp) == 1) {
+                (void)strncpy(
+                    current_time,
+                    timestamp,
+                    sizeof(current_time) - 1U
+                );
+                current_time[
+                    sizeof(current_time) - 1U
+                ] = '\0';
+            }
+
+            continue;
+        }
+
+        if (parsed.attempt == 2U && have_current) {
+            current[1] = parsed;
+            current_count = 2U;
+        }
+    }
+
+    (void)fclose(file);
+
+    /*
+     * Final run is closed by EOF.
+     * Newest always selects it. Oldest selects it only when it was
+     * the first and only run.
+     */
+    if (have_current &&
+        (newest || !have_selected)) {
+        selected[0] = current[0];
+        selected[1] = current[1];
+        selected_count = current_count;
+        (void)strncpy(
+            selected_time,
+            current_time,
+            sizeof(selected_time) - 1U
+        );
+        selected_time[
+            sizeof(selected_time) - 1U
+        ] = '\0';
+        have_selected = 1;
+    }
+
+    if (!have_selected || selected_count == 0U) {
+        return 0;
+    }
+
+    used = 0U;
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "OVMS Agent %s repair run\n"
+        "----------------------------\n"
+        "Started: %s\n"
+        "Attempts used: %u of 2\n",
+        newest ? "latest" : "oldest",
+        selected_time[0] != '\0' ?
+            selected_time : "unknown",
+        selected_count
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+
+    for (index = 0U; index < selected_count; ++index) {
+        const openai_repair_attempt_record *record;
+        const char *build_name;
+        const char *rollback_name;
+
+        record = &selected[index];
+        build_name =
+            (record->build_status & 1) != 0 ?
+            "success" : "failure";
+        rollback_name =
+            openai_rollback_name(record->rollback);
+
+        written = snprintf(
+            output + used,
+            output_size - used,
+            "Attempt %u: plan %08lX, build %s "
+            "(status %d), rollback %s, outcome %s\n",
+            record->attempt,
+            record->plan_hash,
+            build_name,
+            record->build_status,
+            rollback_name,
+            record->outcome
+        );
+
+        if (written < 0 ||
+            (size_t)written >= output_size - used) {
+            return 0;
+        }
+        used += (size_t)written;
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "Final outcome: %s\n",
+        selected[selected_count - 1U].outcome
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+int openai_repair_latest_text(char *output,
+                              size_t output_size)
+{
+    return openai_edge_run_text(
+        1,
+        output,
+        output_size
+    );
+}
+
+void openai_show_repair_latest(void)
+{
+    char report[2048];
+
+    if (!openai_repair_latest_text(
+            report,
+            sizeof(report))) {
+        (void)puts("No persisted AGENT/REPAIR history is available.");
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_repair_oldest_text(char *output,
+                              size_t output_size)
+{
+    return openai_edge_run_text(
+        0,
+        output,
+        output_size
+    );
+}
+
+void openai_show_repair_oldest(void)
+{
+    char report[2048];
+
+    if (!openai_repair_oldest_text(
+            report,
+            sizeof(report))) {
+        (void)puts("No persisted AGENT/REPAIR history is available.");
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+
+int openai_repair_info_text(char *output,
                             size_t output_size)
 {
     FILE *file;
