@@ -1096,6 +1096,142 @@ void openai_show_repair_failures(void)
     (void)fputs(history, stdout);
 }
 
+
+static int openai_repair_export_path_safe(const char *path)
+{
+    const unsigned char *position;
+
+    if (path == NULL || *path == '\0') {
+        return 0;
+    }
+
+    if (strstr(path, "..") != NULL) {
+        return 0;
+    }
+
+    for (position = (const unsigned char *)path;
+         *position != (unsigned char)'\0';
+         ++position) {
+        if (*position < (unsigned char)' ' ||
+            *position == (unsigned char)127 ||
+            *position == (unsigned char)'*' ||
+            *position == (unsigned char)'%' ||
+            *position == (unsigned char)';' ||
+            *position == (unsigned char)'|' ||
+            *position == (unsigned char)'&' ||
+            *position == (unsigned char)'<' ||
+            *position == (unsigned char)'>' ||
+            *position == (unsigned char)'"' ||
+            *position == (unsigned char)'\'' ||
+            *position == (unsigned char)'`' ||
+            *position == (unsigned char)'/' ||
+            *position == (unsigned char)'\\') {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int openai_repair_export_file(const char *path,
+                              int allow_overwrite)
+{
+    FILE *probe;
+    FILE *file;
+    char history[8192];
+
+    if (!openai_repair_export_path_safe(path)) {
+        return 0;
+    }
+
+    if (!openai_repair_history_text(
+            history,
+            sizeof(history))) {
+        return 0;
+    }
+
+    probe = fopen(path, "r");
+    if (probe != NULL) {
+        (void)fclose(probe);
+
+        if (!allow_overwrite) {
+            return 0;
+        }
+    }
+
+    file = fopen(path, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fputs(history, file) == EOF ||
+        fclose(file) != 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+void openai_export_repair_history(const char *arguments)
+{
+    const char *path;
+    FILE *probe;
+    char answer[32];
+    int exists;
+
+    path = arguments;
+
+    while (path != NULL &&
+           (*path == ' ' || *path == '\t')) {
+        ++path;
+    }
+
+    if (!openai_repair_export_path_safe(path)) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/EXPORT <safe-filespec>"
+        );
+        return;
+    }
+
+    probe = fopen(path, "r");
+    exists = probe != NULL;
+
+    if (probe != NULL) {
+        (void)fclose(probe);
+    }
+
+    if (exists) {
+        (void)printf(
+            "Replace existing repair-history export %s [y/N]? ",
+            path
+        );
+        (void)fflush(stdout);
+
+        if (fgets(answer, sizeof(answer), stdin) == NULL) {
+            (void)putchar('\n');
+            return;
+        }
+
+        if (answer[0] != 'y' && answer[0] != 'Y') {
+            (void)puts("Repair-history export cancelled.");
+            return;
+        }
+    }
+
+    if (!openai_repair_export_file(path, exists ? 1 : 0)) {
+        (void)printf(
+            "Unable to export repair history to %s.\n",
+            path
+        );
+        return;
+    }
+
+    (void)printf(
+        "Repair history exported to %s.\n",
+        path
+    );
+}
+
 void openai_show_repair_history(void)
 {
     char history[8192];
