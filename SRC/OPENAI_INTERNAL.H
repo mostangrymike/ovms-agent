@@ -194,6 +194,22 @@ void openai_show_recovery(void);
 int openai_trend_text(char *output,
                       size_t output_size);
 void openai_show_trend(void);
+int openai_first_text(const char *arguments,
+                      char *output,
+                      size_t output_size);
+void openai_show_first(const char *arguments);
+int openai_last_text(const char *arguments,
+                     char *output,
+                     size_t output_size);
+void openai_show_last(const char *arguments);
+int openai_range_text(const char *arguments,
+                      char *output,
+                      size_t output_size);
+void openai_show_range(const char *arguments);
+int openai_index_text(const char *arguments,
+                      char *output,
+                      size_t output_size);
+void openai_show_index(const char *arguments);
 int openai_clear_repair_history(int approved);
 void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);

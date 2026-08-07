@@ -3612,6 +3612,551 @@ void openai_show_trend(void)
 }
 
 
+static int openai_parse_positive(
+    const char *arguments,
+    unsigned int *value)
+{
+    const char *position;
+    unsigned long parsed;
+
+    if (value == NULL) {
+        return 0;
+    }
+
+    position = openai_skip_spaces(arguments);
+
+    if (!openai_arg_is_single(position)) {
+        return 0;
+    }
+
+    parsed = 0UL;
+
+    while (*position != '\0') {
+        unsigned int digit;
+
+        if (*position < '0' || *position > '9') {
+            return 0;
+        }
+
+        digit = (unsigned int)(*position - '0');
+
+        if (parsed > 100000UL) {
+            return 0;
+        }
+
+        parsed = parsed * 10UL + (unsigned long)digit;
+        ++position;
+    }
+
+    if (parsed == 0UL ||
+        parsed > (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM) {
+        return 0;
+    }
+
+    *value = (unsigned int)parsed;
+    return 1;
+}
+
+static int openai_parse_range_args(
+    const char *arguments,
+    unsigned int *start,
+    unsigned int *count)
+{
+    const char *position;
+    char first[32];
+    char second[32];
+    char extra[8];
+    unsigned long first_value;
+    unsigned long second_value;
+    int fields;
+
+    if (start == NULL || count == NULL) {
+        return 0;
+    }
+
+    position = openai_skip_spaces(arguments);
+
+    if (*position == '\0') {
+        return 0;
+    }
+
+    first[0] = '\0';
+    second[0] = '\0';
+    extra[0] = '\0';
+
+    fields = sscanf(
+        position,
+        "%31s %31s %7s",
+        first,
+        second,
+        extra
+    );
+
+    if (fields != 2) {
+        return 0;
+    }
+
+    first_value = 0UL;
+    position = first;
+
+    while (*position != '\0') {
+        if (*position < '0' || *position > '9') {
+            return 0;
+        }
+
+        if (first_value > 100000UL) {
+            return 0;
+        }
+
+        first_value =
+            first_value * 10UL +
+            (unsigned long)(*position - '0');
+        ++position;
+    }
+
+    second_value = 0UL;
+    position = second;
+
+    while (*position != '\0') {
+        if (*position < '0' || *position > '9') {
+            return 0;
+        }
+
+        if (second_value > 100000UL) {
+            return 0;
+        }
+
+        second_value =
+            second_value * 10UL +
+            (unsigned long)(*position - '0');
+        ++position;
+    }
+
+    if (first_value == 0UL ||
+        second_value == 0UL ||
+        first_value >
+            (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM ||
+        second_value >
+            (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM) {
+        return 0;
+    }
+
+    *start = (unsigned int)first_value;
+    *count = (unsigned int)second_value;
+    return 1;
+}
+
+static int openai_select_header(
+    char *output,
+    size_t output_size,
+    const char *selection,
+    unsigned int history_limit,
+    unsigned int run_count,
+    size_t *used)
+{
+    int written;
+
+    if (output == NULL ||
+        selection == NULL ||
+        used == NULL) {
+        return 0;
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history selection\n"
+        "-----------------------------------\n"
+        "Selection: %s\n"
+        "History window: %u\n"
+        "Runs available: %u\n",
+        selection,
+        history_limit,
+        run_count
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size) {
+        return 0;
+    }
+
+    *used = (size_t)written;
+    return 1;
+}
+
+int openai_first_text(const char *arguments,
+                      char *output,
+                      size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    char selection[64];
+    unsigned int wanted;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int shown;
+    unsigned int index;
+    size_t used;
+    int written;
+
+    if (!openai_parse_positive(arguments, &wanted)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (wanted > run_count) {
+        return 0;
+    }
+
+    (void)snprintf(
+        selection,
+        sizeof(selection),
+        "FIRST %u (oldest-first)",
+        wanted
+    );
+
+    if (!openai_select_header(
+            output,
+            output_size,
+            selection,
+            history_limit,
+            run_count,
+            &used)) {
+        return 0;
+    }
+
+    shown = 0U;
+
+    for (index = 0U; index < wanted; ++index) {
+        ++shown;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                shown,
+                &runs[index])) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nSelected: %u\n",
+        shown
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_first(const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_first_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/FIRST "
+            "<1..available-runs>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_last_text(const char *arguments,
+                     char *output,
+                     size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    char selection[64];
+    unsigned int wanted;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int shown;
+    unsigned int display_index;
+    size_t used;
+    int written;
+
+    if (!openai_parse_positive(arguments, &wanted)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (wanted > run_count) {
+        return 0;
+    }
+
+    (void)snprintf(
+        selection,
+        sizeof(selection),
+        "LAST %u (newest-first)",
+        wanted
+    );
+
+    if (!openai_select_header(
+            output,
+            output_size,
+            selection,
+            history_limit,
+            run_count,
+            &used)) {
+        return 0;
+    }
+
+    shown = 0U;
+
+    for (display_index = 0U;
+         display_index < wanted;
+         ++display_index) {
+        unsigned int stored_index;
+
+        stored_index =
+            run_count - 1U - display_index;
+        ++shown;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                shown,
+                &runs[stored_index])) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nSelected: %u\n",
+        shown
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_last(const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_last_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/LAST "
+            "<1..available-runs>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_range_text(const char *arguments,
+                      char *output,
+                      size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    char selection[80];
+    unsigned int start;
+    unsigned int count;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int shown;
+    unsigned int offset;
+    size_t used;
+    int written;
+
+    if (!openai_parse_range_args(
+            arguments,
+            &start,
+            &count)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (start > run_count ||
+        count > run_count - start + 1U) {
+        return 0;
+    }
+
+    (void)snprintf(
+        selection,
+        sizeof(selection),
+        "RANGE %u %u (newest-first)",
+        start,
+        count
+    );
+
+    if (!openai_select_header(
+            output,
+            output_size,
+            selection,
+            history_limit,
+            run_count,
+            &used)) {
+        return 0;
+    }
+
+    shown = 0U;
+
+    for (offset = 0U; offset < count; ++offset) {
+        unsigned int display_index;
+        unsigned int stored_index;
+
+        display_index = start - 1U + offset;
+        stored_index =
+            run_count - 1U - display_index;
+        ++shown;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                start + offset,
+                &runs[stored_index])) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nSelected: %u\n",
+        shown
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_range(const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_range_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/RANGE "
+            "<start> <count>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_index_text(const char *arguments,
+                      char *output,
+                      size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    char selection[64];
+    unsigned int index;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int stored_index;
+    size_t used;
+    int written;
+
+    if (!openai_parse_positive(arguments, &index)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (index > run_count) {
+        return 0;
+    }
+
+    (void)snprintf(
+        selection,
+        sizeof(selection),
+        "INDEX %u (newest-first)",
+        index
+    );
+
+    if (!openai_select_header(
+            output,
+            output_size,
+            selection,
+            history_limit,
+            run_count,
+            &used)) {
+        return 0;
+    }
+
+    stored_index = run_count - index;
+
+    if (!openai_append_query_run(
+            output,
+            output_size,
+            &used,
+            index,
+            &runs[stored_index])) {
+        return 0;
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nSelected: 1\n"
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_index(const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_index_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/INDEX "
+            "<1..available-runs>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+
 int openai_report_text(char *output,
                        size_t output_size)
 {
