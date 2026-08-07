@@ -6,6 +6,8 @@
 #include "openai_log.h"
 #include "openai_state.h"
 
+const char *openai_rollback_name(int rollback_state);
+
 #define OPENAI_ACTIVITY_LOG_FILE "OVMS_AGENT_ACTIVITY.LOG"
 #define OPENAI_ACTIVITY_LOG_OLD_FILE "OVMS_AGENT_ACTIVITY_OLD.LOG"
 #define OPENAI_ACTIVITY_LOG_MAX_BYTES 262144L
@@ -279,6 +281,192 @@ int openai_last_repair_record(char *output,
 
     (void)fclose(file);
     return found;
+}
+
+
+typedef struct openai_repair_attempt_record {
+    unsigned int attempt;
+    unsigned long plan_hash;
+    int build_status;
+    int rollback;
+    char outcome[32];
+} openai_repair_attempt_record;
+
+static int openai_parse_repair_record(
+    const char *line,
+    openai_repair_attempt_record *record)
+{
+    char timestamp[32];
+    unsigned int attempt;
+    unsigned long plan_hash;
+    int build_status;
+    int rollback;
+    char outcome[32];
+    int matched;
+
+    if (line == NULL || record == NULL) {
+        return 0;
+    }
+
+    matched = sscanf(
+        line,
+        "%31s workflow=AGENT/REPAIR event=repair_attempt "
+        "attempt=%u plan=%lx build=%d rollback=%d outcome=%31s",
+        timestamp,
+        &attempt,
+        &plan_hash,
+        &build_status,
+        &rollback,
+        outcome
+    );
+
+    if (matched != 6) {
+        return 0;
+    }
+
+    record->attempt = attempt;
+    record->plan_hash = plan_hash;
+    record->build_status = build_status;
+    record->rollback = rollback;
+    (void)strncpy(
+        record->outcome,
+        outcome,
+        sizeof(record->outcome) - 1U
+    );
+    record->outcome[sizeof(record->outcome) - 1U] = '\0';
+    return 1;
+}
+
+int openai_repair_status_text(char *output,
+                              size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_attempt_record records[2];
+    openai_repair_attempt_record parsed;
+    unsigned int count;
+    int found;
+    int written;
+    size_t used;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    file = fopen(openai_activity_path(), "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    count = 0U;
+    found = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            count = 0U;
+        }
+
+        if (parsed.attempt >= 1U &&
+            parsed.attempt <= 2U) {
+            records[parsed.attempt - 1U] = parsed;
+            if (parsed.attempt > count) {
+                count = parsed.attempt;
+            }
+            found = 1;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (!found || count == 0U) {
+        return 0;
+    }
+
+    used = 0U;
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "OVMS Agent repair status\n"
+        "------------------------\n"
+        "Attempts used: %u of 2\n",
+        count
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+
+    {
+        unsigned int index;
+
+        for (index = 0U; index < count; ++index) {
+            const openai_repair_attempt_record *record;
+            const char *build_name;
+            const char *rollback_name;
+
+            record = &records[index];
+            build_name =
+                (record->build_status & 1) != 0 ?
+                "success" : "failure";
+            rollback_name =
+                openai_rollback_name(record->rollback);
+
+            written = snprintf(
+                output + used,
+                output_size - used,
+                "Attempt %u: plan %08lX, build %s "
+                "(status %d), rollback %s, outcome %s\n",
+                record->attempt,
+                record->plan_hash,
+                build_name,
+                record->build_status,
+                rollback_name,
+                record->outcome
+            );
+
+            if (written < 0 ||
+                (size_t)written >= output_size - used) {
+                return 0;
+            }
+            used += (size_t)written;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "Final outcome: %s\n",
+        records[count - 1U].outcome
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+
+    return 1;
+}
+
+void openai_show_repair_status(void)
+{
+    char summary[2048];
+
+    if (!openai_repair_status_text(
+            summary,
+            sizeof(summary))) {
+        (void)puts("No persisted AGENT/REPAIR history is available.");
+        return;
+    }
+
+    (void)fputs(summary, stdout);
 }
 
 void openai_show_log(void)
