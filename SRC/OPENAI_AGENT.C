@@ -12,11 +12,18 @@ static void openai_agent_instr(agent_state *state,
                                int build_after_write,
                                int workflow)
 {
-    char model_goal[12288];
+    char instr_goal[12288];
+    char model_goal[24576];
 
     if (!openai_instr_compose(
-            state, goal, model_goal, sizeof(model_goal))) {
+            state, goal, instr_goal, sizeof(instr_goal))) {
         (void)puts("Unable to compose project instructions.");
+        return;
+    }
+
+    if (!openai_project_compose(
+            state, instr_goal, model_goal, sizeof(model_goal))) {
+        (void)puts("Unable to compose repository map.");
         return;
     }
 

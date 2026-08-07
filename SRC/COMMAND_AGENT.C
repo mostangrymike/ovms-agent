@@ -207,6 +207,21 @@ void command_agent_instr_show(
 void command_agent_instr_reload(
     agent_state *state, const char *arguments);
 
+void command_agent_project_map(
+    agent_state *state, const char *arguments);
+void command_agent_project_files(
+    agent_state *state, const char *arguments);
+void command_agent_project_src(
+    agent_state *state, const char *arguments);
+void command_agent_project_tests(
+    agent_state *state, const char *arguments);
+void command_agent_project_build(
+    agent_state *state, const char *arguments);
+void command_agent_project_ctx(
+    agent_state *state, const char *arguments);
+void command_agent_project_refresh(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -301,6 +316,13 @@ static const command_entry agent_commands[] = {
     { "AGENT/INSTRUCTIONS/STATUS", "Show project instruction discovery status", command_agent_instr_status },
     { "AGENT/INSTRUCTIONS/SHOW", "Show loaded project instructions", command_agent_instr_show },
     { "AGENT/INSTRUCTIONS/RELOAD", "Reload project instructions from disk", command_agent_instr_reload },
+    { "AGENT/PROJECT/MAP", "Show bounded repository map", command_agent_project_map },
+    { "AGENT/PROJECT/FILES", "Show bounded repository file inventory", command_agent_project_files },
+    { "AGENT/PROJECT/SOURCES", "Show likely source files", command_agent_project_src },
+    { "AGENT/PROJECT/TESTS", "Show likely regression/test files", command_agent_project_tests },
+    { "AGENT/PROJECT/BUILD", "Show likely build/control files", command_agent_project_build },
+    { "AGENT/PROJECT/CONTEXT", "Show repository context injected into agent runs", command_agent_project_ctx },
+    { "AGENT/PROJECT/REFRESH", "Refresh cached repository map", command_agent_project_refresh },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -541,6 +563,48 @@ void command_agent_instr_reload(agent_state *state, const char *arguments)
 {
     (void)arguments;
     openai_instr_reload_cmd(state);
+}
+
+void command_agent_project_map(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_map(state, 0);
+}
+
+void command_agent_project_files(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_map(state, 0);
+}
+
+void command_agent_project_src(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_map(state, 1);
+}
+
+void command_agent_project_tests(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_map(state, 3);
+}
+
+void command_agent_project_build(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_map(state, 4);
+}
+
+void command_agent_project_ctx(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_project_ctx(state);
+}
+
+void command_agent_project_refresh(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_project_refresh_cmd(state);
 }
 
 void command_agent_repair_status(agent_state *state,
