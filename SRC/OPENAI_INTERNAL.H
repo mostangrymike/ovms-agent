@@ -114,6 +114,9 @@ int openai_last_repair_record(char *output,
 int openai_repair_status_text(char *output,
                               size_t output_size);
 void openai_show_repair_status(void);
+int openai_repair_history_text(char *output,
+                               size_t output_size);
+void openai_show_repair_history(void);
 void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,

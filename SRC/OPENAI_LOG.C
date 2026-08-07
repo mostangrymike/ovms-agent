@@ -455,6 +455,189 @@ int openai_repair_status_text(char *output,
     return 1;
 }
 
+#define OPENAI_REPAIR_HISTORY_RUNS 5U
+
+typedef struct openai_repair_run_record {
+    openai_repair_attempt_record attempts[2];
+    unsigned int count;
+} openai_repair_run_record;
+
+int openai_repair_history_text(char *output,
+                               size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_RUNS];
+    openai_repair_attempt_record parsed;
+    unsigned int run_count;
+    int written;
+    size_t used;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    (void)memset(runs, 0, sizeof(runs));
+    run_count = 0U;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        openai_repair_run_record *run;
+
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            if (run_count < OPENAI_REPAIR_HISTORY_RUNS) {
+                ++run_count;
+            } else {
+                unsigned int index;
+
+                for (index = 1U;
+                     index < OPENAI_REPAIR_HISTORY_RUNS;
+                     ++index) {
+                    runs[index - 1U] = runs[index];
+                }
+            }
+
+            run = &runs[run_count - 1U];
+            (void)memset(run, 0, sizeof(*run));
+            run->attempts[0] = parsed;
+            run->count = 1U;
+            continue;
+        }
+
+        if (parsed.attempt == 2U && run_count > 0U) {
+            run = &runs[run_count - 1U];
+            run->attempts[1] = parsed;
+            if (run->count < 2U) {
+                run->count = 2U;
+            }
+        }
+    }
+
+    (void)fclose(file);
+
+    if (run_count == 0U) {
+        return 0;
+    }
+
+    used = 0U;
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "OVMS Agent repair history\n"
+        "-------------------------\n"
+        "Recent runs: %u (maximum %u)\n",
+        run_count,
+        OPENAI_REPAIR_HISTORY_RUNS
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+
+    {
+        unsigned int display_run;
+
+        for (display_run = 0U;
+             display_run < run_count;
+             ++display_run) {
+            const openai_repair_run_record *run;
+            unsigned int stored_index;
+            unsigned int attempt_index;
+
+            stored_index = run_count - 1U - display_run;
+            run = &runs[stored_index];
+
+            written = snprintf(
+                output + used,
+                output_size - used,
+                "\nRun %u%s\n",
+                display_run + 1U,
+                display_run == 0U ? " (newest)" : ""
+            );
+
+            if (written < 0 ||
+                (size_t)written >= output_size - used) {
+                return 0;
+            }
+            used += (size_t)written;
+
+            for (attempt_index = 0U;
+                 attempt_index < run->count;
+                 ++attempt_index) {
+                const openai_repair_attempt_record *record;
+                const char *build_name;
+                const char *rollback_name;
+
+                record = &run->attempts[attempt_index];
+                build_name =
+                    (record->build_status & 1) != 0 ?
+                    "success" : "failure";
+                rollback_name =
+                    openai_rollback_name(record->rollback);
+
+                written = snprintf(
+                    output + used,
+                    output_size - used,
+                    "  Attempt %u: plan %08lX, build %s "
+                    "(status %d), rollback %s, outcome %s\n",
+                    record->attempt,
+                    record->plan_hash,
+                    build_name,
+                    record->build_status,
+                    rollback_name,
+                    record->outcome
+                );
+
+                if (written < 0 ||
+                    (size_t)written >= output_size - used) {
+                    return 0;
+                }
+                used += (size_t)written;
+            }
+
+            written = snprintf(
+                output + used,
+                output_size - used,
+                "  Final outcome: %s\n",
+                run->attempts[run->count - 1U].outcome
+            );
+
+            if (written < 0 ||
+                (size_t)written >= output_size - used) {
+                return 0;
+            }
+            used += (size_t)written;
+        }
+    }
+
+    return 1;
+}
+
+void openai_show_repair_history(void)
+{
+    char history[8192];
+
+    if (!openai_repair_history_text(
+            history,
+            sizeof(history))) {
+        (void)puts("No persisted AGENT/REPAIR history is available.");
+        return;
+    }
+
+    (void)fputs(history, stdout);
+}
+
 void openai_show_repair_status(void)
 {
     char summary[2048];

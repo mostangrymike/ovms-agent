@@ -15,6 +15,10 @@ void command_agent_repair_status(
     agent_state *state,
     const char *arguments);
 
+void command_agent_repair_history(
+    agent_state *state,
+    const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -41,6 +45,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/PLAN/VALIDATE", "Validate saved-plan file fingerprints", command_agent_plan_validate },
     { "AGENT/REPAIR/PLAN", "Create a repair plan from the last failed build", command_agent_repair_plan },
     { "AGENT/REPAIR/STATUS", "Summarize the most recent persisted repair run", command_agent_repair_status },
+    { "AGENT/REPAIR/HISTORY", "Show recent persisted repair runs", command_agent_repair_history },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
@@ -105,6 +110,14 @@ void command_agent_repair_status(agent_state *state,
     (void)state;
     (void)arguments;
     openai_show_repair_status();
+}
+
+void command_agent_repair_history(agent_state *state,
+                                  const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_history();
 }
 
 #include "command_agent_m147_guard.inc"
