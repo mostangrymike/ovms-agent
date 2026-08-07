@@ -585,6 +585,13 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "AGENT/REPAIR succeeded on attempt %u.\n",
                 attempt
             );
+            openai_log_repair_attempt(
+                attempt,
+                openai_approved_hash,
+                openai_last_build_status,
+                openai_last_rollback,
+                "committed"
+            );
             openai_log_event(
                 "AGENT/REPAIR",
                 "repair_succeeded",
@@ -600,6 +607,13 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "AGENT/REPAIR stopped because the failed attempt did not "
                 "complete a safe rollback."
             );
+            openai_log_repair_attempt(
+                attempt,
+                openai_approved_hash,
+                openai_last_build_status,
+                openai_last_rollback,
+                "unsafe"
+            );
             openai_log_event(
                 "AGENT/REPAIR",
                 "unsafe_retry_state",
@@ -608,6 +622,14 @@ void openai_agent_repair(agent_state *state, const char *goal)
             free(previous_plan);
             return;
         }
+
+        openai_log_repair_attempt(
+            attempt,
+            openai_approved_hash,
+            openai_last_build_status,
+            openai_last_rollback,
+            "rolled_back"
+        );
 
         if (attempt == 2U) {
             (void)puts(

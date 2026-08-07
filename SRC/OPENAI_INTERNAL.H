@@ -104,6 +104,14 @@ void openai_load_state(void);
 void openai_show_state(void);
 void openai_show_memory(void);
 void openai_clear_state(void);
+void openai_log_repair_attempt(unsigned int attempt,
+                               unsigned long plan_hash,
+                               int build_status,
+                               int rollback,
+                               const char *outcome);
+int openai_last_repair_record(char *output,
+                              size_t output_size);
+void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,
                         int continue_conversation);

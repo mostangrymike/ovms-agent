@@ -115,6 +115,33 @@ void openai_show_state(void)
         openai_rollback_name(openai_saved_rollback)
     );
 
+
+    {
+        char repair_record[1024];
+
+        if (openai_last_repair_record(
+                repair_record,
+                sizeof(repair_record))) {
+            size_t length;
+
+            length = strlen(repair_record);
+            while (length > 0U &&
+                   (repair_record[length - 1U] == '\n' ||
+                    repair_record[length - 1U] == '\r')) {
+                repair_record[--length] = '\0';
+            }
+
+            (void)printf(
+                "Last repair record:        %s\n",
+                repair_record
+            );
+        } else {
+            (void)puts(
+                "Last repair record:        none recorded"
+            );
+        }
+    }
+
     (void)puts(
         "Chat state:               not persisted"
     );

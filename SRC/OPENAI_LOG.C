@@ -10,6 +10,24 @@
 #define OPENAI_ACTIVITY_LOG_OLD_FILE "OVMS_AGENT_ACTIVITY_OLD.LOG"
 #define OPENAI_ACTIVITY_LOG_MAX_BYTES 262144L
 
+
+static const char *openai_test_log_path = NULL;
+
+void openai_test_set_log_path(const char *path)
+{
+    openai_test_log_path = path;
+}
+
+static const char *openai_activity_path(void)
+{
+    if (openai_test_log_path != NULL &&
+        *openai_test_log_path != '\0') {
+        return openai_test_log_path;
+    }
+
+    return OPENAI_ACTIVITY_LOG_FILE;
+}
+
 static int openai_copy_file(const char *source_path,
                             const char *destination_path)
 {
@@ -65,6 +83,10 @@ static int openai_rotate_log_if_needed(void)
     FILE *file;
     long length;
 
+    if (openai_test_log_path != NULL) {
+        return 1;
+    }
+
     file = fopen(OPENAI_ACTIVITY_LOG_FILE, "rb");
 
     if (file == NULL) {
@@ -95,7 +117,7 @@ static int openai_rotate_log_if_needed(void)
         return 0;
     }
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "w");
+    file = fopen(openai_activity_path(), "w");
 
     if (file == NULL) {
         return 0;
@@ -146,7 +168,7 @@ void openai_log_event(const char *workflow,
         return;
     }
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "a");
+    file = fopen(openai_activity_path(), "a");
 
     if (file == NULL) {
         return;
@@ -165,12 +187,106 @@ void openai_log_event(const char *workflow,
     openai_state_save();
 }
 
+
+void openai_log_repair_attempt(unsigned int attempt,
+                               unsigned long plan_hash,
+                               int build_status,
+                               int rollback,
+                               const char *outcome)
+{
+    FILE *file;
+    time_t now;
+    struct tm *local_time;
+    char timestamp[32];
+
+    if (outcome == NULL) {
+        return;
+    }
+
+    now = time(NULL);
+    local_time = localtime(&now);
+
+    if (local_time != NULL &&
+        strftime(timestamp,
+                 sizeof(timestamp),
+                 "%Y-%m-%dT%H:%M:%S",
+                 local_time) > 0U) {
+        /* timestamp is ready */
+    } else {
+        (void)strcpy(timestamp, "unknown-time");
+    }
+
+    if (!openai_rotate_log_if_needed()) {
+        return;
+    }
+
+    file = fopen(openai_activity_path(), "a");
+    if (file == NULL) {
+        return;
+    }
+
+    (void)fprintf(
+        file,
+        "%s workflow=AGENT/REPAIR event=repair_attempt "
+        "attempt=%u plan=%08lX build=%d rollback=%d outcome=%s\n",
+        timestamp,
+        attempt,
+        plan_hash,
+        build_status,
+        rollback,
+        outcome
+    );
+
+    (void)fclose(file);
+    openai_state_save();
+}
+
+int openai_last_repair_record(char *output,
+                              size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    int found;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    file = fopen(openai_activity_path(), "r");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    found = 0;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (strstr(line,
+                   "workflow=AGENT/REPAIR event=repair_attempt ") != NULL) {
+            size_t length;
+
+            length = strlen(line);
+            if (length >= output_size) {
+                length = output_size - 1U;
+            }
+
+            (void)memcpy(output, line, length);
+            output[length] = '\0';
+            found = 1;
+        }
+    }
+
+    (void)fclose(file);
+    return found;
+}
+
 void openai_show_log(void)
 {
     FILE *file;
     char line[1024];
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "r");
+    file = fopen(openai_activity_path(), "r");
 
     if (file == NULL) {
         (void)puts("No activity log is available in this process directory.");
@@ -229,7 +345,7 @@ void openai_clear_log(void)
         return;
     }
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "w");
+    file = fopen(openai_activity_path(), "w");
 
     if (file == NULL) {
         (void)printf(
@@ -288,7 +404,7 @@ void openai_show_metrics(void)
     verifies_passed = 0UL;
     verifies_failed = 0UL;
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "r");
+    file = fopen(openai_activity_path(), "r");
 
     if (file == NULL) {
         (void)puts(
