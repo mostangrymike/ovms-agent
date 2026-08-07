@@ -579,4 +579,23 @@ int openai_m138_meta_tamper(const char *plan_path);
 int openai_m138_partial_reject(const char *plan_path);
 int openai_m138_save_preserves(const char *plan_path);
 
+int openai_tools_text(char *output, size_t output_size);
+void openai_show_tools(void);
+int openai_tool_info_text(const char *arguments,
+                          char *output, size_t output_size);
+void openai_show_tool_info(const char *arguments);
+int openai_approval_text(char *output, size_t output_size);
+void openai_show_approval(void);
+int openai_set_approval(const char *arguments);
+void openai_set_approval_cmd(const char *arguments);
+void openai_reset_approval(void);
+int openai_context_text(const agent_state *state,
+                        char *output, size_t output_size);
+void openai_show_context(const agent_state *state);
+int openai_parity_text(char *output, size_t output_size);
+void openai_show_parity(void);
+void openai_exec_goal(agent_state *state, const char *goal);
+void openai_exec_dry(agent_state *state, const char *goal);
+void openai_test_reset_approval(void);
+
 #endif /* OPENAI_INTERNAL_H */

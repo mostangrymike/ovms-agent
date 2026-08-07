@@ -131,6 +131,25 @@ void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
 
+void command_agent_tools(
+    agent_state *state, const char *arguments);
+void command_agent_tool_info(
+    agent_state *state, const char *arguments);
+void command_agent_approval(
+    agent_state *state, const char *arguments);
+void command_agent_approval_set(
+    agent_state *state, const char *arguments);
+void command_agent_approval_reset(
+    agent_state *state, const char *arguments);
+void command_agent_context(
+    agent_state *state, const char *arguments);
+void command_agent_exec_goal(
+    agent_state *state, const char *arguments);
+void command_agent_exec_dry(
+    agent_state *state, const char *arguments);
+void command_agent_parity(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -189,6 +208,15 @@ static const command_entry agent_commands[] = {
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
+    { "AGENT/TOOLS", "List agent tools and safety classifications", command_agent_tools },
+    { "AGENT/TOOLS/INFO", "Show metadata for one agent tool", command_agent_tool_info },
+    { "AGENT/APPROVAL", "Show the current agent approval policy", command_agent_approval },
+    { "AGENT/APPROVAL/SET", "Set the session approval policy", command_agent_approval_set },
+    { "AGENT/APPROVAL/RESET", "Reset the session approval policy", command_agent_approval_reset },
+    { "AGENT/CONTEXT", "Show the current agent execution context", command_agent_context },
+    { "AGENT/EXEC", "Run a goal using the current approval policy", command_agent_exec_goal },
+    { "AGENT/EXEC/DRY", "Create a read-only implementation plan for a goal", command_agent_exec_dry },
+    { "AGENT/PARITY", "Show Codex-parity capability status", command_agent_parity },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -242,6 +270,51 @@ void command_agent_repair_plan(agent_state *state,
 {
     (void)arguments;
     openai_repair_plan(state);
+}
+
+void command_agent_tools(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_tools();
+}
+
+void command_agent_tool_info(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_tool_info(arguments);
+}
+
+void command_agent_approval(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_approval();
+}
+
+void command_agent_approval_set(agent_state *state, const char *arguments)
+{
+    (void)state; openai_set_approval_cmd(arguments);
+}
+
+void command_agent_approval_reset(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_reset_approval();
+}
+
+void command_agent_context(agent_state *state, const char *arguments)
+{
+    (void)arguments; openai_show_context(state);
+}
+
+void command_agent_exec_goal(agent_state *state, const char *arguments)
+{
+    openai_exec_goal(state, arguments);
+}
+
+void command_agent_exec_dry(agent_state *state, const char *arguments)
+{
+    openai_exec_dry(state, arguments);
+}
+
+void command_agent_parity(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_parity();
 }
 
 void command_agent_repair_status(agent_state *state,
