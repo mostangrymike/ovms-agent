@@ -79,6 +79,22 @@ void command_agent_query_since(
     agent_state *state,
     const char *arguments);
 
+void command_agent_report(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_summary(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_csv(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_kv(
+    agent_state *state,
+    const char *arguments);
+
 void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
@@ -125,6 +141,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/HISTORY/ATTEMPTS", "Filter recent repair runs by attempt count", command_agent_query_attempts },
     { "AGENT/REPAIR/HISTORY/PLAN", "Filter recent repair runs by plan hash prefix", command_agent_query_plan },
     { "AGENT/REPAIR/HISTORY/SINCE", "Filter recent repair runs by start timestamp", command_agent_query_since },
+    { "AGENT/REPAIR/HISTORY/REPORT", "Show a formatted recent repair report", command_agent_report },
+    { "AGENT/REPAIR/HISTORY/SUMMARY", "Show a compact recent repair summary", command_agent_summary },
+    { "AGENT/REPAIR/HISTORY/CSV", "Export recent repair history as CSV", command_agent_csv },
+    { "AGENT/REPAIR/HISTORY/KV", "Export recent repair history as key/value text", command_agent_kv },
     { "AGENT/REPAIR/HISTORY/CLEAR", "Clear persisted repair history with explicit confirmation", command_agent_repair_clear },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
@@ -312,6 +332,36 @@ void command_agent_query_since(agent_state *state,
 {
     (void)state;
     openai_show_query_since(arguments);
+}
+
+void command_agent_report(agent_state *state,
+                          const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_report();
+}
+
+void command_agent_summary(agent_state *state,
+                           const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_summary();
+}
+
+void command_agent_csv(agent_state *state,
+                       const char *arguments)
+{
+    (void)state;
+    openai_export_csv(arguments);
+}
+
+void command_agent_kv(agent_state *state,
+                      const char *arguments)
+{
+    (void)state;
+    openai_export_kv(arguments);
 }
 
 void command_agent_repair_clear(agent_state *state,

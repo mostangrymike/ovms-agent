@@ -170,6 +170,18 @@ int openai_query_since_text(const char *arguments,
                             char *output,
                             size_t output_size);
 void openai_show_query_since(const char *arguments);
+int openai_report_text(char *output,
+                       size_t output_size);
+void openai_show_report(void);
+int openai_summary_text(char *output,
+                        size_t output_size);
+void openai_show_summary(void);
+int openai_csv_file(const char *path,
+                    int allow_overwrite);
+int openai_kv_file(const char *path,
+                   int allow_overwrite);
+void openai_export_csv(const char *arguments);
+void openai_export_kv(const char *arguments);
 int openai_clear_repair_history(int approved);
 void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);

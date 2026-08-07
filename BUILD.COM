@@ -826,6 +826,39 @@ $     GOTO FINISH
 $ ENDIF
 $
 $!-----------------------------------------------------------
+$! Build M224 repair reporting/export bundle test.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M224_REPAIR_REPORT_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M224_REPAIR_REPORT_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M224_REPAIR_REPORT_TEST.EXE -
+[.BUILD]M224_REPAIR_REPORT_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for M224_REPAIR_REPORT_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M224_REPAIR_REPORT_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test M224_REPAIR_REPORT_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build PROJECT_GREP_TEST.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]PROJECT_GREP_TEST.OBJ -
