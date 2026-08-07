@@ -31,6 +31,10 @@ void command_agent_repair_export(
     agent_state *state,
     const char *arguments);
 
+void command_agent_repair_stats(
+    agent_state *state,
+    const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -61,6 +65,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/HISTORY/FAILURES", "Show failed recent persisted repair runs", command_agent_repair_failures },
     { "AGENT/REPAIR/SHOW", "Show one persisted repair run by plan hash", command_agent_repair_show },
     { "AGENT/REPAIR/EXPORT", "Export recent persisted repair history to a text file", command_agent_repair_export },
+    { "AGENT/REPAIR/STATS", "Show aggregate statistics for recent repair runs", command_agent_repair_stats },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
@@ -155,6 +160,14 @@ void command_agent_repair_export(agent_state *state,
 {
     (void)state;
     openai_export_repair_history(arguments);
+}
+
+void command_agent_repair_stats(agent_state *state,
+                                const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_repair_stats();
 }
 
 #include "command_agent_m147_guard.inc"

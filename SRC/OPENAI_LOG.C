@@ -1097,6 +1097,185 @@ void openai_show_repair_failures(void)
 }
 
 
+int openai_repair_stats_text(char *output,
+                             size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_RUNS];
+    openai_repair_attempt_record parsed;
+    unsigned int run_count;
+    unsigned int committed_runs;
+    unsigned int failed_runs;
+    unsigned int first_successes;
+    unsigned int second_recoveries;
+    unsigned int two_attempt_failures;
+    unsigned int rollback_operations;
+    unsigned int success_rate;
+    int written;
+    unsigned int run_index;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    (void)memset(runs, 0, sizeof(runs));
+    run_count = 0U;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        openai_repair_run_record *run;
+
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            if (run_count < OPENAI_REPAIR_HISTORY_RUNS) {
+                ++run_count;
+            } else {
+                unsigned int index;
+
+                for (index = 1U;
+                     index < OPENAI_REPAIR_HISTORY_RUNS;
+                     ++index) {
+                    runs[index - 1U] = runs[index];
+                }
+            }
+
+            run = &runs[run_count - 1U];
+            (void)memset(run, 0, sizeof(*run));
+            run->attempts[0] = parsed;
+            run->count = 1U;
+            continue;
+        }
+
+        if (parsed.attempt == 2U && run_count > 0U) {
+            run = &runs[run_count - 1U];
+            run->attempts[1] = parsed;
+            run->count = 2U;
+        }
+    }
+
+    (void)fclose(file);
+
+    if (run_count == 0U) {
+        return 0;
+    }
+
+    committed_runs = 0U;
+    failed_runs = 0U;
+    first_successes = 0U;
+    second_recoveries = 0U;
+    two_attempt_failures = 0U;
+    rollback_operations = 0U;
+
+    for (run_index = 0U;
+         run_index < run_count;
+         ++run_index) {
+        const openai_repair_run_record *run;
+        const char *final_outcome;
+        unsigned int attempt_index;
+        int committed;
+
+        run = &runs[run_index];
+        if (run->count == 0U) {
+            continue;
+        }
+
+        final_outcome =
+            run->attempts[run->count - 1U].outcome;
+        committed =
+            strcmp(final_outcome, "committed") == 0;
+
+        if (committed) {
+            ++committed_runs;
+
+            if (run->count == 1U) {
+                ++first_successes;
+            } else if (run->count == 2U) {
+                ++second_recoveries;
+            }
+        } else {
+            ++failed_runs;
+
+            if (run->count == 2U) {
+                ++two_attempt_failures;
+            }
+        }
+
+        for (attempt_index = 0U;
+             attempt_index < run->count;
+             ++attempt_index) {
+            int rollback;
+
+            rollback = run->attempts[attempt_index].rollback;
+
+            /*
+             * Persisted rollback states are stable integers:
+             *   2 = succeeded
+             *   3 = failed
+             * Count both as rollback operations without depending on
+             * rollback macros that are private to another module.
+             */
+            if (rollback == 2 || rollback == 3) {
+                ++rollback_operations;
+            }
+        }
+    }
+
+    success_rate =
+        (committed_runs * 100U) / run_count;
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair statistics\n"
+        "----------------------------\n"
+        "Runs analyzed:              %u\n"
+        "Committed runs:             %u\n"
+        "Failed/rolled-back runs:    %u\n"
+        "First-attempt successes:    %u\n"
+        "Second-attempt recoveries:  %u\n"
+        "Two-attempt failures:       %u\n"
+        "Rollback operations:        %u\n"
+        "Success rate:               %u%%\n",
+        run_count,
+        committed_runs,
+        failed_runs,
+        first_successes,
+        second_recoveries,
+        two_attempt_failures,
+        rollback_operations,
+        success_rate
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_repair_stats(void)
+{
+    char statistics[2048];
+
+    if (!openai_repair_stats_text(
+            statistics,
+            sizeof(statistics))) {
+        (void)puts(
+            "No persisted AGENT/REPAIR history is available."
+        );
+        return;
+    }
+
+    (void)fputs(statistics, stdout);
+}
+
 static int openai_repair_export_path_safe(const char *path)
 {
     const unsigned char *position;

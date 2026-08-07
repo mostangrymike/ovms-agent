@@ -127,6 +127,9 @@ void openai_show_repair_plan(const char *arguments);
 int openai_repair_export_file(const char *path,
                               int allow_overwrite);
 void openai_export_repair_history(const char *arguments);
+int openai_repair_stats_text(char *output,
+                             size_t output_size);
+void openai_show_repair_stats(void);
 void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,
