@@ -154,6 +154,22 @@ void openai_show_repair_latest(void);
 int openai_repair_oldest_text(char *output,
                               size_t output_size);
 void openai_show_repair_oldest(void);
+int openai_query_outcome_text(const char *arguments,
+                              char *output,
+                              size_t output_size);
+void openai_show_query_outcome(const char *arguments);
+int openai_query_attempts_text(const char *arguments,
+                               char *output,
+                               size_t output_size);
+void openai_show_query_attempts(const char *arguments);
+int openai_query_plan_text(const char *arguments,
+                           char *output,
+                           size_t output_size);
+void openai_show_query_plan(const char *arguments);
+int openai_query_since_text(const char *arguments,
+                            char *output,
+                            size_t output_size);
+void openai_show_query_since(const char *arguments);
 int openai_clear_repair_history(int approved);
 void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);

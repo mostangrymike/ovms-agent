@@ -63,6 +63,22 @@ void command_agent_repair_oldest(
     agent_state *state,
     const char *arguments);
 
+void command_agent_query_outcome(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_query_attempts(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_query_plan(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_query_since(
+    agent_state *state,
+    const char *arguments);
+
 void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
@@ -105,6 +121,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/HISTORY/COUNT", "Show concise persisted repair counts", command_agent_repair_count },
     { "AGENT/REPAIR/HISTORY/LATEST", "Show the newest persisted repair run", command_agent_repair_latest },
     { "AGENT/REPAIR/HISTORY/OLDEST", "Show the oldest persisted repair run", command_agent_repair_oldest },
+    { "AGENT/REPAIR/HISTORY/OUTCOME", "Filter recent repair runs by final outcome", command_agent_query_outcome },
+    { "AGENT/REPAIR/HISTORY/ATTEMPTS", "Filter recent repair runs by attempt count", command_agent_query_attempts },
+    { "AGENT/REPAIR/HISTORY/PLAN", "Filter recent repair runs by plan hash prefix", command_agent_query_plan },
+    { "AGENT/REPAIR/HISTORY/SINCE", "Filter recent repair runs by start timestamp", command_agent_query_since },
     { "AGENT/REPAIR/HISTORY/CLEAR", "Clear persisted repair history with explicit confirmation", command_agent_repair_clear },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
@@ -264,6 +284,34 @@ void command_agent_repair_oldest(agent_state *state,
     (void)state;
     (void)arguments;
     openai_show_repair_oldest();
+}
+
+void command_agent_query_outcome(agent_state *state,
+                                 const char *arguments)
+{
+    (void)state;
+    openai_show_query_outcome(arguments);
+}
+
+void command_agent_query_attempts(agent_state *state,
+                                  const char *arguments)
+{
+    (void)state;
+    openai_show_query_attempts(arguments);
+}
+
+void command_agent_query_plan(agent_state *state,
+                              const char *arguments)
+{
+    (void)state;
+    openai_show_query_plan(arguments);
+}
+
+void command_agent_query_since(agent_state *state,
+                               const char *arguments)
+{
+    (void)state;
+    openai_show_query_since(arguments);
 }
 
 void command_agent_repair_clear(agent_state *state,

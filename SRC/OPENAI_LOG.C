@@ -1208,6 +1208,779 @@ typedef struct openai_repair_run_record {
     unsigned int count;
 } openai_repair_run_record;
 
+typedef struct openai_query_run {
+    openai_repair_run_record run;
+    char started[32];
+} openai_query_run;
+
+static const char *openai_skip_spaces(const char *text)
+{
+    if (text == NULL) {
+        return "";
+    }
+
+    while (*text == ' ' || *text == '\t') {
+        ++text;
+    }
+
+    return text;
+}
+
+static int openai_arg_is_single(const char *text)
+{
+    const unsigned char *position;
+
+    if (text == NULL || *text == '\0') {
+        return 0;
+    }
+
+    position = (const unsigned char *)text;
+
+    while (*position != (unsigned char)'\0') {
+        if (*position == (unsigned char)' ' ||
+            *position == (unsigned char)'\t' ||
+            *position == (unsigned char)'\r' ||
+            *position == (unsigned char)'\n') {
+            return 0;
+        }
+        ++position;
+    }
+
+    return 1;
+}
+
+static unsigned int openai_collect_query_runs(
+    openai_query_run *runs,
+    unsigned int capacity)
+{
+    FILE *file;
+    char line[1024];
+    char timestamp[32];
+    openai_repair_attempt_record parsed;
+    unsigned int run_count;
+
+    if (runs == NULL || capacity == 0U) {
+        return 0U;
+    }
+
+    (void)memset(
+        runs,
+        0,
+        sizeof(openai_query_run) * capacity
+    );
+    run_count = 0U;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file == NULL) {
+        return 0U;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        openai_query_run *entry;
+
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            if (run_count < capacity) {
+                ++run_count;
+            } else {
+                unsigned int index;
+
+                for (index = 1U;
+                     index < capacity;
+                     ++index) {
+                    runs[index - 1U] = runs[index];
+                }
+            }
+
+            entry = &runs[run_count - 1U];
+            (void)memset(entry, 0, sizeof(*entry));
+            entry->run.attempts[0] = parsed;
+            entry->run.count = 1U;
+
+            if (sscanf(line, "%31s", timestamp) == 1) {
+                (void)strncpy(
+                    entry->started,
+                    timestamp,
+                    sizeof(entry->started) - 1U
+                );
+                entry->started[
+                    sizeof(entry->started) - 1U
+                ] = '\0';
+            }
+
+            continue;
+        }
+
+        if (parsed.attempt == 2U && run_count > 0U) {
+            entry = &runs[run_count - 1U];
+            entry->run.attempts[1] = parsed;
+            entry->run.count = 2U;
+        }
+    }
+
+    (void)fclose(file);
+    return run_count;
+}
+
+static int openai_append_query_run(
+    char *output,
+    size_t output_size,
+    size_t *used,
+    unsigned int display_index,
+    const openai_query_run *entry)
+{
+    unsigned int attempt_index;
+    int written;
+
+    if (output == NULL ||
+        used == NULL ||
+        entry == NULL ||
+        entry->run.count == 0U) {
+        return 0;
+    }
+
+    written = snprintf(
+        output + *used,
+        output_size - *used,
+        "\nMatch %u\n"
+        "  Started: %s\n",
+        display_index,
+        entry->started[0] != '\0' ?
+            entry->started : "unknown"
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - *used) {
+        return 0;
+    }
+    *used += (size_t)written;
+
+    for (attempt_index = 0U;
+         attempt_index < entry->run.count;
+         ++attempt_index) {
+        const openai_repair_attempt_record *record;
+        const char *build_name;
+        const char *rollback_name;
+
+        record = &entry->run.attempts[attempt_index];
+        build_name =
+            (record->build_status & 1) != 0 ?
+            "success" : "failure";
+        rollback_name =
+            openai_rollback_name(record->rollback);
+
+        written = snprintf(
+            output + *used,
+            output_size - *used,
+            "  Attempt %u: plan %08lX, build %s "
+            "(status %d), rollback %s, outcome %s\n",
+            record->attempt,
+            record->plan_hash,
+            build_name,
+            record->build_status,
+            rollback_name,
+            record->outcome
+        );
+
+        if (written < 0 ||
+            (size_t)written >= output_size - *used) {
+            return 0;
+        }
+        *used += (size_t)written;
+    }
+
+    written = snprintf(
+        output + *used,
+        output_size - *used,
+        "  Final outcome: %s\n",
+        entry->run.attempts[
+            entry->run.count - 1U
+        ].outcome
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - *used) {
+        return 0;
+    }
+
+    *used += (size_t)written;
+    return 1;
+}
+
+static int openai_hash_prefix_ok(const char *prefix)
+{
+    const unsigned char *position;
+    unsigned int length;
+
+    if (prefix == NULL || *prefix == '\0') {
+        return 0;
+    }
+
+    length = 0U;
+    position = (const unsigned char *)prefix;
+
+    while (*position != (unsigned char)'\0') {
+        if (!((*position >= (unsigned char)'0' &&
+               *position <= (unsigned char)'9') ||
+              (*position >= (unsigned char)'A' &&
+               *position <= (unsigned char)'F') ||
+              (*position >= (unsigned char)'a' &&
+               *position <= (unsigned char)'f'))) {
+            return 0;
+        }
+
+        ++length;
+        if (length > 8U) {
+            return 0;
+        }
+        ++position;
+    }
+
+    return length >= 1U;
+}
+
+static int openai_time_prefix_ok(const char *value)
+{
+    const unsigned char *position;
+    unsigned int length;
+
+    if (value == NULL || *value == '\0') {
+        return 0;
+    }
+
+    length = 0U;
+    position = (const unsigned char *)value;
+
+    while (*position != (unsigned char)'\0') {
+        unsigned char ch;
+
+        ch = *position;
+
+        if (!((ch >= (unsigned char)'0' &&
+               ch <= (unsigned char)'9') ||
+              ch == (unsigned char)'-' ||
+              ch == (unsigned char)'T' ||
+              ch == (unsigned char)':')) {
+            return 0;
+        }
+
+        ++length;
+        if (length > 19U) {
+            return 0;
+        }
+        ++position;
+    }
+
+    return length >= 4U;
+}
+
+static int openai_hash_has_prefix(
+    unsigned long hash,
+    const char *prefix)
+{
+    char text[16];
+    size_t length;
+
+    if (prefix == NULL) {
+        return 0;
+    }
+
+    (void)snprintf(
+        text,
+        sizeof(text),
+        "%08lX",
+        hash
+    );
+
+    length = strlen(prefix);
+
+    return strncmp(text, prefix, length) == 0;
+}
+
+static int openai_hash_prefix_ci(
+    unsigned long hash,
+    const char *prefix)
+{
+    char upper_prefix[16];
+    size_t index;
+    size_t length;
+
+    if (!openai_hash_prefix_ok(prefix)) {
+        return 0;
+    }
+
+    length = strlen(prefix);
+
+    for (index = 0U; index < length; ++index) {
+        unsigned char ch;
+
+        ch = (unsigned char)prefix[index];
+
+        if (ch >= (unsigned char)'a' &&
+            ch <= (unsigned char)'f') {
+            ch = (unsigned char)(
+                ch - (unsigned char)'a' +
+                (unsigned char)'A'
+            );
+        }
+
+        upper_prefix[index] = (char)ch;
+    }
+    upper_prefix[length] = '\0';
+
+    return openai_hash_has_prefix(
+        hash,
+        upper_prefix
+    );
+}
+
+static int openai_query_header(
+    char *output,
+    size_t output_size,
+    const char *label,
+    const char *value,
+    unsigned int history_limit,
+    size_t *used)
+{
+    int written;
+
+    if (output == NULL ||
+        label == NULL ||
+        value == NULL ||
+        used == NULL) {
+        return 0;
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history query\n"
+        "-------------------------------\n"
+        "Filter: %s\n"
+        "Value: %s\n"
+        "History window: %u\n",
+        label,
+        value,
+        history_limit
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size) {
+        return 0;
+    }
+
+    *used = (size_t)written;
+    return 1;
+}
+
+int openai_query_outcome_text(
+    const char *arguments,
+    char *output,
+    size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const char *value;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int display_index;
+    unsigned int match_count;
+    size_t used;
+    int written;
+
+    value = openai_skip_spaces(arguments);
+
+    if (!openai_arg_is_single(value) ||
+        !(strcmp(value, "committed") == 0 ||
+          strcmp(value, "rolled_back") == 0 ||
+          strcmp(value, "unsafe") == 0)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (!openai_query_header(
+            output,
+            output_size,
+            "final outcome",
+            value,
+            history_limit,
+            &used)) {
+        return 0;
+    }
+
+    match_count = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        const openai_query_run *entry;
+        unsigned int stored_index;
+
+        stored_index = run_count - 1U - display_index;
+        entry = &runs[stored_index];
+
+        if (strcmp(
+                entry->run.attempts[
+                    entry->run.count - 1U
+                ].outcome,
+                value) != 0) {
+            continue;
+        }
+
+        ++match_count;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                match_count,
+                entry)) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nMatches: %u\n",
+        match_count
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_query_outcome(
+    const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_query_outcome_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/OUTCOME "
+            "<committed|rolled_back|unsafe>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_query_attempts_text(
+    const char *arguments,
+    char *output,
+    size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const char *value;
+    unsigned int wanted;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int display_index;
+    unsigned int match_count;
+    size_t used;
+    int written;
+
+    value = openai_skip_spaces(arguments);
+
+    if (!openai_arg_is_single(value) ||
+        (strcmp(value, "1") != 0 &&
+         strcmp(value, "2") != 0)) {
+        return 0;
+    }
+
+    wanted = value[0] == '1' ? 1U : 2U;
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (!openai_query_header(
+            output,
+            output_size,
+            "attempt count",
+            value,
+            history_limit,
+            &used)) {
+        return 0;
+    }
+
+    match_count = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        const openai_query_run *entry;
+        unsigned int stored_index;
+
+        stored_index = run_count - 1U - display_index;
+        entry = &runs[stored_index];
+
+        if (entry->run.count != wanted) {
+            continue;
+        }
+
+        ++match_count;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                match_count,
+                entry)) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nMatches: %u\n",
+        match_count
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_query_attempts(
+    const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_query_attempts_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/ATTEMPTS <1|2>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_query_plan_text(
+    const char *arguments,
+    char *output,
+    size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const char *value;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int display_index;
+    unsigned int match_count;
+    size_t used;
+    int written;
+
+    value = openai_skip_spaces(arguments);
+
+    if (!openai_arg_is_single(value) ||
+        !openai_hash_prefix_ok(value)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (!openai_query_header(
+            output,
+            output_size,
+            "plan hash prefix",
+            value,
+            history_limit,
+            &used)) {
+        return 0;
+    }
+
+    match_count = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        const openai_query_run *entry;
+        unsigned int stored_index;
+        unsigned int attempt_index;
+        int matched;
+
+        stored_index = run_count - 1U - display_index;
+        entry = &runs[stored_index];
+        matched = 0;
+
+        for (attempt_index = 0U;
+             attempt_index < entry->run.count;
+             ++attempt_index) {
+            if (openai_hash_prefix_ci(
+                    entry->run.attempts[
+                        attempt_index
+                    ].plan_hash,
+                    value)) {
+                matched = 1;
+                break;
+            }
+        }
+
+        if (!matched) {
+            continue;
+        }
+
+        ++match_count;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                match_count,
+                entry)) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nMatches: %u\n",
+        match_count
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_query_plan(
+    const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_query_plan_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/PLAN <1-8 hex digits>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_query_since_text(
+    const char *arguments,
+    char *output,
+    size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const char *value;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int display_index;
+    unsigned int match_count;
+    size_t used;
+    int written;
+
+    value = openai_skip_spaces(arguments);
+
+    if (!openai_arg_is_single(value) ||
+        !openai_time_prefix_ok(value)) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (!openai_query_header(
+            output,
+            output_size,
+            "started since",
+            value,
+            history_limit,
+            &used)) {
+        return 0;
+    }
+
+    match_count = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        const openai_query_run *entry;
+        unsigned int stored_index;
+
+        stored_index = run_count - 1U - display_index;
+        entry = &runs[stored_index];
+
+        if (entry->started[0] == '\0' ||
+            strcmp(entry->started, value) < 0) {
+            continue;
+        }
+
+        ++match_count;
+
+        if (!openai_append_query_run(
+                output,
+                output_size,
+                &used,
+                match_count,
+                entry)) {
+            return 0;
+        }
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "\nMatches: %u\n",
+        match_count
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size - used;
+}
+
+void openai_show_query_since(
+    const char *arguments)
+{
+    char report[32768];
+
+    if (!openai_query_since_text(
+            arguments,
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/HISTORY/SINCE "
+            "<ISO timestamp prefix>"
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+
 int openai_repair_history_text(char *output,
                                size_t output_size)
 {
