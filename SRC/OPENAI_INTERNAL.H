@@ -306,6 +306,8 @@ void openai_agent_create(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
 void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_repair(agent_state *state, const char *goal);
+char *openai_build_repair_prompt(const char *goal,
+                                 const char *build_output);
 const char *openai_workflow_name(int workflow);
 const char *openai_rollback_name(int rollback_state);
 void openai_status(const agent_state *state);

@@ -199,6 +199,72 @@ $     GOTO FINISH
 $ ENDIF
 $
 $!-----------------------------------------------------------
+$! Build M206 failed-build diagnostics and repair-plan test.
+$! First create a deliberately broken source and capture its
+$! compiler diagnostic without failing the production build.
+$!-----------------------------------------------------------
+$ OPEN/WRITE M206_BAD [.BUILD]M206_BAD.C
+$ WRITE M206_BAD "int main(void)"
+$ WRITE M206_BAD "{"
+$ WRITE M206_BAD "    return MISSING_SYMBOL;"
+$ WRITE M206_BAD "}"
+$ CLOSE M206_BAD
+$
+$ IF F$SEARCH("[.BUILD]M206_DIAGNOSTIC.TXT;*") .NES. "" -
+THEN DELETE [.BUILD]M206_DIAGNOSTIC.TXT;*
+$ DEFINE/USER SYS$OUTPUT [.BUILD]M206_DIAGNOSTIC.TXT
+$ DEFINE/USER SYS$ERROR [.BUILD]M206_DIAGNOSTIC.TXT
+$ CC/OBJECT=[.BUILD]M206_BAD.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+[.BUILD]M206_BAD.C
+$ M206_BAD_STATUS = $STATUS
+$ IF M206_BAD_STATUS
+$ THEN
+$     FINAL_STATUS = 2
+$     WRITE SYS$ERROR "M206 fixture unexpectedly compiled successfully."
+$     GOTO FINISH
+$ ENDIF
+$
+$ SEARCH/OUTPUT=NL: [.BUILD]M206_DIAGNOSTIC.TXT "MISSING_SYMBOL"
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "M206 compiler diagnostic capture failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$ CC/OBJECT=[.BUILD]M206_DIAGNOSTICS_PLAN_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M206_DIAGNOSTICS_PLAN_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M206_DIAGNOSTICS_PLAN_TEST.EXE -
+[.BUILD]M206_DIAGNOSTICS_PLAN_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for M206_DIAGNOSTICS_PLAN_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M206_DIAGNOSTICS_PLAN_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test M206_DIAGNOSTICS_PLAN_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build PROJECT_GREP_TEST.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]PROJECT_GREP_TEST.OBJ -

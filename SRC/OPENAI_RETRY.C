@@ -4,6 +4,49 @@
 
 #include "openai_internal.h"
 
+
+char *openai_build_repair_prompt(const char *goal,
+                                 const char *build_output)
+{
+    static const char introduction[] =
+        "Create one deterministic transactional repair plan for the failed "
+        "build below. Inspect relevant project files before finalizing the "
+        "plan. The plan may contain multiple replace_text, replace_lines, "
+        "or create operations when they are required for one coherent fix. "
+        "Do not run a build, do not write files directly, and do not propose "
+        "unrelated cleanup. The saved plan will be reviewed, approved once, "
+        "applied atomically, rebuilt once, and rolled back automatically if "
+        "the build still fails.\n\nUser goal:\n";
+    static const char log_label[] =
+        "\n\nCurrent failed build result:\n";
+    char *combined_goal;
+    size_t combined_size;
+
+    if (goal == NULL || build_output == NULL) {
+        return NULL;
+    }
+
+    combined_size =
+        strlen(introduction) +
+        strlen(goal) +
+        strlen(log_label) +
+        strlen(build_output) +
+        1U;
+
+    combined_goal = (char *)malloc(combined_size);
+
+    if (combined_goal == NULL) {
+        return NULL;
+    }
+
+    (void)strcpy(combined_goal, introduction);
+    (void)strcat(combined_goal, goal);
+    (void)strcat(combined_goal, log_label);
+    (void)strcat(combined_goal, build_output);
+
+    return combined_goal;
+}
+
 void openai_agent_retry(agent_state *state, const char *goal)
 {
     static const char introduction[] =
@@ -121,7 +164,6 @@ void openai_agent_repair(agent_state *state, const char *goal)
         "\n\nCurrent failed build result:\n";
     char *build_output;
     char *combined_goal;
-    size_t combined_size;
     int build_status;
 
     if (state == NULL ||
@@ -187,14 +229,8 @@ void openai_agent_repair(agent_state *state, const char *goal)
         return;
     }
 
-    combined_size =
-        strlen(introduction) +
-        strlen(goal) +
-        strlen(log_label) +
-        strlen(build_output) +
-        1U;
-
-    combined_goal = (char *)malloc(combined_size);
+    combined_goal =
+        openai_build_repair_prompt(goal, build_output);
 
     if (combined_goal == NULL) {
         (void)puts("Insufficient memory for repair prompt.");
@@ -202,11 +238,6 @@ void openai_agent_repair(agent_state *state, const char *goal)
         openai_log_event("AGENT/REPAIR", "allocation_failed", 0);
         return;
     }
-
-    (void)strcpy(combined_goal, introduction);
-    (void)strcat(combined_goal, goal);
-    (void)strcat(combined_goal, log_label);
-    (void)strcat(combined_goal, build_output);
 
     (void)puts(
         "Current build fails. Creating one transactional repair plan..."
