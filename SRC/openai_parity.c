@@ -281,6 +281,11 @@ int openai_approval_text(char *output, size_t output_size)
     return written >= 0 && (size_t)written < output_size;
 }
 
+const char *openai_approval_name(void)
+{
+    return openai_policy_name(openai_policy_source());
+}
+
 void openai_show_approval(void)
 {
     char output[2048];
@@ -410,7 +415,9 @@ int openai_parity_text(char *output, size_t output_size)
         "Approval profiles:    available\n"
         "Unified EXEC entry:   available\n"
         "Dry-run planning:     available\n"
-        "Session resume/fork:  not yet implemented\n"
+        "Persistent sessions:  available\n"
+        "Session resume/fork:  available\n"
+        "Archive lifecycle:    available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
@@ -444,6 +451,10 @@ void openai_exec_goal(agent_state *state, const char *goal)
     policy = openai_policy_source();
 
     if (policy == OPENAI_APPROVAL_READ) {
+        if (!openai_session_note_goal(goal)) {
+            (void)puts("Unable to persist current session goal.");
+            return;
+        }
         openai_agent(state, goal);
         return;
     }
@@ -453,6 +464,11 @@ void openai_exec_goal(agent_state *state, const char *goal)
             "AGENT/EXEC workspace/full policy requires "
             "OVMS_AGENT_WRITE_ENABLED."
         );
+        return;
+    }
+
+    if (!openai_session_note_goal(goal)) {
+        (void)puts("Unable to persist current session goal.");
         return;
     }
 
@@ -467,6 +483,11 @@ void openai_exec_dry(agent_state *state, const char *goal)
         goal == NULL ||
         *openai_skip_ws(goal) == '\0') {
         (void)puts("Usage: AGENT/EXEC/DRY <goal>");
+        return;
+    }
+
+    if (!openai_session_note_goal(goal)) {
+        (void)puts("Unable to persist current session goal.");
         return;
     }
 

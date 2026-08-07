@@ -598,4 +598,33 @@ void openai_exec_goal(agent_state *state, const char *goal);
 void openai_exec_dry(agent_state *state, const char *goal);
 void openai_test_reset_approval(void);
 
+const char *openai_approval_name(void);
+
+int openai_session_new(const char *arguments, char created_id[9]);
+int openai_session_list_text(char *output, size_t output_size);
+int openai_session_show_text(const char *arguments,
+                             char *output, size_t output_size);
+int openai_session_resume(const char *arguments);
+int openai_session_fork(const char *arguments, char created_id[9]);
+int openai_session_rename(const char *arguments);
+int openai_session_archive(const char *arguments);
+int openai_session_unarchive(const char *arguments);
+int openai_session_delete(const char *arguments);
+int openai_session_current_text(char *output, size_t output_size);
+int openai_session_note_goal(const char *goal);
+
+void openai_show_session_list(void);
+void openai_show_session(const char *arguments);
+void openai_show_session_current(void);
+void openai_session_new_cmd(const char *arguments);
+void openai_session_resume_cmd(const char *arguments);
+void openai_session_fork_cmd(const char *arguments);
+void openai_session_rename_cmd(const char *arguments);
+void openai_session_archive_cmd(const char *arguments);
+void openai_session_unarc_cmd(const char *arguments);
+void openai_session_delete_cmd(const char *arguments);
+
+void openai_test_session_paths(const char *data_path,
+                               const char *current_path);
+
 #endif /* OPENAI_INTERNAL_H */

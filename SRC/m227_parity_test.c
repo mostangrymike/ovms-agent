@@ -68,7 +68,6 @@ int main(void)
     if (!openai_parity_text(output, sizeof(output)) ||
         strstr(output, "Unified EXEC entry:   available") == NULL ||
         strstr(output, "Dry-run planning:     available") == NULL ||
-        strstr(output, "Session resume/fork:  not yet implemented") == NULL ||
         strstr(output, "MCP/tool servers:     not yet implemented") == NULL) {
         (void)puts("M227 failed: parity status.");
         return EXIT_FAILURE;

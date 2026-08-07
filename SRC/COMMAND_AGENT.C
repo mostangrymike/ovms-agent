@@ -150,6 +150,27 @@ void command_agent_exec_dry(
 void command_agent_parity(
     agent_state *state, const char *arguments);
 
+void command_agent_session_new(
+    agent_state *state, const char *arguments);
+void command_agent_session_list(
+    agent_state *state, const char *arguments);
+void command_agent_session_show(
+    agent_state *state, const char *arguments);
+void command_agent_session_resume(
+    agent_state *state, const char *arguments);
+void command_agent_session_fork(
+    agent_state *state, const char *arguments);
+void command_agent_session_rename(
+    agent_state *state, const char *arguments);
+void command_agent_session_archive(
+    agent_state *state, const char *arguments);
+void command_agent_session_unarc(
+    agent_state *state, const char *arguments);
+void command_agent_session_delete(
+    agent_state *state, const char *arguments);
+void command_agent_session_current(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -217,6 +238,16 @@ static const command_entry agent_commands[] = {
     { "AGENT/EXEC", "Run a goal using the current approval policy", command_agent_exec_goal },
     { "AGENT/EXEC/DRY", "Create a read-only implementation plan for a goal", command_agent_exec_dry },
     { "AGENT/PARITY", "Show Codex-parity capability status", command_agent_parity },
+    { "AGENT/SESSION/NEW", "Create and select a persistent session", command_agent_session_new },
+    { "AGENT/SESSION/LIST", "List persistent agent sessions", command_agent_session_list },
+    { "AGENT/SESSION/SHOW", "Show one persistent agent session", command_agent_session_show },
+    { "AGENT/SESSION/RESUME", "Resume an active persistent session", command_agent_session_resume },
+    { "AGENT/SESSION/FORK", "Fork a persistent session", command_agent_session_fork },
+    { "AGENT/SESSION/RENAME", "Rename a persistent session", command_agent_session_rename },
+    { "AGENT/SESSION/ARCHIVE", "Archive a persistent session", command_agent_session_archive },
+    { "AGENT/SESSION/UNARCHIVE", "Unarchive a persistent session", command_agent_session_unarc },
+    { "AGENT/SESSION/DELETE", "Delete a persistent session", command_agent_session_delete },
+    { "AGENT/SESSION/CURRENT", "Show the current persistent session", command_agent_session_current },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -315,6 +346,56 @@ void command_agent_exec_dry(agent_state *state, const char *arguments)
 void command_agent_parity(agent_state *state, const char *arguments)
 {
     (void)state; (void)arguments; openai_show_parity();
+}
+
+void command_agent_session_new(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_new_cmd(arguments);
+}
+
+void command_agent_session_list(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_session_list();
+}
+
+void command_agent_session_show(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_session(arguments);
+}
+
+void command_agent_session_resume(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_resume_cmd(arguments);
+}
+
+void command_agent_session_fork(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_fork_cmd(arguments);
+}
+
+void command_agent_session_rename(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_rename_cmd(arguments);
+}
+
+void command_agent_session_archive(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_archive_cmd(arguments);
+}
+
+void command_agent_session_unarc(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_unarc_cmd(arguments);
+}
+
+void command_agent_session_delete(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_delete_cmd(arguments);
+}
+
+void command_agent_session_current(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_session_current();
 }
 
 void command_agent_repair_status(agent_state *state,
