@@ -95,6 +95,22 @@ void command_agent_kv(
     agent_state *state,
     const char *arguments);
 
+void command_agent_compare(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_streak(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_recovery(
+    agent_state *state,
+    const char *arguments);
+
+void command_agent_trend(
+    agent_state *state,
+    const char *arguments);
+
 void command_agent_repair_clear(
     agent_state *state,
     const char *arguments);
@@ -145,6 +161,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/REPAIR/HISTORY/SUMMARY", "Show a compact recent repair summary", command_agent_summary },
     { "AGENT/REPAIR/HISTORY/CSV", "Export recent repair history as CSV", command_agent_csv },
     { "AGENT/REPAIR/HISTORY/KV", "Export recent repair history as key/value text", command_agent_kv },
+    { "AGENT/REPAIR/HISTORY/COMPARE", "Compare the newest two repair runs", command_agent_compare },
+    { "AGENT/REPAIR/HISTORY/STREAK", "Show the current repair outcome streak", command_agent_streak },
+    { "AGENT/REPAIR/HISTORY/RECOVERY", "Summarize two-attempt repair recovery", command_agent_recovery },
+    { "AGENT/REPAIR/HISTORY/TREND", "Show recent repair success trend", command_agent_trend },
     { "AGENT/REPAIR/HISTORY/CLEAR", "Clear persisted repair history with explicit confirmation", command_agent_repair_clear },
     { "AGENT/APPROVE", "Approve the current plan for this session", command_agent_approve },
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
@@ -362,6 +382,38 @@ void command_agent_kv(agent_state *state,
 {
     (void)state;
     openai_export_kv(arguments);
+}
+
+void command_agent_compare(agent_state *state,
+                           const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_compare();
+}
+
+void command_agent_streak(agent_state *state,
+                          const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_streak();
+}
+
+void command_agent_recovery(agent_state *state,
+                            const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_recovery();
+}
+
+void command_agent_trend(agent_state *state,
+                         const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_trend();
 }
 
 void command_agent_repair_clear(agent_state *state,

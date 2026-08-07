@@ -182,6 +182,18 @@ int openai_kv_file(const char *path,
                    int allow_overwrite);
 void openai_export_csv(const char *arguments);
 void openai_export_kv(const char *arguments);
+int openai_compare_text(char *output,
+                        size_t output_size);
+void openai_show_compare(void);
+int openai_streak_text(char *output,
+                       size_t output_size);
+void openai_show_streak(void);
+int openai_recovery_text(char *output,
+                         size_t output_size);
+void openai_show_recovery(void);
+int openai_trend_text(char *output,
+                      size_t output_size);
+void openai_show_trend(void);
 int openai_clear_repair_history(int approved);
 void openai_clear_repair_cmd(void);
 unsigned int openai_test_history_limit(const char *value);

@@ -3105,6 +3105,513 @@ static int openai_repair_export_path_safe(const char *path)
     return 1;
 }
 
+static const char *openai_run_outcome(
+    const openai_query_run *entry)
+{
+    if (entry == NULL || entry->run.count == 0U) {
+        return "unknown";
+    }
+
+    return entry->run.attempts[
+        entry->run.count - 1U
+    ].outcome;
+}
+
+static int openai_run_score(
+    const openai_query_run *entry)
+{
+    const char *outcome;
+
+    if (entry == NULL || entry->run.count == 0U) {
+        return -1;
+    }
+
+    outcome = openai_run_outcome(entry);
+
+    if (strcmp(outcome, "committed") == 0) {
+        return entry->run.count == 1U ? 3 : 2;
+    }
+
+    if (strcmp(outcome, "rolled_back") == 0) {
+        return 1;
+    }
+
+    if (strcmp(outcome, "unsafe") == 0) {
+        return 0;
+    }
+
+    return -1;
+}
+
+static const char *openai_change_name(
+    int latest_score,
+    int previous_score)
+{
+    if (latest_score > previous_score) {
+        return "improved";
+    }
+
+    if (latest_score < previous_score) {
+        return "regressed";
+    }
+
+    return "unchanged";
+}
+
+int openai_compare_text(char *output,
+                        size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const openai_query_run *latest;
+    const openai_query_run *previous;
+    unsigned int history_limit;
+    unsigned int run_count;
+    int latest_score;
+    int previous_score;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (run_count < 2U) {
+        written = snprintf(
+            output,
+            output_size,
+            "OVMS Agent repair history comparison\n"
+            "------------------------------------\n"
+            "History window: %u\n"
+            "Runs available: %u\n"
+            "Comparison: unavailable\n"
+            "Need at least two persisted repair runs.\n",
+            history_limit,
+            run_count
+        );
+
+        return
+            written >= 0 &&
+            (size_t)written < output_size;
+    }
+
+    latest = &runs[run_count - 1U];
+    previous = &runs[run_count - 2U];
+    latest_score = openai_run_score(latest);
+    previous_score = openai_run_score(previous);
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history comparison\n"
+        "------------------------------------\n"
+        "History window: %u\n"
+        "Latest started:   %s\n"
+        "Latest attempts:  %u\n"
+        "Latest outcome:   %s\n"
+        "Previous started: %s\n"
+        "Previous attempts:%u\n"
+        "Previous outcome: %s\n"
+        "Reliability:      %s\n",
+        history_limit,
+        latest->started[0] != '\0' ?
+            latest->started : "unknown",
+        latest->run.count,
+        openai_run_outcome(latest),
+        previous->started[0] != '\0' ?
+            previous->started : "unknown",
+        previous->run.count,
+        openai_run_outcome(previous),
+        openai_change_name(
+            latest_score,
+            previous_score)
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_compare(void)
+{
+    char report[2048];
+
+    if (!openai_compare_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to compare recent AGENT/REPAIR runs."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_streak_text(char *output,
+                       size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    const char *current;
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int streak;
+    unsigned int index;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    if (run_count == 0U) {
+        written = snprintf(
+            output,
+            output_size,
+            "OVMS Agent repair outcome streak\n"
+            "--------------------------------\n"
+            "History window: %u\n"
+            "Runs available: 0\n"
+            "Current outcome: unavailable\n"
+            "Streak length: 0\n",
+            history_limit
+        );
+
+        return
+            written >= 0 &&
+            (size_t)written < output_size;
+    }
+
+    current = openai_run_outcome(
+        &runs[run_count - 1U]
+    );
+    streak = 1U;
+    index = run_count - 1U;
+
+    while (index > 0U) {
+        --index;
+
+        if (strcmp(
+                openai_run_outcome(&runs[index]),
+                current) != 0) {
+            break;
+        }
+
+        ++streak;
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair outcome streak\n"
+        "--------------------------------\n"
+        "History window: %u\n"
+        "Runs available: %u\n"
+        "Current outcome: %s\n"
+        "Streak length: %u\n",
+        history_limit,
+        run_count,
+        current,
+        streak
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_streak(void)
+{
+    char report[1024];
+
+    if (!openai_streak_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to inspect AGENT/REPAIR outcome streak."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+int openai_recovery_text(char *output,
+                         size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int index;
+    unsigned int two_attempt;
+    unsigned int recovered;
+    unsigned int unrecovered;
+    unsigned int rate;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    two_attempt = 0U;
+    recovered = 0U;
+    unrecovered = 0U;
+
+    for (index = 0U; index < run_count; ++index) {
+        if (runs[index].run.count != 2U) {
+            continue;
+        }
+
+        ++two_attempt;
+
+        if (strcmp(
+                openai_run_outcome(&runs[index]),
+                "committed") == 0) {
+            ++recovered;
+        } else {
+            ++unrecovered;
+        }
+    }
+
+    rate = two_attempt == 0U ?
+        0U :
+        (recovered * 100U) / two_attempt;
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair recovery summary\n"
+        "----------------------------------\n"
+        "History window:     %u\n"
+        "Runs analyzed:      %u\n"
+        "Two-attempt runs:   %u\n"
+        "Recovered:          %u\n"
+        "Unrecovered:        %u\n"
+        "Recovery rate:      %u%%\n",
+        history_limit,
+        run_count,
+        two_attempt,
+        recovered,
+        unrecovered,
+        rate
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_recovery(void)
+{
+    char report[1024];
+
+    if (!openai_recovery_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to summarize AGENT/REPAIR recovery."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+static char openai_outcome_code(
+    const openai_query_run *entry)
+{
+    const char *outcome;
+
+    outcome = openai_run_outcome(entry);
+
+    if (strcmp(outcome, "committed") == 0) {
+        return 'C';
+    }
+
+    if (strcmp(outcome, "rolled_back") == 0) {
+        return 'R';
+    }
+
+    if (strcmp(outcome, "unsafe") == 0) {
+        return 'U';
+    }
+
+    return '?';
+}
+
+static const char *openai_trend_name(
+    unsigned int newer_rate,
+    unsigned int older_rate)
+{
+    if (newer_rate > older_rate) {
+        return "improving";
+    }
+
+    if (newer_rate < older_rate) {
+        return "declining";
+    }
+
+    return "steady";
+}
+
+int openai_trend_text(char *output,
+                      size_t output_size)
+{
+    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    char outcomes[OPENAI_REPAIR_HISTORY_MAXIMUM * 2U + 1U];
+    unsigned int history_limit;
+    unsigned int run_count;
+    unsigned int newer_count;
+    unsigned int older_count;
+    unsigned int newer_committed;
+    unsigned int older_committed;
+    unsigned int newer_rate;
+    unsigned int older_rate;
+    unsigned int display_index;
+    size_t used;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    history_limit = openai_repair_history_limit();
+    run_count = openai_collect_query_runs(
+        runs,
+        history_limit
+    );
+
+    used = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        unsigned int stored_index;
+
+        stored_index =
+            run_count - 1U - display_index;
+
+        if (used > 0U) {
+            outcomes[used++] = ',';
+        }
+
+        outcomes[used++] =
+            openai_outcome_code(&runs[stored_index]);
+    }
+    outcomes[used] = '\0';
+
+    newer_count = (run_count + 1U) / 2U;
+    older_count = run_count - newer_count;
+    newer_committed = 0U;
+    older_committed = 0U;
+
+    for (display_index = 0U;
+         display_index < run_count;
+         ++display_index) {
+        unsigned int stored_index;
+
+        stored_index =
+            run_count - 1U - display_index;
+
+        if (strcmp(
+                openai_run_outcome(&runs[stored_index]),
+                "committed") != 0) {
+            continue;
+        }
+
+        if (display_index < newer_count) {
+            ++newer_committed;
+        } else {
+            ++older_committed;
+        }
+    }
+
+    newer_rate = newer_count == 0U ?
+        0U :
+        (newer_committed * 100U) / newer_count;
+    older_rate = older_count == 0U ?
+        0U :
+        (older_committed * 100U) / older_count;
+
+    if (run_count < 2U) {
+        written = snprintf(
+            output,
+            output_size,
+            "OVMS Agent repair success trend\n"
+            "-------------------------------\n"
+            "History window: %u\n"
+            "Runs analyzed: %u\n"
+            "Outcomes newest-first: %s\n"
+            "Trend: unavailable\n"
+            "Need at least two persisted repair runs.\n",
+            history_limit,
+            run_count,
+            run_count > 0U ? outcomes : "none"
+        );
+    } else {
+        written = snprintf(
+            output,
+            output_size,
+            "OVMS Agent repair success trend\n"
+            "-------------------------------\n"
+            "History window: %u\n"
+            "Runs analyzed: %u\n"
+            "Outcomes newest-first: %s\n"
+            "Newer-half success: %u%% (%u/%u)\n"
+            "Older-half success: %u%% (%u/%u)\n"
+            "Trend: %s\n",
+            history_limit,
+            run_count,
+            outcomes,
+            newer_rate,
+            newer_committed,
+            newer_count,
+            older_rate,
+            older_committed,
+            older_count,
+            openai_trend_name(
+                newer_rate,
+                older_rate)
+        );
+    }
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_trend(void)
+{
+    char report[2048];
+
+    if (!openai_trend_text(
+            report,
+            sizeof(report))) {
+        (void)puts(
+            "Unable to analyze AGENT/REPAIR trend."
+        );
+        return;
+    }
+
+    (void)fputs(report, stdout);
+}
+
+
 int openai_report_text(char *output,
                        size_t output_size)
 {
