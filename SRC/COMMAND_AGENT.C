@@ -200,6 +200,13 @@ void command_agent_auto_reset(
 void command_agent_context_show(
     agent_state *state, const char *arguments);
 
+void command_agent_instr_status(
+    agent_state *state, const char *arguments);
+void command_agent_instr_show(
+    agent_state *state, const char *arguments);
+void command_agent_instr_reload(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -290,6 +297,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/AUTO/LIMITS", "Show autonomous model-turn and write limits", command_agent_auto_limits },
     { "AGENT/AUTO/RESET", "Reset autonomous loop status counters", command_agent_auto_reset },
     { "AGENT/CONTEXT/SHOW", "Show restored context for the current persistent session", command_agent_context_show },
+    { "AGENT/INSTRUCTIONS", "Show project instruction discovery status", command_agent_instr_status },
+    { "AGENT/INSTRUCTIONS/STATUS", "Show project instruction discovery status", command_agent_instr_status },
+    { "AGENT/INSTRUCTIONS/SHOW", "Show loaded project instructions", command_agent_instr_show },
+    { "AGENT/INSTRUCTIONS/RELOAD", "Reload project instructions from disk", command_agent_instr_reload },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -512,6 +523,24 @@ void command_agent_context_show(agent_state *state, const char *arguments)
     (void)state;
     (void)arguments;
     openai_show_context_current();
+}
+
+void command_agent_instr_status(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_instr_status(state);
+}
+
+void command_agent_instr_show(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_show_instr(state);
+}
+
+void command_agent_instr_reload(agent_state *state, const char *arguments)
+{
+    (void)arguments;
+    openai_instr_reload_cmd(state);
 }
 
 void command_agent_repair_status(agent_state *state,

@@ -180,6 +180,22 @@ int openai_context_current(char *output,
         output, output_size, &used, meta
     );
 
+    {
+        char instructions[4352];
+
+        if (openai_instr_show_text(
+                NULL, instructions, sizeof(instructions))) {
+            (void)openai_context_append(
+                output, output_size, &used,
+                "\nProject instructions:\n"
+            );
+            (void)openai_context_append(
+                output, output_size, &used,
+                instructions
+            );
+        }
+    }
+
     if (openai_session_hist_text(
             session, history, sizeof(history))) {
         (void)openai_context_append(

@@ -426,6 +426,8 @@ int openai_parity_text(char *output, size_t output_size)
         "Bounded multi-patch:   available\n"
         "Context restoration:  available\n"
         "Fork ancestry context: available\n"
+        "Project instructions:  available\n"
+        "Instruction reload:    available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
@@ -492,9 +494,7 @@ void openai_exec_context(agent_state *state,
 
     openai_tx_note_exec("CONTEXT", goal, "started");
 
-    openai_agent_mode(
-        state, model_goal, 1, 0, OPENAI_WORKFLOW_WRITE
-    );
+    openai_agent_write(state, model_goal);
 }
 
 void openai_exec_goal(agent_state *state, const char *goal)
@@ -535,9 +535,7 @@ void openai_exec_goal(agent_state *state, const char *goal)
 
     openai_tx_note_exec("EXEC", goal, "started");
 
-    openai_agent_mode(
-        state, goal, 1, 0, OPENAI_WORKFLOW_WRITE
-    );
+    openai_agent_write(state, goal);
 }
 
 void openai_exec_dry(agent_state *state, const char *goal)

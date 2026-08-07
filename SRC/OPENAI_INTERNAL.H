@@ -686,4 +686,17 @@ int openai_context_current(char *output, size_t output_size);
 void openai_show_context_current(void);
 void openai_exec_context(agent_state *state, const char *goal);
 
+int openai_instr_reload(const agent_state *state);
+int openai_instr_compose(const agent_state *state,
+                         const char *goal,
+                         char *output, size_t output_size);
+int openai_instr_status_text(const agent_state *state,
+                             char *output, size_t output_size);
+int openai_instr_show_text(const agent_state *state,
+                           char *output, size_t output_size);
+void openai_show_instr_status(const agent_state *state);
+void openai_show_instr(const agent_state *state);
+void openai_instr_reload_cmd(const agent_state *state);
+void openai_test_instr_path(const char *path);
+
 #endif /* OPENAI_INTERNAL_H */
