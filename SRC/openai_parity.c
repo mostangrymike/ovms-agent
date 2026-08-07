@@ -424,6 +424,8 @@ int openai_parity_text(char *output, size_t output_size)
         "Autonomous tool loop:  available\n"
         "Tool-result feedback:  available\n"
         "Bounded multi-patch:   available\n"
+        "Context restoration:  available\n"
+        "Fork ancestry context: available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
@@ -441,6 +443,58 @@ void openai_show_parity(void)
     }
 
     (void)fputs(output, stdout);
+}
+
+void openai_exec_context(agent_state *state,
+                         const char *goal)
+{
+    char model_goal[8192];
+    int policy;
+
+    if (state == NULL ||
+        goal == NULL ||
+        *openai_skip_ws(goal) == '\0') {
+        (void)puts("A continuation goal is required.");
+        return;
+    }
+
+    if (!openai_context_build(
+            goal, model_goal, sizeof(model_goal))) {
+        (void)puts("Unable to rebuild persistent session context.");
+        return;
+    }
+
+    policy = openai_policy_source();
+
+    if (policy == OPENAI_APPROVAL_READ) {
+        if (!openai_session_note_goal(goal)) {
+            (void)puts("Unable to persist current session goal.");
+            return;
+        }
+
+        openai_tx_note_exec("CONTEXT", goal, "started");
+        openai_agent(state, model_goal);
+        return;
+    }
+
+    if (!state->write_enabled) {
+        (void)puts(
+            "Context continuation with workspace/full policy "
+            "requires OVMS_AGENT_WRITE_ENABLED."
+        );
+        return;
+    }
+
+    if (!openai_session_note_goal(goal)) {
+        (void)puts("Unable to persist current session goal.");
+        return;
+    }
+
+    openai_tx_note_exec("CONTEXT", goal, "started");
+
+    openai_agent_mode(
+        state, model_goal, 1, 0, OPENAI_WORKFLOW_WRITE
+    );
 }
 
 void openai_exec_goal(agent_state *state, const char *goal)

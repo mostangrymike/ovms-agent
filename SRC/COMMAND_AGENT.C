@@ -197,6 +197,9 @@ void command_agent_auto_limits(
 void command_agent_auto_reset(
     agent_state *state, const char *arguments);
 
+void command_agent_context_show(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -286,6 +289,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/AUTO/STATUS", "Show last autonomous loop counters and stop reason", command_agent_auto_status },
     { "AGENT/AUTO/LIMITS", "Show autonomous model-turn and write limits", command_agent_auto_limits },
     { "AGENT/AUTO/RESET", "Reset autonomous loop status counters", command_agent_auto_reset },
+    { "AGENT/CONTEXT/SHOW", "Show restored context for the current persistent session", command_agent_context_show },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -501,6 +505,13 @@ void command_agent_auto_reset(agent_state *state, const char *arguments)
     (void)arguments;
     openai_auto_reset();
     (void)puts("Autonomous loop status reset.");
+}
+
+void command_agent_context_show(agent_state *state, const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_context_current();
 }
 
 void command_agent_repair_status(agent_state *state,

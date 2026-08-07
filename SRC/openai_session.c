@@ -851,6 +851,31 @@ int openai_session_current_id(char id[9])
     return openai_session_current(id);
 }
 
+int openai_session_parent(const char *arguments,
+                          char parent[9])
+{
+    openai_session_rec records[OPENAI_SESSION_MAX];
+    unsigned int count;
+    char id[9];
+    int index;
+
+    if (parent == NULL ||
+        !openai_session_arg_id(arguments, id)) {
+        return 0;
+    }
+
+    count = openai_session_load(records, OPENAI_SESSION_MAX);
+    index = openai_session_find(records, count, id);
+
+    if (index < 0) {
+        return 0;
+    }
+
+    (void)strncpy(parent, records[index].parent, 8U);
+    parent[8] = '\0';
+    return 1;
+}
+
 int openai_session_current_text(char *output,
                                 size_t output_size)
 {

@@ -678,4 +678,12 @@ void openai_tx_model_result(const char *name,
 void openai_tx_loop_event(const char *name,
                           const char *status);
 
+int openai_session_parent(const char *arguments, char parent[9]);
+
+int openai_context_build(const char *goal,
+                         char *output, size_t output_size);
+int openai_context_current(char *output, size_t output_size);
+void openai_show_context_current(void);
+void openai_exec_context(agent_state *state, const char *goal);
+
 #endif /* OPENAI_INTERNAL_H */

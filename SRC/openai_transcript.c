@@ -858,7 +858,7 @@ int openai_session_exec(agent_state *state,
     (void)openai_tx_append(
         "exec", "SESSION", "agent", "started", goal
     );
-    openai_exec_goal(state, goal);
+    openai_exec_context(state, goal);
     return 1;
 }
 
@@ -887,7 +887,7 @@ int openai_exec_resume(agent_state *state,
     (void)openai_tx_append(
         "exec", "RESUME", "agent", "started", goal
     );
-    openai_exec_goal(state, goal);
+    openai_exec_context(state, goal);
     return 1;
 }
 
@@ -967,7 +967,7 @@ int openai_exec_fork(agent_state *state,
     (void)openai_tx_append(
         "exec", "FORK", "agent", "started", goal
     );
-    openai_exec_goal(state, goal);
+    openai_exec_context(state, goal);
     return 1;
 }
 
