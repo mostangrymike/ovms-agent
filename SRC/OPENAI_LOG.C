@@ -461,13 +461,13 @@ int openai_repair_status_text(char *output,
 
 static unsigned int openai_repair_history_override = 0U;
 
-static unsigned int openai_parse_history_limit(const char *value)
+static int openai_history_limit_valid(const char *value)
 {
     unsigned int result;
     const unsigned char *position;
 
     if (value == NULL || *value == '\0') {
-        return OPENAI_REPAIR_HISTORY_DEFAULT;
+        return 0;
     }
 
     result = 0U;
@@ -478,23 +478,42 @@ static unsigned int openai_parse_history_limit(const char *value)
 
         if (*position < (unsigned char)'0' ||
             *position > (unsigned char)'9') {
-            return OPENAI_REPAIR_HISTORY_DEFAULT;
+            return 0;
         }
 
         digit = (unsigned int)(*position - (unsigned char)'0');
 
         if (result >
             (OPENAI_REPAIR_HISTORY_MAXIMUM - digit) / 10U) {
-            return OPENAI_REPAIR_HISTORY_DEFAULT;
+            return 0;
         }
 
         result = result * 10U + digit;
         ++position;
     }
 
-    if (result < 1U ||
-        result > OPENAI_REPAIR_HISTORY_MAXIMUM) {
+    return
+        result >= 1U &&
+        result <= OPENAI_REPAIR_HISTORY_MAXIMUM;
+}
+
+static unsigned int openai_parse_history_limit(const char *value)
+{
+    unsigned int result;
+    const unsigned char *position;
+
+    if (!openai_history_limit_valid(value)) {
         return OPENAI_REPAIR_HISTORY_DEFAULT;
+    }
+
+    result = 0U;
+    position = (const unsigned char *)value;
+
+    while (*position != (unsigned char)'\0') {
+        result =
+            result * 10U +
+            (unsigned int)(*position - (unsigned char)'0');
+        ++position;
     }
 
     return result;
@@ -1168,6 +1187,108 @@ void openai_show_repair_failures(void)
     }
 
     (void)fputs(history, stdout);
+}
+
+
+static int openai_format_repair_config(const char *value,
+                                       char *output,
+                                       size_t output_size)
+{
+    unsigned int resolved;
+    const char *source;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    if (openai_history_limit_valid(value)) {
+        resolved = openai_parse_history_limit(value);
+        source = "environment";
+    } else {
+        resolved = OPENAI_REPAIR_HISTORY_DEFAULT;
+        source = "default";
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair configuration\n"
+        "-------------------------------\n"
+        "History window:       %u\n"
+        "Default window:       %u\n"
+        "Maximum window:       %u\n"
+        "Source:               %s\n"
+        "Environment variable: OVMS_AGENT_REPAIR_HISTORY_RUNS\n",
+        resolved,
+        OPENAI_REPAIR_HISTORY_DEFAULT,
+        OPENAI_REPAIR_HISTORY_MAXIMUM,
+        source
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+int openai_repair_config_text(char *output,
+                              size_t output_size)
+{
+    if (openai_repair_history_override != 0U) {
+        int written;
+
+        written = snprintf(
+            output,
+            output_size,
+            "OVMS Agent repair configuration\n"
+            "-------------------------------\n"
+            "History window:       %u\n"
+            "Default window:       %u\n"
+            "Maximum window:       %u\n"
+            "Source:               test override\n"
+            "Environment variable: OVMS_AGENT_REPAIR_HISTORY_RUNS\n",
+            openai_repair_history_override,
+            OPENAI_REPAIR_HISTORY_DEFAULT,
+            OPENAI_REPAIR_HISTORY_MAXIMUM
+        );
+
+        return
+            written >= 0 &&
+            (size_t)written < output_size;
+    }
+
+    return openai_format_repair_config(
+        getenv("OVMS_AGENT_REPAIR_HISTORY_RUNS"),
+        output,
+        output_size
+    );
+}
+
+int openai_test_repair_config_text(const char *value,
+                                   char *output,
+                                   size_t output_size)
+{
+    return openai_format_repair_config(
+        value,
+        output,
+        output_size
+    );
+}
+
+void openai_show_repair_config(void)
+{
+    char configuration[1024];
+
+    if (!openai_repair_config_text(
+            configuration,
+            sizeof(configuration))) {
+        (void)puts(
+            "Unable to resolve AGENT/REPAIR configuration."
+        );
+        return;
+    }
+
+    (void)fputs(configuration, stdout);
 }
 
 
