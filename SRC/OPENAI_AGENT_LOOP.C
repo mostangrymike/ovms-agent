@@ -94,8 +94,8 @@ void openai_agent_mode(agent_state *state,
     tool_output = NULL;
     call_id = NULL;
     write_attempted = 0;
-    turn_limit = workflow == OPENAI_WORKFLOW_PLAN ?
-        OPENAI_PLAN_MAX_TURNS : OPENAI_AGENT_MAX_TURNS;
+    openai_auto_begin(workflow);
+    turn_limit = openai_auto_turn_limit(workflow);
     openai_cache_init(cache);
 
     if (build_after_write) {
@@ -108,6 +108,8 @@ void openai_agent_mode(agent_state *state,
 
     for (turn = 0U; turn < turn_limit; ++turn) {
         char *json;
+
+        openai_auto_note_turn();
         char *response_id;
         char *name;
         char *new_call_id;
@@ -177,6 +179,8 @@ void openai_agent_mode(agent_state *state,
                     (void)puts("Unable to save implementation plan.");
                 }
 
+                openai_auto_finish("final");
+                openai_tx_loop_event("agent", "final");
                 free(plan_text);
                 free(json);
                 remove_temporary_files();
@@ -185,6 +189,8 @@ void openai_agent_mode(agent_state *state,
                 return;
             }
         } else if (display_output_text_from_json(json)) {
+            openai_auto_finish("final");
+            openai_tx_loop_event("agent", "final");
             free(json);
             remove_temporary_files();
             free(previous_id);
@@ -210,6 +216,8 @@ void openai_agent_mode(agent_state *state,
         free(json);
 
         descriptor = openai_tool_find(name);
+        openai_auto_note_tool();
+        openai_tx_model_call(name, arguments);
 
         if (openai_tool_is_read(descriptor)) {
             tool_output = openai_tool_execute_read(
@@ -217,6 +225,88 @@ void openai_agent_mode(agent_state *state,
                 arguments,
                 cache
             );
+            openai_tx_model_result(
+                name,
+                tool_output != NULL ? "ok" : "error",
+                tool_output != NULL ? tool_output : "No tool output."
+            );
+        } else if (allow_write &&
+                   openai_tool_is_replace(descriptor) &&
+                   !build_after_write) {
+            char *display_path;
+            openai_replace_result replace_result;
+            int use_lines;
+
+            if (!openai_auto_allow_write()) {
+                tool_output = make_tool_error(
+                    "Autonomous write limit reached",
+                    name
+                );
+                openai_tx_model_result(
+                    name, "limit", tool_output
+                );
+            } else {
+                display_path = NULL;
+                use_lines =
+                    descriptor->kind == OPENAI_TOOL_REPLACE_LINES;
+
+                replace_result = use_lines ?
+                    execute_replace_lines_tool(
+                        state, arguments, &display_path) :
+                    execute_replace_text_tool(
+                        state, arguments, &display_path);
+
+                (void)printf(
+                    "Tool requested: %s %s\n",
+                    use_lines ? "replace_lines" : "replace_text",
+                    display_path != NULL ? display_path : ""
+                );
+
+                if (replace_result == OPENAI_REPLACE_APPLIED) {
+                    openai_log_event(
+                        openai_workflow_name(openai_last_workflow),
+                        "patch_applied",
+                        1
+                    );
+                    tool_output = openai_duplicate_text(
+                        "Patch applied successfully. Continue inspecting "
+                        "the project if needed, make another bounded patch "
+                        "only when necessary, or return the final answer."
+                    );
+                    openai_tx_model_result(
+                        name, "applied", tool_output
+                    );
+                } else if (replace_result == OPENAI_REPLACE_DECLINED) {
+                    openai_log_event(
+                        openai_workflow_name(openai_last_workflow),
+                        "patch_declined",
+                        0
+                    );
+                    tool_output = make_tool_error(
+                        "Patch declined by local user; do not assume it "
+                        "was applied",
+                        display_path != NULL ? display_path : name
+                    );
+                    openai_tx_model_result(
+                        name, "declined", tool_output
+                    );
+                } else {
+                    openai_log_event(
+                        openai_workflow_name(openai_last_workflow),
+                        "patch_failed",
+                        0
+                    );
+                    tool_output = make_tool_error(
+                        "Patch failed",
+                        display_path != NULL ? display_path : name
+                    );
+                    openai_tx_model_result(
+                        name, "error", tool_output
+                    );
+                }
+
+                free(display_path);
+            }
         } else if (allow_write &&
                    openai_tool_is_replace(descriptor)) {
             char *display_path;
@@ -412,6 +502,26 @@ void openai_agent_mode(agent_state *state,
                     "Patch failed. Agent complete.");
             }
 
+            if (replace_result == OPENAI_REPLACE_APPLIED) {
+                openai_tx_model_result(
+                    name, "applied",
+                    "Supervised patch workflow completed."
+                );
+                openai_auto_finish("supervised");
+            } else if (replace_result == OPENAI_REPLACE_DECLINED) {
+                openai_tx_model_result(
+                    name, "declined",
+                    "Supervised patch was declined."
+                );
+                openai_auto_finish("declined");
+            } else {
+                openai_tx_model_result(
+                    name, "error",
+                    "Supervised patch failed."
+                );
+                openai_auto_finish("error");
+            }
+            openai_tx_loop_event("agent", "supervised");
             remove_temporary_files();
             free(previous_id);
             free(call_id);
@@ -422,6 +532,9 @@ void openai_agent_mode(agent_state *state,
             tool_output = make_tool_error(
                 "Unsupported tool requested",
                 name
+            );
+            openai_tx_model_result(
+                name, "unsupported", tool_output
             );
             (void)printf("Unsupported tool requested: %s\n", name);
         }
@@ -437,6 +550,14 @@ void openai_agent_mode(agent_state *state,
 
         call_id = new_call_id;
     }
+
+    openai_auto_finish(
+        turn >= turn_limit ? "turn-limit" : "error"
+    );
+    openai_tx_loop_event(
+        "agent",
+        turn >= turn_limit ? "turn-limit" : "error"
+    );
 
     (void)puts(
         "Agent stopped before producing a final answer "

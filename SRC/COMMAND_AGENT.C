@@ -190,6 +190,13 @@ void command_agent_exec_resume(
 void command_agent_exec_fork(
     agent_state *state, const char *arguments);
 
+void command_agent_auto_status(
+    agent_state *state, const char *arguments);
+void command_agent_auto_limits(
+    agent_state *state, const char *arguments);
+void command_agent_auto_reset(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -276,6 +283,9 @@ static const command_entry agent_commands[] = {
     { "AGENT/TOOL/CLEAR", "Clear persisted tool/session transcript history", command_agent_tool_clear },
     { "AGENT/EXEC/RESUME", "Execute a goal in the current session", command_agent_exec_resume },
     { "AGENT/EXEC/FORK", "Fork the current session and execute a goal", command_agent_exec_fork },
+    { "AGENT/AUTO/STATUS", "Show last autonomous loop counters and stop reason", command_agent_auto_status },
+    { "AGENT/AUTO/LIMITS", "Show autonomous model-turn and write limits", command_agent_auto_limits },
+    { "AGENT/AUTO/RESET", "Reset autonomous loop status counters", command_agent_auto_reset },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -469,6 +479,28 @@ void command_agent_exec_resume(agent_state *state, const char *arguments)
 void command_agent_exec_fork(agent_state *state, const char *arguments)
 {
     openai_exec_fork_cmd(state, arguments);
+}
+
+void command_agent_auto_status(agent_state *state, const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_auto_status();
+}
+
+void command_agent_auto_limits(agent_state *state, const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_show_auto_limits();
+}
+
+void command_agent_auto_reset(agent_state *state, const char *arguments)
+{
+    (void)state;
+    (void)arguments;
+    openai_auto_reset();
+    (void)puts("Autonomous loop status reset.");
 }
 
 void command_agent_repair_status(agent_state *state,

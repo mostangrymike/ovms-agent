@@ -656,4 +656,26 @@ void openai_tx_note_exec(const char *name,
                          const char *status);
 void openai_test_tx_path(const char *path);
 
+void openai_auto_begin(int workflow);
+unsigned int openai_auto_turn_limit(int workflow);
+void openai_auto_note_turn(void);
+void openai_auto_note_tool(void);
+int openai_auto_allow_write(void);
+void openai_auto_finish(const char *reason);
+int openai_auto_limits_text(char *output, size_t output_size);
+int openai_auto_status_text(char *output, size_t output_size);
+void openai_show_auto_limits(void);
+void openai_show_auto_status(void);
+void openai_auto_reset(void);
+void openai_auto_test_limits(unsigned int turns,
+                             unsigned int writes);
+
+void openai_tx_model_call(const char *name,
+                          const char *arguments);
+void openai_tx_model_result(const char *name,
+                            const char *status,
+                            const char *output);
+void openai_tx_loop_event(const char *name,
+                          const char *status);
+
 #endif /* OPENAI_INTERNAL_H */

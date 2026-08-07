@@ -409,6 +409,39 @@ static const openai_run_tool *openai_tx_find_tool(const char *name)
     return NULL;
 }
 
+void openai_tx_model_call(const char *name,
+                          const char *arguments)
+{
+    (void)openai_tx_append(
+        "model_tool", name, "model", "requested", arguments
+    );
+}
+
+void openai_tx_model_result(const char *name,
+                            const char *status,
+                            const char *output)
+{
+    char bounded[OPENAI_TRANSCRIPT_ARG];
+
+    openai_tx_clean(output, bounded, sizeof(bounded));
+
+    (void)openai_tx_append(
+        "model_tool",
+        name,
+        "model",
+        status != NULL ? status : "result",
+        bounded
+    );
+}
+
+void openai_tx_loop_event(const char *name,
+                          const char *status)
+{
+    (void)openai_tx_append(
+        "loop", name, "agent", status, ""
+    );
+}
+
 int openai_tool_run(agent_state *state,
                     const char *arguments)
 {
@@ -492,7 +525,8 @@ int openai_tool_last_text(char *output,
     count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
 
     for (index = (int)count - 1; index >= 0; --index) {
-        if (strcmp(records[index].kind, "tool") == 0) {
+        if (strcmp(records[index].kind, "tool") == 0 ||
+            strcmp(records[index].kind, "model_tool") == 0) {
             written = snprintf(
                 output, output_size,
                 "OVMS Agent last tool call\n"
@@ -560,7 +594,8 @@ int openai_tool_hist_text(char *output,
     for (index = (int)count - 1;
          index >= 0 && shown < 20U;
          --index) {
-        if (strcmp(records[index].kind, "tool") != 0) {
+        if (strcmp(records[index].kind, "tool") != 0 &&
+            strcmp(records[index].kind, "model_tool") != 0) {
             continue;
         }
 

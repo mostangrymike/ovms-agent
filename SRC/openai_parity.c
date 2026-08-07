@@ -421,6 +421,9 @@ int openai_parity_text(char *output, size_t output_size)
         "Session transcripts:   available\n"
         "Direct tool runner:    available\n"
         "Resume/fork execution: available\n"
+        "Autonomous tool loop:  available\n"
+        "Tool-result feedback:  available\n"
+        "Bounded multi-patch:   available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
