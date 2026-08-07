@@ -130,6 +130,8 @@ void openai_export_repair_history(const char *arguments);
 int openai_repair_stats_text(char *output,
                              size_t output_size);
 void openai_show_repair_stats(void);
+unsigned int openai_test_history_limit(const char *value);
+void openai_test_set_history_limit(unsigned int limit);
 void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,

@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -455,7 +456,76 @@ int openai_repair_status_text(char *output,
     return 1;
 }
 
-#define OPENAI_REPAIR_HISTORY_RUNS 5U
+#define OPENAI_REPAIR_HISTORY_DEFAULT 5U
+#define OPENAI_REPAIR_HISTORY_MAXIMUM 20U
+
+static unsigned int openai_repair_history_override = 0U;
+
+static unsigned int openai_parse_history_limit(const char *value)
+{
+    unsigned int result;
+    const unsigned char *position;
+
+    if (value == NULL || *value == '\0') {
+        return OPENAI_REPAIR_HISTORY_DEFAULT;
+    }
+
+    result = 0U;
+    position = (const unsigned char *)value;
+
+    while (*position != (unsigned char)'\0') {
+        unsigned int digit;
+
+        if (*position < (unsigned char)'0' ||
+            *position > (unsigned char)'9') {
+            return OPENAI_REPAIR_HISTORY_DEFAULT;
+        }
+
+        digit = (unsigned int)(*position - (unsigned char)'0');
+
+        if (result >
+            (OPENAI_REPAIR_HISTORY_MAXIMUM - digit) / 10U) {
+            return OPENAI_REPAIR_HISTORY_DEFAULT;
+        }
+
+        result = result * 10U + digit;
+        ++position;
+    }
+
+    if (result < 1U ||
+        result > OPENAI_REPAIR_HISTORY_MAXIMUM) {
+        return OPENAI_REPAIR_HISTORY_DEFAULT;
+    }
+
+    return result;
+}
+
+static unsigned int openai_repair_history_limit(void)
+{
+    if (openai_repair_history_override != 0U) {
+        return openai_repair_history_override;
+    }
+
+    return openai_parse_history_limit(
+        getenv("OVMS_AGENT_REPAIR_HISTORY_RUNS")
+    );
+}
+
+unsigned int openai_test_history_limit(const char *value)
+{
+    return openai_parse_history_limit(value);
+}
+
+void openai_test_set_history_limit(unsigned int limit)
+{
+    if (limit >= 1U &&
+        limit <= OPENAI_REPAIR_HISTORY_MAXIMUM) {
+        openai_repair_history_override = limit;
+    } else {
+        openai_repair_history_override = 0U;
+    }
+}
+
 
 typedef struct openai_repair_run_record {
     openai_repair_attempt_record attempts[2];
@@ -467,9 +537,10 @@ int openai_repair_history_text(char *output,
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_RUNS];
+    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
     openai_repair_attempt_record parsed;
     unsigned int run_count;
+    unsigned int history_limit;
     int written;
     size_t used;
 
@@ -480,6 +551,7 @@ int openai_repair_history_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
+    history_limit = openai_repair_history_limit();
 
     file = fopen(openai_activity_path(), "r");
     if (file == NULL) {
@@ -494,13 +566,13 @@ int openai_repair_history_text(char *output,
         }
 
         if (parsed.attempt == 1U) {
-            if (run_count < OPENAI_REPAIR_HISTORY_RUNS) {
+            if (run_count < history_limit) {
                 ++run_count;
             } else {
                 unsigned int index;
 
                 for (index = 1U;
-                     index < OPENAI_REPAIR_HISTORY_RUNS;
+                     index < history_limit;
                      ++index) {
                     runs[index - 1U] = runs[index];
                 }
@@ -536,7 +608,7 @@ int openai_repair_history_text(char *output,
         "-------------------------\n"
         "Recent runs: %u (maximum %u)\n",
         run_count,
-        OPENAI_REPAIR_HISTORY_RUNS
+        history_limit
     );
 
     if (written < 0 ||
@@ -630,9 +702,10 @@ int openai_repair_failures_text(char *output,
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_RUNS];
+    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
     openai_repair_attempt_record parsed;
     unsigned int run_count;
+    unsigned int history_limit;
     unsigned int failure_count;
     int written;
     size_t used;
@@ -644,6 +717,7 @@ int openai_repair_failures_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
+    history_limit = openai_repair_history_limit();
 
     file = fopen(openai_activity_path(), "r");
     if (file == NULL) {
@@ -658,13 +732,13 @@ int openai_repair_failures_text(char *output,
         }
 
         if (parsed.attempt == 1U) {
-            if (run_count < OPENAI_REPAIR_HISTORY_RUNS) {
+            if (run_count < history_limit) {
                 ++run_count;
             } else {
                 unsigned int index;
 
                 for (index = 1U;
-                     index < OPENAI_REPAIR_HISTORY_RUNS;
+                     index < history_limit;
                      ++index) {
                     runs[index - 1U] = runs[index];
                 }
@@ -724,7 +798,7 @@ int openai_repair_failures_text(char *output,
         "History window: %u recent runs (maximum %u)\n"
         "Failed runs in window: %u\n",
         run_count,
-        OPENAI_REPAIR_HISTORY_RUNS,
+        history_limit,
         failure_count
     );
 
@@ -1082,7 +1156,7 @@ void openai_show_repair_plan(const char *arguments)
 
 void openai_show_repair_failures(void)
 {
-    char history[8192];
+    char history[32768];
 
     if (!openai_repair_failures_text(
             history,
@@ -1102,9 +1176,10 @@ int openai_repair_stats_text(char *output,
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_RUNS];
+    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
     openai_repair_attempt_record parsed;
     unsigned int run_count;
+    unsigned int history_limit;
     unsigned int committed_runs;
     unsigned int failed_runs;
     unsigned int first_successes;
@@ -1122,6 +1197,7 @@ int openai_repair_stats_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
+    history_limit = openai_repair_history_limit();
 
     file = fopen(openai_activity_path(), "r");
     if (file == NULL) {
@@ -1136,13 +1212,13 @@ int openai_repair_stats_text(char *output,
         }
 
         if (parsed.attempt == 1U) {
-            if (run_count < OPENAI_REPAIR_HISTORY_RUNS) {
+            if (run_count < history_limit) {
                 ++run_count;
             } else {
                 unsigned int index;
 
                 for (index = 1U;
-                     index < OPENAI_REPAIR_HISTORY_RUNS;
+                     index < history_limit;
                      ++index) {
                     runs[index - 1U] = runs[index];
                 }
@@ -1317,7 +1393,7 @@ int openai_repair_export_file(const char *path,
 {
     FILE *probe;
     FILE *file;
-    char history[8192];
+    char history[32768];
 
     if (!openai_repair_export_path_safe(path)) {
         return 0;
@@ -1413,7 +1489,7 @@ void openai_export_repair_history(const char *arguments)
 
 void openai_show_repair_history(void)
 {
-    char history[8192];
+    char history[32768];
 
     if (!openai_repair_history_text(
             history,
