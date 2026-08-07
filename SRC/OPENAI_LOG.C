@@ -546,6 +546,112 @@ void openai_test_set_history_limit(unsigned int limit)
 }
 
 
+int openai_repair_info_text(char *output,
+                            size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    char timestamp[32];
+    char oldest[32];
+    char newest[32];
+    openai_repair_attempt_record parsed;
+    unsigned int record_count;
+    unsigned int run_count;
+    unsigned int history_limit;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    oldest[0] = '\0';
+    newest[0] = '\0';
+    record_count = 0U;
+    run_count = 0U;
+    history_limit = openai_repair_history_limit();
+
+    file = fopen(openai_activity_path(), "r");
+
+    if (file != NULL) {
+        while (fgets(line, sizeof(line), file) != NULL) {
+            if (!openai_parse_repair_record(line, &parsed)) {
+                continue;
+            }
+
+            if (sscanf(line, "%31s", timestamp) != 1) {
+                continue;
+            }
+
+            if (record_count == 0U) {
+                (void)strncpy(
+                    oldest,
+                    timestamp,
+                    sizeof(oldest) - 1U
+                );
+                oldest[sizeof(oldest) - 1U] = '\0';
+            }
+
+            (void)strncpy(
+                newest,
+                timestamp,
+                sizeof(newest) - 1U
+            );
+            newest[sizeof(newest) - 1U] = '\0';
+
+            ++record_count;
+
+            if (parsed.attempt == 1U) {
+                ++run_count;
+            }
+        }
+
+        (void)fclose(file);
+    }
+
+    written = snprintf(
+        output,
+        output_size,
+        "OVMS Agent repair history information\n"
+        "-------------------------------------\n"
+        "Activity log:        %s\n"
+        "Repair records:      %u\n"
+        "Repair runs:         %u\n"
+        "Oldest repair:       %s\n"
+        "Newest repair:       %s\n"
+        "History window:      %u\n"
+        "History available:   %s\n",
+        openai_activity_path(),
+        record_count,
+        run_count,
+        record_count > 0U ? oldest : "none",
+        record_count > 0U ? newest : "none",
+        history_limit,
+        record_count > 0U ? "yes" : "no"
+    );
+
+    return
+        written >= 0 &&
+        (size_t)written < output_size;
+}
+
+void openai_show_repair_info(void)
+{
+    char information[2048];
+
+    if (!openai_repair_info_text(
+            information,
+            sizeof(information))) {
+        (void)puts(
+            "Unable to inspect AGENT/REPAIR history."
+        );
+        return;
+    }
+
+    (void)fputs(information, stdout);
+}
+
+
 typedef struct openai_repair_run_record {
     openai_repair_attempt_record attempts[2];
     unsigned int count;
