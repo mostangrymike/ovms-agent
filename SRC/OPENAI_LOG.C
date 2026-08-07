@@ -624,6 +624,242 @@ int openai_repair_history_text(char *output,
     return 1;
 }
 
+
+int openai_repair_show_text(unsigned long plan_hash,
+                            char *output,
+                            size_t output_size)
+{
+    FILE *file;
+    char line[1024];
+    openai_repair_attempt_record parsed;
+    openai_repair_run_record current;
+    openai_repair_run_record selected;
+    unsigned int run_number;
+    unsigned int selected_run;
+    unsigned int total_runs;
+    int current_matches;
+    int selected_found;
+    int written;
+    size_t used;
+    unsigned int index;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    (void)memset(&current, 0, sizeof(current));
+    (void)memset(&selected, 0, sizeof(selected));
+    run_number = 0U;
+    selected_run = 0U;
+    total_runs = 0U;
+    current_matches = 0;
+    selected_found = 0;
+
+    file = fopen(openai_activity_path(), "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (!openai_parse_repair_record(line, &parsed)) {
+            continue;
+        }
+
+        if (parsed.attempt == 1U) {
+            if (run_number > 0U && current_matches) {
+                selected = current;
+                selected_run = run_number;
+                selected_found = 1;
+            }
+
+            ++run_number;
+            total_runs = run_number;
+            (void)memset(&current, 0, sizeof(current));
+            current.attempts[0] = parsed;
+            current.count = 1U;
+            current_matches =
+                parsed.plan_hash == plan_hash;
+            continue;
+        }
+
+        if (parsed.attempt == 2U && run_number > 0U) {
+            current.attempts[1] = parsed;
+            current.count = 2U;
+
+            if (parsed.plan_hash == plan_hash) {
+                current_matches = 1;
+            }
+        }
+    }
+
+    if (run_number > 0U && current_matches) {
+        selected = current;
+        selected_run = run_number;
+        selected_found = 1;
+    }
+
+    (void)fclose(file);
+
+    if (!selected_found || selected.count == 0U) {
+        return 0;
+    }
+
+    used = 0U;
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "OVMS Agent repair detail\n"
+        "------------------------\n"
+        "Requested plan: %08lX\n"
+        "Persisted run: %u of %u (chronological)\n"
+        "Attempts used: %u of 2\n",
+        plan_hash,
+        selected_run,
+        total_runs,
+        selected.count
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+
+    for (index = 0U; index < selected.count; ++index) {
+        const openai_repair_attempt_record *record;
+        const char *build_name;
+        const char *rollback_name;
+        const char *requested;
+
+        record = &selected.attempts[index];
+        build_name =
+            (record->build_status & 1) != 0 ?
+            "success" : "failure";
+        rollback_name =
+            openai_rollback_name(record->rollback);
+        requested =
+            record->plan_hash == plan_hash ?
+            " [requested]" : "";
+
+        written = snprintf(
+            output + used,
+            output_size - used,
+            "Attempt %u: plan %08lX%s, build %s "
+            "(status %d), rollback %s, outcome %s\n",
+            record->attempt,
+            record->plan_hash,
+            requested,
+            build_name,
+            record->build_status,
+            rollback_name,
+            record->outcome
+        );
+
+        if (written < 0 ||
+            (size_t)written >= output_size - used) {
+            return 0;
+        }
+        used += (size_t)written;
+    }
+
+    written = snprintf(
+        output + used,
+        output_size - used,
+        "Final outcome: %s\n",
+        selected.attempts[selected.count - 1U].outcome
+    );
+
+    if (written < 0 ||
+        (size_t)written >= output_size - used) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static int openai_parse_plan_hash(const char *text,
+                                  unsigned long *hash_out)
+{
+    const char *position;
+    unsigned long value;
+    unsigned int count;
+
+    if (text == NULL || hash_out == NULL) {
+        return 0;
+    }
+
+    position = text;
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    value = 0UL;
+    count = 0U;
+
+    while (*position != '\0' &&
+           *position != ' ' &&
+           *position != '\t') {
+        unsigned int digit;
+
+        if (*position >= '0' && *position <= '9') {
+            digit = (unsigned int)(*position - '0');
+        } else if (*position >= 'A' && *position <= 'F') {
+            digit = (unsigned int)(*position - 'A') + 10U;
+        } else if (*position >= 'a' && *position <= 'f') {
+            digit = (unsigned int)(*position - 'a') + 10U;
+        } else {
+            return 0;
+        }
+
+        if (count >= 8U) {
+            return 0;
+        }
+
+        value = (value << 4) | (unsigned long)digit;
+        ++count;
+        ++position;
+    }
+
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    if (count != 8U || *position != '\0') {
+        return 0;
+    }
+
+    *hash_out = value;
+    return 1;
+}
+
+void openai_show_repair_plan(const char *arguments)
+{
+    unsigned long plan_hash;
+    char detail[4096];
+
+    if (!openai_parse_plan_hash(arguments, &plan_hash)) {
+        (void)puts(
+            "Usage: AGENT/REPAIR/SHOW <8-digit-plan-hash>"
+        );
+        return;
+    }
+
+    if (!openai_repair_show_text(
+            plan_hash,
+            detail,
+            sizeof(detail))) {
+        (void)printf(
+            "No persisted AGENT/REPAIR record was found "
+            "for plan %08lX.\n",
+            plan_hash
+        );
+        return;
+    }
+
+    (void)fputs(detail, stdout);
+}
+
 void openai_show_repair_history(void)
 {
     char history[8192];

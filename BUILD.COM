@@ -463,6 +463,39 @@ $     GOTO FINISH
 $ ENDIF
 $
 $!-----------------------------------------------------------
+$! Build M213 repair plan drill-down test.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M213_REPAIR_SHOW_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M213_REPAIR_SHOW_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M213_REPAIR_SHOW_TEST.EXE -
+[.BUILD]M213_REPAIR_SHOW_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for M213_REPAIR_SHOW_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M213_REPAIR_SHOW_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test M213_REPAIR_SHOW_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build PROJECT_GREP_TEST.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]PROJECT_GREP_TEST.OBJ -
