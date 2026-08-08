@@ -740,6 +740,8 @@ void openai_git_refresh_cmd(const agent_state *state);
 void openai_test_git_data(const char *status_text,
                           const char *diff_text);
 
+int openai_patch_apply_json(const char *arguments,
+                            char *output, size_t output_size);
 int openai_patch_validate(const char *spec_path,
                           char *output, size_t output_size);
 int openai_patch_dry(const char *spec_path,

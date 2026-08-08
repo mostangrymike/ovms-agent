@@ -333,6 +333,144 @@ static int process_patch(const char *spec, int apply,
     free(result); free(orig); free_doc(&d); return ok;
 }
 
+
+static char *patch_json_string(const char *json, const char *name)
+{
+    char key[96];
+    const char *p;
+    char *out;
+    char *q;
+    size_t cap;
+
+    if (json == NULL || name == NULL) return NULL;
+
+    if (snprintf(key, sizeof(key), "\"%s\"", name) < 0) return NULL;
+    p = strstr(json, key);
+    if (p == NULL) return NULL;
+    p += strlen(key);
+
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
+    if (*p != ':') return NULL;
+    ++p;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
+    if (*p != '"') return NULL;
+    ++p;
+
+    cap = strlen(p) + 1U;
+    out = (char *)malloc(cap);
+    if (out == NULL) return NULL;
+    q = out;
+
+    while (*p != '\0' && *p != '"') {
+        if (*p == '\\') {
+            ++p;
+            if (*p == '\0') { free(out); return NULL; }
+
+            switch (*p) {
+            case '"':  *q++ = '"';  break;
+            case '\\': *q++ = '\\'; break;
+            case '/':  *q++ = '/';  break;
+            case 'b':  *q++ = '\b'; break;
+            case 'f':  *q++ = '\f'; break;
+            case 'n':  *q++ = '\n'; break;
+            case 'r':  *q++ = '\r'; break;
+            case 't':  *q++ = '\t'; break;
+            default:
+                free(out);
+                return NULL;
+            }
+            ++p;
+        } else {
+            *q++ = *p++;
+        }
+    }
+
+    if (*p != '"') {
+        free(out);
+        return NULL;
+    }
+
+    *q = '\0';
+    return out;
+}
+
+int openai_patch_apply_json(const char *arguments,
+                            char *output,
+                            size_t output_size)
+{
+    static const char temp_spec[] = "OVMS_AGENT_AUTO_PATCH.TMP";
+    char *path;
+    char *body;
+    FILE *file;
+    int result;
+    size_t body_length;
+
+    if (output == NULL || output_size == 0U) return 0;
+
+    path = patch_json_string(arguments, "path");
+    body = patch_json_string(arguments, "patch");
+
+    if (path == NULL || body == NULL) {
+        free(path);
+        free(body);
+        (void)snprintf(
+            output, output_size,
+            "Structured patch rejected: path and patch are required."
+        );
+        return 0;
+    }
+
+    if (!safe_target(path)) {
+        free(path);
+        free(body);
+        (void)snprintf(
+            output, output_size,
+            "Structured patch rejected: unsafe or invalid target."
+        );
+        return 0;
+    }
+
+    while (remove(temp_spec) == 0) {
+    }
+
+    file = fopen(temp_spec, "w");
+    if (file == NULL) {
+        free(path);
+        free(body);
+        (void)snprintf(
+            output, output_size,
+            "Structured patch rejected: unable to create temporary spec."
+        );
+        return 0;
+    }
+
+    body_length = strlen(body);
+
+    if (fprintf(file, "TARGET %s\n", path) < 0 ||
+        fputs(body, file) == EOF ||
+        (body_length > 0U && body[body_length - 1U] != '\n' &&
+         fputc('\n', file) == EOF) ||
+        fclose(file) != 0) {
+        (void)remove(temp_spec);
+        free(path);
+        free(body);
+        (void)snprintf(
+            output, output_size,
+            "Structured patch rejected: unable to write temporary spec."
+        );
+        return 0;
+    }
+
+    result = openai_patch_apply(temp_spec, output, output_size);
+
+    while (remove(temp_spec) == 0) {
+    }
+
+    free(path);
+    free(body);
+    return result;
+}
+
 int openai_patch_validate(const char *p, char *o, size_t n)
 { return process_patch(p, 0, o, n); }
 int openai_patch_dry(const char *p, char *o, size_t n)

@@ -231,6 +231,62 @@ void openai_agent_mode(agent_state *state,
                 tool_output != NULL ? tool_output : "No tool output."
             );
         } else if (allow_write &&
+                   strcmp(name, "structured_patch") == 0 &&
+                   !build_after_write) {
+            char patch_summary[2048];
+            int patch_ok;
+
+            if (!openai_auto_allow_write()) {
+                tool_output = make_tool_error(
+                    "Autonomous write limit reached",
+                    name
+                );
+                openai_tx_model_result(
+                    name, "limit", tool_output
+                );
+            } else {
+                patch_ok = openai_patch_apply_json(
+                    arguments,
+                    patch_summary,
+                    sizeof(patch_summary)
+                );
+
+                (void)printf(
+                    "Tool requested: structured_patch [%s]\n",
+                    patch_ok ? "applied" : "rejected"
+                );
+
+                if (patch_ok) {
+                    (void)openai_git_refresh(state);
+                    openai_log_event(
+                        openai_workflow_name(openai_last_workflow),
+                        "patch_applied",
+                        1
+                    );
+                    tool_output = openai_duplicate_text(
+                        patch_summary
+                    );
+                    openai_tx_model_result(
+                        name, "applied", patch_summary
+                    );
+                } else {
+                    openai_log_event(
+                        openai_workflow_name(openai_last_workflow),
+                        "patch_failed",
+                        0
+                    );
+                    tool_output = make_tool_error(
+                        patch_summary,
+                        "structured_patch"
+                    );
+                    openai_tx_model_result(
+                        name, "error",
+                        tool_output != NULL ?
+                            tool_output : patch_summary
+                    );
+                }
+            }
+        } else if (allow_write &&
                    openai_tool_is_replace(descriptor) &&
                    !build_after_write) {
             char *display_path;
@@ -263,6 +319,7 @@ void openai_agent_mode(agent_state *state,
                 );
 
                 if (replace_result == OPENAI_REPLACE_APPLIED) {
+                    (void)openai_git_refresh(state);
                     openai_log_event(
                         openai_workflow_name(openai_last_workflow),
                         "patch_applied",

@@ -19,6 +19,7 @@ static const openai_tool_desc openai_parity_tools[] = {
     { "create_file", "write", "workspace", "Create one guarded project file." },
     { "replace_text", "write", "workspace", "Replace exact guarded project text." },
     { "replace_lines", "write", "workspace", "Replace a guarded line range." },
+    { "structured_patch", "write", "workspace", "Apply multiple prevalidated non-overlapping hunks in one file." },
     { "run_build", "execute", "DCL gate", "Run the controlled project build." }
 };
 
@@ -434,6 +435,7 @@ int openai_parity_text(char *output, size_t output_size)
         "Git diff awareness:    available\n"
         "Multi-hunk patching:   available\n"
         "Patch prevalidation:   available\n"
+        "Autonomous multi-hunk:  available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );

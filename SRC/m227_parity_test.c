@@ -28,7 +28,7 @@ int main(void)
     openai_test_reset_approval();
 
     if (!openai_tools_text(output, sizeof(output)) ||
-        strstr(output, "Registered parity tools: 8") == NULL ||
+        strstr(output, "Registered parity tools: 9") == NULL ||
         strstr(output, "read_file") == NULL ||
         strstr(output, "run_build") == NULL ||
         strstr(output, "effect=write") == NULL) {
@@ -37,6 +37,9 @@ int main(void)
     }
 
     if (!openai_tool_info_text("replace_text", output, sizeof(output)) ||
+        strstr(output, "Effect:      write") == NULL ||
+        strstr(output, "Approval:    workspace") == NULL ||
+        !openai_tool_info_text("structured_patch", output, sizeof(output)) ||
         strstr(output, "Effect:      write") == NULL ||
         strstr(output, "Approval:    workspace") == NULL ||
         openai_tool_info_text("unknown_tool", output, sizeof(output))) {
@@ -60,7 +63,7 @@ int main(void)
         strstr(output, "Write gate:        enabled") == NULL ||
         strstr(output, "DCL gate:          disabled") == NULL ||
         strstr(output, "Approval policy:   workspace") == NULL ||
-        strstr(output, "Parity tools:      8") == NULL) {
+        strstr(output, "Parity tools:      9") == NULL) {
         (void)puts("M227 failed: execution context.");
         return EXIT_FAILURE;
     }
