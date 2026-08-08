@@ -220,15 +220,35 @@ void openai_agent_mode(agent_state *state,
         openai_tx_model_call(name, arguments);
 
         if (openai_tool_is_read(descriptor)) {
-            tool_output = openai_tool_execute_read(
+            char *raw_output;
+
+            raw_output = openai_tool_execute_read(
                 descriptor,
                 arguments,
                 cache
             );
+
+            tool_output = openai_result_make(
+                name,
+                raw_output != NULL ? "ok" : "error",
+                "read",
+                raw_output != NULL ? 1 : 0,
+                arguments,
+                raw_output != NULL ? raw_output : "No tool output."
+            );
+
+            if (tool_output == NULL && raw_output != NULL) {
+                tool_output = raw_output;
+                raw_output = NULL;
+            }
+
+            free(raw_output);
+
             openai_tx_model_result(
                 name,
                 tool_output != NULL ? "ok" : "error",
-                tool_output != NULL ? tool_output : "No tool output."
+                tool_output != NULL ?
+                    tool_output : "Unable to normalize tool output."
             );
         } else if (allow_write &&
                    strcmp(name, "structured_patch") == 0 &&
@@ -237,12 +257,15 @@ void openai_agent_mode(agent_state *state,
             int patch_ok;
 
             if (!openai_auto_allow_write()) {
-                tool_output = make_tool_error(
-                    "Autonomous write limit reached",
-                    name
+                tool_output = openai_result_make(
+                    name, "limit", "write", 0,
+                    arguments,
+                    "Autonomous write limit reached."
                 );
                 openai_tx_model_result(
-                    name, "limit", tool_output
+                    name, "limit",
+                    tool_output != NULL ?
+                        tool_output : "Autonomous write limit reached."
                 );
             } else {
                 patch_ok = openai_patch_apply_json(
@@ -263,11 +286,16 @@ void openai_agent_mode(agent_state *state,
                         "patch_applied",
                         1
                     );
-                    tool_output = openai_duplicate_text(
-                        patch_summary
+                    tool_output = openai_result_make(
+                        name, "applied", "write", 1,
+                        arguments, patch_summary
                     );
+                    if (tool_output == NULL) {
+                        tool_output = openai_duplicate_text(patch_summary);
+                    }
                     openai_tx_model_result(
-                        name, "applied", patch_summary
+                        name, "applied",
+                        tool_output != NULL ? tool_output : patch_summary
                     );
                 } else {
                     openai_log_event(
@@ -275,14 +303,18 @@ void openai_agent_mode(agent_state *state,
                         "patch_failed",
                         0
                     );
-                    tool_output = make_tool_error(
-                        patch_summary,
-                        "structured_patch"
+                    tool_output = openai_result_make(
+                        name, "error", "write", 0,
+                        arguments, patch_summary
                     );
+                    if (tool_output == NULL) {
+                        tool_output = make_tool_error(
+                            patch_summary, "structured_patch"
+                        );
+                    }
                     openai_tx_model_result(
                         name, "error",
-                        tool_output != NULL ?
-                            tool_output : patch_summary
+                        tool_output != NULL ? tool_output : patch_summary
                     );
                 }
             }
@@ -294,12 +326,15 @@ void openai_agent_mode(agent_state *state,
             int use_lines;
 
             if (!openai_auto_allow_write()) {
-                tool_output = make_tool_error(
-                    "Autonomous write limit reached",
-                    name
+                tool_output = openai_result_make(
+                    name, "limit", "write", 0,
+                    arguments,
+                    "Autonomous write limit reached."
                 );
                 openai_tx_model_result(
-                    name, "limit", tool_output
+                    name, "limit",
+                    tool_output != NULL ?
+                        tool_output : "Autonomous write limit reached."
                 );
             } else {
                 display_path = NULL;
@@ -325,13 +360,18 @@ void openai_agent_mode(agent_state *state,
                         "patch_applied",
                         1
                     );
-                    tool_output = openai_duplicate_text(
-                        "Patch applied successfully. Continue inspecting "
-                        "the project if needed, make another bounded patch "
-                        "only when necessary, or return the final answer."
+                    tool_output = openai_result_make(
+                        name, "applied", "write", 1,
+                        arguments,
+                        "Patch applied successfully. Git context was "
+                        "refreshed. Continue inspecting the project if "
+                        "needed, make another bounded patch only when "
+                        "necessary, or return the final answer."
                     );
                     openai_tx_model_result(
-                        name, "applied", tool_output
+                        name, "applied",
+                        tool_output != NULL ?
+                            tool_output : "Patch applied successfully."
                     );
                 } else if (replace_result == OPENAI_REPLACE_DECLINED) {
                     openai_log_event(
@@ -339,13 +379,15 @@ void openai_agent_mode(agent_state *state,
                         "patch_declined",
                         0
                     );
-                    tool_output = make_tool_error(
+                    tool_output = openai_result_make(
+                        name, "declined", "write", 0,
+                        arguments,
                         "Patch declined by local user; do not assume it "
-                        "was applied",
-                        display_path != NULL ? display_path : name
+                        "was applied."
                     );
                     openai_tx_model_result(
-                        name, "declined", tool_output
+                        name, "declined",
+                        tool_output != NULL ? tool_output : "Patch declined."
                     );
                 } else {
                     openai_log_event(
@@ -353,12 +395,13 @@ void openai_agent_mode(agent_state *state,
                         "patch_failed",
                         0
                     );
-                    tool_output = make_tool_error(
-                        "Patch failed",
-                        display_path != NULL ? display_path : name
+                    tool_output = openai_result_make(
+                        name, "error", "write", 0,
+                        arguments, "Patch failed."
                     );
                     openai_tx_model_result(
-                        name, "error", tool_output
+                        name, "error",
+                        tool_output != NULL ? tool_output : "Patch failed."
                     );
                 }
 
@@ -586,12 +629,19 @@ void openai_agent_mode(agent_state *state,
             openai_cache_free(cache);
             return;
         } else {
-            tool_output = make_tool_error(
-                "Unsupported tool requested",
-                name
+            tool_output = openai_result_make(
+                name, "unsupported", "unknown", 0,
+                arguments, "Unsupported tool requested."
             );
+            if (tool_output == NULL) {
+                tool_output = make_tool_error(
+                    "Unsupported tool requested", name
+                );
+            }
             openai_tx_model_result(
-                name, "unsupported", tool_output
+                name, "unsupported",
+                tool_output != NULL ?
+                    tool_output : "Unsupported tool requested."
             );
             (void)printf("Unsupported tool requested: %s\n", name);
         }
