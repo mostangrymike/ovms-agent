@@ -432,6 +432,8 @@ int openai_parity_text(char *output, size_t output_size)
         "Context preloading:   available\n"
         "Git state context:     available\n"
         "Git diff awareness:    available\n"
+        "Multi-hunk patching:   available\n"
+        "Patch prevalidation:   available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );

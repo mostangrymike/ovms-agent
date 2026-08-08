@@ -233,6 +233,15 @@ void command_agent_git_context(
 void command_agent_git_refresh(
     agent_state *state, const char *arguments);
 
+void command_agent_patch(
+    agent_state *state, const char *arguments);
+void command_agent_patch_dry(
+    agent_state *state, const char *arguments);
+void command_agent_patch_validate2(
+    agent_state *state, const char *arguments);
+void command_agent_patch_last(
+    agent_state *state, const char *arguments);
+
 static const command_entry agent_commands[] = {
     { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
     { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
@@ -339,6 +348,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/GIT/CHANGED", "Show changed paths from Git status", command_agent_git_changed },
     { "AGENT/GIT/CONTEXT", "Show Git context injected into agent runs", command_agent_git_context },
     { "AGENT/GIT/REFRESH", "Refresh cached Git status and diff", command_agent_git_refresh },
+    { "AGENT/PATCH", "Apply one prevalidated structured multi-hunk patch file", command_agent_patch },
+    { "AGENT/PATCH/DRY", "Validate a structured patch without writing", command_agent_patch_dry },
+    { "AGENT/PATCH/VALIDATE", "Validate every structured patch hunk without writing", command_agent_patch_validate2 },
+    { "AGENT/PATCH/LAST", "Show the most recent structured patch result", command_agent_patch_last },
     { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
 };
 
@@ -348,6 +361,23 @@ void command_register_agent(void)
         agent_commands,
         sizeof(agent_commands) / sizeof(agent_commands[0])
     );
+}
+
+void command_agent_patch(agent_state *state, const char *arguments)
+{
+    (void)state; openai_patch_apply_cmd(arguments);
+}
+void command_agent_patch_dry(agent_state *state, const char *arguments)
+{
+    (void)state; openai_patch_dry_cmd(arguments);
+}
+void command_agent_patch_validate2(agent_state *state, const char *arguments)
+{
+    (void)state; openai_patch_validate_cmd(arguments);
+}
+void command_agent_patch_last(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_patch_last_cmd();
 }
 
 void command_agent_plan(agent_state *state,
