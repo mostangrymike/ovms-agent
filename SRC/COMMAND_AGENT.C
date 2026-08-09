@@ -319,7 +319,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/MCP", "List configured MCP tool servers", command_agent_mcp },
     { "AGENT/MCP/INFO", "Show one configured MCP tool server", command_agent_mcp_info },
     { "AGENT/MCP/CALL", "Validate and plan one guarded MCP tool call", command_agent_mcp_call },
-    { "AGENT/MCP/EXEC", "Execute one approved configured stdio MCP bridge", command_agent_mcp_execute },
+    { "AGENT/MCP/EXEC", "Execute one approved configured MCP transport", command_agent_mcp_execute },
     { "AGENT/APPROVAL", "Show the current agent approval policy", command_agent_approval },
     { "AGENT/APPROVAL/SET", "Set the session approval policy", command_agent_approval_set },
     { "AGENT/APPROVAL/RESET", "Reset the session approval policy", command_agent_approval_reset },

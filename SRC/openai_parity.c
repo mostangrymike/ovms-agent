@@ -838,12 +838,35 @@ static int openai_mcp_stdio_target_valid(const char *target)
     return 1;
 }
 
-static int openai_mcp_bridge_executor(const char *target,
-                                      const char *tool,
-                                      const char *arguments,
-                                      char *result,
-                                      size_t result_size,
-                                      void *context)
+static int openai_mcp_http_target_valid(const char *target)
+{
+    const unsigned char *cursor;
+
+    if (target == NULL ||
+        (strncmp(target, "http://", 7) != 0 &&
+         strncmp(target, "https://", 8) != 0)) {
+        return 0;
+    }
+
+    cursor = (const unsigned char *)target;
+    while (*cursor != '\0') {
+        if (*cursor <= (unsigned char)' ' || *cursor == (unsigned char)'"' ||
+            *cursor == (unsigned char)'<' || *cursor == (unsigned char)'>' ||
+            *cursor == (unsigned char)'\\' || *cursor == (unsigned char)'`') {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_mcp_file_bridge_execute(const char *bridge,
+                                           const char *transport,
+                                           const char *target,
+                                           const char *tool,
+                                           const char *arguments,
+                                           char *result,
+                                           size_t result_size)
 {
     FILE *file;
     char command[OPENAI_MCP_BRIDGE_COMMAND_MAX];
@@ -852,10 +875,9 @@ static int openai_mcp_bridge_executor(const char *target,
     int written;
     int status;
 
-    (void)context;
-
-    if (!openai_mcp_stdio_target_valid(target) || tool == NULL ||
-        arguments == NULL || result == NULL || result_size == 0U) {
+    if (!openai_mcp_stdio_target_valid(bridge) || transport == NULL ||
+        target == NULL || tool == NULL || arguments == NULL ||
+        result == NULL || result_size == 0U) {
         return 0;
     }
 
@@ -863,14 +885,18 @@ static int openai_mcp_bridge_executor(const char *target,
     if (file == NULL) {
         return 0;
     }
-    if (fprintf(file, "tool=%s\narguments=%s\n", tool, arguments) < 0 ||
+    if (((strcmp(transport, "stdio") == 0 &&
+          fprintf(file, "tool=%s\narguments=%s\n", tool, arguments) < 0) ||
+         (strcmp(transport, "stdio") != 0 &&
+          fprintf(file, "transport=%s\ntarget=%s\ntool=%s\narguments=%s\n",
+                  transport, target, tool, arguments) < 0)) ||
         fclose(file) != 0) {
         (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
         return 0;
     }
 
     (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
-    written = snprintf(command, sizeof(command), "%s %s %s", target,
+    written = snprintf(command, sizeof(command), "%s %s %s", bridge,
                        OPENAI_MCP_BRIDGE_REQUEST_FILE,
                        OPENAI_MCP_BRIDGE_RESPONSE_FILE);
     if (written < 0 || (size_t)written >= sizeof(command)) {
@@ -908,16 +934,52 @@ static int openai_mcp_bridge_executor(const char *target,
     (void)fclose(file);
     (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
     (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
-
     return 1;
 }
 
-int openai_mcp_execute_text(const char *config,
-                            const char *arguments,
-                            openai_mcp_executor_fn executor,
-                            void *context,
-                            char *output,
-                            size_t output_size)
+static int openai_mcp_bridge_executor(const char *target,
+                                      const char *tool,
+                                      const char *arguments,
+                                      char *result,
+                                      size_t result_size,
+                                      void *context)
+{
+    (void)context;
+    if (!openai_mcp_stdio_target_valid(target)) {
+        return 0;
+    }
+    return openai_mcp_file_bridge_execute(target, "stdio", target, tool,
+                                           arguments, result, result_size);
+}
+
+static int openai_mcp_http_bridge_executor(const char *target,
+                                           const char *tool,
+                                           const char *arguments,
+                                           char *result,
+                                           size_t result_size,
+                                           void *context)
+{
+    const char *bridge;
+    (void)context;
+
+    if (!openai_mcp_http_target_valid(target)) {
+        return 0;
+    }
+    bridge = getenv("OVMS_AGENT_MCP_HTTP_BRIDGE");
+    if (!openai_mcp_stdio_target_valid(bridge)) {
+        return 0;
+    }
+    return openai_mcp_file_bridge_execute(bridge, "http", target, tool,
+                                           arguments, result, result_size);
+}
+
+int openai_mcp_exec_transport_text(const char *config,
+                                       const char *arguments,
+                                       openai_mcp_executor_fn stdio_executor,
+                                       openai_mcp_executor_fn http_executor,
+                                       void *context,
+                                       char *output,
+                                       size_t output_size)
 {
     openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
     unsigned int count;
@@ -927,10 +989,10 @@ int openai_mcp_execute_text(const char *config,
     char server[OPENAI_MCP_NAME_MAX];
     char tool[OPENAI_MCP_NAME_MAX];
     char result[2048];
+    openai_mcp_executor_fn executor;
     int written;
 
-    if (output == NULL || output_size == 0U || arguments == NULL ||
-        executor == NULL) {
+    if (output == NULL || output_size == 0U || arguments == NULL) {
         return 0;
     }
 
@@ -958,16 +1020,32 @@ int openai_mcp_execute_text(const char *config,
             continue;
         }
 
-        if (!openai_equal_ci(servers[index].transport, "stdio")) {
+        executor = NULL;
+        if (openai_equal_ci(servers[index].transport, "stdio")) {
+            if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+                written = snprintf(output, output_size,
+                    "MCP transport execution refused: unsafe stdio bridge target.\n");
+                return written >= 0 && (size_t)written < output_size;
+            }
+            executor = stdio_executor;
+        } else if (openai_equal_ci(servers[index].transport, "http")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) {
+                written = snprintf(output, output_size,
+                    "MCP transport execution refused: unsafe HTTP endpoint.\n");
+                return written >= 0 && (size_t)written < output_size;
+            }
+            executor = http_executor;
+        } else {
             written = snprintf(output, output_size,
-                "MCP transport execution refused: transport %s is not enabled in M243.\n",
+                "MCP transport execution refused: transport %s is not enabled in M244.\n",
                 servers[index].transport);
             return written >= 0 && (size_t)written < output_size;
         }
 
-        if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+        if (executor == NULL) {
             written = snprintf(output, output_size,
-                "MCP transport execution refused: unsafe stdio bridge target.\n");
+                "MCP transport execution refused: %s executor is not configured.\n",
+                servers[index].transport);
             return written >= 0 && (size_t)written < output_size;
         }
 
@@ -975,9 +1053,8 @@ int openai_mcp_execute_text(const char *config,
         if (!executor(servers[index].target, tool, payload,
                       result, sizeof(result), context)) {
             written = snprintf(output, output_size,
-                "MCP stdio bridge execution failed.\n"
-                "Server: %s\nTool: %s\n",
-                servers[index].name, tool);
+                "MCP %s execution failed.\nServer: %s\nTool: %s\n",
+                servers[index].transport, servers[index].name, tool);
             return written >= 0 && (size_t)written < output_size;
         }
 
@@ -985,12 +1062,13 @@ int openai_mcp_execute_text(const char *config,
             "OVMS Agent MCP execution result\n"
             "-------------------------------\n"
             "Server:     %s\n"
-            "Transport:  stdio\n"
+            "Transport:  %s\n"
             "Target:     %s\n"
             "Tool:       %s\n"
             "Status:     success\n"
             "Result:\n%s%s",
-            servers[index].name, servers[index].target, tool,
+            servers[index].name, servers[index].transport,
+            servers[index].target, tool,
             *result != '\0' ? result : "(empty)\n",
             (*result != '\0' && result[strlen(result) - 1U] != '\n') ? "\n" : "");
         return written >= 0 && (size_t)written < output_size;
@@ -999,13 +1077,25 @@ int openai_mcp_execute_text(const char *config,
     return 0;
 }
 
+int openai_mcp_execute_text(const char *config,
+                            const char *arguments,
+                            openai_mcp_executor_fn executor,
+                            void *context,
+                            char *output,
+                            size_t output_size)
+{
+    return openai_mcp_exec_transport_text(config, arguments,
+                                              executor, NULL, context,
+                                              output, output_size);
+}
+
 void openai_show_mcp_execute(const char *arguments)
 {
     char output[4096];
 
-    if (!openai_mcp_execute_text(
+    if (!openai_mcp_exec_transport_text(
             getenv("OVMS_AGENT_MCP_SERVERS"), arguments,
-            openai_mcp_bridge_executor, NULL,
+            openai_mcp_bridge_executor, openai_mcp_http_bridge_executor, NULL,
             output, sizeof(output))) {
         (void)puts(
             "Usage: AGENT/MCP/EXEC <server-name> <tool-name> [arguments]");

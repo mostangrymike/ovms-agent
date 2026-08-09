@@ -611,6 +611,13 @@ int openai_mcp_execute_text(const char *config,
                             void *context,
                             char *output,
                             size_t output_size);
+int openai_mcp_exec_transport_text(const char *config,
+                                       const char *arguments,
+                                       openai_mcp_executor_fn stdio_executor,
+                                       openai_mcp_executor_fn http_executor,
+                                       void *context,
+                                       char *output,
+                                       size_t output_size);
 void openai_show_mcp_execute(const char *arguments);
 int openai_approval_text(char *output, size_t output_size);
 void openai_show_approval(void);
