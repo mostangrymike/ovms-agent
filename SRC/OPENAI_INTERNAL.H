@@ -626,6 +626,33 @@ int openai_mcp_exec_all_text(const char *config,
                              void *context,
                              char *output,
                              size_t output_size);
+
+#define OPENAI_MCP_RES_TEXT_MAX 2048U
+
+typedef enum openai_mcp_res_status {
+    OPENAI_MCP_RES_INVALID = 0,
+    OPENAI_MCP_RES_SUCCESS = 1,
+    OPENAI_MCP_RES_FAILED = 2,
+    OPENAI_MCP_RES_REFUSED = 3
+} openai_mcp_res_status;
+
+typedef struct openai_mcp_result {
+    openai_mcp_res_status status;
+    char server[64];
+    char transport[16];
+    char tool[64];
+    char detail[OPENAI_MCP_RES_TEXT_MAX];
+} openai_mcp_result;
+
+int openai_mcp_run_result(const char *config,
+                          const char *arguments,
+                          openai_mcp_executor_fn stdio_executor,
+                          openai_mcp_executor_fn http_executor,
+                          openai_mcp_executor_fn sse_executor,
+                          void *context,
+                          openai_mcp_result *result);
+int openai_mcp_result_text(const openai_mcp_result *result,
+                           char *output, size_t output_size);
 void openai_show_mcp_execute(const char *arguments);
 int openai_approval_text(char *output, size_t output_size);
 void openai_show_approval(void);

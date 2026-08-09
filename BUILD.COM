@@ -1567,6 +1567,39 @@ $     GOTO FINISH
 $ ENDIF
 $
 $!-----------------------------------------------------------
+$! Build M246_MCP_RESULT_TEST.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M246_MCP_RESULT_TEST.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M246_MCP_RESULT_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M246_MCP_RESULT_TEST.EXE -
+[.BUILD]M246_MCP_RESULT_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for M246_MCP_RESULT_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M246_MCP_RESULT_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test M246_MCP_RESULT_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build PROJECT_GREP_TEST.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]PROJECT_GREP_TEST.OBJ -

@@ -1534,3 +1534,159 @@ void openai_test_reset_approval(void)
 {
     openai_approval_override = -1;
 }
+
+static void openai_mcp_res_clear(openai_mcp_result *result)
+{
+    if (result == NULL) return;
+    memset(result, 0, sizeof(*result));
+    result->status = OPENAI_MCP_RES_INVALID;
+}
+
+static void openai_mcp_res_copy(char *dest, size_t dest_size,
+                                const char *source)
+{
+    if (dest == NULL || dest_size == 0U) return;
+    if (source == NULL) source = "";
+    (void)snprintf(dest, dest_size, "%s", source);
+}
+
+int openai_mcp_run_result(const char *config,
+                          const char *arguments,
+                          openai_mcp_executor_fn stdio_executor,
+                          openai_mcp_executor_fn http_executor,
+                          openai_mcp_executor_fn sse_executor,
+                          void *context,
+                          openai_mcp_result *result)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[OPENAI_MCP_NAME_MAX];
+    char tool[OPENAI_MCP_NAME_MAX];
+    char bridge_result[OPENAI_MCP_RES_TEXT_MAX];
+    openai_mcp_executor_fn executor;
+
+    if (result == NULL) return 0;
+    openai_mcp_res_clear(result);
+    if (config == NULL || arguments == NULL) return 0;
+
+    cursor = arguments;
+    if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !openai_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !openai_mcp_name_valid(server) || !openai_mcp_name_valid(tool)) {
+        return 0;
+    }
+    payload = openai_skip_ws(cursor);
+    if (!openai_mcp_call_args_valid(payload)) return 0;
+
+    openai_mcp_res_copy(result->server, sizeof(result->server), server);
+    openai_mcp_res_copy(result->tool, sizeof(result->tool), tool);
+
+    if (openai_policy_source() != OPENAI_APPROVAL_FULL) {
+        result->status = OPENAI_MCP_RES_REFUSED;
+        openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                            "FULL approval policy is required.");
+        return 1;
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(server, servers[index].name)) continue;
+
+        openai_mcp_res_copy(result->server, sizeof(result->server),
+                            servers[index].name);
+        openai_mcp_res_copy(result->transport, sizeof(result->transport),
+                            servers[index].transport);
+        executor = NULL;
+
+        if (openai_equal_ci(servers[index].transport, "stdio")) {
+            if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+                result->status = OPENAI_MCP_RES_REFUSED;
+                openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                    "unsafe stdio bridge target.");
+                return 1;
+            }
+            executor = stdio_executor;
+        } else if (openai_equal_ci(servers[index].transport, "http")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) {
+                result->status = OPENAI_MCP_RES_REFUSED;
+                openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                    "unsafe HTTP endpoint.");
+                return 1;
+            }
+            executor = http_executor;
+        } else if (openai_equal_ci(servers[index].transport, "sse")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) {
+                result->status = OPENAI_MCP_RES_REFUSED;
+                openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                    "unsafe SSE endpoint.");
+                return 1;
+            }
+            executor = sse_executor;
+        } else {
+            result->status = OPENAI_MCP_RES_REFUSED;
+            openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                "unsupported transport.");
+            return 1;
+        }
+
+        if (executor == NULL) {
+            result->status = OPENAI_MCP_RES_REFUSED;
+            openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                "transport executor is not configured.");
+            return 1;
+        }
+
+        bridge_result[0] = '\0';
+        if (!executor(servers[index].target, tool, payload,
+                      bridge_result, sizeof(bridge_result), context)) {
+            result->status = OPENAI_MCP_RES_FAILED;
+            openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                                "transport execution failed.");
+            return 1;
+        }
+
+        result->status = OPENAI_MCP_RES_SUCCESS;
+        openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                            *bridge_result != '\0' ? bridge_result : "(empty)");
+        return 1;
+    }
+
+    result->status = OPENAI_MCP_RES_REFUSED;
+    openai_mcp_res_copy(result->detail, sizeof(result->detail),
+                        "server is not configured.");
+    return 1;
+}
+
+int openai_mcp_result_text(const openai_mcp_result *result,
+                           char *output, size_t output_size)
+{
+    const char *status;
+    int written;
+
+    if (result == NULL || output == NULL || output_size == 0U ||
+        result->status == OPENAI_MCP_RES_INVALID) return 0;
+
+    if (result->status == OPENAI_MCP_RES_SUCCESS) status = "success";
+    else if (result->status == OPENAI_MCP_RES_FAILED) status = "failed";
+    else status = "refused";
+
+    written = snprintf(output, output_size,
+        "OVMS Agent MCP normalized result\n"
+        "--------------------------------\n"
+        "Server:     %s\n"
+        "Transport:  %s\n"
+        "Tool:       %s\n"
+        "Status:     %s\n"
+        "Detail:\n%s%s",
+        *result->server != '\0' ? result->server : "(unknown)",
+        *result->transport != '\0' ? result->transport : "(unknown)",
+        *result->tool != '\0' ? result->tool : "(unknown)",
+        status,
+        *result->detail != '\0' ? result->detail : "(none)\n",
+        (*result->detail != '\0' &&
+         result->detail[strlen(result->detail) - 1U] != '\n') ? "\n" : "");
+    return written >= 0 && (size_t)written < output_size;
+}
