@@ -244,6 +244,18 @@ int openai_tools_ext_text(char *output, size_t output_size)
     return 1;
 }
 
+void openai_show_tools_ext(void)
+{
+    char output[4096];
+
+    if (!openai_tools_ext_text(output, sizeof(output))) {
+        (void)puts("Unable to build extended tool catalog.");
+        return;
+    }
+
+    (void)fputs(output, stdout);
+}
+
 int openai_tool_info_text(const char *arguments,
                           char *output,
                           size_t output_size)
@@ -1524,6 +1536,97 @@ void openai_show_parity(void)
 
     if (!openai_parity_text(output, sizeof(output))) {
         (void)puts("Unable to build parity status.");
+        return;
+    }
+
+    (void)fputs(output, stdout);
+}
+
+int openai_final_parity_text(char *output, size_t output_size)
+{
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    written = snprintf(
+        output, output_size,
+        "OVMS Agent final Codex parity report\n"
+        "===================================\n"
+        "Scope: practical local coding-agent behavior on OpenVMS\n"
+        "Result: practical parity achieved with documented adaptations\n"
+        "\n"
+        "Core coding loop\n"
+        "----------------\n"
+        "Repository read/search:        native\n"
+        "Guarded create/edit/patch:     native\n"
+        "Controlled build/test:         native\n"
+        "Plan/apply/repair retry:       native\n"
+        "Code review workflow:          native\n"
+        "Autonomous tool loop:          native\n"
+        "Normalized tool feedback:      native\n"
+        "\n"
+        "Session and context\n"
+        "-------------------\n"
+        "Persistent sessions:           native\n"
+        "Resume/rename/archive/delete:  native\n"
+        "Fork and delegated branch:     adapted (session fork + EXEC/FORK)\n"
+        "Transcript/result history:     native\n"
+        "Context restoration/replay:    native\n"
+        "Project instructions/reload:   adapted (OpenVMS project policy)\n"
+        "Repository/Git context:        native\n"
+        "\n"
+        "Permissions and execution\n"
+        "-------------------------\n"
+        "Read/workspace/full policy:    adapted\n"
+        "Session policy override:       native\n"
+        "Environment policy default:   native\n"
+        "Workspace path guards:         native\n"
+        "Unix/Windows OS sandbox:       not applicable on OpenVMS\n"
+        "Danger-full-access analogue:   full policy + explicit write enable\n"
+        "\n"
+        "External tools and current context\n"
+        "----------------------------------\n"
+        "MCP server catalog:            native\n"
+        "MCP stdio transport:           adapted through configured bridge\n"
+        "MCP HTTP/SSE transport:        adapted through configured bridge\n"
+        "MCP approval enforcement:      native\n"
+        "MCP result/session evidence:   native\n"
+        "MCP protocol/auth lifecycle:   external bridge responsibility\n"
+        "Web/current-data tools:        external through MCP\n"
+        "Plugins/connectors:            external through MCP\n"
+        "Reusable skills/prompts:       adapted through project instructions\n"
+        "\n"
+        "Platform-specific exclusions\n"
+        "----------------------------\n"
+        "TUI keymaps/Vim/composer UI:   not applicable\n"
+        "IDE/desktop-app integration:   not applicable\n"
+        "Unix shell completion:         not applicable\n"
+        "Windows sandbox setup:         not applicable\n"
+        "Codex cloud handoff:           external service, not local core\n"
+        "Image attachment UI:           external client concern\n"
+        "\n"
+        "OpenVMS adaptation boundary\n"
+        "---------------------------\n"
+        "DCL replaces generated shell execution.\n"
+        "RMS versions provide guarded rollback semantics.\n"
+        "Configured bridges isolate external transports and credentials.\n"
+        "Session forks provide bounded delegated-work branches without\n"
+        "requiring Unix worktrees or process sandbox primitives.\n"
+        "\n"
+        "Compatibility: legacy AGENT/PARITY remains frozen for M227 tests.\n"
+    );
+
+    return written >= 0 && (size_t)written < output_size;
+}
+
+void openai_show_final_parity(void)
+{
+    char output[8192];
+
+    if (!openai_final_parity_text(output, sizeof(output))) {
+        (void)puts("Unable to build final parity report.");
         return;
     }
 

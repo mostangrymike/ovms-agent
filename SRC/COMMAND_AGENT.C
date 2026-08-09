@@ -157,6 +157,10 @@ void command_agent_exec_dry(
     agent_state *state, const char *arguments);
 void command_agent_parity(
     agent_state *state, const char *arguments);
+void command_agent_parity_final(
+    agent_state *state, const char *arguments);
+void command_agent_tools_ext(
+    agent_state *state, const char *arguments);
 
 void command_agent_session_new(
     agent_state *state, const char *arguments);
@@ -315,6 +319,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/EXECUTE/DRY_RUN", "Validate and stage a saved plan without writing", command_agent_execute_dry },
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
     { "AGENT/TOOLS", "List agent tools and safety classifications", command_agent_tools },
+    { "AGENT/TOOLS/EXT", "List current built-in and external parity tools", command_agent_tools_ext },
     { "AGENT/TOOLS/INFO", "Show metadata for one agent tool", command_agent_tool_info },
     { "AGENT/MCP", "List configured MCP tool servers", command_agent_mcp },
     { "AGENT/MCP/INFO", "Show one configured MCP tool server", command_agent_mcp_info },
@@ -326,7 +331,8 @@ static const command_entry agent_commands[] = {
     { "AGENT/CONTEXT", "Show the current agent execution context", command_agent_context },
     { "AGENT/EXEC", "Run a goal using the current approval policy", command_agent_exec_goal },
     { "AGENT/EXEC/DRY", "Create a read-only implementation plan for a goal", command_agent_exec_dry },
-    { "AGENT/PARITY", "Show Codex-parity capability status", command_agent_parity },
+    { "AGENT/PARITY", "Show legacy Codex-parity capability status", command_agent_parity },
+    { "AGENT/PARITY/FINAL", "Show final practical Codex parity report", command_agent_parity_final },
     { "AGENT/SESSION/NEW", "Create and select a persistent session", command_agent_session_new },
     { "AGENT/SESSION/LIST", "List persistent agent sessions", command_agent_session_list },
     { "AGENT/SESSION/SHOW", "Show one persistent agent session", command_agent_session_show },
@@ -508,6 +514,16 @@ void command_agent_exec_dry(agent_state *state, const char *arguments)
 void command_agent_parity(agent_state *state, const char *arguments)
 {
     (void)state; (void)arguments; openai_show_parity();
+}
+
+void command_agent_parity_final(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_final_parity();
+}
+
+void command_agent_tools_ext(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_tools_ext();
 }
 
 void command_agent_session_new(agent_state *state, const char *arguments)

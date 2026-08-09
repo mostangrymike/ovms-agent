@@ -582,6 +582,7 @@ int openai_m138_save_preserves(const char *plan_path);
 int openai_tools_text(char *output, size_t output_size);
 int openai_tools_ext_text(char *output, size_t output_size);
 void openai_show_tools(void);
+void openai_show_tools_ext(void);
 int openai_tool_info_text(const char *arguments,
                           char *output, size_t output_size);
 void openai_show_tool_info(const char *arguments);
@@ -672,6 +673,8 @@ int openai_context_text(const agent_state *state,
 void openai_show_context(const agent_state *state);
 int openai_parity_text(char *output, size_t output_size);
 void openai_show_parity(void);
+int openai_final_parity_text(char *output, size_t output_size);
+void openai_show_final_parity(void);
 void openai_exec_goal(agent_state *state, const char *goal);
 void openai_exec_dry(agent_state *state, const char *goal);
 void openai_test_reset_approval(void);
