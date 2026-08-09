@@ -23,6 +23,10 @@ static const openai_tool_desc openai_parity_tools[] = {
     { "run_build", "execute", "DCL gate", "Run the controlled project build." }
 };
 
+static const openai_tool_desc openai_m247_tools[] = {
+    { "mcp_call", "external", "full", "Call one configured MCP server tool through the guarded transport layer." }
+};
+
 static int openai_approval_override = -1;
 
 static int openai_equal_ci(const char *left, const char *right)
@@ -195,6 +199,49 @@ void openai_show_tools(void)
     }
 
     (void)fputs(output, stdout);
+}
+
+int openai_tools_ext_text(char *output, size_t output_size)
+{
+    size_t used;
+    unsigned int index;
+    unsigned int count;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    if (!openai_tools_text(output, output_size)) {
+        return 0;
+    }
+
+    used = strlen(output);
+    count = (unsigned int)(sizeof(openai_m247_tools) /
+                           sizeof(openai_m247_tools[0]));
+
+    written = snprintf(
+        output + used, output_size - used,
+        "M247 external tools: %u\n", count);
+    if (written < 0 || (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+
+    for (index = 0U; index < count; ++index) {
+        written = snprintf(
+            output + used, output_size - used,
+            "  %-16s effect=%-7s approval=%s\n",
+            openai_m247_tools[index].name,
+            openai_m247_tools[index].effect,
+            openai_m247_tools[index].approval);
+        if (written < 0 || (size_t)written >= output_size - used) {
+            return 0;
+        }
+        used += (size_t)written;
+    }
+
+    return 1;
 }
 
 int openai_tool_info_text(const char *arguments,
@@ -1338,14 +1385,76 @@ int openai_mcp_execute_text(const char *config,
     return 0;
 }
 
+static const char *openai_mcp_res_name(openai_mcp_res_status status)
+{
+    if (status == OPENAI_MCP_RES_SUCCESS) return "success";
+    if (status == OPENAI_MCP_RES_FAILED) return "failed";
+    if (status == OPENAI_MCP_RES_REFUSED) return "refused";
+    return "invalid";
+}
+
+int openai_mcp_feedback_text(const openai_mcp_result *result,
+                            char *output, size_t output_size)
+{
+    int written;
+
+    if (result == NULL || output == NULL || output_size == 0U ||
+        result->status == OPENAI_MCP_RES_INVALID) return 0;
+
+    written = snprintf(
+        output, output_size,
+        "TOOL RESULT MCP\n"
+        "server=%s\n"
+        "transport=%s\n"
+        "tool=%s\n"
+        "status=%s\n"
+        "detail=%s%s",
+        *result->server != '\0' ? result->server : "(unknown)",
+        *result->transport != '\0' ? result->transport : "(unknown)",
+        *result->tool != '\0' ? result->tool : "(unknown)",
+        openai_mcp_res_name(result->status),
+        *result->detail != '\0' ? result->detail : "(none)\n",
+        (*result->detail != '\0' &&
+         result->detail[strlen(result->detail) - 1U] != '\n') ? "\n" : "");
+
+    return written >= 0 && (size_t)written < output_size;
+}
+
+int openai_mcp_record_result(const char *arguments,
+                             const openai_mcp_result *result,
+                             char *output, size_t output_size)
+{
+    const char *status;
+
+    if (!openai_mcp_feedback_text(result, output, output_size)) return 0;
+
+    status = openai_mcp_res_name(result->status);
+    openai_tx_model_call("mcp_call", arguments != NULL ? arguments : "");
+    openai_tx_model_result("mcp_call", status, output);
+    return 1;
+}
+
+int openai_mcp_agent_call(const char *arguments,
+                          char *output, size_t output_size)
+{
+    openai_mcp_result result;
+
+    if (arguments == NULL || output == NULL || output_size == 0U) return 0;
+
+    openai_auto_note_tool();
+    if (!openai_mcp_run_result(
+            getenv("OVMS_AGENT_MCP_SERVERS"), arguments,
+            openai_mcp_bridge_executor, openai_mcp_http_bridge_executor,
+            openai_mcp_sse_bridge_executor, NULL, &result)) return 0;
+
+    return openai_mcp_record_result(arguments, &result, output, output_size);
+}
+
 void openai_show_mcp_execute(const char *arguments)
 {
     char output[4096];
 
-    if (!openai_mcp_exec_all_text(
-            getenv("OVMS_AGENT_MCP_SERVERS"), arguments,
-            openai_mcp_bridge_executor, openai_mcp_http_bridge_executor,
-            openai_mcp_sse_bridge_executor, NULL, output, sizeof(output))) {
+    if (!openai_mcp_agent_call(arguments, output, sizeof(output))) {
         (void)puts(
             "Usage: AGENT/MCP/EXEC <server-name> <tool-name> [arguments]");
         return;

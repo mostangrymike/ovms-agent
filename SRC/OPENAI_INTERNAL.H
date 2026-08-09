@@ -580,6 +580,7 @@ int openai_m138_partial_reject(const char *plan_path);
 int openai_m138_save_preserves(const char *plan_path);
 
 int openai_tools_text(char *output, size_t output_size);
+int openai_tools_ext_text(char *output, size_t output_size);
 void openai_show_tools(void);
 int openai_tool_info_text(const char *arguments,
                           char *output, size_t output_size);
@@ -653,6 +654,13 @@ int openai_mcp_run_result(const char *config,
                           openai_mcp_result *result);
 int openai_mcp_result_text(const openai_mcp_result *result,
                            char *output, size_t output_size);
+int openai_mcp_feedback_text(const openai_mcp_result *result,
+                            char *output, size_t output_size);
+int openai_mcp_record_result(const char *arguments,
+                             const openai_mcp_result *result,
+                             char *output, size_t output_size);
+int openai_mcp_agent_call(const char *arguments,
+                          char *output, size_t output_size);
 void openai_show_mcp_execute(const char *arguments);
 int openai_approval_text(char *output, size_t output_size);
 void openai_show_approval(void);

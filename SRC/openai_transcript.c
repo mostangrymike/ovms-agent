@@ -29,6 +29,8 @@ typedef struct openai_run_tool {
 #define OPENAI_TOOL_WORK 1
 #define OPENAI_TOOL_FULL 2
 
+static void openai_tx_mcp_cmd(agent_state *state, const char *arguments);
+
 static const openai_run_tool openai_run_tools[] = {
     { "READ",      "read",    OPENAI_TOOL_READ, command_read },
     { "SEARCH",    "read",    OPENAI_TOOL_READ, command_search },
@@ -40,8 +42,15 @@ static const openai_run_tool openai_run_tools[] = {
     { "EDIT",      "write",   OPENAI_TOOL_WORK, command_edit },
     { "PATCH",     "write",   OPENAI_TOOL_WORK, command_patch },
     { "BUILD",     "execute", OPENAI_TOOL_WORK, command_build },
-    { "RUN",       "execute", OPENAI_TOOL_FULL, command_run }
+    { "RUN",       "execute", OPENAI_TOOL_FULL, command_run },
+    { "MCP",       "external", OPENAI_TOOL_FULL, openai_tx_mcp_cmd }
 };
+
+static void openai_tx_mcp_cmd(agent_state *state, const char *arguments)
+{
+    (void)state;
+    openai_show_mcp_execute(arguments);
+}
 
 static char openai_transcript_path[OPENAI_TRANSCRIPT_PATH_MAX] =
     OPENAI_TRANSCRIPT_FILE;
