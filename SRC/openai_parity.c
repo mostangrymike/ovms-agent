@@ -644,6 +644,126 @@ int openai_mcp_info_text(const char *config,
     return 0;
 }
 
+#define OPENAI_MCP_CALL_ARGS_MAX 1024U
+
+static int openai_mcp_call_token(const char **cursor,
+                                 char *output,
+                                 size_t output_size)
+{
+    const char *start;
+    size_t length;
+
+    if (cursor == NULL || *cursor == NULL ||
+        output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    *cursor = openai_skip_ws(*cursor);
+    start = *cursor;
+    while (**cursor != '\0' &&
+           **cursor != ' ' && **cursor != '\t') {
+        ++(*cursor);
+    }
+
+    length = (size_t)(*cursor - start);
+    if (length == 0U || length >= output_size) {
+        return 0;
+    }
+
+    memcpy(output, start, length);
+    output[length] = '\0';
+    return 1;
+}
+
+static int openai_mcp_call_args_valid(const char *text)
+{
+    const unsigned char *cursor;
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    cursor = (const unsigned char *)text;
+    while (*cursor != '\0') {
+        if (*cursor < 32U && *cursor != '\t') {
+            return 0;
+        }
+        ++cursor;
+    }
+    return strlen(text) < OPENAI_MCP_CALL_ARGS_MAX;
+}
+
+int openai_mcp_call_text(const char *config,
+                         const char *arguments,
+                         char *output,
+                         size_t output_size)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    const char *action;
+    char server[OPENAI_MCP_NAME_MAX];
+    char tool[OPENAI_MCP_NAME_MAX];
+    int written;
+
+    if (output == NULL || output_size == 0U || arguments == NULL) {
+        return 0;
+    }
+
+    cursor = arguments;
+    if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !openai_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !openai_mcp_name_valid(server) ||
+        !openai_mcp_name_valid(tool)) {
+        return 0;
+    }
+
+    payload = openai_skip_ws(cursor);
+    if (!openai_mcp_call_args_valid(payload)) {
+        return 0;
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(server, servers[index].name)) {
+            continue;
+        }
+
+        if (openai_equal_ci(servers[index].transport, "stdio")) {
+            action = "guarded subprocess transport";
+        } else if (openai_equal_ci(servers[index].transport, "http")) {
+            action = "guarded HTTP transport";
+        } else {
+            action = "guarded SSE transport";
+        }
+
+        written = snprintf(
+            output, output_size,
+            "OVMS Agent MCP call plan\n"
+            "------------------------\n"
+            "Server:     %s\n"
+            "Transport:  %s\n"
+            "Target:     %s\n"
+            "Tool:       %s\n"
+            "Arguments:  %s\n"
+            "Action:     %s\n"
+            "Approval:   required before transport execution\n"
+            "Execution:  not performed by this command\n",
+            servers[index].name,
+            servers[index].transport,
+            servers[index].target,
+            tool,
+            *payload != '\0' ? payload : "(none)",
+            action
+        );
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
+}
+
 int openai_mcp_text(char *output, size_t output_size)
 {
     return openai_mcp_catalog_text(
@@ -669,6 +789,20 @@ void openai_show_mcp_info(const char *arguments)
             getenv("OVMS_AGENT_MCP_SERVERS"),
             arguments, output, sizeof(output))) {
         (void)puts("Usage: AGENT/MCP/INFO <server-name>");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
+void openai_show_mcp_call(const char *arguments)
+{
+    char output[4096];
+
+    if (!openai_mcp_call_text(
+            getenv("OVMS_AGENT_MCP_SERVERS"),
+            arguments, output, sizeof(output))) {
+        (void)puts(
+            "Usage: AGENT/MCP/CALL <server-name> <tool-name> [arguments]");
         return;
     }
     (void)fputs(output, stdout);

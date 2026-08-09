@@ -139,6 +139,8 @@ void command_agent_mcp(
     agent_state *state, const char *arguments);
 void command_agent_mcp_info(
     agent_state *state, const char *arguments);
+void command_agent_mcp_call(
+    agent_state *state, const char *arguments);
 void command_agent_approval(
     agent_state *state, const char *arguments);
 void command_agent_approval_set(
@@ -314,6 +316,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/TOOLS/INFO", "Show metadata for one agent tool", command_agent_tool_info },
     { "AGENT/MCP", "List configured MCP tool servers", command_agent_mcp },
     { "AGENT/MCP/INFO", "Show one configured MCP tool server", command_agent_mcp_info },
+    { "AGENT/MCP/CALL", "Validate and plan one guarded MCP tool call", command_agent_mcp_call },
     { "AGENT/APPROVAL", "Show the current agent approval policy", command_agent_approval },
     { "AGENT/APPROVAL/SET", "Set the session approval policy", command_agent_approval_set },
     { "AGENT/APPROVAL/RESET", "Reset the session approval policy", command_agent_approval_reset },
@@ -457,6 +460,11 @@ void command_agent_mcp(agent_state *state, const char *arguments)
 void command_agent_mcp_info(agent_state *state, const char *arguments)
 {
     (void)state; openai_show_mcp_info(arguments);
+}
+
+void command_agent_mcp_call(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_mcp_call(arguments);
 }
 
 void command_agent_approval(agent_state *state, const char *arguments)
