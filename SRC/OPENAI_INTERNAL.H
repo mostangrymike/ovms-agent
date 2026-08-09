@@ -593,6 +593,23 @@ void openai_show_langs(void);
 void openai_show_lang_info(const char *arguments);
 void openai_show_lang_detect(const char *path);
 void openai_show_lang_policy(void);
+
+#define OPENAI_GH_RESULT_MAX 2048U
+
+typedef int (*openai_gh_executor_fn)(const char *operation,
+                                     const char *arguments,
+                                     char *result,
+                                     size_t result_size,
+                                     void *context);
+
+int openai_github_text(char *output, size_t output_size);
+int openai_gh_run_text(const char *operation,
+                       const char *arguments,
+                       openai_gh_executor_fn executor,
+                       void *context,
+                       char *output, size_t output_size);
+void openai_show_github(const char *operation,
+                        const char *arguments);
 int openai_tool_info_text(const char *arguments,
                           char *output, size_t output_size);
 void openai_show_tool_info(const char *arguments);

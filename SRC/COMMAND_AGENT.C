@@ -169,6 +169,24 @@ void command_agent_lang_detect(
     agent_state *state, const char *arguments);
 void command_agent_lang_policy(
     agent_state *state, const char *arguments);
+void command_agent_github(
+    agent_state *state, const char *arguments);
+void command_agent_gh_status(
+    agent_state *state, const char *arguments);
+void command_agent_gh_remote(
+    agent_state *state, const char *arguments);
+void command_agent_gh_fetch(
+    agent_state *state, const char *arguments);
+void command_agent_gh_pull(
+    agent_state *state, const char *arguments);
+void command_agent_gh_push(
+    agent_state *state, const char *arguments);
+void command_agent_gh_clone(
+    agent_state *state, const char *arguments);
+void command_agent_gh_issues(
+    agent_state *state, const char *arguments);
+void command_agent_gh_pr(
+    agent_state *state, const char *arguments);
 
 void command_agent_session_new(
     agent_state *state, const char *arguments);
@@ -332,6 +350,15 @@ static const command_entry agent_commands[] = {
     { "AGENT/LANG/INFO", "Show guidance for one OpenVMS programming language", command_agent_lang_info },
     { "AGENT/LANG/DETECT", "Detect language from an OpenVMS source file name", command_agent_lang_detect },
     { "AGENT/LANG/POLICY", "Show multilingual policy injected into agent context", command_agent_lang_policy },
+    { "AGENT/GITHUB", "Show guarded GitHub integration and policy", command_agent_github },
+    { "AGENT/GITHUB/STATUS", "Show local Git working-tree status", command_agent_gh_status },
+    { "AGENT/GITHUB/REMOTE", "Show configured Git remotes", command_agent_gh_remote },
+    { "AGENT/GITHUB/FETCH", "Fetch from a GitHub remote", command_agent_gh_fetch },
+    { "AGENT/GITHUB/PULL", "Pull from a GitHub remote and branch", command_agent_gh_pull },
+    { "AGENT/GITHUB/PUSH", "Push to a GitHub remote and branch", command_agent_gh_push },
+    { "AGENT/GITHUB/CLONE", "Clone a validated GitHub repository", command_agent_gh_clone },
+    { "AGENT/GITHUB/ISSUES", "Use configured GitHub bridge for issue operations", command_agent_gh_issues },
+    { "AGENT/GITHUB/PR", "Use configured GitHub bridge for pull-request operations", command_agent_gh_pr },
     { "AGENT/TOOLS/INFO", "Show metadata for one agent tool", command_agent_tool_info },
     { "AGENT/MCP", "List configured MCP tool servers", command_agent_mcp },
     { "AGENT/MCP/INFO", "Show one configured MCP tool server", command_agent_mcp_info },
@@ -556,6 +583,51 @@ void command_agent_lang_detect(agent_state *state, const char *arguments)
 void command_agent_lang_policy(agent_state *state, const char *arguments)
 {
     (void)state; (void)arguments; openai_show_lang_policy();
+}
+
+void command_agent_github(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("help", arguments);
+}
+
+void command_agent_gh_status(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("status", arguments);
+}
+
+void command_agent_gh_remote(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("remote", arguments);
+}
+
+void command_agent_gh_fetch(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("fetch", arguments);
+}
+
+void command_agent_gh_pull(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("pull", arguments);
+}
+
+void command_agent_gh_push(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("push", arguments);
+}
+
+void command_agent_gh_clone(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("clone", arguments);
+}
+
+void command_agent_gh_issues(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("issues", arguments);
+}
+
+void command_agent_gh_pr(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("pr", arguments);
 }
 
 void command_agent_session_new(agent_state *state, const char *arguments)

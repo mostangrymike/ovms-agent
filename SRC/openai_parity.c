@@ -27,6 +27,11 @@ static const openai_tool_desc openai_m247_tools[] = {
     { "mcp_call", "external", "full", "Call one configured MCP server tool through the guarded transport layer." }
 };
 
+static const openai_tool_desc openai_m250_tools[] = {
+    { "github_git", "external", "mixed", "Use guarded OpenVMS Git transport for GitHub repositories." },
+    { "github_service", "external", "full", "Use the configured GitHub bridge for issues and pull requests." }
+};
+
 static int openai_approval_override = -1;
 
 static int openai_equal_ci(const char *left, const char *right)
@@ -235,6 +240,27 @@ int openai_tools_ext_text(char *output, size_t output_size)
             openai_m247_tools[index].name,
             openai_m247_tools[index].effect,
             openai_m247_tools[index].approval);
+        if (written < 0 || (size_t)written >= output_size - used) {
+            return 0;
+        }
+        used += (size_t)written;
+    }
+
+    count = (unsigned int)(sizeof(openai_m250_tools) /
+                           sizeof(openai_m250_tools[0]));
+    written = snprintf(output + used, output_size - used,
+                       "M250 GitHub tools: %u\n", count);
+    if (written < 0 || (size_t)written >= output_size - used) {
+        return 0;
+    }
+    used += (size_t)written;
+    for (index = 0U; index < count; ++index) {
+        written = snprintf(
+            output + used, output_size - used,
+            "  %-16s effect=%-7s approval=%s\n",
+            openai_m250_tools[index].name,
+            openai_m250_tools[index].effect,
+            openai_m250_tools[index].approval);
         if (written < 0 || (size_t)written >= output_size - used) {
             return 0;
         }
@@ -1597,6 +1623,9 @@ int openai_final_parity_text(char *output, size_t output_size)
         "Web/current-data tools:        external through MCP\n"
         "Plugins/connectors:            external through MCP\n"
         "Reusable skills/prompts:       adapted through project instructions\n"
+        "GitHub Git transport:          adapted through OpenVMS Git\n"
+        "GitHub issues/pull requests:   external through configured bridge\n"
+        "GitHub credential handling:    external to OVMS Agent core\n"
         "\n"
         "Platform-specific exclusions\n"
         "----------------------------\n"
@@ -2281,4 +2310,452 @@ void openai_show_lang_policy(void)
     if (openai_lang_policy_text(output, sizeof(output))) {
         (void)puts(output);
     }
+}
+
+/* M250: guarded GitHub integration. */
+#define OPENAI_GH_REQ_FILE "OVMS_AGENT_GH_REQUEST.TMP"
+#define OPENAI_GH_RESP_FILE "OVMS_AGENT_GH_RESPONSE.TMP"
+#define OPENAI_GH_CMD_MAX 1024U
+#define OPENAI_GH_ARG_MAX 1024U
+
+static int openai_gh_no_newline(const char *text)
+{
+    const unsigned char *cursor;
+
+    if (text == NULL) {
+        return 0;
+    }
+    cursor = (const unsigned char *)text;
+    while (*cursor != '\0') {
+        if (*cursor == (unsigned char)'\r' || *cursor == (unsigned char)'\n') {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_gh_token_valid(const char *text)
+{
+    const unsigned char *cursor;
+
+    if (text == NULL || *text == '\0' || text[0] == '-' ||
+        strstr(text, "..") != NULL || strstr(text, "@{") != NULL) {
+        return 0;
+    }
+    cursor = (const unsigned char *)text;
+    while (*cursor != '\0') {
+        if (!( (*cursor >= (unsigned char)'A' && *cursor <= (unsigned char)'Z') ||
+               (*cursor >= (unsigned char)'a' && *cursor <= (unsigned char)'z') ||
+               (*cursor >= (unsigned char)'0' && *cursor <= (unsigned char)'9') ||
+               *cursor == (unsigned char)'_' || *cursor == (unsigned char)'-' ||
+               *cursor == (unsigned char)'.' || *cursor == (unsigned char)'/')) {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_gh_path_valid(const char *text)
+{
+    const unsigned char *cursor;
+
+    if (text == NULL || *text == '\0' || text[0] == '-' ||
+        strstr(text, "..") != NULL) {
+        return 0;
+    }
+    cursor = (const unsigned char *)text;
+    while (*cursor != '\0') {
+        if (!( (*cursor >= (unsigned char)'A' && *cursor <= (unsigned char)'Z') ||
+               (*cursor >= (unsigned char)'a' && *cursor <= (unsigned char)'z') ||
+               (*cursor >= (unsigned char)'0' && *cursor <= (unsigned char)'9') ||
+               *cursor == (unsigned char)'_' || *cursor == (unsigned char)'-' ||
+               *cursor == (unsigned char)'.' || *cursor == (unsigned char)'$' ||
+               *cursor == (unsigned char)':' || *cursor == (unsigned char)'[' ||
+               *cursor == (unsigned char)']' || *cursor == (unsigned char)'<' ||
+               *cursor == (unsigned char)'>' || *cursor == (unsigned char)'/')) {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_gh_url_valid(const char *text)
+{
+    const unsigned char *cursor;
+    const char *body;
+
+    if (text == NULL) {
+        return 0;
+    }
+    if (strncmp(text, "https://github.com/", 19) == 0) {
+        body = text + 19;
+    } else if (strncmp(text, "git@github.com:", 15) == 0) {
+        body = text + 15;
+    } else {
+        return 0;
+    }
+    if (*body == '\0' || strchr(body, '/') == NULL || strstr(body, "..") != NULL) {
+        return 0;
+    }
+    cursor = (const unsigned char *)body;
+    while (*cursor != '\0') {
+        if (!( (*cursor >= (unsigned char)'A' && *cursor <= (unsigned char)'Z') ||
+               (*cursor >= (unsigned char)'a' && *cursor <= (unsigned char)'z') ||
+               (*cursor >= (unsigned char)'0' && *cursor <= (unsigned char)'9') ||
+               *cursor == (unsigned char)'_' || *cursor == (unsigned char)'-' ||
+               *cursor == (unsigned char)'.' || *cursor == (unsigned char)'/')) {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_gh_split2(const char *arguments,
+                            char *first, size_t first_size,
+                            char *second, size_t second_size,
+                            int second_optional)
+{
+    const char *cursor;
+    const char *start;
+    size_t length;
+
+    if (first == NULL || first_size == 0U ||
+        second == NULL || second_size == 0U) {
+        return 0;
+    }
+    first[0] = '\0';
+    second[0] = '\0';
+    cursor = openai_skip_ws(arguments);
+    if (*cursor == '\0') {
+        return 0;
+    }
+    start = cursor;
+    while (*cursor != '\0' && *cursor != ' ' && *cursor != '\t') {
+        ++cursor;
+    }
+    length = (size_t)(cursor - start);
+    if (length == 0U || length >= first_size) {
+        return 0;
+    }
+    memcpy(first, start, length);
+    first[length] = '\0';
+    cursor = openai_skip_ws(cursor);
+    if (*cursor == '\0') {
+        return second_optional;
+    }
+    start = cursor;
+    while (*cursor != '\0' && *cursor != ' ' && *cursor != '\t') {
+        ++cursor;
+    }
+    length = (size_t)(cursor - start);
+    if (length == 0U || length >= second_size) {
+        return 0;
+    }
+    memcpy(second, start, length);
+    second[length] = '\0';
+    cursor = openai_skip_ws(cursor);
+    return *cursor == '\0';
+}
+
+static int openai_gh_bridge_target(const char *target)
+{
+    const unsigned char *cursor;
+
+    if (target == NULL || *target == '\0') {
+        return 0;
+    }
+    cursor = (const unsigned char *)target;
+    while (*cursor != '\0') {
+        if (!( (*cursor >= (unsigned char)'A' && *cursor <= (unsigned char)'Z') ||
+               (*cursor >= (unsigned char)'a' && *cursor <= (unsigned char)'z') ||
+               (*cursor >= (unsigned char)'0' && *cursor <= (unsigned char)'9') ||
+               *cursor == (unsigned char)'_' || *cursor == (unsigned char)'-' ||
+               *cursor == (unsigned char)'.' || *cursor == (unsigned char)'$' ||
+               *cursor == (unsigned char)':' || *cursor == (unsigned char)'[' ||
+               *cursor == (unsigned char)']' || *cursor == (unsigned char)'<' ||
+               *cursor == (unsigned char)'>' || *cursor == (unsigned char)'@')) {
+            return 0;
+        }
+        ++cursor;
+    }
+    return 1;
+}
+
+static int openai_gh_bridge_exec(const char *operation,
+                                 const char *arguments,
+                                 char *result, size_t result_size)
+{
+    const char *bridge;
+    FILE *file;
+    char command[OPENAI_GH_CMD_MAX];
+    char line[512];
+    size_t used;
+    int written;
+    int status;
+
+    bridge = getenv("OVMS_AGENT_GITHUB_BRIDGE");
+    if (!openai_gh_bridge_target(bridge) || !openai_gh_no_newline(arguments)) {
+        return 0;
+    }
+    file = fopen(OPENAI_GH_REQ_FILE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    if (fprintf(file, "operation=%s\narguments=%s\n", operation,
+                arguments == NULL ? "" : arguments) < 0 || fclose(file) != 0) {
+        (void)remove(OPENAI_GH_REQ_FILE);
+        return 0;
+    }
+    (void)remove(OPENAI_GH_RESP_FILE);
+    written = snprintf(command, sizeof(command), "%s %s %s", bridge,
+                       OPENAI_GH_REQ_FILE, OPENAI_GH_RESP_FILE);
+    if (written < 0 || (size_t)written >= sizeof(command)) {
+        (void)remove(OPENAI_GH_REQ_FILE);
+        return 0;
+    }
+    status = system(command);
+    if ((status & 1) == 0) {
+        (void)remove(OPENAI_GH_REQ_FILE);
+        (void)remove(OPENAI_GH_RESP_FILE);
+        return 0;
+    }
+    file = fopen(OPENAI_GH_RESP_FILE, "r");
+    if (file == NULL) {
+        (void)remove(OPENAI_GH_REQ_FILE);
+        return 0;
+    }
+    used = 0U;
+    result[0] = '\0';
+    while (fgets(line, sizeof(line), file) != NULL) {
+        size_t length = strlen(line);
+        if (length >= result_size - used) {
+            (void)fclose(file);
+            (void)remove(OPENAI_GH_REQ_FILE);
+            (void)remove(OPENAI_GH_RESP_FILE);
+            return 0;
+        }
+        memcpy(result + used, line, length);
+        used += length;
+        result[used] = '\0';
+    }
+    (void)fclose(file);
+    (void)remove(OPENAI_GH_REQ_FILE);
+    (void)remove(OPENAI_GH_RESP_FILE);
+    return 1;
+}
+
+static int openai_gh_prod_exec(const char *operation,
+                               const char *arguments,
+                               char *result, size_t result_size,
+                               void *context)
+{
+    char first[256];
+    char second[256];
+    char command[OPENAI_GH_CMD_MAX];
+    int written;
+    int status;
+    (void)context;
+
+    if (operation == NULL || arguments == NULL || result == NULL ||
+        result_size == 0U) {
+        return 0;
+    }
+    command[0] = '\0';
+    if (strcmp(operation, "status") == 0) {
+        written = snprintf(command, sizeof(command), "GIT \"status\" \"--short\"");
+    } else if (strcmp(operation, "remote") == 0) {
+        written = snprintf(command, sizeof(command), "GIT \"remote\" \"-v\"");
+    } else if (strcmp(operation, "fetch") == 0) {
+        if (*arguments == '\0') {
+            written = snprintf(command, sizeof(command), "GIT \"fetch\"");
+        } else if (openai_gh_split2(arguments, first, sizeof(first), second,
+                                    sizeof(second), 1) &&
+                   openai_gh_token_valid(first) &&
+                   (*second == '\0' || openai_gh_token_valid(second))) {
+            if (*second == '\0') {
+                written = snprintf(command, sizeof(command),
+                                   "GIT \"fetch\" \"%s\"", first);
+            } else {
+                written = snprintf(command, sizeof(command),
+                                   "GIT \"fetch\" \"%s\" \"%s\"", first, second);
+            }
+        } else {
+            return 0;
+        }
+    } else if (strcmp(operation, "pull") == 0 ||
+               strcmp(operation, "push") == 0) {
+        if (!openai_gh_split2(arguments, first, sizeof(first), second,
+                              sizeof(second), 0) ||
+            !openai_gh_token_valid(first) || !openai_gh_token_valid(second)) {
+            return 0;
+        }
+        written = snprintf(command, sizeof(command),
+                           "GIT \"%s\" \"%s\" \"%s\"",
+                           operation, first, second);
+    } else if (strcmp(operation, "clone") == 0) {
+        if (!openai_gh_split2(arguments, first, sizeof(first), second,
+                              sizeof(second), 1) ||
+            !openai_gh_url_valid(first) ||
+            (*second != '\0' && !openai_gh_path_valid(second))) {
+            return 0;
+        }
+        if (*second == '\0') {
+            written = snprintf(command, sizeof(command),
+                               "GIT \"clone\" \"%s\"", first);
+        } else {
+            written = snprintf(command, sizeof(command),
+                               "GIT \"clone\" \"%s\" \"%s\"", first, second);
+        }
+    } else if (strcmp(operation, "issues") == 0 || strcmp(operation, "pr") == 0) {
+        return openai_gh_bridge_exec(operation, arguments, result, result_size);
+    } else {
+        return 0;
+    }
+    if (written < 0 || (size_t)written >= sizeof(command)) {
+        return 0;
+    }
+    status = system(command);
+    if ((status & 1) == 0) {
+        return 0;
+    }
+    written = snprintf(result, result_size,
+                       "OpenVMS Git command completed successfully.\n");
+    return written >= 0 && (size_t)written < result_size;
+}
+
+int openai_github_text(char *output, size_t output_size)
+{
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+    written = snprintf(output, output_size,
+        "OVMS Agent GitHub integration\n"
+        "-----------------------------\n"
+        "AGENT/GITHUB/STATUS                local read\n"
+        "AGENT/GITHUB/REMOTE                local read\n"
+        "AGENT/GITHUB/FETCH [remote [ref]] workspace approval\n"
+        "AGENT/GITHUB/PULL remote branch    workspace approval\n"
+        "AGENT/GITHUB/PUSH remote branch    FULL approval\n"
+        "AGENT/GITHUB/CLONE url [directory] workspace approval\n"
+        "AGENT/GITHUB/ISSUES operation...   FULL approval + bridge\n"
+        "AGENT/GITHUB/PR operation...       FULL approval + bridge\n"
+        "\n"
+        "Git transport uses the installed OpenVMS Git command.\n"
+        "Credentials remain Git's responsibility and are never embedded in DCL.\n"
+        "Issue/PR service operations use OVMS_AGENT_GITHUB_BRIDGE.\n"
+        "Only github.com HTTPS or SSH clone URLs are accepted by the native clone path.\n");
+    return written >= 0 && (size_t)written < output_size;
+}
+
+int openai_gh_run_text(const char *operation,
+                       const char *arguments,
+                       openai_gh_executor_fn executor,
+                       void *context,
+                       char *output, size_t output_size)
+{
+    const char *args;
+    char result[OPENAI_GH_RESULT_MAX];
+    int required;
+    int written;
+
+    if (operation == NULL || output == NULL || output_size == 0U) {
+        return 0;
+    }
+    args = openai_skip_ws(arguments);
+    if (strlen(args) >= OPENAI_GH_ARG_MAX || !openai_gh_no_newline(args)) {
+        return 0;
+    }
+    if (strcmp(operation, "help") == 0) {
+        return openai_github_text(output, output_size);
+    }
+    if (strcmp(operation, "status") == 0 || strcmp(operation, "remote") == 0) {
+        if (*args != '\0') {
+            return 0;
+        }
+        required = OPENAI_APPROVAL_READ;
+    } else if (strcmp(operation, "fetch") == 0) {
+        char first[256];
+        char second[256];
+        if (*args != '\0' &&
+            (!openai_gh_split2(args, first, sizeof(first), second, sizeof(second), 1) ||
+             !openai_gh_token_valid(first) ||
+             (*second != '\0' && !openai_gh_token_valid(second)))) {
+            return 0;
+        }
+        required = OPENAI_APPROVAL_WORK;
+    } else if (strcmp(operation, "pull") == 0 || strcmp(operation, "push") == 0) {
+        char first[256];
+        char second[256];
+        if (!openai_gh_split2(args, first, sizeof(first), second, sizeof(second), 0) ||
+            !openai_gh_token_valid(first) || !openai_gh_token_valid(second)) {
+            return 0;
+        }
+        required = strcmp(operation, "push") == 0 ?
+                   OPENAI_APPROVAL_FULL : OPENAI_APPROVAL_WORK;
+    } else if (strcmp(operation, "clone") == 0) {
+        char first[256];
+        char second[256];
+        if (!openai_gh_split2(args, first, sizeof(first), second, sizeof(second), 1) ||
+            !openai_gh_url_valid(first) ||
+            (*second != '\0' && !openai_gh_path_valid(second))) {
+            return 0;
+        }
+        required = OPENAI_APPROVAL_WORK;
+    } else if (strcmp(operation, "issues") == 0 || strcmp(operation, "pr") == 0) {
+        if (*args == '\0') {
+            return 0;
+        }
+        required = OPENAI_APPROVAL_FULL;
+    } else {
+        return 0;
+    }
+    if (openai_policy_source() < required) {
+        written = snprintf(output, output_size,
+            "GitHub operation refused: %s approval policy is required.\n",
+            required == OPENAI_APPROVAL_FULL ? "FULL" : "WORKSPACE");
+        return written >= 0 && (size_t)written < output_size;
+    }
+    if (executor == NULL) {
+        return 0;
+    }
+    result[0] = '\0';
+    if (!executor(operation, args, result, sizeof(result), context)) {
+        written = snprintf(output, output_size,
+            "GitHub operation failed or was refused: %s\n", operation);
+        return written >= 0 && (size_t)written < output_size;
+    }
+    written = snprintf(output, output_size,
+        "GitHub operation: %s\nStatus: success\n%s",
+        operation, result);
+    return written >= 0 && (size_t)written < output_size;
+}
+
+void openai_show_github(const char *operation, const char *arguments)
+{
+    char output[4096];
+
+    if (!openai_gh_run_text(operation, arguments, openai_gh_prod_exec,
+                            NULL, output, sizeof(output))) {
+        if (operation != NULL && strcmp(operation, "clone") == 0) {
+            (void)puts("Usage: AGENT/GITHUB/CLONE github-url [directory]");
+        } else if (operation != NULL &&
+                   (strcmp(operation, "pull") == 0 || strcmp(operation, "push") == 0)) {
+            (void)printf("Usage: AGENT/GITHUB/%s remote branch\n",
+                         strcmp(operation, "pull") == 0 ? "PULL" : "PUSH");
+        } else if (operation != NULL &&
+                   (strcmp(operation, "issues") == 0 || strcmp(operation, "pr") == 0)) {
+            (void)printf("Usage: AGENT/GITHUB/%s operation [arguments]\n",
+                         strcmp(operation, "issues") == 0 ? "ISSUES" : "PR");
+        } else {
+            (void)puts("Invalid GitHub operation or arguments.");
+        }
+        return;
+    }
+    (void)fputs(output, stdout);
 }
