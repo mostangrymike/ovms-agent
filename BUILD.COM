@@ -1533,6 +1533,38 @@ $     FINAL_STATUS = $STATUS
 $     WRITE SYS$ERROR "Regression test M244_MCP_HTTP_TEST.EXE failed."
 $     GOTO FINISH
 $ ENDIF
+$!-----------------------------------------------------------
+$! Build M245_MCP_SSE_TEST.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M245_MCP_SSE_TEST.OBJ -
+/STANDARD=C99 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M245_MCP_SSE_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M245_MCP_SSE_TEST.EXE -
+[.BUILD]M245_MCP_SSE_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Link failed for M245_MCP_SSE_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M245_MCP_SSE_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Regression test M245_MCP_SSE_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
 $
 $!-----------------------------------------------------------
 $! Build PROJECT_GREP_TEST.

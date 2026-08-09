@@ -973,6 +973,140 @@ static int openai_mcp_http_bridge_executor(const char *target,
                                            arguments, result, result_size);
 }
 
+
+static int openai_mcp_sse_bridge_executor(const char *target,
+                                          const char *tool,
+                                          const char *arguments,
+                                          char *result,
+                                          size_t result_size,
+                                          void *context)
+{
+    const char *bridge;
+    (void)context;
+
+    if (!openai_mcp_http_target_valid(target)) {
+        return 0;
+    }
+    bridge = getenv("OVMS_AGENT_MCP_SSE_BRIDGE");
+    if (!openai_mcp_stdio_target_valid(bridge)) {
+        return 0;
+    }
+    return openai_mcp_file_bridge_execute(bridge, "sse", target, tool,
+                                           arguments, result, result_size);
+}
+
+int openai_mcp_exec_all_text(const char *config,
+                             const char *arguments,
+                             openai_mcp_executor_fn stdio_executor,
+                             openai_mcp_executor_fn http_executor,
+                             openai_mcp_executor_fn sse_executor,
+                                       void *context,
+                                       char *output,
+                                       size_t output_size)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[OPENAI_MCP_NAME_MAX];
+    char tool[OPENAI_MCP_NAME_MAX];
+    char result[2048];
+    openai_mcp_executor_fn executor;
+    int written;
+
+    if (output == NULL || output_size == 0U || arguments == NULL) {
+        return 0;
+    }
+
+    if (openai_policy_source() != OPENAI_APPROVAL_FULL) {
+        written = snprintf(output, output_size,
+            "MCP transport execution refused: FULL approval policy is required.\n");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    cursor = arguments;
+    if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !openai_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !openai_mcp_name_valid(server) || !openai_mcp_name_valid(tool)) {
+        return 0;
+    }
+
+    payload = openai_skip_ws(cursor);
+    if (!openai_mcp_call_args_valid(payload)) {
+        return 0;
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(server, servers[index].name)) {
+            continue;
+        }
+
+        executor = NULL;
+        if (openai_equal_ci(servers[index].transport, "stdio")) {
+            if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+                written = snprintf(output, output_size,
+                    "MCP transport execution refused: unsafe stdio bridge target.\n");
+                return written >= 0 && (size_t)written < output_size;
+            }
+            executor = stdio_executor;
+        } else if (openai_equal_ci(servers[index].transport, "http")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) {
+                written = snprintf(output, output_size,
+                    "MCP transport execution refused: unsafe HTTP endpoint.\n");
+                return written >= 0 && (size_t)written < output_size;
+            }
+            executor = http_executor;
+        } else if (openai_equal_ci(servers[index].transport, "sse")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) {
+                written = snprintf(output, output_size,
+                    "MCP transport execution refused: unsafe SSE endpoint.\n");
+                return written >= 0 && (size_t)written < output_size;
+            }
+            executor = sse_executor;
+        } else {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: unsupported transport %s.\n",
+                servers[index].transport);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        if (executor == NULL) {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: %s executor is not configured.\n",
+                servers[index].transport);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        result[0] = '\0';
+        if (!executor(servers[index].target, tool, payload,
+                      result, sizeof(result), context)) {
+            written = snprintf(output, output_size,
+                "MCP %s execution failed.\nServer: %s\nTool: %s\n",
+                servers[index].transport, servers[index].name, tool);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        written = snprintf(output, output_size,
+            "OVMS Agent MCP execution result\n"
+            "-------------------------------\n"
+            "Server:     %s\n"
+            "Transport:  %s\n"
+            "Target:     %s\n"
+            "Tool:       %s\n"
+            "Status:     success\n"
+            "Result:\n%s%s",
+            servers[index].name, servers[index].transport,
+            servers[index].target, tool,
+            *result != '\0' ? result : "(empty)\n",
+            (*result != '\0' && result[strlen(result) - 1U] != '\n') ? "\n" : "");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
+}
+
 int openai_mcp_exec_transport_text(const char *config,
                                        const char *arguments,
                                        openai_mcp_executor_fn stdio_executor,
@@ -1084,19 +1218,134 @@ int openai_mcp_execute_text(const char *config,
                             char *output,
                             size_t output_size)
 {
-    return openai_mcp_exec_transport_text(config, arguments,
-                                              executor, NULL, context,
-                                              output, output_size);
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[OPENAI_MCP_NAME_MAX];
+    char tool[OPENAI_MCP_NAME_MAX];
+    char result[2048];
+    int written;
+
+    if (output == NULL || output_size == 0U || arguments == NULL ||
+        executor == NULL) {
+        return 0;
+    }
+
+    if (openai_policy_source() != OPENAI_APPROVAL_FULL) {
+        written = snprintf(output, output_size,
+            "MCP transport execution refused: FULL approval policy is required.\n");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    cursor = arguments;
+    if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !openai_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !openai_mcp_name_valid(server) || !openai_mcp_name_valid(tool)) {
+        return 0;
+    }
+
+    payload = openai_skip_ws(cursor);
+    if (!openai_mcp_call_args_valid(payload)) {
+        return 0;
+    }
+
+    /* M243 compatibility/security: reject an ambiguous malformed tail
+       immediately after the selected catalog entry. This catches config
+       injection such as "name|stdio|@BRIDGE;DELETE" instead of silently
+       treating DELETE as an unrelated ignored entry. */
+    if (config != NULL) {
+        const char *scan = config;
+        size_t server_len = strlen(server);
+        while (*scan != '\0') {
+            const char *entry_end = strchr(scan, ';');
+            const char *first_bar = strchr(scan, '|');
+            if (first_bar != NULL &&
+                (entry_end == NULL || first_bar < entry_end) &&
+                (size_t)(first_bar - scan) == server_len &&
+                strncmp(scan, server, server_len) == 0) {
+                if (entry_end != NULL && entry_end[1] != '\0') {
+                    const char *next_end = strchr(entry_end + 1, ';');
+                    const char *bar1 = strchr(entry_end + 1, '|');
+                    const char *bar2 = NULL;
+                    if (bar1 != NULL &&
+                        (next_end == NULL || bar1 < next_end)) {
+                        bar2 = strchr(bar1 + 1, '|');
+                    }
+                    if (bar1 == NULL ||
+                        (next_end != NULL && bar1 > next_end) ||
+                        bar2 == NULL ||
+                        (next_end != NULL && bar2 > next_end)) {
+                        written = snprintf(output, output_size,
+                            "MCP transport execution refused: unsafe stdio bridge target.\n");
+                        return written >= 0 && (size_t)written < output_size;
+                    }
+                }
+                break;
+            }
+            if (entry_end == NULL) {
+                break;
+            }
+            scan = entry_end + 1;
+        }
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(server, servers[index].name)) {
+            continue;
+        }
+
+        if (!openai_equal_ci(servers[index].transport, "stdio")) {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: transport %s is not enabled in M243.\n",
+                servers[index].transport);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: unsafe stdio bridge target.\n");
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        result[0] = '\0';
+        if (!executor(servers[index].target, tool, payload,
+                      result, sizeof(result), context)) {
+            written = snprintf(output, output_size,
+                "MCP stdio bridge execution failed.\n"
+                "Server: %s\nTool: %s\n",
+                servers[index].name, tool);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        written = snprintf(output, output_size,
+            "OVMS Agent MCP execution result\n"
+            "-------------------------------\n"
+            "Server:     %s\n"
+            "Transport:  stdio\n"
+            "Target:     %s\n"
+            "Tool:       %s\n"
+            "Status:     success\n"
+            "Result:\n%s%s",
+            servers[index].name, servers[index].target, tool,
+            *result != '\0' ? result : "(empty)\n",
+            (*result != '\0' && result[strlen(result) - 1U] != '\n') ? "\n" : "");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
 }
 
 void openai_show_mcp_execute(const char *arguments)
 {
     char output[4096];
 
-    if (!openai_mcp_exec_transport_text(
+    if (!openai_mcp_exec_all_text(
             getenv("OVMS_AGENT_MCP_SERVERS"), arguments,
-            openai_mcp_bridge_executor, openai_mcp_http_bridge_executor, NULL,
-            output, sizeof(output))) {
+            openai_mcp_bridge_executor, openai_mcp_http_bridge_executor,
+            openai_mcp_sse_bridge_executor, NULL, output, sizeof(output))) {
         (void)puts(
             "Usage: AGENT/MCP/EXEC <server-name> <tool-name> [arguments]");
         return;
