@@ -66,6 +66,48 @@ static const char *openai_context_tail(const char *text,
     return start;
 }
 
+int openai_context_evidence_text(const char *session,
+                                 char *output,
+                                 size_t output_size)
+{
+    char recent[OPENAI_CONTEXT_HIST];
+    char last[OPENAI_CONTEXT_HIST];
+    const char *tail;
+    size_t used;
+
+    if (session == NULL || strlen(session) != 8U ||
+        output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    used = 0U;
+
+    if (openai_session_result_last(
+            session, last, sizeof(last))) {
+        (void)openai_context_append(
+            output, output_size, &used,
+            "LATEST NORMALIZED RESULT\n");
+        tail = openai_context_tail(
+            last, OPENAI_CONTEXT_PARENT_RES);
+        (void)openai_context_append(
+            output, output_size, &used, tail);
+    }
+
+    if (openai_session_results_text(
+            session, recent, sizeof(recent))) {
+        (void)openai_context_append(
+            output, output_size, &used,
+            "RECENT NORMALIZED RESULTS\n");
+        tail = openai_context_tail(
+            recent, OPENAI_CONTEXT_RESULTS);
+        (void)openai_context_append(
+            output, output_size, &used, tail);
+    }
+
+    return output[0] != '\0';
+}
+
 int openai_context_build(const char *goal,
                          char *output,
                          size_t output_size)
@@ -131,11 +173,11 @@ int openai_context_build(const char *goal,
             output, output_size, &used, tail
         );
 
-        if (openai_session_results_text(
+        if (openai_context_evidence_text(
                 parent, parent_results, sizeof(parent_results))) {
             (void)openai_context_append(
                 output, output_size, &used,
-                "\nPARENT SESSION RECENT TOOL EVIDENCE\n"
+                "\nPARENT SESSION PRIORITIZED TOOL EVIDENCE\n"
             );
             tail = openai_context_tail(
                 parent_results, OPENAI_CONTEXT_PARENT_RES
@@ -159,17 +201,14 @@ int openai_context_build(const char *goal,
         );
     }
 
-    if (openai_session_results_text(
+    if (openai_context_evidence_text(
             session, results, sizeof(results))) {
         (void)openai_context_append(
             output, output_size, &used,
-            "\nCURRENT SESSION RECENT TOOL EVIDENCE\n"
-        );
-        tail = openai_context_tail(
-            results, OPENAI_CONTEXT_RESULTS
+            "\nCURRENT SESSION PRIORITIZED TOOL EVIDENCE\n"
         );
         (void)openai_context_append(
-            output, output_size, &used, tail
+            output, output_size, &used, results
         );
     }
 
@@ -243,17 +282,14 @@ int openai_context_current(char *output,
         );
     }
 
-    if (openai_session_results_text(
+    if (openai_context_evidence_text(
             session, results, sizeof(results))) {
         (void)openai_context_append(
             output, output_size, &used,
-            "\nRecent normalized tool evidence:\n"
-        );
-        tail = openai_context_tail(
-            results, OPENAI_CONTEXT_RESULTS
+            "\nPrioritized normalized tool evidence:\n"
         );
         (void)openai_context_append(
-            output, output_size, &used, tail
+            output, output_size, &used, results
         );
     }
 

@@ -680,6 +680,8 @@ void openai_tx_loop_event(const char *name,
 
 int openai_session_parent(const char *arguments, char parent[9]);
 
+int openai_context_evidence_text(const char *session,
+                                 char *output, size_t output_size);
 int openai_context_build(const char *goal,
                          char *output, size_t output_size);
 int openai_context_current(char *output, size_t output_size);

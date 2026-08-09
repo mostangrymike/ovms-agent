@@ -2,6 +2,7 @@
 #include "command_internal.h"
 
 #define OPENAI_TRANSCRIPT_FILE "OVMS_AGENT_TRANSCRIPT.DAT"
+#define OPENAI_TRANSCRIPT_PATH_MAX 256U
 #define OPENAI_TRANSCRIPT_MAX 256U
 #define OPENAI_TRANSCRIPT_LINE 1400U
 #define OPENAI_TRANSCRIPT_ARG 768U
@@ -42,7 +43,8 @@ static const openai_run_tool openai_run_tools[] = {
     { "RUN",       "execute", OPENAI_TOOL_FULL, command_run }
 };
 
-static char openai_transcript_path[256] = OPENAI_TRANSCRIPT_FILE;
+static char openai_transcript_path[OPENAI_TRANSCRIPT_PATH_MAX] =
+    OPENAI_TRANSCRIPT_FILE;
 
 static void openai_tx_now(char *output, size_t output_size)
 {
