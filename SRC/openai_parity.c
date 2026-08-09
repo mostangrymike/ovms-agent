@@ -808,6 +808,212 @@ void openai_show_mcp_call(const char *arguments)
     (void)fputs(output, stdout);
 }
 
+#define OPENAI_MCP_BRIDGE_REQUEST_FILE "OVMS_AGENT_MCP_REQUEST.TMP"
+#define OPENAI_MCP_BRIDGE_RESPONSE_FILE "OVMS_AGENT_MCP_RESPONSE.TMP"
+#define OPENAI_MCP_BRIDGE_COMMAND_MAX 512U
+
+static int openai_mcp_stdio_target_valid(const char *target)
+{
+    const unsigned char *cursor;
+
+    if (target == NULL || *target == '\0') {
+        return 0;
+    }
+
+    cursor = (const unsigned char *)target;
+    while (*cursor != '\0') {
+        if (!( (*cursor >= (unsigned char)'A' && *cursor <= (unsigned char)'Z') ||
+               (*cursor >= (unsigned char)'a' && *cursor <= (unsigned char)'z') ||
+               (*cursor >= (unsigned char)'0' && *cursor <= (unsigned char)'9') ||
+               *cursor == (unsigned char)'_' || *cursor == (unsigned char)'-' ||
+               *cursor == (unsigned char)'.' || *cursor == (unsigned char)'$' ||
+               *cursor == (unsigned char)':' || *cursor == (unsigned char)'[' ||
+               *cursor == (unsigned char)']' || *cursor == (unsigned char)'<' ||
+               *cursor == (unsigned char)'>' || *cursor == (unsigned char)'@')) {
+            return 0;
+        }
+        ++cursor;
+    }
+
+    return 1;
+}
+
+static int openai_mcp_bridge_executor(const char *target,
+                                      const char *tool,
+                                      const char *arguments,
+                                      char *result,
+                                      size_t result_size,
+                                      void *context)
+{
+    FILE *file;
+    char command[OPENAI_MCP_BRIDGE_COMMAND_MAX];
+    char line[512];
+    size_t used;
+    int written;
+    int status;
+
+    (void)context;
+
+    if (!openai_mcp_stdio_target_valid(target) || tool == NULL ||
+        arguments == NULL || result == NULL || result_size == 0U) {
+        return 0;
+    }
+
+    file = fopen(OPENAI_MCP_BRIDGE_REQUEST_FILE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    if (fprintf(file, "tool=%s\narguments=%s\n", tool, arguments) < 0 ||
+        fclose(file) != 0) {
+        (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+        return 0;
+    }
+
+    (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
+    written = snprintf(command, sizeof(command), "%s %s %s", target,
+                       OPENAI_MCP_BRIDGE_REQUEST_FILE,
+                       OPENAI_MCP_BRIDGE_RESPONSE_FILE);
+    if (written < 0 || (size_t)written >= sizeof(command)) {
+        (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+        return 0;
+    }
+
+    status = system(command);
+    if ((status & 1) == 0) {
+        (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+        (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
+        return 0;
+    }
+
+    file = fopen(OPENAI_MCP_BRIDGE_RESPONSE_FILE, "r");
+    if (file == NULL) {
+        (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+        return 0;
+    }
+
+    used = 0U;
+    result[0] = '\0';
+    while (fgets(line, sizeof(line), file) != NULL) {
+        size_t length = strlen(line);
+        if (length >= result_size - used) {
+            (void)fclose(file);
+            (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+            (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
+            return 0;
+        }
+        memcpy(result + used, line, length);
+        used += length;
+        result[used] = '\0';
+    }
+    (void)fclose(file);
+    (void)remove(OPENAI_MCP_BRIDGE_REQUEST_FILE);
+    (void)remove(OPENAI_MCP_BRIDGE_RESPONSE_FILE);
+
+    return 1;
+}
+
+int openai_mcp_execute_text(const char *config,
+                            const char *arguments,
+                            openai_mcp_executor_fn executor,
+                            void *context,
+                            char *output,
+                            size_t output_size)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[OPENAI_MCP_NAME_MAX];
+    char tool[OPENAI_MCP_NAME_MAX];
+    char result[2048];
+    int written;
+
+    if (output == NULL || output_size == 0U || arguments == NULL ||
+        executor == NULL) {
+        return 0;
+    }
+
+    if (openai_policy_source() != OPENAI_APPROVAL_FULL) {
+        written = snprintf(output, output_size,
+            "MCP transport execution refused: FULL approval policy is required.\n");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    cursor = arguments;
+    if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !openai_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !openai_mcp_name_valid(server) || !openai_mcp_name_valid(tool)) {
+        return 0;
+    }
+
+    payload = openai_skip_ws(cursor);
+    if (!openai_mcp_call_args_valid(payload)) {
+        return 0;
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(server, servers[index].name)) {
+            continue;
+        }
+
+        if (!openai_equal_ci(servers[index].transport, "stdio")) {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: transport %s is not enabled in M243.\n",
+                servers[index].transport);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        if (!openai_mcp_stdio_target_valid(servers[index].target)) {
+            written = snprintf(output, output_size,
+                "MCP transport execution refused: unsafe stdio bridge target.\n");
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        result[0] = '\0';
+        if (!executor(servers[index].target, tool, payload,
+                      result, sizeof(result), context)) {
+            written = snprintf(output, output_size,
+                "MCP stdio bridge execution failed.\n"
+                "Server: %s\nTool: %s\n",
+                servers[index].name, tool);
+            return written >= 0 && (size_t)written < output_size;
+        }
+
+        written = snprintf(output, output_size,
+            "OVMS Agent MCP execution result\n"
+            "-------------------------------\n"
+            "Server:     %s\n"
+            "Transport:  stdio\n"
+            "Target:     %s\n"
+            "Tool:       %s\n"
+            "Status:     success\n"
+            "Result:\n%s%s",
+            servers[index].name, servers[index].target, tool,
+            *result != '\0' ? result : "(empty)\n",
+            (*result != '\0' && result[strlen(result) - 1U] != '\n') ? "\n" : "");
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
+}
+
+void openai_show_mcp_execute(const char *arguments)
+{
+    char output[4096];
+
+    if (!openai_mcp_execute_text(
+            getenv("OVMS_AGENT_MCP_SERVERS"), arguments,
+            openai_mcp_bridge_executor, NULL,
+            output, sizeof(output))) {
+        (void)puts(
+            "Usage: AGENT/MCP/EXEC <server-name> <tool-name> [arguments]");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
 int openai_parity_text(char *output, size_t output_size)
 {
     int written;

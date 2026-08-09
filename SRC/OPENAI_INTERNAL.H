@@ -596,6 +596,22 @@ int openai_mcp_call_text(const char *config,
 void openai_show_mcp(void);
 void openai_show_mcp_info(const char *arguments);
 void openai_show_mcp_call(const char *arguments);
+
+typedef int (*openai_mcp_executor_fn)(
+    const char *target,
+    const char *tool,
+    const char *arguments,
+    char *result,
+    size_t result_size,
+    void *context);
+
+int openai_mcp_execute_text(const char *config,
+                            const char *arguments,
+                            openai_mcp_executor_fn executor,
+                            void *context,
+                            char *output,
+                            size_t output_size);
+void openai_show_mcp_execute(const char *arguments);
 int openai_approval_text(char *output, size_t output_size);
 void openai_show_approval(void);
 int openai_set_approval(const char *arguments);
