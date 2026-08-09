@@ -760,6 +760,7 @@ char *openai_result_make(const char *tool,
                          int code,
                          const char *arguments,
                          const char *output);
+char *openai_build_result(const char *output, int status);
 int openai_result_last_text(char *output, size_t output_size);
 void openai_show_result_last(void);
 

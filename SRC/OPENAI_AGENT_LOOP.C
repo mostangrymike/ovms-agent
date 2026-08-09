@@ -470,6 +470,42 @@ void openai_agent_mode(agent_state *state,
                         build_status
                     );
 
+                    if (build_output != NULL) {
+                        char *normalized_build;
+
+                        normalized_build = openai_build_result(
+                            build_output, build_status
+                        );
+
+                        if (normalized_build != NULL) {
+                            free(build_output);
+                            build_output = normalized_build;
+                        }
+
+                        openai_tx_model_result(
+                            "run_build",
+                            (build_status & 1) != 0 ?
+                                "success" : "failure",
+                            build_output
+                        );
+                    } else {
+                        char *normalized_build;
+
+                        normalized_build = openai_build_result(
+                            NULL, build_status
+                        );
+
+                        if (normalized_build != NULL) {
+                            build_output = normalized_build;
+                            openai_tx_model_result(
+                                "run_build",
+                                (build_status & 1) != 0 ?
+                                    "success" : "failure",
+                                build_output
+                            );
+                        }
+                    }
+
                     if ((build_status & 1) == 0 &&
                         display_path != NULL) {
                         if (openai_confirm_restore(display_path)) {
@@ -534,9 +570,11 @@ void openai_agent_mode(agent_state *state,
                             "A supervised exact patch was applied for this "
                             "goal:\n\n";
                         static const char middle[] =
-                            "\n\nAnalyze the following OpenVMS build result. "
-                            "State whether it succeeded. If it failed, identify "
-                            "the first actionable compiler or linker diagnostic "
+                            "\n\nAnalyze the following normalized OpenVMS "
+                            "run_build tool result. Use its status, code, "
+                            "truncation flag, and captured output as the "
+                            "execution evidence. If it failed, identify the "
+                            "first actionable compiler or linker diagnostic "
                             "and recommend the smallest next edit. Also report "
                             "the rollback status exactly as supplied below. "
                             "Do not claim to have made another edit.\n\n";

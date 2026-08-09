@@ -75,6 +75,18 @@ char *openai_result_make(const char *tool,
     return result;
 }
 
+char *openai_build_result(const char *output, int status)
+{
+    return openai_result_make(
+        "run_build",
+        (status & 1) != 0 ? "success" : "failure",
+        "execute",
+        status,
+        "{}",
+        output != NULL ? output : "Unable to capture build output."
+    );
+}
+
 int openai_result_last_text(char *output, size_t output_size)
 {
     int written;

@@ -438,6 +438,8 @@ int openai_parity_text(char *output, size_t output_size)
         "Autonomous multi-hunk:  available\n"
         "Normalized results:     available\n"
         "Result persistence:     available\n"
+        "Normalized build result: available\n"
+        "Build evidence replay:  available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );
