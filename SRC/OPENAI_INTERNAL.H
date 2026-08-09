@@ -584,6 +584,14 @@ void openai_show_tools(void);
 int openai_tool_info_text(const char *arguments,
                           char *output, size_t output_size);
 void openai_show_tool_info(const char *arguments);
+int openai_mcp_catalog_text(const char *config,
+                            char *output, size_t output_size);
+int openai_mcp_info_text(const char *config,
+                         const char *arguments,
+                         char *output, size_t output_size);
+int openai_mcp_text(char *output, size_t output_size);
+void openai_show_mcp(void);
+void openai_show_mcp_info(const char *arguments);
 int openai_approval_text(char *output, size_t output_size);
 void openai_show_approval(void);
 int openai_set_approval(const char *arguments);

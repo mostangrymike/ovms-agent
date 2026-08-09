@@ -394,6 +394,286 @@ void openai_show_context(const agent_state *state)
     (void)fputs(output, stdout);
 }
 
+
+#define OPENAI_MCP_MAX_SERVERS 8U
+#define OPENAI_MCP_ENTRY_MAX 512U
+#define OPENAI_MCP_NAME_MAX 64U
+#define OPENAI_MCP_TRANSPORT_MAX 16U
+#define OPENAI_MCP_TARGET_MAX 384U
+
+typedef struct openai_mcp_server_desc {
+    char name[OPENAI_MCP_NAME_MAX];
+    char transport[OPENAI_MCP_TRANSPORT_MAX];
+    char target[OPENAI_MCP_TARGET_MAX];
+} openai_mcp_server_desc;
+
+static int openai_mcp_name_valid(const char *name)
+{
+    const unsigned char *cursor;
+
+    if (name == NULL || *name == '\0') {
+        return 0;
+    }
+
+    cursor = (const unsigned char *)name;
+    while (*cursor != '\0') {
+        if (!(isalnum(*cursor) || *cursor == '_' ||
+              *cursor == '-' || *cursor == '.')) {
+            return 0;
+        }
+        ++cursor;
+    }
+
+    return 1;
+}
+
+static int openai_mcp_transport_valid(const char *transport)
+{
+    return openai_equal_ci(transport, "stdio") ||
+           openai_equal_ci(transport, "http") ||
+           openai_equal_ci(transport, "sse");
+}
+
+static char *openai_mcp_trim(char *text)
+{
+    char *end;
+
+    if (text == NULL) {
+        return text;
+    }
+
+    while (*text == ' ' || *text == '\t') {
+        ++text;
+    }
+
+    end = text + strlen(text);
+    while (end > text &&
+           (end[-1] == ' ' || end[-1] == '\t')) {
+        --end;
+    }
+    *end = '\0';
+    return text;
+}
+
+static unsigned int openai_mcp_parse(
+    const char *config,
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS],
+    unsigned int *invalid_count)
+{
+    const char *cursor;
+    const char *end;
+    char entry[OPENAI_MCP_ENTRY_MAX];
+    char *name;
+    char *transport;
+    char *target;
+    char *first;
+    char *second;
+    size_t length;
+    unsigned int count;
+    unsigned int invalid;
+
+    count = 0U;
+    invalid = 0U;
+
+    if (config == NULL) {
+        config = "";
+    }
+
+    cursor = config;
+    while (*cursor != '\0') {
+        while (*cursor == ';' || *cursor == ' ' || *cursor == '\t') {
+            ++cursor;
+        }
+        if (*cursor == '\0') {
+            break;
+        }
+
+        end = strchr(cursor, ';');
+        if (end == NULL) {
+            end = cursor + strlen(cursor);
+        }
+
+        length = (size_t)(end - cursor);
+        if (length == 0U || length >= sizeof(entry)) {
+            ++invalid;
+        } else {
+            memcpy(entry, cursor, length);
+            entry[length] = '\0';
+
+            first = strchr(entry, '|');
+            second = first != NULL ? strchr(first + 1, '|') : NULL;
+            if (first == NULL || second == NULL ||
+                strchr(second + 1, '|') != NULL) {
+                ++invalid;
+            } else {
+                *first = '\0';
+                *second = '\0';
+                name = openai_mcp_trim(entry);
+                transport = openai_mcp_trim(first + 1);
+                target = openai_mcp_trim(second + 1);
+
+                if (!openai_mcp_name_valid(name) ||
+                    !openai_mcp_transport_valid(transport) ||
+                    *target == '\0' ||
+                    strlen(name) >= OPENAI_MCP_NAME_MAX ||
+                    strlen(transport) >= OPENAI_MCP_TRANSPORT_MAX ||
+                    strlen(target) >= OPENAI_MCP_TARGET_MAX) {
+                    ++invalid;
+                } else if (count >= OPENAI_MCP_MAX_SERVERS) {
+                    ++invalid;
+                } else {
+                    strcpy(servers[count].name, name);
+                    strcpy(servers[count].transport, transport);
+                    strcpy(servers[count].target, target);
+                    ++count;
+                }
+            }
+        }
+
+        cursor = *end == ';' ? end + 1 : end;
+    }
+
+    if (invalid_count != NULL) {
+        *invalid_count = invalid;
+    }
+    return count;
+}
+
+int openai_mcp_catalog_text(const char *config,
+                            char *output,
+                            size_t output_size)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int invalid;
+    unsigned int index;
+    size_t used;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    count = openai_mcp_parse(config, servers, &invalid);
+    written = snprintf(
+        output, output_size,
+        "OVMS Agent MCP server catalog\n"
+        "-----------------------------\n"
+        "Configuration: OVMS_AGENT_MCP_SERVERS\n"
+        "Format: name|transport|target;...\n"
+        "Configured servers: %u\n"
+        "Ignored entries:    %u\n",
+        count, invalid
+    );
+    if (written < 0 || (size_t)written >= output_size) {
+        return 0;
+    }
+    used = (size_t)written;
+
+    for (index = 0U; index < count; ++index) {
+        written = snprintf(
+            output + used, output_size - used,
+            "  %-16s transport=%-5s target=%s\n",
+            servers[index].name,
+            servers[index].transport,
+            servers[index].target
+        );
+        if (written < 0 ||
+            (size_t)written >= output_size - used) {
+            return 0;
+        }
+        used += (size_t)written;
+    }
+
+    if (count == 0U) {
+        written = snprintf(
+            output + used, output_size - used,
+            "  (none configured)\n"
+        );
+        if (written < 0 ||
+            (size_t)written >= output_size - used) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int openai_mcp_info_text(const char *config,
+                         const char *arguments,
+                         char *output,
+                         size_t output_size)
+{
+    openai_mcp_server_desc servers[OPENAI_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *name;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    name = openai_skip_ws(arguments);
+    if (*name == '\0' || strchr(name, ' ') != NULL ||
+        strchr(name, '\t') != NULL) {
+        return 0;
+    }
+
+    count = openai_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (!openai_equal_ci(name, servers[index].name)) {
+            continue;
+        }
+
+        written = snprintf(
+            output, output_size,
+            "OVMS Agent MCP server information\n"
+            "---------------------------------\n"
+            "Name:      %s\n"
+            "Transport: %s\n"
+            "Target:    %s\n"
+            "State:     configured (transport execution pending)\n",
+            servers[index].name,
+            servers[index].transport,
+            servers[index].target
+        );
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
+}
+
+int openai_mcp_text(char *output, size_t output_size)
+{
+    return openai_mcp_catalog_text(
+        getenv("OVMS_AGENT_MCP_SERVERS"), output, output_size);
+}
+
+void openai_show_mcp(void)
+{
+    char output[4096];
+
+    if (!openai_mcp_text(output, sizeof(output))) {
+        (void)puts("Unable to build MCP server catalog.");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
+void openai_show_mcp_info(const char *arguments)
+{
+    char output[2048];
+
+    if (!openai_mcp_info_text(
+            getenv("OVMS_AGENT_MCP_SERVERS"),
+            arguments, output, sizeof(output))) {
+        (void)puts("Usage: AGENT/MCP/INFO <server-name>");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
 int openai_parity_text(char *output, size_t output_size)
 {
     int written;
