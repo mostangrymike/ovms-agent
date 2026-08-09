@@ -688,6 +688,212 @@ void openai_tool_clear_cmd(const char *arguments)
     (void)puts("Tool and session transcript history cleared.");
 }
 
+
+static int openai_tx_is_result(const openai_transcript_rec *record)
+{
+    if (record == NULL) return 0;
+    return openai_tx_equal_ci(record->kind, "model_tool") &&
+           strncmp(record->arguments, "TOOL RESULT", 11U) == 0;
+}
+
+int openai_session_results_text(const char *arguments,
+                                char *output,
+                                size_t output_size)
+{
+    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    char session[9];
+    unsigned int count, index, shown;
+    size_t used;
+    int written;
+
+    if (output == NULL || output_size == 0U) return 0;
+    openai_tx_clean(arguments, session, sizeof(session));
+    if (strlen(session) != 8U) return 0;
+
+    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    written = snprintf(
+        output, output_size,
+        "OVMS Agent normalized session results\n"
+        "-------------------------------------\n"
+        "Session: %s\n", session);
+    if (written < 0 || (size_t)written >= output_size) return 0;
+
+    used = (size_t)written;
+    shown = 0U;
+
+    for (index = 0U; index < count; ++index) {
+        if (!openai_tx_equal_ci(records[index].session, session) ||
+            !openai_tx_is_result(&records[index])) continue;
+
+        ++shown;
+        written = snprintf(
+            output + used, output_size - used,
+            "%s tool=%s status=%s %s\n",
+            records[index].timestamp,
+            records[index].name,
+            records[index].status,
+            records[index].arguments);
+
+        if (written < 0 ||
+            (size_t)written >= output_size - used) return 0;
+        used += (size_t)written;
+    }
+
+    written = snprintf(
+        output + used, output_size - used,
+        "Results: %u\n", shown);
+
+    return written >= 0 &&
+           (size_t)written < output_size - used;
+}
+
+int openai_session_result_last(const char *arguments,
+                               char *output,
+                               size_t output_size)
+{
+    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    char session[9];
+    unsigned int count, index;
+    int written;
+
+    if (output == NULL || output_size == 0U) return 0;
+    openai_tx_clean(arguments, session, sizeof(session));
+    if (strlen(session) != 8U) return 0;
+
+    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+
+    for (index = count; index > 0U; --index) {
+        openai_transcript_rec *record = &records[index - 1U];
+
+        if (!openai_tx_equal_ci(record->session, session) ||
+            !openai_tx_is_result(record)) continue;
+
+        written = snprintf(
+            output, output_size,
+            "OVMS Agent last normalized result\n"
+            "---------------------------------\n"
+            "Session: %s\n"
+            "%s tool=%s status=%s\n"
+            "%s\n",
+            session,
+            record->timestamp,
+            record->name,
+            record->status,
+            record->arguments);
+
+        return written >= 0 &&
+               (size_t)written < output_size;
+    }
+
+    written = snprintf(
+        output, output_size,
+        "OVMS Agent last normalized result\n"
+        "---------------------------------\n"
+        "Session: %s\n"
+        "No normalized results found.\n",
+        session);
+
+    return written >= 0 &&
+           (size_t)written < output_size;
+}
+
+int openai_session_clear_results(const char *arguments)
+{
+    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    char session[9];
+    char temp_path[OPENAI_TRANSCRIPT_PATH_MAX];
+    unsigned int count, index, removed;
+    FILE *file;
+
+    openai_tx_clean(arguments, session, sizeof(session));
+    if (strlen(session) != 8U) return 0;
+
+    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+
+    if (snprintf(temp_path, sizeof(temp_path),
+                 "%s.M239", openai_transcript_path) < 0) return 0;
+
+    while (remove(temp_path) == 0) {
+    }
+
+    file = fopen(temp_path, "w");
+    if (file == NULL) return 0;
+
+    removed = 0U;
+
+    for (index = 0U; index < count; ++index) {
+        if (openai_tx_equal_ci(records[index].session, session) &&
+            openai_tx_is_result(&records[index])) {
+            ++removed;
+            continue;
+        }
+
+        if (fprintf(
+                file,
+                "%s|%s|%s|%s|%s|%s|%s|%s\n",
+                records[index].timestamp,
+                records[index].session,
+                records[index].kind,
+                records[index].name,
+                records[index].effect,
+                records[index].policy,
+                records[index].status,
+                records[index].arguments) < 0) {
+            (void)fclose(file);
+            (void)remove(temp_path);
+            return 0;
+        }
+    }
+
+    if (fclose(file) != 0) {
+        (void)remove(temp_path);
+        return 0;
+    }
+
+    while (remove(openai_transcript_path) == 0) {
+    }
+
+    if (rename(temp_path, openai_transcript_path) != 0) {
+        (void)remove(temp_path);
+        return 0;
+    }
+
+    return removed > 0U;
+}
+
+void openai_show_session_results(const char *arguments)
+{
+    char output[32768];
+
+    if (!openai_session_results_text(
+            arguments, output, sizeof(output))) {
+        (void)puts("Unable to show normalized session results.");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
+void openai_show_session_result(const char *arguments)
+{
+    char output[8192];
+
+    if (!openai_session_result_last(
+            arguments, output, sizeof(output))) {
+        (void)puts("Unable to show last normalized session result.");
+        return;
+    }
+    (void)fputs(output, stdout);
+}
+
+void openai_session_clear_res_cmd(const char *arguments)
+{
+    if (openai_session_clear_results(arguments)) {
+        (void)puts("Normalized session results cleared.");
+    } else {
+        (void)puts("No normalized session results were cleared.");
+    }
+}
+
 int openai_session_hist_text(const char *arguments,
                              char *output,
                              size_t output_size)

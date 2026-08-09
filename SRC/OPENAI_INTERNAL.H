@@ -764,4 +764,13 @@ char *openai_build_result(const char *output, int status);
 int openai_result_last_text(char *output, size_t output_size);
 void openai_show_result_last(void);
 
+int openai_session_results_text(const char *arguments,
+                                char *output, size_t output_size);
+int openai_session_result_last(const char *arguments,
+                               char *output, size_t output_size);
+int openai_session_clear_results(const char *arguments);
+void openai_show_session_results(const char *arguments);
+void openai_show_session_result(const char *arguments);
+void openai_session_clear_res_cmd(const char *arguments);
+
 #endif /* OPENAI_INTERNAL_H */

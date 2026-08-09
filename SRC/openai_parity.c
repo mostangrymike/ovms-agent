@@ -440,6 +440,8 @@ int openai_parity_text(char *output, size_t output_size)
         "Result persistence:     available\n"
         "Normalized build result: available\n"
         "Build evidence replay:  available\n"
+        "Session result history: available\n"
+        "Evidence preloading:    available\n"
         "MCP/tool servers:     not yet implemented\n"
         "Unix sandbox parity:  not applicable on OpenVMS\n"
     );

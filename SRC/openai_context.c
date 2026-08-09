@@ -5,6 +5,8 @@
 #define OPENAI_CONTEXT_HIST 32768U
 #define OPENAI_CONTEXT_TAIL 2400U
 #define OPENAI_CONTEXT_PARENT 1800U
+#define OPENAI_CONTEXT_RESULTS 1800U
+#define OPENAI_CONTEXT_PARENT_RES 1200U
 
 static int openai_context_append(char *output,
                                  size_t output_size,
@@ -73,6 +75,8 @@ int openai_context_build(const char *goal,
     char meta[OPENAI_CONTEXT_META];
     char history[OPENAI_CONTEXT_HIST];
     char parent_history[OPENAI_CONTEXT_HIST];
+    char results[OPENAI_CONTEXT_HIST];
+    char parent_results[OPENAI_CONTEXT_HIST];
     const char *tail;
     size_t used;
 
@@ -126,6 +130,20 @@ int openai_context_build(const char *goal,
         (void)openai_context_append(
             output, output_size, &used, tail
         );
+
+        if (openai_session_results_text(
+                parent, parent_results, sizeof(parent_results))) {
+            (void)openai_context_append(
+                output, output_size, &used,
+                "\nPARENT SESSION RECENT TOOL EVIDENCE\n"
+            );
+            tail = openai_context_tail(
+                parent_results, OPENAI_CONTEXT_PARENT_RES
+            );
+            (void)openai_context_append(
+                output, output_size, &used, tail
+            );
+        }
     }
 
     if (history[0] != '\0') {
@@ -135,6 +153,20 @@ int openai_context_build(const char *goal,
         );
         tail = openai_context_tail(
             history, OPENAI_CONTEXT_TAIL
+        );
+        (void)openai_context_append(
+            output, output_size, &used, tail
+        );
+    }
+
+    if (openai_session_results_text(
+            session, results, sizeof(results))) {
+        (void)openai_context_append(
+            output, output_size, &used,
+            "\nCURRENT SESSION RECENT TOOL EVIDENCE\n"
+        );
+        tail = openai_context_tail(
+            results, OPENAI_CONTEXT_RESULTS
         );
         (void)openai_context_append(
             output, output_size, &used, tail
@@ -158,6 +190,7 @@ int openai_context_current(char *output,
     char session[9];
     char meta[OPENAI_CONTEXT_META];
     char history[OPENAI_CONTEXT_HIST];
+    char results[OPENAI_CONTEXT_HIST];
     const char *tail;
     size_t used;
 
@@ -204,6 +237,20 @@ int openai_context_current(char *output,
         );
         tail = openai_context_tail(
             history, OPENAI_CONTEXT_TAIL
+        );
+        (void)openai_context_append(
+            output, output_size, &used, tail
+        );
+    }
+
+    if (openai_session_results_text(
+            session, results, sizeof(results))) {
+        (void)openai_context_append(
+            output, output_size, &used,
+            "\nRecent normalized tool evidence:\n"
+        );
+        tail = openai_context_tail(
+            results, OPENAI_CONTEXT_RESULTS
         );
         (void)openai_context_append(
             output, output_size, &used, tail

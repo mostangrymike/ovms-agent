@@ -173,6 +173,12 @@ void command_agent_session_current(
 
 void command_agent_session_hist(
     agent_state *state, const char *arguments);
+void command_agent_sess_results(
+    agent_state *state, const char *arguments);
+void command_agent_sess_result_last(
+    agent_state *state, const char *arguments);
+void command_agent_sess_res_clear(
+    agent_state *state, const char *arguments);
 void command_agent_session_export2(
     agent_state *state, const char *arguments);
 void command_agent_session_exec(
@@ -320,6 +326,9 @@ static const command_entry agent_commands[] = {
     { "AGENT/SESSION/DELETE", "Delete a persistent session", command_agent_session_delete },
     { "AGENT/SESSION/CURRENT", "Show the current persistent session", command_agent_session_current },
     { "AGENT/SESSION/HISTORY", "Show the persistent transcript for a session", command_agent_session_hist },
+    { "AGENT/SESSION/RESULTS", "Show normalized tool evidence for a session", command_agent_sess_results },
+    { "AGENT/SESSION/RESULTS/LAST", "Show the latest normalized tool result for a session", command_agent_sess_result_last },
+    { "AGENT/SESSION/RESULTS/CLEAR", "Clear normalized tool evidence for a session", command_agent_sess_res_clear },
     { "AGENT/SESSION/EXPORT", "Export one persistent session transcript", command_agent_session_export2 },
     { "AGENT/SESSION/EXEC", "Resume a session and execute a goal", command_agent_session_exec },
     { "AGENT/TOOL/RUN", "Run one approved built-in tool directly", command_agent_tool_run },
@@ -522,6 +531,21 @@ void command_agent_session_current(agent_state *state, const char *arguments)
 void command_agent_session_hist(agent_state *state, const char *arguments)
 {
     (void)state; openai_show_session_hist(arguments);
+}
+
+void command_agent_sess_results(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_session_results(arguments);
+}
+
+void command_agent_sess_result_last(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_session_result(arguments);
+}
+
+void command_agent_sess_res_clear(agent_state *state, const char *arguments)
+{
+    (void)state; openai_session_clear_res_cmd(arguments);
 }
 
 void command_agent_session_export2(agent_state *state, const char *arguments)
