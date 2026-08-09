@@ -583,6 +583,16 @@ int openai_tools_text(char *output, size_t output_size);
 int openai_tools_ext_text(char *output, size_t output_size);
 void openai_show_tools(void);
 void openai_show_tools_ext(void);
+int openai_lang_list_text(char *output, size_t output_size);
+int openai_lang_info_text(const char *arguments,
+                          char *output, size_t output_size);
+int openai_lang_detect_text(const char *path,
+                            char *output, size_t output_size);
+int openai_lang_policy_text(char *output, size_t output_size);
+void openai_show_langs(void);
+void openai_show_lang_info(const char *arguments);
+void openai_show_lang_detect(const char *path);
+void openai_show_lang_policy(void);
 int openai_tool_info_text(const char *arguments,
                           char *output, size_t output_size);
 void openai_show_tool_info(const char *arguments);

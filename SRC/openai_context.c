@@ -119,6 +119,7 @@ int openai_context_build(const char *goal,
     char parent_history[OPENAI_CONTEXT_HIST];
     char results[OPENAI_CONTEXT_HIST];
     char parent_results[OPENAI_CONTEXT_HIST];
+    char lang_policy[2048];
     const char *tail;
     size_t used;
 
@@ -131,6 +132,13 @@ int openai_context_build(const char *goal,
     used = 0U;
 
     if (!openai_session_current_id(session)) {
+        if (openai_lang_policy_text(
+                lang_policy, sizeof(lang_policy))) {
+            (void)openai_context_append(
+                output, output_size, &used, lang_policy);
+            (void)openai_context_append(
+                output, output_size, &used, "\nCURRENT REQUEST\n");
+        }
         return openai_context_append(
             output, output_size, &used, goal
         );
@@ -210,6 +218,15 @@ int openai_context_build(const char *goal,
         (void)openai_context_append(
             output, output_size, &used, results
         );
+    }
+
+    if (openai_lang_policy_text(
+            lang_policy, sizeof(lang_policy))) {
+        (void)openai_context_append(
+            output, output_size, &used,
+            "\nMULTILINGUAL LANGUAGE POLICY\n");
+        (void)openai_context_append(
+            output, output_size, &used, lang_policy);
     }
 
     (void)openai_context_append(

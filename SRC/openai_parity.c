@@ -1902,3 +1902,383 @@ int openai_mcp_result_text(const openai_mcp_result *result,
          result->detail[strlen(result->detail) - 1U] != '\n') ? "\n" : "");
     return written >= 0 && (size_t)written < output_size;
 }
+
+#define OPENAI_LANG_OUT_MAX 4096U
+
+typedef struct openai_lang_desc {
+    const char *name;
+    const char *aliases;
+    const char *extensions;
+    const char *compile_hint;
+    const char *comment_hint;
+    const char *notes;
+} openai_lang_desc;
+
+static const openai_lang_desc openai_langs[] = {
+    { "C", "c,dec-c,vsi-c", ".C,.H",
+      "CC source.C; LINK object",
+      "/* ... */ and // where supported by the selected C dialect",
+      "Preserve DEC/VSI C dialect, OpenVMS RTL usage, and the 31-character external-name constraint when targeting older DEC C/VAX toolchains." },
+    { "DCL", "dcl,command-procedure,com", ".COM",
+      "No compiler; execute a command procedure with @file.COM",
+      "$! comment",
+      "Treat DCL as an OpenVMS command language, not as a Unix shell. Preserve lexical functions, logical names, symbols, and OpenVMS file specifications." },
+    { "MACRO-32", "macro,macro32,mar", ".MAR",
+      "MACRO source.MAR; LINK object",
+      "; comment",
+      "Preserve VAX MACRO/MACRO-32 calling conventions, registers, psects, entry masks, condition values, and architecture assumptions." },
+    { "FORTRAN", "fortran,fortran77,fortran90,f77,f90", ".FOR,.F,.F90",
+      "FORTRAN source.FOR; LINK object",
+      "! comment; older fixed-form sources may use column-based comment conventions",
+      "Detect fixed-form versus free-form style before editing. Preserve continuation, column, COMMON, INCLUDE, record, and OpenVMS extension conventions already present." },
+    { "BASIC", "basic,vsi-basic,vax-basic", ".BAS",
+      "BASIC source.BAS; LINK object",
+      "! or REM, according to the source dialect",
+      "Preserve line labels, declarations, record/layout conventions, and OpenVMS BASIC extensions already used by the program." },
+    { "PASCAL", "pascal,vsi-pascal,vax-pascal", ".PAS",
+      "PASCAL source.PAS; LINK object",
+      "{ ... } or (* ... *)",
+      "Preserve module/program structure, declarations, OpenVMS attributes, and the source's existing Pascal dialect." },
+    { "COBOL", "cobol,vsi-cobol,vax-cobol", ".COB,.CBL",
+      "COBOL source.COB; LINK object",
+      "Fixed-format indicator comments or *> where supported by the source dialect",
+      "Preserve divisions, sections, paragraph names, fixed/free source format, record layouts, and OpenVMS COBOL extensions already present." },
+    { "BLISS", "bliss,bliss32,bli", ".BLI,.REQ",
+      "Use the installed BLISS compiler appropriate to the target architecture; LINK the resulting object",
+      "! comment",
+      "Preserve BLISS dialect, linkage declarations, OWN/GLOBAL/EXTERNAL storage, macros, REQUIRE files, and architecture-specific constructs. Compiler command names vary by BLISS family and platform." }
+};
+
+static int openai_lang_ci_equal(const char *left, const char *right)
+{
+    unsigned char a;
+    unsigned char b;
+
+    if (left == NULL || right == NULL) {
+        return 0;
+    }
+
+    while (*left != '\0' && *right != '\0') {
+        a = (unsigned char)*left++;
+        b = (unsigned char)*right++;
+        if (tolower((int)a) != tolower((int)b)) {
+            return 0;
+        }
+    }
+
+    return *left == '\0' && *right == '\0';
+}
+
+static int openai_lang_alias_has(const char *aliases, const char *name)
+{
+    const char *start;
+    const char *end;
+    size_t length;
+    char token[64];
+
+    if (aliases == NULL || name == NULL || *name == '\0') {
+        return 0;
+    }
+
+    start = aliases;
+    while (*start != '\0') {
+        end = start;
+        while (*end != '\0' && *end != ',') {
+            ++end;
+        }
+        length = (size_t)(end - start);
+        if (length > 0U && length < sizeof(token)) {
+            (void)memcpy(token, start, length);
+            token[length] = '\0';
+            if (openai_lang_ci_equal(token, name)) {
+                return 1;
+            }
+        }
+        start = (*end == ',') ? end + 1 : end;
+    }
+
+    return 0;
+}
+
+static const openai_lang_desc *openai_lang_by_name(const char *name)
+{
+    size_t index;
+
+    if (name == NULL || *name == '\0') {
+        return NULL;
+    }
+
+    for (index = 0U; index < sizeof(openai_langs) / sizeof(openai_langs[0]); ++index) {
+        if (openai_lang_ci_equal(openai_langs[index].name, name) ||
+            openai_lang_alias_has(openai_langs[index].aliases, name)) {
+            return &openai_langs[index];
+        }
+    }
+
+    return NULL;
+}
+
+static const char *openai_lang_file_ext(const char *path)
+{
+    const char *cursor;
+    const char *dot;
+    const char *semi;
+
+    if (path == NULL || *path == '\0') {
+        return NULL;
+    }
+
+    dot = NULL;
+    semi = NULL;
+    cursor = path;
+    while (*cursor != '\0') {
+        if (*cursor == '.') {
+            dot = cursor;
+        } else if (*cursor == ';') {
+            semi = cursor;
+        }
+        ++cursor;
+    }
+
+    if (dot == NULL) {
+        return NULL;
+    }
+    if (semi != NULL && semi < dot) {
+        return NULL;
+    }
+
+    return dot;
+}
+
+static int openai_lang_ext_has(const char *extensions, const char *ext)
+{
+    const char *start;
+    const char *end;
+    size_t length;
+    char token[16];
+    char clean[16];
+    const char *semi;
+    size_t clean_len;
+
+    if (extensions == NULL || ext == NULL) {
+        return 0;
+    }
+
+    semi = strchr(ext, ';');
+    clean_len = semi == NULL ? strlen(ext) : (size_t)(semi - ext);
+    if (clean_len == 0U || clean_len >= sizeof(clean)) {
+        return 0;
+    }
+    (void)memcpy(clean, ext, clean_len);
+    clean[clean_len] = '\0';
+
+    start = extensions;
+    while (*start != '\0') {
+        end = start;
+        while (*end != '\0' && *end != ',') {
+            ++end;
+        }
+        length = (size_t)(end - start);
+        if (length > 0U && length < sizeof(token)) {
+            (void)memcpy(token, start, length);
+            token[length] = '\0';
+            if (openai_lang_ci_equal(token, clean)) {
+                return 1;
+            }
+        }
+        start = (*end == ',') ? end + 1 : end;
+    }
+
+    return 0;
+}
+
+static const openai_lang_desc *openai_lang_by_path(const char *path)
+{
+    const char *ext;
+    size_t index;
+
+    ext = openai_lang_file_ext(path);
+    if (ext == NULL) {
+        return NULL;
+    }
+
+    for (index = 0U; index < sizeof(openai_langs) / sizeof(openai_langs[0]); ++index) {
+        if (openai_lang_ext_has(openai_langs[index].extensions, ext)) {
+            return &openai_langs[index];
+        }
+    }
+
+    return NULL;
+}
+
+static int openai_lang_write(char *output, size_t output_size,
+                             size_t *used, const char *text)
+{
+    size_t length;
+
+    if (output == NULL || output_size == 0U || used == NULL || text == NULL ||
+        *used >= output_size) {
+        return 0;
+    }
+
+    length = strlen(text);
+    if (length >= output_size - *used) {
+        length = output_size - *used - 1U;
+    }
+    if (length > 0U) {
+        (void)memcpy(output + *used, text, length);
+        *used += length;
+    }
+    output[*used] = '\0';
+    return 1;
+}
+
+int openai_lang_list_text(char *output, size_t output_size)
+{
+    size_t index;
+    size_t used;
+    char line[256];
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    used = 0U;
+    (void)openai_lang_write(output, output_size, &used,
+        "OVMS Agent language support\n"
+        "---------------------------\n"
+        "Language     Typical OpenVMS source types\n");
+
+    for (index = 0U; index < sizeof(openai_langs) / sizeof(openai_langs[0]); ++index) {
+        written = snprintf(line, sizeof(line), "%-12s %s\n",
+                           openai_langs[index].name,
+                           openai_langs[index].extensions);
+        if (written < 0) {
+            return 0;
+        }
+        (void)openai_lang_write(output, output_size, &used, line);
+    }
+
+    (void)openai_lang_write(output, output_size, &used,
+        "\nDetection is case-insensitive and accepts OpenVMS file-version suffixes such as ;1.\n"
+        "Compiler availability is not assumed; project build procedures remain authoritative.\n");
+    return 1;
+}
+
+int openai_lang_info_text(const char *arguments,
+                          char *output, size_t output_size)
+{
+    const openai_lang_desc *language;
+    size_t used;
+    char line[768];
+    int written;
+
+    if (arguments == NULL || *arguments == '\0' || output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    language = openai_lang_by_name(arguments);
+    if (language == NULL) {
+        language = openai_lang_by_path(arguments);
+    }
+    if (language == NULL) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    used = 0U;
+    written = snprintf(line, sizeof(line),
+        "Language: %s\nAliases: %s\nSource types: %s\nBuild hint: %s\nComments: %s\nGuidance: %s\n",
+        language->name, language->aliases, language->extensions,
+        language->compile_hint, language->comment_hint, language->notes);
+    if (written < 0) {
+        return 0;
+    }
+    (void)openai_lang_write(output, output_size, &used, line);
+    return 1;
+}
+
+int openai_lang_detect_text(const char *path,
+                            char *output, size_t output_size)
+{
+    const openai_lang_desc *language;
+    int written;
+
+    if (path == NULL || *path == '\0' || output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    language = openai_lang_by_path(path);
+    if (language == NULL) {
+        written = snprintf(output, output_size,
+                           "Language: unknown\nPath: %s\n",
+                           path);
+    } else {
+        written = snprintf(output, output_size,
+                           "Language: %s\nPath: %s\nBuild hint: %s\n",
+                           language->name, path, language->compile_hint);
+    }
+
+    return written >= 0 && (size_t)written < output_size;
+}
+
+int openai_lang_policy_text(char *output, size_t output_size)
+{
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    written = snprintf(output, output_size,
+        "OVMS AGENT MULTILINGUAL POLICY\n"
+        "Recognize and work natively with these historically important OpenVMS languages: "
+        "C, DCL, MACRO-32, Fortran, BASIC, Pascal, COBOL, and BLISS.\n"
+        "Infer language from source type and source syntax. Do not assume C syntax for non-C files. "
+        "Preserve the file's existing dialect, formatting model, comments, calling conventions, record/layout rules, and OpenVMS extensions. "
+        "For DCL use OpenVMS/DCL semantics, never Unix-shell assumptions. "
+        "For Fortran and COBOL detect fixed versus free source form before editing. "
+        "For MACRO-32 and BLISS preserve architecture and linkage assumptions. "
+        "Compiler availability varies by OpenVMS system and architecture; use the project's established build procedure when present and do not invent an installed compiler. "
+        "When C is involved on legacy DEC C/VAX targets, keep external linker-visible identifiers within 31 characters.\n");
+
+    return written >= 0 && (size_t)written < output_size;
+}
+
+void openai_show_langs(void)
+{
+    char output[OPENAI_LANG_OUT_MAX];
+    if (openai_lang_list_text(output, sizeof(output))) {
+        (void)puts(output);
+    }
+}
+
+void openai_show_lang_info(const char *arguments)
+{
+    char output[OPENAI_LANG_OUT_MAX];
+    if (!openai_lang_info_text(arguments, output, sizeof(output))) {
+        (void)puts("Usage: AGENT/LANG/INFO language-or-source-file");
+        return;
+    }
+    (void)puts(output);
+}
+
+void openai_show_lang_detect(const char *path)
+{
+    char output[OPENAI_LANG_OUT_MAX];
+    if (!openai_lang_detect_text(path, output, sizeof(output))) {
+        (void)puts("Usage: AGENT/LANG/DETECT source-file");
+        return;
+    }
+    (void)puts(output);
+}
+
+void openai_show_lang_policy(void)
+{
+    char output[OPENAI_LANG_OUT_MAX];
+    if (openai_lang_policy_text(output, sizeof(output))) {
+        (void)puts(output);
+    }
+}

@@ -161,6 +161,14 @@ void command_agent_parity_final(
     agent_state *state, const char *arguments);
 void command_agent_tools_ext(
     agent_state *state, const char *arguments);
+void command_agent_lang(
+    agent_state *state, const char *arguments);
+void command_agent_lang_info(
+    agent_state *state, const char *arguments);
+void command_agent_lang_detect(
+    agent_state *state, const char *arguments);
+void command_agent_lang_policy(
+    agent_state *state, const char *arguments);
 
 void command_agent_session_new(
     agent_state *state, const char *arguments);
@@ -320,6 +328,10 @@ static const command_entry agent_commands[] = {
     { "AGENT/EXECUTE", "Execute one validated saved-plan operation", command_agent_execute },
     { "AGENT/TOOLS", "List agent tools and safety classifications", command_agent_tools },
     { "AGENT/TOOLS/EXT", "List current built-in and external parity tools", command_agent_tools_ext },
+    { "AGENT/LANG", "List OpenVMS programming language support", command_agent_lang },
+    { "AGENT/LANG/INFO", "Show guidance for one OpenVMS programming language", command_agent_lang_info },
+    { "AGENT/LANG/DETECT", "Detect language from an OpenVMS source file name", command_agent_lang_detect },
+    { "AGENT/LANG/POLICY", "Show multilingual policy injected into agent context", command_agent_lang_policy },
     { "AGENT/TOOLS/INFO", "Show metadata for one agent tool", command_agent_tool_info },
     { "AGENT/MCP", "List configured MCP tool servers", command_agent_mcp },
     { "AGENT/MCP/INFO", "Show one configured MCP tool server", command_agent_mcp_info },
@@ -524,6 +536,26 @@ void command_agent_parity_final(agent_state *state, const char *arguments)
 void command_agent_tools_ext(agent_state *state, const char *arguments)
 {
     (void)state; (void)arguments; openai_show_tools_ext();
+}
+
+void command_agent_lang(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_langs();
+}
+
+void command_agent_lang_info(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_lang_info(arguments);
+}
+
+void command_agent_lang_detect(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_lang_detect(arguments);
+}
+
+void command_agent_lang_policy(agent_state *state, const char *arguments)
+{
+    (void)state; (void)arguments; openai_show_lang_policy();
 }
 
 void command_agent_session_new(agent_state *state, const char *arguments)
