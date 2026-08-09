@@ -1,4 +1,5 @@
 #include "openai_internal.h"
+#include "command_internal.h"
 
 /* Standalone regression link stubs. The full project option files pull in
    command handlers, but this test does not exercise interactive input. */
@@ -53,6 +54,12 @@ int main(void)
         !has_text(tools, "mcp_call") ||
         !has_text(tools, "approval=full")) {
         (void)puts("M248 failed: extended tool catalog.");
+        return 2;
+    }
+
+    if (command_find("AGENT/PARITY/FINAL") == NULL ||
+        command_find("AGENT/TOOLS/EXT") == NULL) {
+        (void)puts("M248 failed: live command registry.");
         return 2;
     }
 

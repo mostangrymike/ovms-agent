@@ -1730,6 +1730,18 @@ $     WRITE SYS$ERROR "Regression test COMMAND_GREP_TEST.EXE failed."
 $     GOTO FINISH
 $ ENDIF
 $
+$!-----------------------------------------------------------
+$! Publish the verified executable used by @OVMS_AGENT.
+$! Do this only after every regression has passed.
+$!-----------------------------------------------------------
+$ COPY/NOLOG [.BUILD]OVMS_AGENT.EXE []OVMS_AGENT.EXE
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$ERROR "Unable to publish OVMS_AGENT.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
 $ IF BUILD_QUIET
 $ THEN
 $     DEFINE/PROCESS/NOLOG SYS$OUTPUT 'SAVED_OUTPUT'
