@@ -43,6 +43,8 @@ int main(void)
     openai_test_reset_approval();
     if (!openai_github_text(output, sizeof(output)) ||
         !has(output, "AGENT/GITHUB/PUSH") ||
+        !has(output, "AGENT/GITHUB/CHECK") ||
+        !has(output, "SHARE") ||
         !has(output, "OVMS_AGENT_GITHUB_BRIDGE")) {
         (void)puts("M250 failed: GitHub catalog.");
         return 2;
@@ -51,6 +53,12 @@ int main(void)
                             output, sizeof(output)) ||
         !has(output, "Status: success")) {
         (void)puts("M250 failed: read-only Git status.");
+        return 2;
+    }
+    if (!openai_gh_run_text("check", "", mock_exec, NULL,
+                            output, sizeof(output)) ||
+        !has(output, "mock check")) {
+        (void)puts("M250 failed: GitHub preflight dispatch.");
         return 2;
     }
     if (!openai_gh_run_text("fetch", "origin", mock_exec, NULL,
@@ -112,6 +120,11 @@ int main(void)
     entry = command_find("AGENT/GITHUB");
     if (entry == NULL || entry->handler == NULL) {
         (void)puts("M250 failed: AGENT/GITHUB registration.");
+        return 2;
+    }
+    entry = command_find("AGENT/GITHUB/CHECK");
+    if (entry == NULL || entry->handler == NULL) {
+        (void)puts("M250 failed: AGENT/GITHUB/CHECK registration.");
         return 2;
     }
     entry = command_find("AGENT/GITHUB/PUSH");

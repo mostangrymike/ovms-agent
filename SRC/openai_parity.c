@@ -2317,6 +2317,8 @@ void openai_show_lang_policy(void)
 #define OPENAI_GH_RESP_FILE "OVMS_AGENT_GH_RESPONSE.TMP"
 #define OPENAI_GH_CMD_MAX 1024U
 #define OPENAI_GH_ARG_MAX 1024U
+#define OPENAI_GH_ENV_COM "OVMS_AGENT_GH_ENV.COM"
+#define OPENAI_GH_ENV_TMP "OVMS_AGENT_GH_ENV.TMP"
 
 static int openai_gh_no_newline(const char *text)
 {
@@ -2485,6 +2487,141 @@ static int openai_gh_bridge_target(const char *target)
     return 1;
 }
 
+
+static int openai_gh_has_word(const char *text, const char *word)
+{
+    const char *cursor;
+    size_t word_len;
+
+    if (text == NULL || word == NULL || *word == '\0') {
+        return 0;
+    }
+    word_len = strlen(word);
+    cursor = text;
+    while (*cursor != '\0') {
+        while (*cursor == ' ' || *cursor == '\t' || *cursor == ',') {
+            ++cursor;
+        }
+        if (strncmp(cursor, word, word_len) == 0 &&
+            (cursor[word_len] == '\0' || cursor[word_len] == ' ' ||
+             cursor[word_len] == '\t' || cursor[word_len] == ',' ||
+             cursor[word_len] == '\r' || cursor[word_len] == '\n')) {
+            return 1;
+        }
+        while (*cursor != '\0' && *cursor != ',' &&
+               *cursor != ' ' && *cursor != '\t' &&
+               *cursor != '\r' && *cursor != '\n') {
+            ++cursor;
+        }
+    }
+    return 0;
+}
+
+static int openai_gh_env_probe(char *result, size_t result_size)
+{
+    FILE *file;
+    char line[512];
+    char priv[1024];
+    char parse[64];
+    char arch[64];
+    int written;
+    int status;
+    int have_share;
+    int have_parse;
+    int parse_needed;
+
+    if (result == NULL || result_size == 0U) {
+        return 0;
+    }
+    result[0] = '\0';
+    priv[0] = '\0';
+    parse[0] = '\0';
+    arch[0] = '\0';
+
+    file = fopen(OPENAI_GH_ENV_COM, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    if (fputs("$ ON ERROR THEN GOTO DONE\n", file) == EOF ||
+        fputs("$ OPEN/WRITE GHOUT OVMS_AGENT_GH_ENV.TMP\n", file) == EOF ||
+        fputs("$ P = F$GETJPI(\"\",\"CURPRIV\")\n", file) == EOF ||
+        fputs("$ A = F$GETSYI(\"ARCH_NAME\")\n", file) == EOF ||
+        fputs("$ WRITE GHOUT \"CURPRIV=''P'\"\n", file) == EOF ||
+        fputs("$ WRITE GHOUT \"ARCH=''A'\"\n", file) == EOF ||
+        fputs("$ IF A .EQS. \"VAX\" THEN GOTO DONE\n", file) == EOF ||
+        fputs("$ S = F$GETJPI(\"\",\"PARSE_STYLE_PERM\")\n", file) == EOF ||
+        fputs("$ WRITE GHOUT \"PARSE=''S'\"\n", file) == EOF ||
+        fputs("$ DONE:\n", file) == EOF ||
+        fputs("$ IF F$TRNLNM(\"GHOUT\") .NES. \"\" THEN CLOSE GHOUT\n", file) == EOF ||
+        fputs("$ EXIT 1\n", file) == EOF ||
+        fclose(file) != 0) {
+        (void)remove(OPENAI_GH_ENV_COM);
+        return 0;
+    }
+
+    (void)remove(OPENAI_GH_ENV_TMP);
+    status = system("@OVMS_AGENT_GH_ENV.COM");
+    (void)remove(OPENAI_GH_ENV_COM);
+    if ((status & 1) == 0) {
+        (void)remove(OPENAI_GH_ENV_TMP);
+        return 0;
+    }
+    file = fopen(OPENAI_GH_ENV_TMP, "r");
+    if (file == NULL) {
+        return 0;
+    }
+    while (fgets(line, sizeof(line), file) != NULL) {
+        size_t length;
+        char *value;
+
+        length = strlen(line);
+        while (length > 0U &&
+               (line[length - 1U] == '\r' || line[length - 1U] == '\n')) {
+            line[--length] = '\0';
+        }
+        if (strncmp(line, "CURPRIV=", 8) == 0) {
+            value = line + 8;
+            (void)snprintf(priv, sizeof(priv), "%s", value);
+        } else if (strncmp(line, "PARSE=", 6) == 0) {
+            value = line + 6;
+            (void)snprintf(parse, sizeof(parse), "%s", value);
+        } else if (strncmp(line, "ARCH=", 5) == 0) {
+            value = line + 5;
+            (void)snprintf(arch, sizeof(arch), "%s", value);
+        }
+    }
+    (void)fclose(file);
+    (void)remove(OPENAI_GH_ENV_TMP);
+
+    have_share = openai_gh_has_word(priv, "SHARE");
+    parse_needed = strcmp(arch, "VAX") != 0;
+    have_parse = !parse_needed || strcmp(parse, "EXTENDED") == 0;
+
+    if (have_share && have_parse) {
+        written = snprintf(result, result_size,
+            "OpenVMS Git network preflight: ready.\n"
+            "SHARE privilege: enabled\n"
+            "DCL parse style: %s\n",
+            parse_needed ? "EXTENDED" : "not applicable on VAX");
+        return written >= 0 && (size_t)written < result_size;
+    }
+
+    written = snprintf(result, result_size,
+        "GitHub network operation refused by OpenVMS preflight.\n"
+        "SHARE privilege: %s\n"
+        "DCL parse style: %s\n"
+        "%s%s"
+        "Then retry the GitHub operation.\n",
+        have_share ? "enabled" : "NOT enabled",
+        parse_needed ? (have_parse ? "EXTENDED" : "NOT EXTENDED") :
+                       "not applicable on VAX",
+        have_share ? "" :
+          "At DCL run: $ SET PROCESS/PRIVILEGE=SHARE\n",
+        (!parse_needed || have_parse) ? "" :
+          "At DCL run: $ SET PROCESS/PARSE_STYLE=EXTENDED\n");
+    return written < 0 || (size_t)written >= result_size ? 0 : -1;
+}
+
 static int openai_gh_bridge_exec(const char *operation,
                                  const char *arguments,
                                  char *result, size_t result_size)
@@ -2565,6 +2702,18 @@ static int openai_gh_prod_exec(const char *operation,
         return 0;
     }
     command[0] = '\0';
+    if (strcmp(operation, "check") == 0) {
+        status = openai_gh_env_probe(result, result_size);
+        return status > 0;
+    }
+    if (strcmp(operation, "fetch") == 0 || strcmp(operation, "pull") == 0 ||
+        strcmp(operation, "push") == 0 || strcmp(operation, "clone") == 0) {
+        status = openai_gh_env_probe(result, result_size);
+        if (status <= 0) {
+            return 0;
+        }
+        result[0] = '\0';
+    }
     if (strcmp(operation, "status") == 0) {
         written = snprintf(command, sizeof(command), "GIT \"status\" \"--short\"");
     } else if (strcmp(operation, "remote") == 0) {
@@ -2639,6 +2788,7 @@ int openai_github_text(char *output, size_t output_size)
         "-----------------------------\n"
         "AGENT/GITHUB/STATUS                local read\n"
         "AGENT/GITHUB/REMOTE                local read\n"
+        "AGENT/GITHUB/CHECK                 check OpenVMS Git network prerequisites\n"
         "AGENT/GITHUB/FETCH [remote [ref]] workspace approval\n"
         "AGENT/GITHUB/PULL remote branch    workspace approval\n"
         "AGENT/GITHUB/PUSH remote branch    FULL approval\n"
@@ -2647,6 +2797,8 @@ int openai_github_text(char *output, size_t output_size)
         "AGENT/GITHUB/PR operation...       FULL approval + bridge\n"
         "\n"
         "Git transport uses the installed OpenVMS Git command.\n"
+        "Native network Git requires SHARE and EXTENDED DCL parsing on non-VAX systems.\n"
+        "Use AGENT/GITHUB/CHECK before FETCH, PULL, PUSH, or CLONE.\n"
         "Credentials remain Git's responsibility and are never embedded in DCL.\n"
         "Issue/PR service operations use OVMS_AGENT_GITHUB_BRIDGE.\n"
         "Only github.com HTTPS or SSH clone URLs are accepted by the native clone path.\n");
@@ -2674,7 +2826,8 @@ int openai_gh_run_text(const char *operation,
     if (strcmp(operation, "help") == 0) {
         return openai_github_text(output, output_size);
     }
-    if (strcmp(operation, "status") == 0 || strcmp(operation, "remote") == 0) {
+    if (strcmp(operation, "status") == 0 || strcmp(operation, "remote") == 0 ||
+        strcmp(operation, "check") == 0) {
         if (*args != '\0') {
             return 0;
         }
@@ -2726,8 +2879,12 @@ int openai_gh_run_text(const char *operation,
     }
     result[0] = '\0';
     if (!executor(operation, args, result, sizeof(result), context)) {
-        written = snprintf(output, output_size,
-            "GitHub operation failed or was refused: %s\n", operation);
+        if (result[0] != '\0') {
+            written = snprintf(output, output_size, "%s", result);
+        } else {
+            written = snprintf(output, output_size,
+                "GitHub operation failed or was refused: %s\n", operation);
+        }
         return written >= 0 && (size_t)written < output_size;
     }
     written = snprintf(output, output_size,

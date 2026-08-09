@@ -175,6 +175,8 @@ void command_agent_gh_status(
     agent_state *state, const char *arguments);
 void command_agent_gh_remote(
     agent_state *state, const char *arguments);
+void command_agent_gh_check(
+    agent_state *state, const char *arguments);
 void command_agent_gh_fetch(
     agent_state *state, const char *arguments);
 void command_agent_gh_pull(
@@ -353,6 +355,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/GITHUB", "Show guarded GitHub integration and policy", command_agent_github },
     { "AGENT/GITHUB/STATUS", "Show local Git working-tree status", command_agent_gh_status },
     { "AGENT/GITHUB/REMOTE", "Show configured Git remotes", command_agent_gh_remote },
+    { "AGENT/GITHUB/CHECK", "Check OpenVMS Git network prerequisites", command_agent_gh_check },
     { "AGENT/GITHUB/FETCH", "Fetch from a GitHub remote", command_agent_gh_fetch },
     { "AGENT/GITHUB/PULL", "Pull from a GitHub remote and branch", command_agent_gh_pull },
     { "AGENT/GITHUB/PUSH", "Push to a GitHub remote and branch", command_agent_gh_push },
@@ -598,6 +601,11 @@ void command_agent_gh_status(agent_state *state, const char *arguments)
 void command_agent_gh_remote(agent_state *state, const char *arguments)
 {
     (void)state; openai_show_github("remote", arguments);
+}
+
+void command_agent_gh_check(agent_state *state, const char *arguments)
+{
+    (void)state; openai_show_github("check", arguments);
 }
 
 void command_agent_gh_fetch(agent_state *state, const char *arguments)
