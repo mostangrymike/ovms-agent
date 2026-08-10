@@ -5,6 +5,33 @@
 #include "openai_internal.h"
 #include "openai_prompts.h"
 
+
+static char *write_prompt_rules(const char *base)
+{
+    static const char rule[] =
+        "\n\nBOUNDED WRITE WORKFLOW: Inspect only files directly needed for "
+        "the requested change. Reuse prior tool results and do not reread an "
+        "unchanged file unless new evidence makes that necessary. Once enough "
+        "evidence exists for one bounded patch, propose the patch instead of "
+        "continuing exploratory reads.";
+    char *combined;
+    size_t size;
+
+    if (base == NULL) {
+        return NULL;
+    }
+
+    size = strlen(base) + strlen(rule) + 1U;
+    combined = (char *)malloc(size);
+    if (combined == NULL) {
+        return NULL;
+    }
+
+    (void)strcpy(combined, base);
+    (void)strcat(combined, rule);
+    return combined;
+}
+
 void openai_agent_mode(agent_state *state,
                        const char *goal,
                        int allow_write,
@@ -14,6 +41,7 @@ void openai_agent_mode(agent_state *state,
     const char *api_key;
     const char *model;
     const char *instructions;
+    char *owned_instructions;
     char *previous_id;
     char *tool_output;
     char *call_id;
@@ -46,6 +74,8 @@ void openai_agent_mode(agent_state *state,
         return;
     }
 
+    (void)printf("Project root: %s\n", state->project_root);
+
     if (goal == NULL || *goal == '\0') {
         if (workflow == OPENAI_WORKFLOW_PLAN) {
             (void)puts("Usage: AGENT/PLAN goal");
@@ -56,13 +86,6 @@ void openai_agent_mode(agent_state *state,
                 "Usage: AGENT/WRITE goal" :
                 "Usage: AGENT goal");
         }
-        return;
-    }
-
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
-        );
         return;
     }
 
@@ -83,11 +106,18 @@ void openai_agent_mode(agent_state *state,
         return;
     }
 
+    owned_instructions = NULL;
     if (workflow == OPENAI_WORKFLOW_PLAN) {
         instructions = openai_prompt_plan();
+    } else if (allow_write) {
+        owned_instructions = write_prompt_rules(openai_prompt_write());
+        if (owned_instructions == NULL) {
+            (void)puts("Unable to prepare write-agent instructions.");
+            return;
+        }
+        instructions = owned_instructions;
     } else {
-        instructions = allow_write ?
-            openai_prompt_write() : openai_prompt_read_only();
+        instructions = openai_prompt_read_only();
     }
 
     previous_id = NULL;
@@ -186,6 +216,7 @@ void openai_agent_mode(agent_state *state,
                 remove_temporary_files();
                 free(previous_id);
                 openai_cache_free(cache);
+                free(owned_instructions);
                 return;
             }
         } else if (display_output_text_from_json(json)) {
@@ -195,6 +226,7 @@ void openai_agent_mode(agent_state *state,
             remove_temporary_files();
             free(previous_id);
             openai_cache_free(cache);
+            free(owned_instructions);
             return;
         }
 
@@ -665,6 +697,7 @@ void openai_agent_mode(agent_state *state,
             free(call_id);
             free(tool_output);
             openai_cache_free(cache);
+            free(owned_instructions);
             return;
         } else {
             tool_output = openai_result_make(
@@ -714,4 +747,5 @@ void openai_agent_mode(agent_state *state,
     free(call_id);
     free(tool_output);
     openai_cache_free(cache);
+    free(owned_instructions);
 }

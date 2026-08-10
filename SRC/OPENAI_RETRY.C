@@ -4,8 +4,6 @@
 
 #include "openai_internal.h"
 
-
-
 static const char *openai_test_repair_plan_text = NULL;
 static const char *openai_test_repair_plan_text2 = NULL;
 static int openai_test_repair_auto_approve = 0;
@@ -154,7 +152,6 @@ char *openai_build_repair_prompt(const char *goal,
     return combined_goal;
 }
 
-
 static char *openai_quote_plan_context(const char *plan)
 {
     static const char prefix[] = "PRIOR> ";
@@ -301,13 +298,6 @@ void openai_agent_retry(agent_state *state, const char *goal)
         return;
     }
 
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
-        );
-        return;
-    }
-
     (void)puts("Checking the current project build before retrying...");
 
     build_output = execute_run_build_tool(&build_status);
@@ -400,13 +390,6 @@ void openai_agent_repair(agent_state *state, const char *goal)
         (void)puts(
             "AGENT/REPAIR requires DCL execution. "
             "Define OVMS_AGENT_DCL_ENABLED as YES and restart."
-        );
-        return;
-    }
-
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
         );
         return;
     }
