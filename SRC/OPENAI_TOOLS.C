@@ -844,6 +844,24 @@ openai_create_result execute_create_file_tool(
 
     content_length = strlen(content);
 
+    if (content_length == 0U) {
+        (void)puts(
+            "Proposed file content is empty; creation rejected."
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    if (strstr(content, "```") != NULL) {
+        (void)puts(
+            "Proposed file contains a Markdown code fence; creation rejected."
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
     if (content_length > OPENAI_CREATE_MAX_BYTES) {
         (void)printf(
             "Proposed file is too large (%lu bytes; limit %u).\n",
@@ -1614,4 +1632,3 @@ int openai_restore_previous_version(const char *path)
     );
     return 1;
 }
-
