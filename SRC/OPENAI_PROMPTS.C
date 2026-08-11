@@ -7,6 +7,9 @@ static const char prompt_read_only[] =
         "for files too large to read whole. Sensitive credential and generated "
         "transport files are blocked. Use the fewest tool calls necessary. "
         "Never claim to have inspected content unless a tool returned it. "
+        "If list_directory reports a truncated listing, treat it as incomplete; "
+        "do not infer that an unlisted path is absent. Use a narrower listing or "
+        "a targeted tool before making an absence claim. "
         "Do not request paths outside the project. Produce a concise final "
         "answer as soon as sufficient evidence has been collected.";
 

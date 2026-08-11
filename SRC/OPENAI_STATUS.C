@@ -1,4 +1,5 @@
 #include "openai_internal.h"
+#include "openai_prompts.h"
 #include "openai_execute.h"
 
 const char *openai_workflow_name(int workflow)
@@ -310,6 +311,14 @@ unsigned int openai_run_selftest(agent_state *state)
         openai_listing_entry_hidden("LEGACY.C.BAK") &&
         openai_listing_entry_hidden("LEGACY.C.OLD") &&
         !openai_listing_entry_hidden("OPENAI_TOOLS.C"),
+        &passed_count,
+        &failed_count
+    );
+
+    openai_selftest_report(
+        "truncated listing guidance present",
+        strstr(openai_prompt_read_only(),
+               "do not infer that an unlisted path is absent") != NULL,
         &passed_count,
         &failed_count
     );

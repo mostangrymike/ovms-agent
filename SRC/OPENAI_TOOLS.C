@@ -693,7 +693,7 @@ char *execute_list_directory_tool(const char *arguments,
             (size_t)written >= OPENAI_LIST_OUTPUT_LIMIT - used) {
             (void)snprintf(output + used,
                            OPENAI_LIST_OUTPUT_LIMIT - used,
-                           "[directory listing truncated]\n");
+                           "[directory listing truncated; incomplete result]\n");
             break;
         }
 
