@@ -395,6 +395,35 @@ $     GOTO FINISH
 $ ENDIF
 $
 $!-----------------------------------------------------------
+$! Build M251 user-directed repair regression.
+$! Link only OPENAI_RETRY.OBJ plus local stubs so MAIN.OBJ is not required.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M251_REPAIR_GOAL_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M251_REPAIR_GOAL_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M251_REPAIR_GOAL_TEST.EXE -
+[.BUILD]M251_REPAIR_GOAL_TEST.OBJ, -
+[.BUILD]OPENAI_RETRY.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M251_REPAIR_GOAL_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M251_REPAIR_GOAL_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Regression test M251_REPAIR_GOAL_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build M210 persistent repair observability test.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M210_REPAIR_STATE_TEST.OBJ -
