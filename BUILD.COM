@@ -119,6 +119,16 @@ $ CC/OBJECT=[.BUILD]UTIL.OBJ -
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
 $!-----------------------------------------------------------
+$! Build shared OpenAI path helper module.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]OPENAI_PATH.OBJ -
+  /STANDARD=C99 -
+  /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+  /INCLUDE_DIRECTORY=([.SRC]) -
+  [.SRC]OPENAI_PATH.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$!-----------------------------------------------------------
 $! Copy linker options files into BUILD.
 $!-----------------------------------------------------------
 $ COPY/NOLOG COMMAND_MODULES.OPT [.BUILD]COMMAND_MODULES.OPT

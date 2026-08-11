@@ -218,8 +218,7 @@ void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,
                         int continue_conversation);
-int openai_contains_ignore_case(const char *text,
-                                       const char *pattern);
+#include "openai_path.h"
 char *openai_read_text_file(const char *path);
 char *make_tool_error(const char *message,
                              const char *path);
