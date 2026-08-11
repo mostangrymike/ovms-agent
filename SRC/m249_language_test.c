@@ -97,7 +97,13 @@ int main(void)
         !has(output, "MMS/MMK") ||
         !has(output, "DESCRIP.MMS is authoritative") ||
         !has(output, "MMS suffix rules") ||
-        !has(output, "project-demonstrated syntax")) {
+        !has(output, "project-demonstrated syntax") ||
+        !has(output, "OpenVMS networking") ||
+        !has(output, "socket descriptor") ||
+        !has(output, "OpenVMS I/O channel") ||
+        !has(output, "interchangeable") ||
+        !has(output, "socket or channel handoff") ||
+        !has(output, "working interface")) {
         (void)puts("M249 failed: agent language policy.");
         return 2;
     }

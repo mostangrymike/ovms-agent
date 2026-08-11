@@ -2277,6 +2277,9 @@ int openai_lang_policy_text(char *output, size_t output_size)
         "Before proposing build changes, inspect the existing BUILD.COM, DESCRIP.MMS, or other build definition. "
         "Do not assume MMS/MMK is installed or DESCRIP.MMS is authoritative. "
         "Do not invent MMS suffix rules from generic make syntax; use project-demonstrated syntax or mark it unverified. "
+        "For OpenVMS networking, inspect the target project's working headers, libraries, build commands, and network calls before identifying the TCP/IP stack or API. "
+        "Distinguish a C run-time socket descriptor from an OpenVMS I/O channel; do not treat them as interchangeable without project evidence. "
+        "Do not invent a socket or channel handoff across COBOL/C boundaries; preserve the ownership and argument-passing pattern demonstrated by a working interface. "
         "Compiler availability varies by OpenVMS system and architecture; use the project's established build procedure when present and do not invent an installed compiler. "
         "When C is involved on legacy DEC C/VAX targets, keep external linker-visible identifiers within 31 characters.\n");
 
