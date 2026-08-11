@@ -301,6 +301,19 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
+    openai_selftest_report(
+        "backup listing entries hidden",
+        openai_listing_entry_hidden(
+            "OPENAI_TOOLS.C_M251_14_BACKUP") &&
+        openai_listing_entry_hidden(
+            "OPENAI_STATUS_BEFORE_M96_REPAIR.C") &&
+        openai_listing_entry_hidden("LEGACY.C.BAK") &&
+        openai_listing_entry_hidden("LEGACY.C.OLD") &&
+        !openai_listing_entry_hidden("OPENAI_TOOLS.C"),
+        &passed_count,
+        &failed_count
+    );
+
     read_descriptor = openai_tool_find("read_file");
     replace_descriptor = openai_tool_find("replace_text");
     build_descriptor = openai_tool_find("run_build");
