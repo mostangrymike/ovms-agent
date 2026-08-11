@@ -2274,6 +2274,9 @@ int openai_lang_policy_text(char *output, size_t output_size)
         "Do not substitute RETURNING for GIVING unless the target compiler has demonstrated support, and do not copy C BY VALUE conventions onto COBOL-to-COBOL calls without evidence. "
         "Preserve an established project status convention, including OpenVMS odd/even success semantics when the project uses it, rather than inventing status bit layouts. "
         "For MACRO-32 and BLISS preserve architecture and linkage assumptions. "
+        "Before proposing build changes, inspect the existing BUILD.COM, DESCRIP.MMS, or other build definition. "
+        "Do not assume MMS/MMK is installed or DESCRIP.MMS is authoritative. "
+        "Do not invent MMS suffix rules from generic make syntax; use project-demonstrated syntax or mark it unverified. "
         "Compiler availability varies by OpenVMS system and architecture; use the project's established build procedure when present and do not invent an installed compiler. "
         "When C is involved on legacy DEC C/VAX targets, keep external linker-visible identifiers within 31 characters.\n");
 

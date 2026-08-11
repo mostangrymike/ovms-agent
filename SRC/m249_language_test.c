@@ -92,7 +92,12 @@ int main(void)
         !has(output, "BY VALUE PIC S9(9) COMP") ||
         !has(output, "BY REFERENCE PIC S9(9) COMP") ||
         !has(output, "RETURNING for GIVING") ||
-        !has(output, "COBOL-to-COBOL")) {
+        !has(output, "COBOL-to-COBOL") ||
+        !has(output, "existing BUILD.COM") ||
+        !has(output, "MMS/MMK") ||
+        !has(output, "DESCRIP.MMS is authoritative") ||
+        !has(output, "MMS suffix rules") ||
+        !has(output, "project-demonstrated syntax")) {
         (void)puts("M249 failed: agent language policy.");
         return 2;
     }
