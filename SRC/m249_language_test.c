@@ -86,7 +86,13 @@ int main(void)
 
     if (!openai_lang_policy_text(output, sizeof(output)) ||
         !has(output, "Do not assume C syntax") ||
-        !has(output, "31 characters")) {
+        !has(output, "31 characters") ||
+        !has(output, "COBOL/C interoperability") ||
+        !has(output, "CALL ... GIVING PIC S9(9) COMP") ||
+        !has(output, "BY VALUE PIC S9(9) COMP") ||
+        !has(output, "BY REFERENCE PIC S9(9) COMP") ||
+        !has(output, "RETURNING for GIVING") ||
+        !has(output, "COBOL-to-COBOL")) {
         (void)puts("M249 failed: agent language policy.");
         return 2;
     }

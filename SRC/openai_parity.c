@@ -2269,6 +2269,10 @@ int openai_lang_policy_text(char *output, size_t output_size)
         "Preserve the file's existing dialect, formatting model, comments, calling conventions, record/layout rules, and OpenVMS extensions. "
         "For DCL use OpenVMS/DCL semantics, never Unix-shell assumptions. "
         "For Fortran and COBOL detect fixed versus free source form before editing. "
+        "For COBOL/C interoperability, inspect the target compiler dialect and existing working CALL interfaces before choosing GIVING versus RETURNING or BY VALUE versus BY REFERENCE. "
+        "On the verified VSI X86VMS COBOL interface, a C int32_t function result is received with CALL ... GIVING PIC S9(9) COMP; int32_t scalar inputs use BY VALUE PIC S9(9) COMP; int32_t pointer outputs use BY REFERENCE PIC S9(9) COMP; and char buffers use PIC X(n) BY REFERENCE. "
+        "Do not substitute RETURNING for GIVING unless the target compiler has demonstrated support, and do not copy C BY VALUE conventions onto COBOL-to-COBOL calls without evidence. "
+        "Preserve an established project status convention, including OpenVMS odd/even success semantics when the project uses it, rather than inventing status bit layouts. "
         "For MACRO-32 and BLISS preserve architecture and linkage assumptions. "
         "Compiler availability varies by OpenVMS system and architecture; use the project's established build procedure when present and do not invent an installed compiler. "
         "When C is involved on legacy DEC C/VAX targets, keep external linker-visible identifiers within 31 characters.\n");
