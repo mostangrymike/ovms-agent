@@ -346,14 +346,14 @@ unsigned int openai_run_selftest(agent_state *state)
 
     openai_cache_init(test_cache);
     openai_selftest_report(
-        "cache store and lookup",
+        "case-insensitive cache lookup",
         openai_cache_store(
             test_cache,
             "SRC/SELFTEST.C",
             "cached self-test text") &&
         (cached_text = openai_cache_lookup(
             test_cache,
-            "SRC/SELFTEST.C")) != NULL &&
+            "src/selftest.c")) != NULL &&
         strcmp(cached_text, "cached self-test text") == 0,
         &passed_count,
         &failed_count
@@ -454,6 +454,59 @@ unsigned int openai_run_selftest(agent_state *state)
 
         free(range_output);
         free(range_path);
+    }
+
+    {
+        const char *large_path;
+        FILE *large_file;
+        unsigned long count;
+        openai_file_cache_entry large_cache[OPENAI_AGENT_CACHE_SIZE];
+        char *large_output;
+        char *large_display;
+        int large_cache_hit;
+        int large_created;
+
+        large_path = "M251_14_LARGE.TMP";
+        large_file = fopen(large_path, "w");
+        large_created = large_file != NULL;
+        if (large_file != NULL) {
+            for (count = 0UL; count < 65537UL; ++count) {
+                if (fputc('X', large_file) == EOF) {
+                    large_created = 0;
+                    break;
+                }
+            }
+            if (fclose(large_file) != 0) {
+                large_created = 0;
+            }
+        }
+
+        openai_cache_init(large_cache);
+        large_display = NULL;
+        large_cache_hit = 0;
+        large_output = large_created ?
+            execute_read_file_tool(
+                "{\"path\":\"M251_14_LARGE.TMP\"}",
+                large_cache,
+                &large_cache_hit,
+                &large_display
+            ) : NULL;
+
+        openai_selftest_report(
+            "oversized read suggests ranged fallback",
+            large_output != NULL &&
+            strstr(large_output, "Whole-file read exceeds 65536 bytes") != NULL &&
+            strstr(large_output, "search_file") != NULL &&
+            strstr(large_output, "read_file_range") != NULL &&
+            large_cache_hit == 0,
+            &passed_count,
+            &failed_count
+        );
+
+        free(large_output);
+        free(large_display);
+        openai_cache_free(large_cache);
+        (void)remove(large_path);
     }
 
     build_file = fopen("BUILD.COM", "r");

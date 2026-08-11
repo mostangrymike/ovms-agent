@@ -283,7 +283,8 @@ const char *openai_cache_lookup(
 
     for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
         if (cache[index].path != NULL &&
-            strcmp(cache[index].path, path) == 0) {
+            strlen(cache[index].path) == strlen(path) &&
+            openai_contains_ignore_case(cache[index].path, path)) {
             return cache[index].content;
         }
     }
@@ -531,6 +532,34 @@ char *execute_read_file_tool(
         output = openai_duplicate_text(cached);
         free(path);
         return output;
+    }
+
+    {
+        FILE *probe;
+        long length;
+
+        probe = fopen(path, "r");
+        length = -1L;
+        if (probe != NULL) {
+            if (fseek(probe, 0L, SEEK_END) == 0) {
+                length = ftell(probe);
+            }
+            (void)fclose(probe);
+        }
+
+        if (length > 65536L) {
+            output = make_tool_error(
+                "Whole-file read exceeds 65536 bytes; use search_file "
+                "to locate relevant lines, then read_file_range; do not "
+                "retry read_file for this path",
+                path
+            );
+            if (output != NULL) {
+                (void)openai_cache_store(cache, path, output);
+            }
+            free(path);
+            return output;
+        }
     }
 
     output = openai_read_text_file(path);
