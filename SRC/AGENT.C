@@ -36,6 +36,11 @@ static int agent_value_is_true(const char *value)
            strcmp(normalized, "ON") == 0;
 }
 
+int agent_api_key_present(const char *api_key)
+{
+    return api_key != NULL && *api_key != '\0';
+}
+
 int agent_root_matches(const char *root)
 {
     char current[OVMS_AGENT_ROOT_SIZE];
@@ -89,7 +94,7 @@ int agent_initialize(agent_state *state)
     write_enabled = getenv("OVMS_AGENT_WRITE_ENABLED");
 
     state->api_key_defined =
-        api_key != NULL && *api_key != '\0';
+        agent_api_key_present(api_key);
     state->write_enabled = agent_value_is_true(write_enabled);
     state->dcl_enabled = agent_value_is_true(dcl_enabled);
 
@@ -131,7 +136,20 @@ int agent_initialize(agent_state *state)
 
     (void)puts("OVMS Agent");
     (void)puts("Native agentic programming assistant for OpenVMS");
-    (void)printf("Version %s\n\n", OVMS_AGENT_VERSION);
+    (void)printf("Version %s\n", OVMS_AGENT_VERSION);
+
+    if (state->api_key_defined) {
+        (void)puts("OpenAI API: configured.\n");
+    } else {
+        (void)puts("OpenAI API: not configured.");
+        (void)puts("OPENAI_API_KEY is not defined in this process.");
+        (void)puts(
+            "AI-backed commands are unavailable; local commands remain usable."
+        );
+        (void)puts(
+            "Define OPENAI_API_KEY before starting OVMS Agent, then restart.\n"
+        );
+    }
 
     return 1;
 }

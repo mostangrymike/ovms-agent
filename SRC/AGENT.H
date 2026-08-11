@@ -14,6 +14,7 @@ typedef struct agent_state {
     int dcl_enabled;
 } agent_state;
 
+int agent_api_key_present(const char *api_key);
 int agent_root_matches(const char *root);
 int agent_initialize(agent_state *state);
 void agent_shutdown(agent_state *state);
