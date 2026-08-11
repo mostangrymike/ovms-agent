@@ -200,6 +200,66 @@ int write_agent_request_mode(const char *model,
     return 1;
 }
 
+
+int write_agent_final_request(
+    const char *model,
+    const char *previous_id,
+    const char *call_id,
+    const char *tool_output)
+{
+    static const char instructions[] =
+        "Produce the final answer now using only the evidence already gathered. "
+        "Do not request, propose, or describe additional tool calls. "
+        "State any remaining uncertainty explicitly. Do not claim to have "
+        "inspected or changed anything not present in the supplied evidence.";
+    FILE *file;
+    int success;
+
+    if (model == NULL ||
+        previous_id == NULL || *previous_id == '\0' ||
+        call_id == NULL || *call_id == '\0' ||
+        tool_output == NULL) {
+        return 0;
+    }
+
+    file = fopen(OPENAI_REQUEST_FILE, "w");
+
+    if (file == NULL) {
+        (void)printf("Unable to create %s: %s\n",
+                     OPENAI_REQUEST_FILE,
+                     strerror(errno));
+        return 0;
+    }
+
+    success = 1;
+
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, model) ||
+        fputs("\",\"instructions\":\"", file) == EOF ||
+        !json_write_escaped(file, instructions) ||
+        fputs("\",\"previous_response_id\":\"", file) == EOF ||
+        !json_write_escaped(file, previous_id) ||
+        fputs("\",\"input\":[{\"type\":\"function_call_output\","
+              "\"call_id\":\"", file) == EOF ||
+        !json_write_escaped(file, call_id) ||
+        fputs("\",\"output\":\"", file) == EOF ||
+        !json_write_escaped(file, tool_output) ||
+        fputs("\"}],\"parallel_tool_calls\":false}\n", file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    if (!success) {
+        (void)puts("Unable to write final synthesis request.");
+        return 0;
+    }
+
+    return 1;
+}
+
 int write_agent_request(const char *model,
                                const char *instructions,
                                const char *user_prompt,

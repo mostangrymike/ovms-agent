@@ -729,6 +729,88 @@ void openai_agent_mode(agent_state *state,
         call_id = new_call_id;
     }
 
+    if (turn >= turn_limit &&
+        previous_id != NULL &&
+        call_id != NULL &&
+        tool_output != NULL) {
+        char *json;
+
+        (void)puts(
+            "Tool-turn limit reached; requesting final synthesis..."
+        );
+
+        if (write_agent_final_request(
+                model,
+                previous_id,
+                call_id,
+                tool_output)) {
+            free(call_id);
+            call_id = NULL;
+            free(tool_output);
+            tool_output = NULL;
+
+            if (perform_openai_request()) {
+                json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+
+                if (json != NULL) {
+                    if (workflow == OPENAI_WORKFLOW_PLAN) {
+                        char *plan_text;
+
+                        plan_text = extract_output_text_from_json(json);
+
+                        if (plan_text != NULL) {
+                            (void)puts("");
+                            (void)puts(plan_text);
+
+                            if (openai_plan_save(goal, plan_text)) {
+                                (void)puts("");
+                                (void)puts(
+                                    "Implementation plan saved to "
+                                    "OVMS_AGENT_PLAN.TXT."
+                                );
+                            } else {
+                                (void)puts("");
+                                (void)puts(
+                                    "Unable to save implementation plan."
+                                );
+                            }
+
+                            openai_auto_finish("final");
+                            openai_tx_loop_event("agent", "final");
+                            free(plan_text);
+                            free(json);
+                            remove_temporary_files();
+                            free(previous_id);
+                            openai_cache_free(cache);
+                            free(owned_instructions);
+                            return;
+                        }
+                    } else if (display_output_text_from_json(json)) {
+                        openai_auto_finish("final");
+                        openai_tx_loop_event("agent", "final");
+                        free(json);
+                        remove_temporary_files();
+                        free(previous_id);
+                        openai_cache_free(cache);
+                        free(owned_instructions);
+                        return;
+                    }
+
+                    if (!display_api_error_from_json(json)) {
+                        (void)puts(
+                            "Final synthesis response contained no output text."
+                        );
+                    }
+                    free(json);
+                } else {
+                    (void)puts("Unable to read final synthesis response.");
+                }
+            } else {
+                (void)puts("Final synthesis request failed.");
+            }
+        }
+    }
+
     openai_auto_finish(
         turn >= turn_limit ? "turn-limit" : "error"
     );
