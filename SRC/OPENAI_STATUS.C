@@ -323,6 +323,18 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
+    openai_selftest_report(
+        "live source preference guidance present",
+        strstr(openai_prompt_read_only(),
+               "prefer live source over backup") != NULL &&
+        strstr(openai_prompt_read_only(),
+               "user explicitly asks to inspect") != NULL &&
+        strstr(openai_prompt_read_only(),
+               "does not make it preferred evidence") != NULL,
+        &passed_count,
+        &failed_count
+    );
+
     read_descriptor = openai_tool_find("read_file");
     replace_descriptor = openai_tool_find("replace_text");
     build_descriptor = openai_tool_find("run_build");
