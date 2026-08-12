@@ -10,7 +10,12 @@ static const char prompt_read_only[] =
         "If list_directory reports a truncated listing, treat it as incomplete; "
         "do not infer that an unlisted path is absent. Use a narrower listing or "
         "a targeted tool before making an absence claim. "
-        "Do not request paths outside the project. Produce a concise final "
+        "For a request about an interface, relationship, or behavior spanning "
+        "multiple files, modules, or languages, inspect the obvious relevant "
+        "project-local sides before treating one side as unknown, unverified, "
+        "unavailable, or requiring external documentation. Follow only the "
+        "specific evidence chain needed by the request; do not scan unrelated "
+        "files. Do not request paths outside the project. Produce a concise final "
         "answer as soon as sufficient evidence has been collected.";
 
 #if 0
