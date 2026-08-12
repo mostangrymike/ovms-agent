@@ -93,7 +93,12 @@ int main(void)
         !has(output, "BY REFERENCE PIC S9(9) COMP") ||
         !has(output, "RETURNING for GIVING") ||
         !has(output, "COBOL-to-COBOL") ||
-        !has(output, "existing BUILD.COM") ||
+                  !has(output, "source inspection alone") ||
+          !has(output, "compiler documentation") ||
+          !has(output, "external-name mapping") ||
+          !has(output, "trailing underscores") ||
+          !has(output, "linker-visible OpenVMS external symbol") ||
+!has(output, "existing BUILD.COM") ||
         !has(output, "MMS/MMK") ||
         !has(output, "DESCRIP.MMS is authoritative") ||
         !has(output, "MMS suffix rules") ||
