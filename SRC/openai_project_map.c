@@ -399,6 +399,45 @@ static void openai_map_walk(const char *path,
     (void)closedir(directory);
 }
 
+static void openai_map_build_root(const char *path)
+{
+    DIR *directory;
+    struct dirent *entry;
+
+    directory = opendir(path);
+    if (directory == NULL) {
+        return;
+    }
+
+    while ((entry = readdir(directory)) != NULL) {
+        char child[OPENAI_MAP_PATH];
+        DIR *candidate;
+
+        if (openai_map_hide(entry->d_name)) {
+            continue;
+        }
+
+        if (!openai_map_join(
+                path, entry->d_name,
+                child, sizeof(child))) {
+            openai_map_truncated = 1;
+            continue;
+        }
+
+        candidate = opendir(child);
+        if (candidate != NULL) {
+            (void)closedir(candidate);
+            continue;
+        }
+
+        if (openai_map_kind(child) == OPENAI_MAP_BUILD) {
+            openai_map_add(child);
+        }
+    }
+
+    (void)closedir(directory);
+}
+
 int openai_project_refresh(const agent_state *state)
 {
     if (state == NULL ||
@@ -416,14 +455,12 @@ int openai_project_refresh(const agent_state *state)
     openai_map_truncated = 0;
 
     /*
-     * DEC C directory enumeration is not guaranteed to expose VMS
-     * subdirectory files in a form that can be recursively reopened
-     * by the same pathname. Scan the project root first, then scan
-     * the conventional OVMS Agent source/test directories directly.
-     *
+     * Seed authoritative root build definitions before bounded
+     * repository traversal, then prioritize the conventional live
+     * source/test areas. The final root walk fills remaining capacity.
      * Duplicate logical filespecs are collapsed by openai_map_add().
      */
-    openai_map_walk(".", 0U);
+    openai_map_build_root(".");
 
     {
         DIR *probe;
@@ -440,6 +477,8 @@ int openai_project_refresh(const agent_state *state)
             openai_map_walk("test", 0U);
         }
     }
+
+    openai_map_walk(".", 0U);
 
     openai_map_loaded = 1;
 

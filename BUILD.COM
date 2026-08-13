@@ -222,6 +222,36 @@ $ ENDIF
 $
 $
 $!-----------------------------------------------------------
+$!-----------------------------------------------------------
+$! Build M251 automatic transaction rollback test.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M251_TXN_FAIL_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M251_TXN_FAIL_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M251_TXN_FAIL_TEST.EXE -
+ [.BUILD]M251_TXN_FAIL_TEST.OBJ, -
+ [.BUILD]EDIT_TXN.OBJ, -
+ [.BUILD]RMS_WRITE.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M251_TXN_FAIL_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M251_TXN_FAIL_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Regression test M251_TXN_FAIL_TEST.EXE failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$!-----------------------------------------------------------
 $! Build M205 controlled repair transaction test.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M205_REPAIR_PATH_TEST.OBJ -
