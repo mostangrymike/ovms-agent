@@ -180,6 +180,19 @@
 {
     int ok;
 
+    ok = openai_m195_reject_early_begin();
+
+    openai_selftest_report(
+        "M195 early operation before count rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
     ok = openai_m195_failure_preserves();
 
     openai_selftest_report(

@@ -279,6 +279,44 @@ int openai_m195_reject_markers(void)
            unmatched == NULL;
 }
 
+int openai_m195_reject_early_begin(void)
+{
+    char *normalized;
+
+    normalized = openai_m195_normalize_count(
+        "Narrative prose\n"
+        "Ordered edits\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n"
+        "\n"
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST2.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD2\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW2\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n");
+
+    if (normalized != NULL) {
+        free(normalized);
+        return 0;
+    }
+
+    return 1;
+}
+
 int openai_m195_failure_preserves(void)
 {
     const char *plan_path =

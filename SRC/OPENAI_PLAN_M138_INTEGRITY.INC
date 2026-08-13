@@ -284,6 +284,70 @@ static int openai_plan_restore_old(void)
     return 1;
 }
 
+static int openai_m195_check_begin_order(
+    const char *plan_text)
+{
+    const char *cursor;
+    const char *line_start;
+    int saw_count;
+
+    if (plan_text == NULL) {
+        return 0;
+    }
+
+    saw_count = 0;
+    line_start = plan_text;
+    cursor = plan_text;
+
+    for (;;) {
+        if (*cursor == '\n' || *cursor == '\0') {
+            const char *content_end;
+            size_t content_length;
+
+            content_end = cursor;
+
+            if (content_end > line_start &&
+                content_end[-1] == '\r') {
+                --content_end;
+            }
+
+            content_length =
+                (size_t)(content_end - line_start);
+
+            if (content_length >= 15U &&
+                memcmp(
+                    line_start,
+                    "operation_count=",
+                    15U) == 0) {
+                saw_count = 1;
+            } else if (content_length == 15U &&
+                       memcmp(
+                           line_start,
+                           "BEGIN_OPERATION",
+                           15U) == 0) {
+                if (!saw_count) {
+                    (void)puts(
+                        "Implementation plan was not saved because "
+                        "an operation block appears before "
+                        "operation_count.");
+                    return 0;
+                }
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    return 1;
+}
+
 static char *openai_m195_normalize_count(
     const char *plan_text)
 {
@@ -306,6 +370,10 @@ static char *openai_m195_normalize_count(
     int replacement_count;
 
     if (plan_text == NULL) {
+        return NULL;
+    }
+
+    if (!openai_m195_check_begin_order(plan_text)) {
         return NULL;
     }
 
