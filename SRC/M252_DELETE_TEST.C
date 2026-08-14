@@ -4,8 +4,6 @@
 
 #include "edit_txn.h"
 
-extern int fgetname(FILE *, char *);
-
 static void m252_cleanup(const char *path)
 {
     while (remove(path) == 0) {
