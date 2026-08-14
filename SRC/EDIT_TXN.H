@@ -11,8 +11,10 @@ typedef struct edit_txn_file {
     char *replacement_text;
     char *original_text;
     char original_spec[EDIT_TXN_PATH_SIZE];
+    char held_spec[EDIT_TXN_PATH_SIZE];
     unsigned int existed_before;
     unsigned int written;
+    unsigned int is_delete;
 } edit_txn_file;
 
 typedef struct edit_txn {
@@ -28,6 +30,10 @@ int edit_txn_add(
     edit_txn *transaction,
     const char *path,
     const char *replacement_text);
+
+int edit_txn_add_delete(
+    edit_txn *transaction,
+    const char *path);
 
 int edit_txn_write(edit_txn *transaction);
 
