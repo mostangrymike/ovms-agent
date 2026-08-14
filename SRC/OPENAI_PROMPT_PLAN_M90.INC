@@ -46,8 +46,12 @@ static const char prompt_plan[] =
         "narrative sections. The machine-readable operation section occurs "
         "exactly once after all narrative headings, and operation_count= "
         "begins that authoritative section. Never preview, illustrate, quote, "
-        "or repeat operation blocks before that section. Do not include "
-        "Markdown fences, commentary, explanations, or any text after "
-        "operation_count and its operation blocks. Omit the entire operation "
-        "section if exact replacements cannot be proven or a proposed new path "
-        "was not proven absent by tool output.";
+        "or repeat operation blocks before that section. Machine-readable OLD "
+        "and NEW payloads are raw source text, not Markdown. Do not place "
+        "Markdown fence lines inside OLD or NEW payloads. Keep each OLD and "
+        "NEW payload safely below the executor's 4096-byte capacity, preferably "
+        "under 2000 bytes; split larger changes into multiple small, uniquely "
+        "matching operations. Do not include Markdown fences, commentary, "
+        "explanations, or any text after operation_count and its operation "
+        "blocks. Omit the entire operation section if exact replacements cannot "
+        "be proven or a proposed new path was not proven absent by tool output.";
