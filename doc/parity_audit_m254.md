@@ -49,15 +49,15 @@ Build completed successfully.
 $STATUS == "%X00000001"
 ```
 
-This closes the CAP-015 policy evidence gap. The authoritative matrix should promote CAP-015 to VERIFIED during M254 reconciliation.
+This closes the CAP-015 policy evidence gap. The authoritative matrix should promote CAP-015 to VERIFIED during final M254 reconciliation.
 
 ## Existing restricted RUN path
 
 A guarded interactive `RUN` path already exists in `SRC/COMMAND.C`. It requires the DCL gate, is full-policy when invoked through the direct tool runner, applies the write gate, captures output/status, and deliberately allows only read-oriented DCL. It remains unchanged by M254.2.
 
-## M254.2 - Approved generic DCL execution - IMPLEMENTED, AWAITING VMS VALIDATION
+## M254.2 - Approved generic DCL execution - VALIDATED
 
-M254 adds `SRC/COMMAND_DCL.C` and registers the explicit `DCL` command. This is a separate full-authority surface rather than a weakening of restricted `RUN`.
+M254 adds `SRC/COMMAND_DCL.C` and registers the explicit top-level `DCL` command. This is a separate full-authority surface rather than a weakening of restricted `RUN`.
 
 Contract:
 - requires `full` approval policy,
@@ -73,7 +73,7 @@ Contract:
 - is reachable only through the explicit `DCL` command, not ordinary model prose,
 - leaves the older restricted interactive `RUN` policy unchanged.
 
-The strengthened `SRC/m229_tool_test.c` now additionally verifies:
+`SRC/m229_tool_test.c` verifies:
 - workspace-policy DCL refusal,
 - full-policy DCL-gate refusal,
 - a real harmless `SHOW DEFAULT` execution,
@@ -84,19 +84,38 @@ The strengthened `SRC/m229_tool_test.c` now additionally verifies:
 
 The test redirects transcript and activity logging to test-only files so normal user history is not modified.
 
+Validated on VSI OpenVMS x86-64 after commit `3718988`:
+
+```text
+Building OVMS Agent Version 2...
+All regression tests passed.
+Build completed successfully.
+$STATUS == "%X00000001"
+```
+
 New production external identifiers are `command_dcl` and `command_dcl_exec`; both are below the OpenVMS VAX / DEC C 31-character limit.
 
-## M254.3 - Non-interactive/headless entry point - STILL OPEN
+This supplies the implementation/evidence needed to promote CAP-020 to VERIFIED during final M254 reconciliation. The explicit `DCL` command is the authoritative M254.2 interface; direct tool-table exposure is not required for the CAP-020 contract and must not be claimed unless separately wired and tested.
 
-`SRC/MAIN.C` still defines `int main(void)` and continuously reads commands from `stdin`. There is no command-line one-shot goal/command argument, bounded machine-readable result envelope, or dedicated deterministic exit-status mapping.
+## M254.3 - Non-interactive/headless entry point - IN PROGRESS
 
-M254.3 must:
+The first M254.3 slice adds a one-shot DCL entry through `OVMS_AGENT.COM`:
+
+```text
+@OVMS_AGENT "DCL SHOW DEFAULT" JSON
+```
+
+The one-shot contract is:
 - initialize and shut down normal agent state,
-- execute exactly one supplied operation without entering the prompt loop,
-- avoid interactive confirmation prompts,
-- emit bounded machine-readable output,
-- map success/failure to deterministic OpenVMS-compatible process status,
-- retain approval and write/DCL gates rather than bypassing them.
+- execute exactly one supplied DCL operation without entering the prompt loop,
+- do not prompt for confirmation or consume interactive input,
+- require the same full approval, write, and DCL gates as interactive approved DCL,
+- emit one bounded JSON result object when `JSON` mode is requested,
+- include the exact OpenVMS condition value and odd/even interpretation,
+- return the captured OpenVMS condition as the one-shot process result,
+- use a quiet initialization mode so JSON output is not contaminated by the normal banner.
+
+This slice proves deterministic headless command execution. CAP-021 remains open until the one-shot interface is validated on OpenVMS and the final acceptance wording is reconciled against whether a direct tool/command entry is sufficient or a model-goal entry is also required.
 
 ## Compatibility rule
 
