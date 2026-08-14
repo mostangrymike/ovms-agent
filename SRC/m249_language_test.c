@@ -86,7 +86,29 @@ int main(void)
 
     if (!openai_lang_policy_text(output, sizeof(output)) ||
         !has(output, "Do not assume C syntax") ||
-        !has(output, "31 characters")) {
+        !has(output, "31 characters") ||
+        !has(output, "COBOL/C interoperability") ||
+        !has(output, "CALL ... GIVING PIC S9(9) COMP") ||
+        !has(output, "BY VALUE PIC S9(9) COMP") ||
+        !has(output, "BY REFERENCE PIC S9(9) COMP") ||
+        !has(output, "RETURNING for GIVING") ||
+        !has(output, "COBOL-to-COBOL") ||
+                  !has(output, "source inspection alone") ||
+          !has(output, "compiler documentation") ||
+          !has(output, "external-name mapping") ||
+          !has(output, "trailing underscores") ||
+          !has(output, "linker-visible OpenVMS external symbol") ||
+!has(output, "existing BUILD.COM") ||
+        !has(output, "MMS/MMK") ||
+        !has(output, "DESCRIP.MMS is authoritative") ||
+        !has(output, "MMS suffix rules") ||
+        !has(output, "project-demonstrated syntax") ||
+        !has(output, "OpenVMS networking") ||
+        !has(output, "socket descriptor") ||
+        !has(output, "OpenVMS I/O channel") ||
+        !has(output, "interchangeable") ||
+        !has(output, "socket or channel handoff") ||
+        !has(output, "working interface")) {
         (void)puts("M249 failed: agent language policy.");
         return 2;
     }

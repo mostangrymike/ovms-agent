@@ -13,51 +13,7 @@
 #define OPENAI_PLAN_MAX_FILES 32U
 #define OPENAI_PLAN_PATH_SIZE 256U
 
-static int plan_has_sensitive_text(const char *text)
-{
-    static const char *blocked[] = {
-        "OPENAI_API_KEY",
-        "AUTHORIZATION: BEARER",
-        "OVMS_AGENT_HEADERS",
-        ".PEM",
-        ".KEY",
-        NULL
-    };
-    const char **pattern;
-    const unsigned char *position;
-
-    if (text == NULL) {
-        return 1;
-    }
-
-    for (pattern = blocked; *pattern != NULL; ++pattern) {
-        size_t pattern_length;
-
-        pattern_length = strlen(*pattern);
-
-        for (position = (const unsigned char *)text;
-             *position != (unsigned char)'\0';
-             ++position) {
-            size_t index;
-
-            for (index = 0U;
-                 index < pattern_length &&
-                 position[index] != (unsigned char)'\0' &&
-                 toupper((int)position[index]) ==
-                     (unsigned char)(*pattern)[index];
-                 ++index) {
-                /* compare case-insensitively */
-            }
-
-            if (index == pattern_length) {
-                return 1;
-            }
-        }
-    }
-
-    return 0;
-}
-
+#include "openai_plan_sensitive.inc"
 static int plan_path_char(int ch)
 {
     return isalnum(ch) ||

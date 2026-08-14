@@ -18,6 +18,13 @@ int write_agent_request_mode(
     const char *tool_output,
     int allow_write);
 
+
+int write_agent_final_request(
+    const char *model,
+    const char *previous_id,
+    const char *call_id,
+    const char *tool_output);
+
 int write_agent_request(
     const char *model,
     const char *instructions,

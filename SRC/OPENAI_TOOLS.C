@@ -41,119 +41,6 @@ static int openai_write_complete_text_txn(
     return success;
 }
 
-int openai_path_is_safe(const char *path)
-{
-    if (path == NULL || *path == '\0') {
-        return 0;
-    }
-
-    if (*path == '/' ||
-        strchr(path, ':') != NULL ||
-        strstr(path, "..") != NULL) {
-        return 0;
-    }
-
-    return 1;
-}
-
-int openai_contains_ignore_case(const char *text,
-                                       const char *pattern)
-{
-    const unsigned char *start;
-
-    if (text == NULL || pattern == NULL || *pattern == '\0') {
-        return 0;
-    }
-
-    for (start = (const unsigned char *)text;
-         *start != (unsigned char)'\0';
-         ++start) {
-        const unsigned char *left;
-        const unsigned char *right;
-
-        left = start;
-        right = (const unsigned char *)pattern;
-
-        while (*left != (unsigned char)'\0' &&
-               *right != (unsigned char)'\0' &&
-               tolower((int)*left) == tolower((int)*right)) {
-            ++left;
-            ++right;
-        }
-
-        if (*right == (unsigned char)'\0') {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-int openai_path_is_sensitive(const char *path)
-{
-    static const char *blocked[] = {
-        "OPENAIKEY",
-        "OPENAI_API_KEY",
-        "OVMS_AGENT_HEADERS",
-        "OPENAI_TEST_HEADERS",
-        ".PEM",
-        ".KEY",
-        NULL
-    };
-    const char **pattern;
-
-    if (path == NULL) {
-        return 1;
-    }
-
-    for (pattern = blocked; *pattern != NULL; ++pattern) {
-        if (openai_contains_ignore_case(path, *pattern)) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-int openai_listing_entry_hidden(const char *name)
-{
-    static const char *hidden[] = {
-        "OPENAIKEY",
-        "OVMS_AGENT_HEADERS",
-        "OVMS_AGENT_REQUEST.JSON",
-        "OVMS_AGENT_RESPONSE.JSON",
-        "OPENAI_MODELS.JSON",
-        NULL
-    };
-    const char **pattern;
-    size_t length;
-
-    if (name == NULL) {
-        return 1;
-    }
-
-    for (pattern = hidden; *pattern != NULL; ++pattern) {
-        if (openai_contains_ignore_case(name, *pattern)) {
-            return 1;
-        }
-    }
-
-    length = strlen(name);
-
-    if (length >= 4U) {
-        const char *extension;
-
-        extension = name + length - 4U;
-
-        if (openai_contains_ignore_case(extension, ".OBJ") ||
-            openai_contains_ignore_case(extension, ".EXE")) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 char *openai_read_text_file(const char *path)
 {
     FILE *file;
@@ -283,7 +170,8 @@ const char *openai_cache_lookup(
 
     for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
         if (cache[index].path != NULL &&
-            strcmp(cache[index].path, path) == 0) {
+            strlen(cache[index].path) == strlen(path) &&
+            openai_contains_ignore_case(cache[index].path, path)) {
             return cache[index].content;
         }
     }
@@ -533,6 +421,34 @@ char *execute_read_file_tool(
         return output;
     }
 
+    {
+        FILE *probe;
+        long length;
+
+        probe = fopen(path, "r");
+        length = -1L;
+        if (probe != NULL) {
+            if (fseek(probe, 0L, SEEK_END) == 0) {
+                length = ftell(probe);
+            }
+            (void)fclose(probe);
+        }
+
+        if (length > 65536L) {
+            output = make_tool_error(
+                "Whole-file read exceeds 65536 bytes; use search_file "
+                "to locate relevant lines, then read_file_range; do not "
+                "retry read_file for this path",
+                path
+            );
+            if (output != NULL) {
+                (void)openai_cache_store(cache, path, output);
+            }
+            free(path);
+            return output;
+        }
+    }
+
     output = openai_read_text_file(path);
 
     if (output == NULL) {
@@ -660,7 +576,7 @@ char *execute_list_directory_tool(const char *arguments,
             (size_t)written >= OPENAI_LIST_OUTPUT_LIMIT - used) {
             (void)snprintf(output + used,
                            OPENAI_LIST_OUTPUT_LIMIT - used,
-                           "[directory listing truncated]\n");
+                           "[directory listing truncated; incomplete result]\n");
             break;
         }
 
@@ -843,6 +759,24 @@ openai_create_result execute_create_file_tool(
     }
 
     content_length = strlen(content);
+
+    if (content_length == 0U) {
+        (void)puts(
+            "Proposed file content is empty; creation rejected."
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
+
+    if (strstr(content, "```") != NULL) {
+        (void)puts(
+            "Proposed file contains a Markdown code fence; creation rejected."
+        );
+        free(path);
+        free(content);
+        return OPENAI_CREATE_ERROR;
+    }
 
     if (content_length > OPENAI_CREATE_MAX_BYTES) {
         (void)printf(
@@ -1614,4 +1548,3 @@ int openai_restore_previous_version(const char *path)
     );
     return 1;
 }
-

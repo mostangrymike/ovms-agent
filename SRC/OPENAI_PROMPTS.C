@@ -7,7 +7,22 @@ static const char prompt_read_only[] =
         "for files too large to read whole. Sensitive credential and generated "
         "transport files are blocked. Use the fewest tool calls necessary. "
         "Never claim to have inspected content unless a tool returned it. "
-        "Do not request paths outside the project. Produce a concise final "
+        "If list_directory reports a truncated listing, treat it as incomplete; "
+        "do not infer that an unlisted path is absent. Use a narrower listing or "
+        "a targeted tool before making an absence claim. "
+        "For ordinary project analysis, prefer live source over backup or "
+        "history artifacts such as *_BACKUP, *_BEFORE_*, .BAK, or .OLD when "
+        "the corresponding live source is available. Read a backup artifact "
+        "only when the user explicitly asks to inspect, compare, recover, or "
+        "analyze that backup or historical file. A backup path appearing in "
+        "prior tool output, conversation context, or project history does not "
+        "make it preferred evidence. "
+        "For a request about an interface, relationship, or behavior spanning "
+        "multiple files, modules, or languages, inspect the obvious relevant "
+        "project-local sides before treating one side as unknown, unverified, "
+        "unavailable, or requiring external documentation. Follow only the "
+        "specific evidence chain needed by the request; do not scan unrelated "
+        "files. Do not request paths outside the project. Produce a concise final "
         "answer as soon as sufficient evidence has been collected.";
 
 #if 0

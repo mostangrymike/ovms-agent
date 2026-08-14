@@ -85,6 +85,8 @@ int openai_listing_entry_hidden(const char *name)
         "OVMS_AGENT_REQUEST.JSON",
         "OVMS_AGENT_RESPONSE.JSON",
         "OPENAI_MODELS.JSON",
+        "_BACKUP",
+        "_BEFORE_",
         NULL
     };
     const char **pattern;
@@ -108,7 +110,9 @@ int openai_listing_entry_hidden(const char *name)
         extension = name + length - 4U;
 
         if (openai_contains_ignore_case(extension, ".OBJ") ||
-            openai_contains_ignore_case(extension, ".EXE")) {
+            openai_contains_ignore_case(extension, ".EXE") ||
+            openai_contains_ignore_case(extension, ".BAK") ||
+            openai_contains_ignore_case(extension, ".OLD")) {
             return 1;
         }
     }

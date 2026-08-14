@@ -4,7 +4,44 @@
 
 #include "openai_internal.h"
 
+int openai_plan_clear_files(const char *plan_path);
 
+int openai_plan_is_noop_text(const char *text)
+{
+    static const char marker[] = "operation_count=0";
+    const char *position;
+    size_t marker_length;
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    marker_length = strlen(marker);
+    position = text;
+
+    while ((position = strstr(position, marker)) != NULL) {
+        int line_start;
+        int line_end;
+
+        line_start =
+            position == text ||
+            position[-1] == '\n' ||
+            position[-1] == '\r';
+
+        line_end =
+            position[marker_length] == '\0' ||
+            position[marker_length] == '\n' ||
+            position[marker_length] == '\r';
+
+        if (line_start && line_end) {
+            return 1;
+        }
+
+        ++position;
+    }
+
+    return 0;
+}
 
 static const char *openai_test_repair_plan_text = NULL;
 static const char *openai_test_repair_plan_text2 = NULL;
@@ -112,6 +149,49 @@ static char *openai_saved_plan_body(const char *saved_plan)
     return openai_duplicate_text(body);
 }
 
+char *openai_build_goal_prompt(const char *goal,
+                               const char *build_output)
+{
+    static const char introduction[] =
+        "Create one deterministic transactional repair plan for the user's "
+        "reported defect below. The baseline project build currently succeeds, "
+        "so do not assume this is a compiler or linker failure. Inspect relevant "
+        "project files and use the user's goal as the repair objective. The plan "
+        "may contain multiple replace_text, replace_lines, or create operations "
+        "when required for one coherent fix. Do not run a build, do not write "
+        "files directly, and do not propose unrelated cleanup. The saved plan "
+        "will be reviewed, approved once, applied atomically, rebuilt once, and "
+        "rolled back automatically if the post-repair build fails.\n\n"
+        "User goal:\n";
+    static const char build_label[] =
+        "\n\nPassing baseline build result:\n";
+    char *combined_goal;
+    size_t combined_size;
+
+    if (goal == NULL || build_output == NULL) {
+        return NULL;
+    }
+
+    combined_size =
+        strlen(introduction) +
+        strlen(goal) +
+        strlen(build_label) +
+        strlen(build_output) +
+        1U;
+
+    combined_goal = (char *)malloc(combined_size);
+    if (combined_goal == NULL) {
+        return NULL;
+    }
+
+    (void)strcpy(combined_goal, introduction);
+    (void)strcat(combined_goal, goal);
+    (void)strcat(combined_goal, build_label);
+    (void)strcat(combined_goal, build_output);
+
+    return combined_goal;
+}
+
 char *openai_build_repair_prompt(const char *goal,
                                  const char *build_output)
 {
@@ -153,7 +233,6 @@ char *openai_build_repair_prompt(const char *goal,
 
     return combined_goal;
 }
-
 
 static char *openai_quote_plan_context(const char *plan)
 {
@@ -301,13 +380,6 @@ void openai_agent_retry(agent_state *state, const char *goal)
         return;
     }
 
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
-        );
-        return;
-    }
-
     (void)puts("Checking the current project build before retrying...");
 
     build_output = execute_run_build_tool(&build_status);
@@ -404,13 +476,6 @@ void openai_agent_repair(agent_state *state, const char *goal)
         return;
     }
 
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
-        );
-        return;
-    }
-
     openai_last_rollback = OPENAI_ROLLBACK_NONE;
     openai_log_event("AGENT/REPAIR", "start", 0);
 
@@ -435,23 +500,26 @@ void openai_agent_repair(agent_state *state, const char *goal)
 
     if ((build_status & 1) != 0) {
         (void)puts(
-            "Current build succeeds. No repair is required."
+            "Current build succeeds. Continuing with the explicit repair goal."
         );
-        free(build_output);
         openai_log_event(
             "AGENT/REPAIR",
-            "build_already_passes",
+            "passing_baseline",
             build_status
         );
-        return;
     }
 
     previous_plan = NULL;
 
     for (attempt = 1U; attempt <= 2U; ++attempt) {
         if (attempt == 1U) {
-            combined_goal =
-                openai_build_repair_prompt(goal, build_output);
+            if ((build_status & 1) != 0) {
+                combined_goal =
+                    openai_build_goal_prompt(goal, build_output);
+            } else {
+                combined_goal =
+                    openai_build_repair_prompt(goal, build_output);
+            }
         } else {
             combined_goal =
                 openai_build_retry_prompt(
@@ -519,6 +587,39 @@ void openai_agent_repair(agent_state *state, const char *goal)
             free(previous_plan);
             openai_log_event("AGENT/REPAIR", "plan_missing", (int)attempt);
             return;
+        }
+
+        {
+            char *saved_plan;
+
+            saved_plan =
+                openai_read_text_file("OVMS_AGENT_PLAN.TXT");
+
+            if (saved_plan != NULL &&
+                openai_plan_is_noop_text(saved_plan)) {
+                free(saved_plan);
+
+                if (!openai_plan_clear_files(
+                        "OVMS_AGENT_PLAN.TXT")) {
+                    (void)puts(
+                        "Warning: no-op repair plan could not be cleared."
+                    );
+                }
+
+                (void)puts("No repair operations were proposed.");
+                (void)puts(
+                    "AGENT/REPAIR completed without modifying the project."
+                );
+                openai_log_event(
+                    "AGENT/REPAIR",
+                    "no_operations",
+                    (int)attempt
+                );
+                free(previous_plan);
+                return;
+            }
+
+            free(saved_plan);
         }
 
         if (attempt == 1U) {

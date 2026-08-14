@@ -622,20 +622,41 @@ char *extract_output_items_json(const char *json)
 
 char *extract_output_text_from_json(const char *json)
 {
-    const char *object_start;
-    const char *text_value;
+    const char *search_start;
 
-    object_start = find_output_text_object(json);
-
-    if (object_start == NULL) {
+    if (json == NULL) {
         return NULL;
     }
 
-    text_value = find_string_value(object_start, "text");
+    search_start = json;
 
-    if (text_value == NULL) {
-        return NULL;
+    while (*search_start != '\0') {
+        const char *object_start;
+        const char *text_value;
+        char *decoded;
+
+        object_start = find_output_text_object(search_start);
+
+        if (object_start == NULL) {
+            return NULL;
+        }
+
+        text_value = find_string_value(object_start, "text");
+
+        if (text_value != NULL) {
+            decoded = json_decode_string(text_value, NULL);
+
+            if (decoded != NULL) {
+                if (*decoded != '\0') {
+                    return decoded;
+                }
+
+                free(decoded);
+            }
+        }
+
+        search_start = object_start + 1;
     }
 
-    return json_decode_string(text_value, NULL);
+    return NULL;
 }

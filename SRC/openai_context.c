@@ -119,7 +119,7 @@ int openai_context_build(const char *goal,
     char parent_history[OPENAI_CONTEXT_HIST];
     char results[OPENAI_CONTEXT_HIST];
     char parent_results[OPENAI_CONTEXT_HIST];
-    char lang_policy[2048];
+    char lang_policy[4096];
     const char *tail;
     size_t used;
 

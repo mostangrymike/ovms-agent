@@ -5,6 +5,33 @@
 #include "openai_internal.h"
 #include "openai_prompts.h"
 
+
+static char *write_prompt_rules(const char *base)
+{
+    static const char rule[] =
+        "\n\nBOUNDED WRITE WORKFLOW: Inspect only files directly needed for "
+        "the requested change. Reuse prior tool results and do not reread an "
+        "unchanged file unless new evidence makes that necessary. Once enough "
+        "evidence exists for one bounded patch, propose the patch instead of "
+        "continuing exploratory reads.";
+    char *combined;
+    size_t size;
+
+    if (base == NULL) {
+        return NULL;
+    }
+
+    size = strlen(base) + strlen(rule) + 1U;
+    combined = (char *)malloc(size);
+    if (combined == NULL) {
+        return NULL;
+    }
+
+    (void)strcpy(combined, base);
+    (void)strcat(combined, rule);
+    return combined;
+}
+
 void openai_agent_mode(agent_state *state,
                        const char *goal,
                        int allow_write,
@@ -14,6 +41,7 @@ void openai_agent_mode(agent_state *state,
     const char *api_key;
     const char *model;
     const char *instructions;
+    char *owned_instructions;
     char *previous_id;
     char *tool_output;
     char *call_id;
@@ -46,6 +74,8 @@ void openai_agent_mode(agent_state *state,
         return;
     }
 
+    (void)printf("Project root: %s\n", state->project_root);
+
     if (goal == NULL || *goal == '\0') {
         if (workflow == OPENAI_WORKFLOW_PLAN) {
             (void)puts("Usage: AGENT/PLAN goal");
@@ -56,13 +86,6 @@ void openai_agent_mode(agent_state *state,
                 "Usage: AGENT/WRITE goal" :
                 "Usage: AGENT goal");
         }
-        return;
-    }
-
-    if (openai_path_is_sensitive(goal)) {
-        (void)puts(
-            "Request denied because it references a sensitive path."
-        );
         return;
     }
 
@@ -83,11 +106,18 @@ void openai_agent_mode(agent_state *state,
         return;
     }
 
+    owned_instructions = NULL;
     if (workflow == OPENAI_WORKFLOW_PLAN) {
         instructions = openai_prompt_plan();
+    } else if (allow_write) {
+        owned_instructions = write_prompt_rules(openai_prompt_write());
+        if (owned_instructions == NULL) {
+            (void)puts("Unable to prepare write-agent instructions.");
+            return;
+        }
+        instructions = owned_instructions;
     } else {
-        instructions = allow_write ?
-            openai_prompt_write() : openai_prompt_read_only();
+        instructions = openai_prompt_read_only();
     }
 
     previous_id = NULL;
@@ -186,6 +216,7 @@ void openai_agent_mode(agent_state *state,
                 remove_temporary_files();
                 free(previous_id);
                 openai_cache_free(cache);
+                free(owned_instructions);
                 return;
             }
         } else if (display_output_text_from_json(json)) {
@@ -195,6 +226,7 @@ void openai_agent_mode(agent_state *state,
             remove_temporary_files();
             free(previous_id);
             openai_cache_free(cache);
+            free(owned_instructions);
             return;
         }
 
@@ -665,6 +697,7 @@ void openai_agent_mode(agent_state *state,
             free(call_id);
             free(tool_output);
             openai_cache_free(cache);
+            free(owned_instructions);
             return;
         } else {
             tool_output = openai_result_make(
@@ -696,6 +729,88 @@ void openai_agent_mode(agent_state *state,
         call_id = new_call_id;
     }
 
+    if (turn >= turn_limit &&
+        previous_id != NULL &&
+        call_id != NULL &&
+        tool_output != NULL) {
+        char *json;
+
+        (void)puts(
+            "Tool-turn limit reached; requesting final synthesis..."
+        );
+
+        if (write_agent_final_request(
+                model,
+                previous_id,
+                call_id,
+                tool_output)) {
+            free(call_id);
+            call_id = NULL;
+            free(tool_output);
+            tool_output = NULL;
+
+            if (perform_openai_request()) {
+                json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+
+                if (json != NULL) {
+                    if (workflow == OPENAI_WORKFLOW_PLAN) {
+                        char *plan_text;
+
+                        plan_text = extract_output_text_from_json(json);
+
+                        if (plan_text != NULL) {
+                            (void)puts("");
+                            (void)puts(plan_text);
+
+                            if (openai_plan_save(goal, plan_text)) {
+                                (void)puts("");
+                                (void)puts(
+                                    "Implementation plan saved to "
+                                    "OVMS_AGENT_PLAN.TXT."
+                                );
+                            } else {
+                                (void)puts("");
+                                (void)puts(
+                                    "Unable to save implementation plan."
+                                );
+                            }
+
+                            openai_auto_finish("final");
+                            openai_tx_loop_event("agent", "final");
+                            free(plan_text);
+                            free(json);
+                            remove_temporary_files();
+                            free(previous_id);
+                            openai_cache_free(cache);
+                            free(owned_instructions);
+                            return;
+                        }
+                    } else if (display_output_text_from_json(json)) {
+                        openai_auto_finish("final");
+                        openai_tx_loop_event("agent", "final");
+                        free(json);
+                        remove_temporary_files();
+                        free(previous_id);
+                        openai_cache_free(cache);
+                        free(owned_instructions);
+                        return;
+                    }
+
+                    if (!display_api_error_from_json(json)) {
+                        (void)puts(
+                            "Final synthesis response contained no output text."
+                        );
+                    }
+                    free(json);
+                } else {
+                    (void)puts("Unable to read final synthesis response.");
+                }
+            } else {
+                (void)puts("Final synthesis request failed.");
+            }
+        }
+    }
+
     openai_auto_finish(
         turn >= turn_limit ? "turn-limit" : "error"
     );
@@ -714,4 +829,5 @@ void openai_agent_mode(agent_state *state,
     free(call_id);
     free(tool_output);
     openai_cache_free(cache);
+    free(owned_instructions);
 }

@@ -37,7 +37,6 @@ int save_response_id(const char *json)
 int display_clean_response(void)
 {
     char *json;
-    const char *object_start;
     const char *text_value;
     char *decoded;
 
@@ -49,22 +48,14 @@ int display_clean_response(void)
 
     (void)save_response_id(json);
 
-    object_start = find_output_text_object(json);
+    decoded = extract_output_text_from_json(json);
 
-    if (object_start != NULL) {
-        text_value = find_string_value(object_start, "text");
-
-        if (text_value != NULL) {
-            decoded = json_decode_string(text_value, NULL);
-
-            if (decoded != NULL) {
-                (void)puts("");
-                (void)puts(decoded);
-                free(decoded);
-                free(json);
-                return 1;
-            }
-        }
+    if (decoded != NULL) {
+        (void)puts("");
+        (void)puts(decoded);
+        free(decoded);
+        free(json);
+        return 1;
     }
 
     text_value = find_string_value(json, "message");
@@ -130,23 +121,9 @@ int display_api_error_from_json(const char *json)
 
 int display_output_text_from_json(const char *json)
 {
-    const char *object_start;
-    const char *text_value;
     char *decoded;
 
-    object_start = find_output_text_object(json);
-
-    if (object_start == NULL) {
-        return 0;
-    }
-
-    text_value = find_string_value(object_start, "text");
-
-    if (text_value == NULL) {
-        return 0;
-    }
-
-    decoded = json_decode_string(text_value, NULL);
+    decoded = extract_output_text_from_json(json);
 
     if (decoded == NULL) {
         return 0;

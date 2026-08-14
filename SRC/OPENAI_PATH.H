@@ -2,6 +2,8 @@
 #define OPENAI_PATH_H
 
 int openai_path_is_safe(const char *path);
+int openai_contains_ignore_case(const char *text,
+                                const char *pattern);
 int openai_path_is_sensitive(const char *path);
 int openai_listing_entry_hidden(const char *name);
 
