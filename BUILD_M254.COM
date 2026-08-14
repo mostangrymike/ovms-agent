@@ -61,6 +61,10 @@ $     FINAL_STATUS = RUN_STATUS
 $     GOTO FINISH
 $ ENDIF
 $
+$! The JSON must preserve the exact condition returned by the DCL command.
+$! Do not assume every successful OpenVMS command returns %X00000001.
+$ EXPECT_CONDITION = "%X" + F$FAO("!8XL",RUN_STATUS)
+$
 $ CHECK_NEEDLE = """executed"":true"
 $ GOSUB CHECK_TEXT
 $ IF .NOT. TEXT_FOUND
@@ -68,11 +72,11 @@ $ THEN
 $     FAILED_FIELD = "executed=true"
 $     GOTO JSON_FAIL
 $ ENDIF
-$ CHECK_NEEDLE = """condition"":""%X00000001"""
+$ CHECK_NEEDLE = """condition"":""" + EXPECT_CONDITION + """"
 $ GOSUB CHECK_TEXT
 $ IF .NOT. TEXT_FOUND
 $ THEN
-$     FAILED_FIELD = "condition=%X00000001"
+$     FAILED_FIELD = "condition=" + EXPECT_CONDITION
 $     GOTO JSON_FAIL
 $ ENDIF
 $ CHECK_NEEDLE = """success"":true"
@@ -84,6 +88,7 @@ $     GOTO JSON_FAIL
 $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M254 headless DCL policy/status evidence passed."
+$ WRITE SYS$OUTPUT "M254 preserved condition: ", EXPECT_CONDITION
 $ GOTO FINISH
 $
 $JSON_FAIL:
