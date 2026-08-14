@@ -53,6 +53,8 @@ static int m253_snapshot(
 
     fab.fab$l_fna = (char *)path;
     fab.fab$b_fns = (unsigned char)strlen(path);
+    fab.fab$b_fac = FAB$M_GET;
+
     status = sys$open(&fab);
     if (!(status & 1UL)) {
         return 0;
@@ -135,6 +137,7 @@ static int m253_delete_evidence(void)
     m253_cleanup(base);
     if (!m253_seed(base, "M253 DELETE\n") ||
         !m253_snapshot(versioned, &before)) {
+        (void)puts("M253 delete seed/snapshot failed.");
         m253_cleanup(base);
         return 0;
     }
@@ -152,6 +155,10 @@ static int m253_delete_evidence(void)
 
     edit_txn_dispose(&txn);
     m253_cleanup(base);
+
+    if (!result) {
+        (void)puts("M253 delete RMS/isolation evidence failed.");
+    }
     return result;
 }
 
@@ -171,6 +178,7 @@ static int m253_rename_evidence(void)
     m253_cleanup(dst_base);
     if (!m253_seed(src_base, "M253 RENAME\n") ||
         !m253_snapshot(src, &before)) {
+        (void)puts("M253 rename seed/snapshot failed.");
         m253_cleanup(src_base);
         m253_cleanup(dst_base);
         return 0;
@@ -192,6 +200,10 @@ static int m253_rename_evidence(void)
     edit_txn_dispose(&txn);
     m253_cleanup(src_base);
     m253_cleanup(dst_base);
+
+    if (!result) {
+        (void)puts("M253 rename RMS/isolation evidence failed.");
+    }
     return result;
 }
 
@@ -210,6 +222,7 @@ static int m253_move_evidence(void)
     m253_cleanup(dst);
     if (!m253_seed(src_base, "M253 MOVE\n") ||
         !m253_snapshot(src, &before)) {
+        (void)puts("M253 move seed/snapshot failed.");
         m253_cleanup(src_base);
         m253_cleanup(dst);
         return 0;
@@ -231,11 +244,18 @@ static int m253_move_evidence(void)
     edit_txn_dispose(&txn);
     m253_cleanup(src_base);
     m253_cleanup(dst);
+
+    if (!result) {
+        (void)puts("M253 move RMS/isolation evidence failed.");
+    }
     return result;
 }
 
 int main(void)
 {
+    int delete_ok;
+    int rename_ok;
+    int move_ok;
     int result;
 
     m253_cleanup("M253_SENTINEL.DAT");
@@ -244,11 +264,10 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    result =
-        m253_delete_evidence() &&
-        m253_rename_evidence() &&
-        m253_move_evidence() &&
-        m253_sentinel_ok();
+    delete_ok = m253_delete_evidence();
+    rename_ok = m253_rename_evidence();
+    move_ok = m253_move_evidence();
+    result = delete_ok && rename_ok && move_ok && m253_sentinel_ok();
 
     m253_cleanup("M253_SENTINEL.DAT");
 
