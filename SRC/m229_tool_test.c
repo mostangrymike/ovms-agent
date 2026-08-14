@@ -98,10 +98,40 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (openai_tool_run(&state, "RUN \"SHOW TIME\"") ||
+        !openai_tool_last_text(output, sizeof(output)) ||
+        strstr(output, "Tool:     RUN") == NULL ||
+        strstr(output, "Policy:   workspace") == NULL ||
+        strstr(output, "Status:   denied") == NULL) {
+        (void)puts("M254 failed: workspace/full policy boundary.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!openai_set_approval("full")) {
+        (void)puts("M254 failed: set full approval.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    state.write_enabled = 1;
+    state.dcl_enabled = 0;
+
+    if (openai_tool_run(&state, "RUN \"SHOW TIME\"") ||
+        !openai_tool_last_text(output, sizeof(output)) ||
+        strstr(output, "Tool:     RUN") == NULL ||
+        strstr(output, "Policy:   full") == NULL ||
+        strstr(output, "Status:   dcl-gate") == NULL) {
+        (void)puts("M254 failed: full policy DCL gate boundary.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
     if (!openai_tool_hist_text(output, sizeof(output)) ||
         strstr(output, "READ") == NULL ||
         strstr(output, "EDIT") == NULL ||
-        strstr(output, "BUILD") == NULL) {
+        strstr(output, "BUILD") == NULL ||
+        strstr(output, "RUN") == NULL) {
         (void)puts("M229 failed: tool history.");
         cleanup();
         return EXIT_FAILURE;
@@ -110,7 +140,8 @@ int main(void)
     if (!openai_session_hist_text(session_id, output, sizeof(output)) ||
         strstr(output, "kind=tool") == NULL ||
         strstr(output, "name=READ") == NULL ||
-        strstr(output, "name=EDIT") == NULL) {
+        strstr(output, "name=EDIT") == NULL ||
+        strstr(output, "name=RUN") == NULL) {
         (void)puts("M229 failed: session transcript.");
         cleanup();
         return EXIT_FAILURE;
