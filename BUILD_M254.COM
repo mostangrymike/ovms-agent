@@ -37,6 +37,7 @@ $ GOSUB CHECK_TEXT
 $ IF .NOT. TEXT_FOUND
 $ THEN
 $     WRITE SYS$OUTPUT "M254 headless policy denial JSON evidence missing."
+$     GOSUB SHOW_OUTPUT
 $     FINAL_STATUS = %X10000002
 $     GOTO FINISH
 $ ENDIF
@@ -54,6 +55,7 @@ $
 $ IF .NOT. RUN_STATUS
 $ THEN
 $     WRITE SYS$OUTPUT "M254 headless approved DCL returned failure."
+$     GOSUB SHOW_OUTPUT
 $     FINAL_STATUS = RUN_STATUS
 $     GOTO FINISH
 $ ENDIF
@@ -61,19 +63,32 @@ $
 $ CHECK_FILE = TEST_OUT
 $ CHECK_NEEDLE = """executed"":true"
 $ GOSUB CHECK_TEXT
-$ IF .NOT. TEXT_FOUND THEN GOTO JSON_FAIL
+$ IF .NOT. TEXT_FOUND
+$ THEN
+$     FAILED_FIELD = "executed=true"
+$     GOTO JSON_FAIL
+$ ENDIF
 $ CHECK_NEEDLE = """condition"":""%X00000001"""
 $ GOSUB CHECK_TEXT
-$ IF .NOT. TEXT_FOUND THEN GOTO JSON_FAIL
+$ IF .NOT. TEXT_FOUND
+$ THEN
+$     FAILED_FIELD = "condition=%X00000001"
+$     GOTO JSON_FAIL
+$ ENDIF
 $ CHECK_NEEDLE = """success"":true"
 $ GOSUB CHECK_TEXT
-$ IF .NOT. TEXT_FOUND THEN GOTO JSON_FAIL
+$ IF .NOT. TEXT_FOUND
+$ THEN
+$     FAILED_FIELD = "success=true"
+$     GOTO JSON_FAIL
+$ ENDIF
 $
 $ WRITE SYS$OUTPUT "M254 headless DCL policy/status evidence passed."
 $ GOTO FINISH
 $
 $JSON_FAIL:
-$ WRITE SYS$OUTPUT "M254 headless success JSON evidence missing."
+$ WRITE SYS$OUTPUT "M254 headless success JSON evidence missing: ", FAILED_FIELD
+$ GOSUB SHOW_OUTPUT
 $ FINAL_STATUS = %X10000002
 $
 $FINISH:
@@ -105,6 +120,17 @@ $ ENDIF
 $ GOTO CHECK_TEXT_LOOP
 $CHECK_TEXT_DONE:
 $ CLOSE CHECK_CHAN
+$ RETURN
+$
+$SHOW_OUTPUT:
+$ SHOW_SPEC = F$SEARCH(TEST_OUT+";*")
+$ IF SHOW_SPEC .EQS. ""
+$ THEN
+$     WRITE SYS$OUTPUT "M254 captured JSON file is missing."
+$     RETURN
+$ ENDIF
+$ WRITE SYS$OUTPUT "M254 captured headless output:"
+$ TYPE 'SHOW_SPEC'
 $ RETURN
 $
 $CLEAN_OUTPUT:
