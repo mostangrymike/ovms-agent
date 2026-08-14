@@ -32,6 +32,13 @@ static int m253_seed(const char *path, const char *text)
     }
 
     length = strlen(text);
+    if (length > 0U && text[length - 1U] == '\n') {
+        --length;
+        if (length > 0U && text[length - 1U] == '\r') {
+            --length;
+        }
+    }
+
     if (write(fd, text, length) != (int)length) {
         (void)close(fd);
         return 0;
