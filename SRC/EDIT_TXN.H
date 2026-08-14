@@ -42,6 +42,11 @@ int edit_txn_add_rename(
     const char *path,
     const char *target_path);
 
+int edit_txn_add_move(
+    edit_txn *transaction,
+    const char *path,
+    const char *target_path);
+
 int edit_txn_write(edit_txn *transaction);
 
 int edit_txn_commit(edit_txn *transaction);

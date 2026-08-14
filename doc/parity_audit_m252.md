@@ -1,6 +1,6 @@
 # M252 Parity Baseline Audit
 
-**Current baseline:** `main` merge `3c5098d` (M252.1 validated)
+**Current baseline:** `main` merge `6464d7a` (M252.2 validated)
 
 This audit refreshes the older M160 parity matrix against the live source. It does
 not replace `doc/codex_parity.md`; it records later capability work and the next
@@ -68,59 +68,76 @@ phase. Rollback restores that exact object/version; commit removes the held obje
 Unversioned paths, `;0`, wildcard versions, device-qualified paths, parent
 traversal, and sensitive paths are rejected.
 
-Validation on VSI OpenVMS x86-64 covered:
-- transaction commit and rollback,
-- saved-plan parser acceptance and rejection,
-- saved-plan parse -> stage -> write -> commit/rollback,
-- the combined `@BUILD_M252` regression procedure.
+Validation on VSI OpenVMS x86-64 covered transaction commit/rollback, saved-plan
+parser acceptance/rejection, saved-plan parse -> stage -> write -> commit/rollback,
+and the combined `@BUILD_M252` regression procedure.
 
 M252.1 merged to `main` as `3c5098d`.
 
-### M252.2 guarded same-directory rename: IMPLEMENTED, pending final combined validation
+### M252.2 guarded same-directory rename: VERIFIED
 
-The `m252-file-rename` branch adds `type=rename_file` saved-plan operations and
-`edit_txn_add_rename` transaction support. The first rename contract is deliberately
-narrow:
-- exactly one rename operation per plan/transaction,
+Saved plans support `type=rename_file` with `path=` and `target_path=` only. Source
+and destination are project-relative exact versions, both use positive numeric
+`;version`, both name the same directory, the source must exist, and the destination
+must not exist. OLD/NEW payload is forbidden. The first contract allows exactly one
+rename operation per plan/transaction.
+
+The transaction renames the exact resolved source object to the requested
+destination. Rollback renames the actual resolved destination object back to the
+original exact filespec; commit leaves the renamed object in place. Slash-style
+project paths such as `SRC/A.C;1` are included in directory classification.
+
+Validation on VSI OpenVMS x86-64 covered transaction commit/rollback, saved-plan
+parser acceptance/rejection, saved-plan parse -> stage -> write -> commit/rollback,
+normal `@BUILD`, combined `@BUILD_M252`, final success status, and a clean working
+tree.
+
+M252.2 merged to `main` as `6464d7a`.
+
+### M252.3 guarded cross-directory move: IMPLEMENTED, pending final combined validation
+
+The `m252-file-move` branch adds `type=move_file` saved-plan operations and
+`edit_txn_add_move` transaction support. The move contract is deliberately narrow:
+- exactly one move operation per plan/transaction,
 - source and destination are project-relative,
-- both source and destination include explicit positive numeric `;version`,
-- source and destination must name the same directory,
+- both include explicit positive numeric `;version`,
+- source and destination must name different directories,
 - source must exist,
 - destination must not exist,
 - no OLD or NEW payload is allowed.
 
-The transaction renames the exact resolved source object to the requested
-destination. Rollback renames the actual resolved destination object back to the
-original exact filespec; commit leaves the renamed object in place. Cross-directory
-changes are intentionally not treated as rename and remain M252.3 work.
+Move and rename are disjoint contracts: slash-style and native OpenVMS directory
+syntax are classified, same-directory changes are rejected by move, and
+cross-directory changes are rejected by rename. The transaction uses the same
+proven exact-object `rename()` mechanism as M252.2; rollback reverses the resolved
+destination filespec to the exact original filespec, while commit leaves the exact
+object at the destination.
 
 Validation already completed on VSI OpenVMS x86-64:
-- exact-version transaction rename commit/rollback,
-- saved-plan rename parser acceptance/rejection,
+- exact-version cross-directory transaction move commit/rollback,
+- rename-vs-move directory-boundary regression,
+- saved-plan move parser acceptance/rejection,
 - saved-plan parse -> stage -> write -> commit/rollback,
-- normal `@BUILD` after rename executor changes.
+- normal `@BUILD` after move executor changes.
 
-Remaining M252.2 release step:
-- run the updated `@BUILD_M252` suite and final branch audit before PR/merge.
-
-### M252.3 guarded move: REMAINING
-
-Cross-directory file movement remains separate from M252.2. It must preserve
-OpenVMS file/version semantics and provide rollback without weakening the guarded
-path and collision rules established by delete and rename.
+Remaining M252.3 release step:
+- run the updated nine-test `@BUILD_M252` suite and final branch audit before
+  PR/merge.
 
 ## M252 plan
 
 1. **M252.1** - guarded transactional file deletion — complete and merged.
-2. **M252.2** - guarded same-directory rename with rollback — implemented; final
+2. **M252.2** - guarded same-directory rename with rollback — complete and merged.
+3. **M252.3** - guarded cross-directory move with rollback — implemented; final
    combined validation pending.
-3. M252.3 - guarded move with rollback.
 4. Update the authoritative parity matrix after each capability is validated on
    OpenVMS.
 
 ## Compatibility rule
 
 Every newly introduced externally visible DEC C identifier must be 31 characters
-or fewer. M252.2 production additions include `edit_txn_add_rename`; the execution
-regression hook `openai_m252_rename_exec` is also within the limit. Static helper
-names should remain compact where practical.
+or fewer. M252 production additions include `edit_txn_add_delete`,
+`edit_txn_add_rename`, and `edit_txn_add_move`; execution regression hooks
+`openai_m252_delete_exec`, `openai_m252_rename_exec`, and
+`openai_m252_move_exec` are also within the limit. Static helper names should
+remain compact where practical.

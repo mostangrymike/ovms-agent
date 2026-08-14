@@ -114,6 +114,10 @@ static size_t edit_txn_dir_length(const char *path)
     if (other != NULL && (split == NULL || other > split)) {
         split = other;
     }
+    other = strrchr(path, '/');
+    if (other != NULL && (split == NULL || other > split)) {
+        split = other;
+    }
 
     if (split == path + 1 && path[0] == '[') {
         return 0U;
@@ -410,6 +414,39 @@ int edit_txn_add_rename(
         !edit_txn_versioned_path(path) ||
         !edit_txn_versioned_path(target_path) ||
         !edit_txn_same_dir(path, target_path) ||
+        edit_txn_path_equal(path, target_path) ||
+        edit_txn_file_exists(target_path)) {
+        return 0;
+    }
+
+    file = &transaction->files[0];
+    (void)memset(file, 0, sizeof(*file));
+    (void)strcpy(file->path, path);
+    (void)strcpy(file->target_path, target_path);
+    file->existed_before = 1U;
+    file->is_rename = 1U;
+
+    if (!edit_txn_get_spec(path, file->original_spec, sizeof(file->original_spec))) {
+        (void)memset(file, 0, sizeof(*file));
+        return 0;
+    }
+
+    transaction->file_count = 1U;
+    return 1;
+}
+
+int edit_txn_add_move(
+    edit_txn *transaction,
+    const char *path,
+    const char *target_path)
+{
+    edit_txn_file *file;
+
+    if (transaction == NULL || !transaction->active ||
+        transaction->committed || transaction->file_count != 0U ||
+        !edit_txn_versioned_path(path) ||
+        !edit_txn_versioned_path(target_path) ||
+        edit_txn_same_dir(path, target_path) ||
         edit_txn_path_equal(path, target_path) ||
         edit_txn_file_exists(target_path)) {
         return 0;
