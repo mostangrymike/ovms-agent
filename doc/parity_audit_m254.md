@@ -27,7 +27,7 @@ The authoritative Phase 3 requirements are:
 
 ## Existing implementation
 
-### Approval policy surface - IMPLEMENTED, evidence reconciliation required
+### Approval policy surface - IMPLEMENTED, focused evidence added
 
 `SRC/openai_parity.c` implements three explicit approval modes:
 - `read-only`,
@@ -42,17 +42,35 @@ Policy may come from the default, `OVMS_AGENT_APPROVAL_POLICY`, or a session ove
 - `AGENT/EXEC`,
 - `AGENT/EXEC/DRY`.
 
-The old CAP-015 text saying policy modes are not configurable is stale. CAP-015 should be promoted only after focused policy-boundary regression evidence is recorded.
+`SRC/openai_transcript.c` independently classifies direct tools by minimum policy. `READ`-class tools are read-only, `EDIT`/`PATCH`/`BUILD` require workspace, and `RUN`/`MCP` require full. The direct runner also applies the write gate to workspace/full effects and a separate DCL gate to `RUN`.
+
+M254 strengthens `SRC/m229_tool_test.c` so it proves these boundaries without executing DCL:
+- read-only refuses `EDIT`,
+- workspace reaches the write-gate path for `BUILD`,
+- workspace refuses full-only `RUN`,
+- full policy reaches the independent DCL gate for `RUN`.
+
+If the strengthened regression passes on OpenVMS, the old CAP-015 text saying policy modes are not configurable is stale and CAP-015 can be promoted to VERIFIED.
 
 ### Persistent/session execution - IMPLEMENTED but not equivalent to headless execution
 
 The live command surface includes persistent session operations, `AGENT/SESSION/EXEC`, `AGENT/EXEC/RESUME`, `AGENT/EXEC/FORK`, autonomous-loop status/limits, project context, and Git context. These improve resumability and goal execution, but they are still invoked through the interactive command interpreter.
 
-### Generic approved DCL execution - MISSING
+### Restricted approved DCL execution - IMPLEMENTED, CAP-020 remains incomplete
 
-The registered parity tool catalog exposes controlled `run_build` execution and guarded external/GitHub tools, but no generic DCL command tool or user command that satisfies CAP-020.
+A guarded `RUN` path already exists in `SRC/COMMAND.C` and is reachable as a full-policy direct tool through `AGENT/TOOL/RUN RUN ...`.
 
-The implementation must not simply call arbitrary DCL from model text. It needs an explicit policy/gate contract, bounded command length/output, activity logging, OpenVMS odd/even status preservation, and deterministic rejection outside the permitted approval mode.
+The current implementation:
+- requires `state->dcl_enabled`,
+- is full-policy through the direct tool runner,
+- applies the write gate before dispatch,
+- rejects command separators, procedure invocation, redirection, and a broad set of mutating DCL verbs,
+- allows a bounded read-oriented whitelist (`SHOW`, `DIRECTORY`, `SEARCH`, `TYPE`, `DIFFERENCES`, and read-only Git subcommands),
+- captures command output through a temporary command procedure,
+- reports the OpenVMS completion status,
+- asks interactively for confirmation before execution.
+
+This is useful controlled DCL execution, but it does **not** satisfy CAP-020's current wording, "Arbitrary approved DCL execution." It is intentionally read-oriented and interactive. M254.2 therefore needs to decide and implement the bounded meaning of "arbitrary approved" without weakening the existing safety boundary.
 
 ### Non-interactive/headless entry point - MISSING
 
@@ -62,22 +80,23 @@ The implementation must not simply call arbitrary DCL from model text. It needs 
 
 ### M254.1 - Policy evidence reconciliation
 
-Add focused regressions proving that read-only, workspace, and full policy modes expose or reject effects according to their declared boundaries. If those pass on OpenVMS, update CAP-015 from PARTIAL to VERIFIED.
+Validate the strengthened `m229_tool_test.c` on OpenVMS. If it passes, update CAP-015 from PARTIAL to VERIFIED with the policy-boundary evidence.
 
 ### M254.2 - Approved generic DCL execution
 
-Add a deliberately explicit DCL execution surface with these minimum properties:
+Extend the deliberately explicit DCL execution surface while preserving these minimum properties:
 - requires the full approval policy,
-- requires the existing DCL gate to be enabled,
+- requires the existing write and DCL gates,
 - bounded command length,
 - bounded captured output,
 - exact OpenVMS condition value reported,
 - odd/even success interpretation retained,
 - activity/tool-result logging,
 - no silent execution from ordinary model prose,
-- deterministic rejection when policy or gate is insufficient.
+- deterministic rejection when policy or gate is insufficient,
+- no implicit bypass of the existing restricted `RUN` safety policy.
 
-This closes CAP-020 only after focused OpenVMS regressions.
+CAP-020 closes only after the exact approved-command contract is defined and focused OpenVMS regressions pass.
 
 ### M254.3 - Non-interactive execution
 
