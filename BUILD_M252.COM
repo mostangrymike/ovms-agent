@@ -1,5 +1,5 @@
 $!===========================================================
-$! BUILD_M252.COM - M252 guarded delete regressions
+$! BUILD_M252.COM - M252 guarded file-operation regressions
 $!===========================================================
 $ SET NOON
 $
@@ -11,7 +11,7 @@ $ SET DEFAULT 'PROJECT_DIR'
 $ FINAL_STATUS = 1
 $
 $!-----------------------------------------------------------
-$! M252 exact-version transaction delete commit/rollback.
+$! M252.1 exact-version transaction delete commit/rollback.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M252_DELETE_TEST.OBJ -
  /STANDARD=RELAXED_ANSI89 -
@@ -30,7 +30,7 @@ $ RUN [.BUILD]M252_DELETE_TEST
 $ IF .NOT. $STATUS THEN GOTO FAILURE
 $
 $!-----------------------------------------------------------
-$! M252 delete_file saved-plan parser validation.
+$! M252.1 delete_file saved-plan parser validation.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M252_PLAN_TEST.OBJ -
  /STANDARD=RELAXED_ANSI89 -
@@ -53,7 +53,7 @@ $ RUN [.BUILD]M252_PLAN_TEST
 $ IF .NOT. $STATUS THEN GOTO FAILURE
 $
 $!-----------------------------------------------------------
-$! M252 saved-plan parse/stage/write commit/rollback.
+$! M252.1 delete parse/stage/write commit/rollback.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M252_EXEC_TEST.OBJ -
  /STANDARD=RELAXED_ANSI89 -
@@ -73,6 +73,71 @@ $ LINK/EXECUTABLE=[.BUILD]M252_EXEC_TEST.EXE -
 $ IF .NOT. $STATUS THEN GOTO FAILURE
 $
 $ RUN [.BUILD]M252_EXEC_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$!-----------------------------------------------------------
+$! M252.2 exact-version transaction rename commit/rollback.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_RENAME_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_RENAME_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_RENAME_TEST.EXE -
+ [.BUILD]M252_RENAME_TEST.OBJ, -
+ [.BUILD]EDIT_TXN.OBJ, -
+ [.BUILD]RMS_WRITE.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_RENAME_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$!-----------------------------------------------------------
+$! M252.2 rename_file saved-plan parser validation.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_RENAME_PLAN_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_RENAME_PLAN_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_RENAME_PLAN_TEST.EXE -
+ [.BUILD]M252_RENAME_PLAN_TEST.OBJ, -
+ [.BUILD]AGENT.OBJ, -
+ [.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+ [.BUILD]PROJECT.OBJ, -
+ [.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+ [.BUILD]EDIT.OBJ, -
+ [.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_RENAME_PLAN_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$!-----------------------------------------------------------
+$! M252.2 rename parse/stage/write commit/rollback.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_RENAME_EXEC_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_RENAME_EXEC_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_RENAME_EXEC_TEST.EXE -
+ [.BUILD]M252_RENAME_EXEC_TEST.OBJ, -
+ [.BUILD]AGENT.OBJ, -
+ [.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+ [.BUILD]PROJECT.OBJ, -
+ [.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+ [.BUILD]EDIT.OBJ, -
+ [.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_RENAME_EXEC_TEST
 $ IF .NOT. $STATUS THEN GOTO FAILURE
 $
 $ WRITE SYS$OUTPUT "All M252 regressions passed."
