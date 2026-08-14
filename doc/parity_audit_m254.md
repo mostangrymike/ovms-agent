@@ -25,91 +25,79 @@ The authoritative Phase 3 requirements are:
 5. a non-interactive execution entry point,
 6. deterministic exit status and machine-readable output.
 
-## Existing implementation
-
-### Approval policy surface - IMPLEMENTED, focused evidence added
+## M254.1 - Policy evidence reconciliation - VALIDATED
 
 `SRC/openai_parity.c` implements three explicit approval modes:
 - `read-only`,
 - `workspace`,
 - `full`.
 
-Policy may come from the default, `OVMS_AGENT_APPROVAL_POLICY`, or a session override. The interactive command surface exposes:
-- `AGENT/APPROVAL`,
-- `AGENT/APPROVAL/SET`,
-- `AGENT/APPROVAL/RESET`,
-- `AGENT/CONTEXT`,
-- `AGENT/EXEC`,
-- `AGENT/EXEC/DRY`.
+Policy may come from the default, `OVMS_AGENT_APPROVAL_POLICY`, or a session override. `SRC/openai_transcript.c` independently classifies direct tools by minimum policy and applies the write/DCL gates.
 
-`SRC/openai_transcript.c` independently classifies direct tools by minimum policy. `READ`-class tools are read-only, `EDIT`/`PATCH`/`BUILD` require workspace, and `RUN`/`MCP` require full. The direct runner also applies the write gate to workspace/full effects and a separate DCL gate to `RUN`.
-
-M254 strengthens `SRC/m229_tool_test.c` so it proves these boundaries without executing DCL:
+M254 strengthened `SRC/m229_tool_test.c` to prove:
 - read-only refuses `EDIT`,
 - workspace reaches the write-gate path for `BUILD`,
 - workspace refuses full-only `RUN`,
 - full policy reaches the independent DCL gate for `RUN`.
 
-If the strengthened regression passes on OpenVMS, the old CAP-015 text saying policy modes are not configurable is stale and CAP-015 can be promoted to VERIFIED.
+Validated on VSI OpenVMS x86-64 on `m254-execution-modes`:
 
-### Persistent/session execution - IMPLEMENTED but not equivalent to headless execution
+```text
+Building OVMS Agent Version 2...
+All regression tests passed.
+Build completed successfully.
+$STATUS == "%X00000001"
+```
 
-The live command surface includes persistent session operations, `AGENT/SESSION/EXEC`, `AGENT/EXEC/RESUME`, `AGENT/EXEC/FORK`, autonomous-loop status/limits, project context, and Git context. These improve resumability and goal execution, but they are still invoked through the interactive command interpreter.
+This closes the CAP-015 policy evidence gap. The authoritative matrix should promote CAP-015 to VERIFIED during M254 reconciliation.
 
-### Restricted approved DCL execution - IMPLEMENTED, CAP-020 remains incomplete
+## Existing restricted RUN path
 
-A guarded `RUN` path already exists in `SRC/COMMAND.C` and is reachable as a full-policy direct tool through `AGENT/TOOL/RUN RUN ...`.
+A guarded interactive `RUN` path already exists in `SRC/COMMAND.C`. It requires the DCL gate, is full-policy when invoked through the direct tool runner, applies the write gate, captures output/status, and deliberately allows only read-oriented DCL. It remains unchanged by M254.2.
 
-The current implementation:
+## M254.2 - Approved generic DCL execution - IMPLEMENTED, AWAITING VMS VALIDATION
+
+M254 adds `SRC/COMMAND_DCL.C` and registers the explicit `DCL` command. This is a separate full-authority surface rather than a weakening of restricted `RUN`.
+
+Contract:
+- requires `full` approval policy,
+- requires `state->write_enabled`,
 - requires `state->dcl_enabled`,
-- is full-policy through the direct tool runner,
-- applies the write gate before dispatch,
-- rejects command separators, procedure invocation, redirection, and a broad set of mutating DCL verbs,
-- allows a bounded read-oriented whitelist (`SHOW`, `DIRECTORY`, `SEARCH`, `TYPE`, `DIFFERENCES`, and read-only Git subcommands),
-- captures command output through a temporary command procedure,
-- reports the OpenVMS completion status,
-- asks interactively for confirmation before execution.
+- accepts one bounded printable DCL command,
+- rejects command-procedure invocation and wrapper-control verbs that could escape status capture,
+- executes through a private `SYS$SCRATCH` command procedure,
+- captures bounded output,
+- preserves the exact OpenVMS condition value,
+- reports odd/even success interpretation,
+- records transcript/tool-result evidence and activity-log evidence,
+- is reachable only through the explicit `DCL` command, not ordinary model prose,
+- leaves the older restricted interactive `RUN` policy unchanged.
 
-This is useful controlled DCL execution, but it does **not** satisfy CAP-020's current wording, "Arbitrary approved DCL execution." It is intentionally read-oriented and interactive. M254.2 therefore needs to decide and implement the bounded meaning of "arbitrary approved" without weakening the existing safety boundary.
+The strengthened `SRC/m229_tool_test.c` now additionally verifies:
+- workspace-policy DCL refusal,
+- full-policy DCL-gate refusal,
+- a real harmless `SHOW DEFAULT` execution,
+- non-empty captured output,
+- odd OpenVMS success status,
+- persisted DCL result evidence,
+- rejection of wrapper-control `EXIT`.
 
-### Non-interactive/headless entry point - MISSING
+The test redirects transcript and activity logging to test-only files so normal user history is not modified.
 
-`SRC/MAIN.C` currently defines `int main(void)` and continuously reads commands from `stdin`. There is no command-line goal/command argument, batch result envelope, or dedicated deterministic exit-status mapping. Existing `AGENT/EXEC` and session execution commands therefore do not satisfy CAP-021 by themselves.
+New production external identifiers are `command_dcl` and `command_dcl_exec`; both are below the OpenVMS VAX / DEC C 31-character limit.
 
-## M254 implementation plan
+## M254.3 - Non-interactive/headless entry point - STILL OPEN
 
-### M254.1 - Policy evidence reconciliation
+`SRC/MAIN.C` still defines `int main(void)` and continuously reads commands from `stdin`. There is no command-line one-shot goal/command argument, bounded machine-readable result envelope, or dedicated deterministic exit-status mapping.
 
-Validate the strengthened `m229_tool_test.c` on OpenVMS. If it passes, update CAP-015 from PARTIAL to VERIFIED with the policy-boundary evidence.
-
-### M254.2 - Approved generic DCL execution
-
-Extend the deliberately explicit DCL execution surface while preserving these minimum properties:
-- requires the full approval policy,
-- requires the existing write and DCL gates,
-- bounded command length,
-- bounded captured output,
-- exact OpenVMS condition value reported,
-- odd/even success interpretation retained,
-- activity/tool-result logging,
-- no silent execution from ordinary model prose,
-- deterministic rejection when policy or gate is insufficient,
-- no implicit bypass of the existing restricted `RUN` safety policy.
-
-CAP-020 closes only after the exact approved-command contract is defined and focused OpenVMS regressions pass.
-
-### M254.3 - Non-interactive execution
-
-Add a one-shot entry point that can execute a supplied agent command/goal without entering the interactive prompt loop. It must:
+M254.3 must:
 - initialize and shut down normal agent state,
-- execute exactly one requested operation,
+- execute exactly one supplied operation without entering the prompt loop,
 - avoid interactive confirmation prompts,
-- emit a bounded machine-readable result mode,
+- emit bounded machine-readable output,
 - map success/failure to deterministic OpenVMS-compatible process status,
 - retain approval and write/DCL gates rather than bypassing them.
 
-This closes CAP-021 only after focused OpenVMS validation.
-
 ## Compatibility rule
 
-All production identifiers introduced by M254 must remain within the OpenVMS V7.2 VAX / DEC C 31-character external identifier limit. Test-only identifiers should follow the same rule where practical. No implementation may rely on compiler truncation.
+All production identifiers introduced by M254 must remain within the OpenVMS V7.2 VAX / DEC C 31-character external identifier limit. No implementation may rely on compiler truncation.
