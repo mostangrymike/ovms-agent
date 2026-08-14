@@ -148,6 +148,43 @@ static int execute_create_precheck(
     return 1;
 }
 
+static int execute_delete_precheck(
+    const openai_saved_operation *operations,
+    unsigned int operation_count)
+{
+    unsigned int index;
+    unsigned int delete_count;
+
+    delete_count = 0U;
+
+    for (index = 0U; index < operation_count; ++index) {
+        if (operations[index].is_block != 2) {
+            continue;
+        }
+
+        ++delete_count;
+
+        if (!openai_path_is_safe(operations[index].path) ||
+            openai_path_is_sensitive(operations[index].path)) {
+            (void)printf(
+                "Saved plan delete_file refused for path: %s\n",
+                operations[index].path
+            );
+            return 0;
+        }
+    }
+
+    if (delete_count > 0U &&
+        (delete_count != 1U || operation_count != 1U)) {
+        (void)puts(
+            "M252 delete_file plans must contain exactly one operation."
+        );
+        return 0;
+    }
+
+    return 1;
+}
+
 static int execute_stage_operations_chained(
     edit_txn *transaction,
     const openai_saved_operation *operations,
@@ -165,6 +202,9 @@ static int execute_stage_operations_chained(
 
     if (!execute_create_precheck(
             operations,
+            operation_count) ||
+        !execute_delete_precheck(
+            operations,
             operation_count)) {
         return 0;
     }
@@ -174,6 +214,21 @@ static int execute_stage_operations_chained(
          ++index) {
         char *working_content;
         int already_processed;
+
+        if (operations[index].is_block == 2) {
+            if (!edit_txn_add_delete(
+                    transaction,
+                    operations[index].path)) {
+                (void)printf(
+                    "Unable to stage delete_file operation for %s. "
+                    "Use an existing explicit numeric file version such as ;1.\n",
+                    operations[index].path
+                );
+                return 0;
+            }
+
+            continue;
+        }
 
         if (operations[index].is_create) {
             if (!edit_txn_add(
