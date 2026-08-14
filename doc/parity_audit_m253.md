@@ -23,27 +23,27 @@ The M252 implementation preserves the OpenVMS exact-version object model for del
 
 ### CAP-008 / CP-016 - Planned file creation
 
-The authoritative matrix says PARTIAL. Later M150/M150B/M150C/M150D work provides saved-plan `create_file` support, transaction behavior, path validation, rollback, and regressions. `SRC/m251_txn_fail_test.c` also provides an automatic transaction-write failure rollback regression. CAP-008 / CP-016 should be reviewed for reclassification to VERIFIED.
+The authoritative matrix says PARTIAL. M150/M150B/M150C/M150D provide saved-plan `create_file` parsing, path validation, approval gating, transactional execution, successful commit, build-failure rollback, and tamper rejection. `SRC/m251_txn_fail_test.c` also provides an automatic transaction-write failure rollback regression. The original CAP-008 / CP-016 behavior is therefore supported by executable evidence and should be reclassified to VERIFIED.
 
 ### CAP-009 - File deletion
 
-The authoritative matrix says MISSING. M252.1 now provides guarded exact-version `delete_file` saved-plan execution with transaction rollback and focused regressions. Feature presence is no longer missing.
+The authoritative matrix says MISSING. M252.1 provides guarded exact-version `delete_file` saved-plan execution with transaction rollback and focused transaction/parser/execution regressions. M253 adds explicit RMS/isolation and automatic write-failure rollback evidence. CAP-009 should be reclassified to VERIFIED.
 
 ### CAP-010 - File rename
 
-The authoritative matrix says UNKNOWN. M252.2 now provides guarded same-directory exact-version `rename_file` saved-plan execution with rollback and focused regressions.
+The authoritative matrix says UNKNOWN. M252.2 provides guarded same-directory exact-version `rename_file` saved-plan execution with rollback and focused transaction/parser/execution regressions. M253 adds explicit RMS/isolation and automatic write-failure rollback evidence. CAP-010 should be reclassified to VERIFIED.
 
 ### CAP-011 - File move
 
-The authoritative matrix says UNKNOWN. M252.3 now provides guarded cross-directory exact-version `move_file` saved-plan execution with rollback and focused regressions.
+The authoritative matrix says UNKNOWN. M252.3 provides guarded cross-directory exact-version `move_file` saved-plan execution with rollback and focused transaction/parser/execution regressions. M253 adds explicit RMS/isolation and automatic write-failure rollback evidence. CAP-011 should be reclassified to VERIFIED.
 
 ### CAP-015 - Guarded workspace-write workflow
 
-The authoritative matrix says PARTIAL because policy modes were not configurable. Later parity work implements read-only, workspace, and full approval policies with environment and session selection. The current policy surface should be reviewed against the original CAP-015 pass condition before reclassification.
+The authoritative matrix says PARTIAL because policy modes were not configurable. Later parity work implements read-only, workspace, and full approval policies with environment and session selection. This is a genuine stale entry, but M253 does not reclassify it without a focused policy acceptance review.
 
 ### CAP-024 / CP-019 - Project instructions
 
-The authoritative matrix says MISSING. The live repository implements project-root `OVMS_AGENT_INSTRUCTIONS.TXT` discovery, bounded loading, status reporting, reload, and request integration. However, the original CP-019 pass condition also requires directory-specific instruction scope. Root-level instructions are implemented; full CP-019 parity is therefore not automatically VERIFIED.
+The authoritative matrix says MISSING. The live repository implements project-root `OVMS_AGENT_INSTRUCTIONS.TXT` discovery, bounded loading, status reporting, reload, and request integration. However, the original CP-019 pass condition also requires directory-specific instruction scope. Root-level instructions are implemented; full CP-019 parity is therefore not VERIFIED by M253.
 
 ### CAP-027 / CP-020 external-tool portion
 
@@ -66,28 +66,44 @@ $STATUS == "%X00000001"
 
 This closes the explicit RMS metadata and unrelated-file isolation evidence gap for the M252 structural operations.
 
-### Structural-operation automatic failure rollback - AWAITING VMS VALIDATION
+### Structural-operation automatic failure rollback - VALIDATED
 
-`SRC/M253_FILE_FAIL_TEST.C` stages each structural operation first, then stages a deliberately oversized `.OPT` write that is rejected by the existing RMS record writer. The expected behavior is that `edit_txn_write()` fails and automatically rolls back the already-applied structural operation.
+`SRC/M253_FILE_FAIL_TEST.C` stages each structural operation first, then stages a deliberately oversized `.OPT` write that is rejected by the existing RMS record writer. `edit_txn_write()` must fail and automatically roll back the already-applied structural operation.
 
 The focused checks are:
 - delete: exact original source filespec restored and failed `.OPT` absent,
 - rename: exact original source filespec restored, destination absent, failed `.OPT` absent,
 - move: exact original source filespec restored, destination absent, failed `.OPT` absent.
 
-This test requires no production failpoint or production-code change; it reuses the established oversized-record write failure mechanism.
+Validated on VSI OpenVMS x86-64:
 
-### Authoritative evidence references - PENDING
+```text
+Running M253 parity evidence regressions...
+M253 file-operation RMS/isolation evidence passed.
+M253 structural operation failure rollback evidence passed.
+All M253 parity evidence regressions passed.
+$STATUS == "%X00000001"
+```
 
-After the structural failure regression is validated, update `doc/codex_parity.md` so every status change to VERIFIED cites the focused source/test procedure and the M252/M253 OpenVMS validation baselines.
+This closes the Phase 2 failure-injection requirement without adding a production failpoint or changing shipped runtime behavior.
+
+## Phase 2 conclusion
+
+All five Phase 2 roadmap requirements now have implementation plus OpenVMS evidence:
+1. plan-driven file creation,
+2. guarded exact-version deletion,
+3. guarded exact-version rename and move,
+4. RMS/version preservation evidence,
+5. operation-specific automatic failure rollback evidence.
+
+Phase 2 is evidence-complete. The authoritative parity matrix can now mark CAP-008, CAP-009, CAP-010, CAP-011, and CP-016 VERIFIED.
 
 ## Remaining M253 work
 
-1. Validate `SRC/M253_FILE_FAIL_TEST.C` through `@BUILD_M253` on OpenVMS.
-2. Reconcile CAP-008, CAP-009, CAP-010, CAP-011, CAP-015, CAP-024, and CAP-027 against live source and regressions.
-3. Update `doc/codex_parity.md` statuses and acceptance-test evidence only where the pass conditions are actually satisfied.
-4. Run normal build plus the focused parity suite on OpenVMS.
-5. Use the reconciled authoritative matrix to choose the next implementation milestone.
+1. Update `doc/codex_parity.md` for CAP-008, CAP-009, CAP-010, CAP-011, CP-016, and Phase 2 completion.
+2. Keep later-phase stale entries conservative until their own acceptance conditions are reviewed.
+3. Run normal build plus `@BUILD_M253` after the documentation reconciliation.
+4. Use the resulting authoritative matrix to select the next genuine parity gap.
 
 ## Compatibility rule
 
