@@ -26,13 +26,26 @@ static int m252_seed(
         return 0;
     }
 
-    if (fputs(text, file) == EOF ||
-        fgetname(file, exact_spec) == 0 ||
-        fclose(file) != 0) {
+    if (fputs(text, file) == EOF) {
+        (void)fclose(file);
         return 0;
     }
 
-    return 1;
+    if (fclose(file) != 0) {
+        return 0;
+    }
+
+    file = fopen(path, "r", "ctx=stm");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fgetname(file, exact_spec) == 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    return fclose(file) == 0;
 }
 
 static int m252_read_exact(
