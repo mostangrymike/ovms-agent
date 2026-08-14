@@ -1,0 +1,87 @@
+$!===========================================================
+$! BUILD_M252.COM - M252 guarded delete regressions
+$!===========================================================
+$ SET NOON
+$
+$ SAVED_DEFAULT = F$ENVIRONMENT("DEFAULT")
+$ PROCEDURE = F$ENVIRONMENT("PROCEDURE")
+$ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
+F$PARSE(PROCEDURE,,,"DIRECTORY")
+$ SET DEFAULT 'PROJECT_DIR'
+$ FINAL_STATUS = 1
+$
+$!-----------------------------------------------------------
+$! M252 exact-version transaction delete commit/rollback.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_DELETE_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_DELETE_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_DELETE_TEST.EXE -
+ [.BUILD]M252_DELETE_TEST.OBJ, -
+ [.BUILD]EDIT_TXN.OBJ, -
+ [.BUILD]RMS_WRITE.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_DELETE_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$!-----------------------------------------------------------
+$! M252 delete_file saved-plan parser validation.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_PLAN_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_PLAN_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_PLAN_TEST.EXE -
+ [.BUILD]M252_PLAN_TEST.OBJ, -
+ [.BUILD]AGENT.OBJ, -
+ [.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+ [.BUILD]PROJECT.OBJ, -
+ [.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+ [.BUILD]EDIT.OBJ, -
+ [.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_PLAN_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$!-----------------------------------------------------------
+$! M252 saved-plan parse/stage/write commit/rollback.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M252_EXEC_TEST.OBJ -
+ /STANDARD=RELAXED_ANSI89 -
+ /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+ /INCLUDE_DIRECTORY=([.SRC]) -
+ [.SRC]M252_EXEC_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ LINK/EXECUTABLE=[.BUILD]M252_EXEC_TEST.EXE -
+ [.BUILD]M252_EXEC_TEST.OBJ, -
+ [.BUILD]AGENT.OBJ, -
+ [.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+ [.BUILD]PROJECT.OBJ, -
+ [.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+ [.BUILD]EDIT.OBJ, -
+ [.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ RUN [.BUILD]M252_EXEC_TEST
+$ IF .NOT. $STATUS THEN GOTO FAILURE
+$
+$ WRITE SYS$OUTPUT "All M252 regressions passed."
+$ GOTO FINISH
+$
+$ FAILURE:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M252 regression build failed."
+$
+$ FINISH:
+$ SET DEFAULT 'SAVED_DEFAULT'
+$ EXIT 'FINAL_STATUS'
