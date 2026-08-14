@@ -28,6 +28,7 @@ static int m253_seed(const char *path, const char *text)
     m253_cleanup(path);
     fd = creat(path, 0, "rfm=var", "rat=cr");
     if (fd < 0) {
+        (void)printf("M253 seed open failed: %s\n", path);
         return 0;
     }
 
@@ -40,11 +41,17 @@ static int m253_seed(const char *path, const char *text)
     }
 
     if (write(fd, text, length) != (int)length) {
+        (void)printf("M253 seed write failed: %s\n", path);
         (void)close(fd);
         return 0;
     }
 
-    return close(fd) == 0;
+    if (close(fd) != 0) {
+        (void)printf("M253 seed close failed: %s\n", path);
+        return 0;
+    }
+
+    return 1;
 }
 
 static int m253_snapshot(
@@ -64,6 +71,10 @@ static int m253_snapshot(
 
     status = sys$open(&fab);
     if (!(status & 1UL)) {
+        (void)printf(
+            "M253 RMS open failed: %s status=%08lX\n",
+            path,
+            status);
         return 0;
     }
 
@@ -73,43 +84,86 @@ static int m253_snapshot(
     snapshot->mrs = (unsigned int)fab.fab$w_mrs;
 
     status = sys$close(&fab);
-    return (status & 1UL) != 0UL;
+    if (!(status & 1UL)) {
+        (void)printf(
+            "M253 RMS close failed: %s status=%08lX\n",
+            path,
+            status);
+        return 0;
+    }
+
+    return 1;
 }
 
 static int m253_same_rms(
+    const char *label,
     const m253_rms_snapshot *left,
     const m253_rms_snapshot *right)
 {
-    return left->org == right->org &&
-           left->rfm == right->rfm &&
-           left->rat == right->rat &&
-           left->mrs == right->mrs;
+    if (left->org == right->org &&
+        left->rfm == right->rfm &&
+        left->rat == right->rat &&
+        left->mrs == right->mrs) {
+        return 1;
+    }
+
+    (void)printf(
+        "M253 %s RMS mismatch: before org=%u rfm=%u rat=%u mrs=%u; after org=%u rfm=%u rat=%u mrs=%u\n",
+        label,
+        left->org,
+        left->rfm,
+        left->rat,
+        left->mrs,
+        right->org,
+        right->rfm,
+        right->rat,
+        right->mrs);
+    return 0;
 }
 
 static int m253_read_exact(const char *path, const char *expected)
 {
     FILE *file;
     char buffer[256];
+    char extra[8];
 
     file = fopen(path, "r", "ctx=stm");
     if (file == NULL) {
+        (void)printf("M253 read open failed: %s\n", path);
         return 0;
     }
 
     if (fgets(buffer, sizeof(buffer), file) == NULL) {
+        (void)printf("M253 read first record failed: %s\n", path);
         (void)fclose(file);
         return 0;
     }
 
-    if (fgets(buffer + strlen(buffer),
-              sizeof(buffer) - strlen(buffer),
-              file) != NULL) {
+    if (fgets(extra, sizeof(extra), file) != NULL) {
+        (void)printf(
+            "M253 read found unexpected extra record: %s first=[%s] extra=[%s]\n",
+            path,
+            buffer,
+            extra);
         (void)fclose(file);
         return 0;
     }
 
-    (void)fclose(file);
-    return strcmp(buffer, expected) == 0;
+    if (fclose(file) != 0) {
+        (void)printf("M253 read close failed: %s\n", path);
+        return 0;
+    }
+
+    if (strcmp(buffer, expected) != 0) {
+        (void)printf(
+            "M253 content mismatch: %s expected=[%s] actual=[%s]\n",
+            path,
+            expected,
+            buffer);
+        return 0;
+    }
+
+    return 1;
 }
 
 static int m253_absent(const char *path)
@@ -122,6 +176,7 @@ static int m253_absent(const char *path)
     }
 
     (void)fclose(file);
+    (void)printf("M253 expected absent but found: %s\n", path);
     return 0;
 }
 
@@ -141,28 +196,57 @@ static int m253_delete_evidence(void)
     edit_txn txn;
     int result;
 
+    result = 0;
     m253_cleanup(base);
-    if (!m253_seed(base, "M253 DELETE\n") ||
-        !m253_snapshot(versioned, &before)) {
-        (void)puts("M253 delete seed/snapshot failed.");
+
+    if (!m253_seed(base, "M253 DELETE\n")) {
+        (void)puts("M253 delete checkpoint: seed failed.");
+        return 0;
+    }
+    if (!m253_snapshot(versioned, &before)) {
+        (void)puts("M253 delete checkpoint: initial snapshot failed.");
         m253_cleanup(base);
         return 0;
     }
 
     edit_txn_init(&txn);
-    result =
-        edit_txn_add_delete(&txn, versioned) &&
-        edit_txn_write(&txn) &&
-        m253_absent(versioned) &&
-        m253_sentinel_ok() &&
-        edit_txn_rollback(&txn) &&
-        m253_snapshot(versioned, &after) &&
-        m253_same_rms(&before, &after) &&
-        m253_sentinel_ok();
+    if (!edit_txn_add_delete(&txn, versioned)) {
+        (void)puts("M253 delete checkpoint: add failed.");
+        goto done;
+    }
+    if (!edit_txn_write(&txn)) {
+        (void)puts("M253 delete checkpoint: write failed.");
+        goto done;
+    }
+    if (!m253_absent(versioned)) {
+        (void)puts("M253 delete checkpoint: source still present after write.");
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 delete checkpoint: sentinel changed after write.");
+        goto done;
+    }
+    if (!edit_txn_rollback(&txn)) {
+        (void)puts("M253 delete checkpoint: rollback failed.");
+        goto done;
+    }
+    if (!m253_snapshot(versioned, &after)) {
+        (void)puts("M253 delete checkpoint: restored snapshot failed.");
+        goto done;
+    }
+    if (!m253_same_rms("delete rollback", &before, &after)) {
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 delete checkpoint: sentinel changed after rollback.");
+        goto done;
+    }
 
+    result = 1;
+
+done:
     edit_txn_dispose(&txn);
     m253_cleanup(base);
-
     if (!result) {
         (void)puts("M253 delete RMS/isolation evidence failed.");
     }
@@ -181,33 +265,66 @@ static int m253_rename_evidence(void)
     edit_txn txn;
     int result;
 
+    result = 0;
     m253_cleanup(src_base);
     m253_cleanup(dst_base);
-    if (!m253_seed(src_base, "M253 RENAME\n") ||
-        !m253_snapshot(src, &before)) {
-        (void)puts("M253 rename seed/snapshot failed.");
+
+    if (!m253_seed(src_base, "M253 RENAME\n")) {
+        (void)puts("M253 rename checkpoint: seed failed.");
+        return 0;
+    }
+    if (!m253_snapshot(src, &before)) {
+        (void)puts("M253 rename checkpoint: initial snapshot failed.");
         m253_cleanup(src_base);
-        m253_cleanup(dst_base);
         return 0;
     }
 
     edit_txn_init(&txn);
-    result =
-        edit_txn_add_rename(&txn, src, dst) &&
-        edit_txn_write(&txn) &&
-        m253_snapshot(dst, &moved) &&
-        m253_same_rms(&before, &moved) &&
-        m253_sentinel_ok() &&
-        edit_txn_rollback(&txn) &&
-        m253_snapshot(src, &restored) &&
-        m253_same_rms(&before, &restored) &&
-        m253_absent(dst) &&
-        m253_sentinel_ok();
+    if (!edit_txn_add_rename(&txn, src, dst)) {
+        (void)puts("M253 rename checkpoint: add failed.");
+        goto done;
+    }
+    if (!edit_txn_write(&txn)) {
+        (void)puts("M253 rename checkpoint: write failed.");
+        goto done;
+    }
+    if (!m253_snapshot(dst, &moved)) {
+        (void)puts("M253 rename checkpoint: destination snapshot failed.");
+        goto done;
+    }
+    if (!m253_same_rms("rename destination", &before, &moved)) {
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 rename checkpoint: sentinel changed after write.");
+        goto done;
+    }
+    if (!edit_txn_rollback(&txn)) {
+        (void)puts("M253 rename checkpoint: rollback failed.");
+        goto done;
+    }
+    if (!m253_snapshot(src, &restored)) {
+        (void)puts("M253 rename checkpoint: restored snapshot failed.");
+        goto done;
+    }
+    if (!m253_same_rms("rename rollback", &before, &restored)) {
+        goto done;
+    }
+    if (!m253_absent(dst)) {
+        (void)puts("M253 rename checkpoint: destination remains after rollback.");
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 rename checkpoint: sentinel changed after rollback.");
+        goto done;
+    }
 
+    result = 1;
+
+done:
     edit_txn_dispose(&txn);
     m253_cleanup(src_base);
     m253_cleanup(dst_base);
-
     if (!result) {
         (void)puts("M253 rename RMS/isolation evidence failed.");
     }
@@ -225,33 +342,66 @@ static int m253_move_evidence(void)
     edit_txn txn;
     int result;
 
+    result = 0;
     m253_cleanup(src_base);
     m253_cleanup(dst);
-    if (!m253_seed(src_base, "M253 MOVE\n") ||
-        !m253_snapshot(src, &before)) {
-        (void)puts("M253 move seed/snapshot failed.");
+
+    if (!m253_seed(src_base, "M253 MOVE\n")) {
+        (void)puts("M253 move checkpoint: seed failed.");
+        return 0;
+    }
+    if (!m253_snapshot(src, &before)) {
+        (void)puts("M253 move checkpoint: initial snapshot failed.");
         m253_cleanup(src_base);
-        m253_cleanup(dst);
         return 0;
     }
 
     edit_txn_init(&txn);
-    result =
-        edit_txn_add_move(&txn, src, dst) &&
-        edit_txn_write(&txn) &&
-        m253_snapshot(dst, &moved) &&
-        m253_same_rms(&before, &moved) &&
-        m253_sentinel_ok() &&
-        edit_txn_rollback(&txn) &&
-        m253_snapshot(src, &restored) &&
-        m253_same_rms(&before, &restored) &&
-        m253_absent(dst) &&
-        m253_sentinel_ok();
+    if (!edit_txn_add_move(&txn, src, dst)) {
+        (void)puts("M253 move checkpoint: add failed.");
+        goto done;
+    }
+    if (!edit_txn_write(&txn)) {
+        (void)puts("M253 move checkpoint: write failed.");
+        goto done;
+    }
+    if (!m253_snapshot(dst, &moved)) {
+        (void)puts("M253 move checkpoint: destination snapshot failed.");
+        goto done;
+    }
+    if (!m253_same_rms("move destination", &before, &moved)) {
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 move checkpoint: sentinel changed after write.");
+        goto done;
+    }
+    if (!edit_txn_rollback(&txn)) {
+        (void)puts("M253 move checkpoint: rollback failed.");
+        goto done;
+    }
+    if (!m253_snapshot(src, &restored)) {
+        (void)puts("M253 move checkpoint: restored snapshot failed.");
+        goto done;
+    }
+    if (!m253_same_rms("move rollback", &before, &restored)) {
+        goto done;
+    }
+    if (!m253_absent(dst)) {
+        (void)puts("M253 move checkpoint: destination remains after rollback.");
+        goto done;
+    }
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 move checkpoint: sentinel changed after rollback.");
+        goto done;
+    }
 
+    result = 1;
+
+done:
     edit_txn_dispose(&txn);
     m253_cleanup(src_base);
     m253_cleanup(dst);
-
     if (!result) {
         (void)puts("M253 move RMS/isolation evidence failed.");
     }
@@ -268,6 +418,12 @@ int main(void)
     m253_cleanup("M253_SENTINEL.DAT");
     if (!m253_seed("M253_SENTINEL.DAT", "M253 SENTINEL\n")) {
         (void)puts("M253 could not create unrelated-file sentinel.");
+        return EXIT_FAILURE;
+    }
+
+    if (!m253_sentinel_ok()) {
+        (void)puts("M253 sentinel verification failed before operations.");
+        m253_cleanup("M253_SENTINEL.DAT");
         return EXIT_FAILURE;
     }
 
