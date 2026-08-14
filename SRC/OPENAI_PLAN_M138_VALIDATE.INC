@@ -375,3 +375,255 @@ int openai_m195_failure_preserves(void)
 
     return result;
 }
+
+static int openai_m251_append(
+    char *buffer,
+    size_t capacity,
+    size_t *used,
+    const char *text)
+{
+    size_t length;
+
+    if (buffer == NULL || used == NULL || text == NULL) {
+        return 0;
+    }
+
+    length = strlen(text);
+
+    if (*used + length >= capacity) {
+        return 0;
+    }
+
+    (void)memcpy(buffer + *used, text, length);
+    *used += length;
+    buffer[*used] = '\0';
+    return 1;
+}
+
+static char *openai_m251_big_plan(int old_side)
+{
+    static const char fill_line[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n";
+    char *plan;
+    size_t used;
+    int index;
+
+    plan = (char *)malloc(7000U);
+
+    if (plan == NULL) {
+        return NULL;
+    }
+
+    used = 0U;
+    plan[0] = '\0';
+
+    if (!openai_m251_append(plan, 7000U, &used,
+            "operation_count=1\n"
+            "BEGIN_OPERATION\n"
+            "type=replace_block\n"
+            "path=SRC/TEST.C\n"
+            "BEGIN_OLD_TEXT\n")) {
+        free(plan);
+        return NULL;
+    }
+
+    if (old_side) {
+        for (index = 0; index < 70; ++index) {
+            if (!openai_m251_append(
+                    plan, 7000U, &used, fill_line)) {
+                free(plan);
+                return NULL;
+            }
+        }
+    } else if (!openai_m251_append(
+                   plan, 7000U, &used, "OLD\n")) {
+        free(plan);
+        return NULL;
+    }
+
+    if (!openai_m251_append(plan, 7000U, &used,
+            "END_OLD_TEXT\n"
+            "BEGIN_NEW_TEXT\n")) {
+        free(plan);
+        return NULL;
+    }
+
+    if (!old_side) {
+        for (index = 0; index < 70; ++index) {
+            if (!openai_m251_append(
+                    plan, 7000U, &used, fill_line)) {
+                free(plan);
+                return NULL;
+            }
+        }
+    } else if (!openai_m251_append(
+                   plan, 7000U, &used, "NEW\n")) {
+        free(plan);
+        return NULL;
+    }
+
+    if (!openai_m251_append(plan, 7000U, &used,
+            "END_NEW_TEXT\n"
+            "END_OPERATION\n")) {
+        free(plan);
+        return NULL;
+    }
+
+    return plan;
+}
+
+int openai_m251_fence_old(void)
+{
+    char *normalized;
+
+    normalized = openai_m195_normalize_count(
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "```c\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n");
+
+    if (normalized != NULL) {
+        free(normalized);
+        return 0;
+    }
+
+    return 1;
+}
+
+int openai_m251_fence_new(void)
+{
+    char *normalized;
+
+    normalized = openai_m195_normalize_count(
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "   ``` fence\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n");
+
+    if (normalized != NULL) {
+        free(normalized);
+        return 0;
+    }
+
+    return 1;
+}
+
+int openai_m251_size_old(void)
+{
+    char *plan;
+    char *normalized;
+
+    plan = openai_m251_big_plan(1);
+
+    if (plan == NULL) {
+        return 0;
+    }
+
+    normalized = openai_m195_normalize_count(plan);
+    free(plan);
+
+    if (normalized != NULL) {
+        free(normalized);
+        return 0;
+    }
+
+    return 1;
+}
+
+int openai_m251_size_new(void)
+{
+    char *plan;
+    char *normalized;
+
+    plan = openai_m251_big_plan(0);
+
+    if (plan == NULL) {
+        return 0;
+    }
+
+    normalized = openai_m195_normalize_count(plan);
+    free(plan);
+
+    if (normalized != NULL) {
+        free(normalized);
+        return 0;
+    }
+
+    return 1;
+}
+
+int openai_m251_payload_ok_test(void)
+{
+    return openai_m195_normalized_equals(
+        "operation_count=0\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n",
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n");
+}
+
+int openai_m251_narr_ok(void)
+{
+    return openai_m195_normalized_equals(
+        "Goal\n"
+        "Inline `code` is narrative.\n"
+        "``` narrative fence\n"
+        "operation_count=0\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n",
+        "Goal\n"
+        "Inline `code` is narrative.\n"
+        "``` narrative fence\n"
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=replace_block\n"
+        "path=SRC/TEST.C\n"
+        "BEGIN_OLD_TEXT\n"
+        "OLD\n"
+        "END_OLD_TEXT\n"
+        "BEGIN_NEW_TEXT\n"
+        "NEW\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n");
+}
