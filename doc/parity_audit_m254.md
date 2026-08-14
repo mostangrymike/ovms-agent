@@ -97,9 +97,9 @@ New production external identifiers are `command_dcl` and `command_dcl_exec`; bo
 
 This supplies the implementation/evidence needed to promote CAP-020 to VERIFIED during final M254 reconciliation. The explicit `DCL` command is the authoritative M254.2 interface; direct tool-table exposure is not required for the CAP-020 contract and must not be claimed unless separately wired and tested.
 
-## M254.3 - Non-interactive/headless entry point - IN PROGRESS
+## M254.3 - Non-interactive/headless entry point - VALIDATED
 
-The first M254.3 slice adds a one-shot DCL entry through `OVMS_AGENT.COM`:
+M254.3 adds a one-shot DCL entry through `OVMS_AGENT.COM`:
 
 ```text
 @OVMS_AGENT "DCL SHOW DEFAULT" JSON
@@ -115,7 +115,23 @@ The one-shot contract is:
 - return the captured OpenVMS condition as the one-shot process result,
 - use a quiet initialization mode so JSON output is not contaminated by the normal banner.
 
-This slice proves deterministic headless command execution. CAP-021 remains open until the one-shot interface is validated on OpenVMS and the final acceptance wording is reconciled against whether a direct tool/command entry is sufficient or a model-goal entry is also required.
+`BUILD_M254.COM` proves both denial and success paths. The denial case uses workspace policy and requires the deterministic M254 failure condition. The success case uses full policy plus both write and DCL gates, executes harmless `SHOW DEFAULT`, verifies `executed:true`, extracts the JSON condition field, compares that condition numerically with the exact process status returned by `@OVMS_AGENT`, and requires `success:true`.
+
+Validated on VSI OpenVMS x86-64:
+
+```text
+Running M254 execution-mode regressions...
+M254 headless DCL policy/status evidence passed.
+M254 preserved condition: %X00030001
+All M254 execution-mode regressions passed.
+$STATUS == "%X00000001"
+```
+
+The `%X00030001` result is intentionally retained as evidence that M254 does not normalize successful OpenVMS conditions to `%X00000001`; it preserves the actual odd condition returned by the executed DCL command and reports it consistently in JSON and process status.
+
+All M254.3 helper functions added in `SRC/MAIN.C` are `static`, so M254.3 adds no new linker-visible identifiers. The only new M254 production external identifiers remain `command_dcl` and `command_dcl_exec`, both within the DEC C/VAX 31-character external identifier limit.
+
+This supplies the implementation/evidence needed to promote CAP-021 to VERIFIED during final M254 reconciliation for the defined non-interactive one-shot command interface.
 
 ## Compatibility rule
 
