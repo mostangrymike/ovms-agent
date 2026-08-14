@@ -1,7 +1,7 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative M160 parity specification
-**Baseline date:** 2 August 2026
+**Document status:** Authoritative parity specification, M253 reconciled
+**Baseline date:** 14 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
 
@@ -194,10 +194,10 @@ POSIX filesystem sequence.
 | CAP-005 | Exact line-range replacement         | VERIFIED | replace_lines with verified inclusive ranges                                     |
 | CAP-006 | Direct new-file creation             | VERIFIED | AGENT/CREATE and create_file                                                     |
 | CAP-007 | Transactional multi-file replacement | VERIFIED | AGENT/EXECUTE and edit_txn                                                       |
-| CAP-008 | Planned file creation                | PARTIAL  | Direct creation exists; fully integrated plan-driven creation remains incomplete |
-| CAP-009 | File deletion                        | MISSING  | No delete_file tool or guarded deletion command                                  |
-| CAP-010 | File rename                          | UNKNOWN  | No accepted regression evidence                                                  |
-| CAP-011 | File move                            | UNKNOWN  | No accepted regression evidence                                                  |
+| CAP-008 | Planned file creation                | VERIFIED | M150-M150D saved-plan create_file parsing, approval, commit, rollback, tamper tests |
+| CAP-009 | File deletion                        | VERIFIED | M252.1 exact-version delete plus M253 RMS/isolation and automatic-failure rollback |
+| CAP-010 | File rename                          | VERIFIED | M252.2 exact-version same-directory rename plus M253 preservation/failure evidence |
+| CAP-011 | File move                            | VERIFIED | M252.3 exact-version cross-directory move plus M253 preservation/failure evidence |
 
 ## Planning and approval
 
@@ -206,7 +206,7 @@ POSIX filesystem sequence.
 | CAP-012 | Saved plans and file fingerprints | VERIFIED | OVMS_AGENT_PLAN.TXT and plan validation                         |
 | CAP-013 | Explicit write approval           | VERIFIED | AGENT/APPROVE and session approval state                        |
 | CAP-014 | Execution dry-run                 | VERIFIED | AGENT/EXECUTE/DRY_RUN                                           |
-| CAP-015 | Guarded workspace-write workflow  | PARTIAL  | Guarded edits work; policy modes are not yet fully configurable |
+| CAP-015 | Guarded workspace-write workflow  | PARTIAL  | Guarded edits work; policy modes require separate acceptance reconciliation |
 
 ## Build, execution, and repair
 
@@ -214,7 +214,7 @@ POSIX filesystem sequence.
 | ------- | -------------------------------- | -------- | --------------------------------------------------------------------------- |
 | CAP-016 | BUILD.COM execution              | VERIFIED | run_build, BUILD, and automatic build regressions                           |
 | CAP-017 | OpenVMS status handling          | VERIFIED | Odd-status success handling in build workflows                              |
-| CAP-018 | Transaction rollback             | VERIFIED | edit_txn rollback and M154 through M159 regressions                         |
+| CAP-018 | Transaction rollback             | VERIFIED | edit_txn rollback, M154-M159, M252, and M253 failure regressions            |
 | CAP-019 | Iterative edit-build-test repair | PARTIAL  | AGENT/FIX and AGENT/RETRY exist; autonomous convergence remains incomplete  |
 | CAP-020 | Arbitrary approved DCL execution | MISSING  | Only the controlled build tool is exposed                                   |
 | CAP-021 | Non-interactive agent execution  | MISSING  | No complete unattended execution interface comparable to headless execution |
@@ -225,10 +225,10 @@ POSIX filesystem sequence.
 | ------- | ---------------------------------- | -------- | ----------------------------------------------------------------- |
 | CAP-022 | Persistent state and activity logs | VERIFIED | OVMS_AGENT.STATE and OVMS_AGENT_ACTIVITY.LOG                      |
 | CAP-023 | Resumable interactive sessions     | PARTIAL  | Durable state exists; complete task resumption is not implemented |
-| CAP-024 | Project instruction files          | MISSING  | No automatic project instruction discovery and enforcement        |
+| CAP-024 | Project instruction files          | MISSING  | Root-level support exists later; full directory-scoped CP-019 remains unverified |
 | CAP-025 | Configurable network policy        | MISSING  | No allow, deny, or approval-based outbound policy                 |
 | CAP-026 | Image input                        | MISSING  | No image ingestion or image reasoning interface                   |
-| CAP-027 | External tool extensibility        | MISSING  | No MCP-compatible or equivalent external-tool registry            |
+| CAP-027 | External tool extensibility        | MISSING  | External-tool work exists later; full capability requires separate reconciliation |
 
 ---
 
@@ -353,7 +353,7 @@ an odd OpenVMS condition value as success.
 **Pass condition:** An injected edit or build failure leaves the original file
 contents, versions, and required RMS attributes intact.
 
-**Evidence:** M154 through M159 rollback and RMS preservation regressions.
+**Evidence:** M154-M159 rollback/RMS regressions plus M253 delete/rename/move RMS/isolation and automatic write-failure rollback evidence.
 
 ## CP-014 - Persistent state
 
@@ -375,14 +375,13 @@ OVMS_AGENT_ACTIVITY.LOG with enough information for later review.
 
 ## CP-016 - Planned file creation
 
-**Status:** PARTIAL
+**Status:** VERIFIED
 
 **Pass condition:** A saved multi-step plan may contain one or more new-file
 operations, display their full proposed contents, validate that the paths remain
 nonexistent, and create them transactionally during approved execution.
 
-**Current evidence:** Direct AGENT/CREATE works, but complete integration with
-general saved-plan execution has not been verified.
+**Evidence:** M150-M150D saved-plan create_file parser, path/preflight validation, approval gating, transactional success, build-failure rollback, tamper rejection, and transaction failure regressions.
 
 ## CP-017 - Iterative repair
 
@@ -414,8 +413,7 @@ task resumption is not implemented.
 applies root and directory-specific instructions, reports which instructions are
 active, and enforces them during planning and execution.
 
-**Current evidence:** No project-instruction discovery or enforcement subsystem
-is implemented.
+**Current evidence:** Root-level instruction support exists in later work, but directory-specific scope and the complete acceptance condition have not been verified.
 
 ## CP-020 - Image input and external tools
 
@@ -425,8 +423,7 @@ is implemented.
 registered external tools through an explicit, inspectable, policy-controlled
 interface.
 
-**Current evidence:** Neither image ingestion nor a general external-tool
-extension protocol is implemented.
+**Current evidence:** External-tool support exists in later work, but image ingestion remains missing and the combined acceptance condition is not satisfied.
 
 ---
 
@@ -442,13 +439,15 @@ smaller implementation milestones when necessary.
 3. Store concise evidence references in this document.
 4. Reclassify any item whose evidence does not support VERIFIED status.
 
-## Phase 2 - Complete guarded file operations
+## Phase 2 - Complete guarded file operations - COMPLETE
 
-1. Add plan-driven file creation.
-2. Add guarded deletion with exact-version rollback.
-3. Add guarded rename and move operations.
-4. Preserve RMS attributes and version semantics for every operation.
-5. Add failure-injection regressions for each operation.
+Validated through M150-M150D, M252.1-M252.3, and M253 OpenVMS evidence.
+
+1. Plan-driven file creation - complete.
+2. Guarded deletion with exact-version rollback - complete.
+3. Guarded rename and move operations - complete.
+4. RMS attributes and version semantics preserved with focused evidence - complete.
+5. Failure-injection regressions for each structural operation - complete.
 
 ## Phase 3 - Complete agent execution modes
 
