@@ -33,6 +33,12 @@ void command_help(agent_state *state, const char *arguments);
 void command_version(agent_state *state, const char *arguments);
 void command_quit(agent_state *state, const char *arguments);
 void command_run(agent_state *state, const char *arguments);
+void command_dcl(agent_state *state, const char *arguments);
+int command_dcl_exec(agent_state *state,
+                     const char *command,
+                     char *output,
+                     size_t output_size,
+                     unsigned long *status_out);
 
 void command_root(agent_state *state, const char *arguments);
 void command_status(agent_state *state, const char *arguments);
