@@ -17,9 +17,7 @@ static int edit_txn_get_spec(
     FILE *file;
     int status;
 
-    if (path == NULL ||
-        spec == NULL ||
-        spec_size == 0U) {
+    if (path == NULL || spec == NULL || spec_size == 0U) {
         return 0;
     }
 
@@ -447,13 +445,23 @@ int edit_txn_write(edit_txn *transaction)
         file = &transaction->files[index];
 
         if (file->is_rename) {
-            if (rename(file->original_spec, file->target_path) != 0 ||
-                !edit_txn_get_spec(file->target_path, file->held_spec,
-                                   sizeof(file->held_spec))) {
+            char destination_spec[EDIT_TXN_PATH_SIZE];
+
+            if (rename(file->original_spec, file->target_path) != 0) {
                 (void)edit_txn_rollback(transaction);
                 return 0;
             }
+
             file->written = 1U;
+            (void)strcpy(file->held_spec, file->target_path);
+
+            if (!edit_txn_get_spec(file->target_path, destination_spec,
+                                   sizeof(destination_spec))) {
+                (void)edit_txn_rollback(transaction);
+                return 0;
+            }
+
+            (void)strcpy(file->held_spec, destination_spec);
             continue;
         }
 
