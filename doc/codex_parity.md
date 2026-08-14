@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M253 reconciled
+**Document status:** Authoritative parity specification, M254 reconciled
 **Baseline date:** 14 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -206,7 +206,7 @@ POSIX filesystem sequence.
 | CAP-012 | Saved plans and file fingerprints | VERIFIED | OVMS_AGENT_PLAN.TXT and plan validation                         |
 | CAP-013 | Explicit write approval           | VERIFIED | AGENT/APPROVE and session approval state                        |
 | CAP-014 | Execution dry-run                 | VERIFIED | AGENT/EXECUTE/DRY_RUN                                           |
-| CAP-015 | Guarded workspace-write workflow  | PARTIAL  | Guarded edits work; policy modes require separate acceptance reconciliation |
+| CAP-015 | Guarded workspace-write workflow  | VERIFIED | M254 read-only/workspace/full policy and write/DCL gate regression evidence |
 
 ## Build, execution, and repair
 
@@ -216,8 +216,8 @@ POSIX filesystem sequence.
 | CAP-017 | OpenVMS status handling          | VERIFIED | Odd-status success handling in build workflows                              |
 | CAP-018 | Transaction rollback             | VERIFIED | edit_txn rollback, M154-M159, M252, and M253 failure regressions            |
 | CAP-019 | Iterative edit-build-test repair | PARTIAL  | AGENT/FIX and AGENT/RETRY exist; autonomous convergence remains incomplete  |
-| CAP-020 | Arbitrary approved DCL execution | MISSING  | Only the controlled build tool is exposed                                   |
-| CAP-021 | Non-interactive agent execution  | MISSING  | No complete unattended execution interface comparable to headless execution |
+| CAP-020 | Arbitrary approved DCL execution | VERIFIED | M254 explicit DCL command with full/write/DCL gates, bounded output, logging, and exact condition capture |
+| CAP-021 | Non-interactive agent execution  | VERIFIED | M254 one-shot @OVMS_AGENT DCL JSON mode with deterministic policy denial and exact OpenVMS process status |
 
 ## Sessions, policy, and extensibility
 
@@ -449,14 +449,16 @@ Validated through M150-M150D, M252.1-M252.3, and M253 OpenVMS evidence.
 4. RMS attributes and version semantics preserved with focused evidence - complete.
 5. Failure-injection regressions for each structural operation - complete.
 
-## Phase 3 - Complete agent execution modes
+## Phase 3 - Complete agent execution modes - COMPLETE
 
-1. Define explicit read-only and workspace-write policies.
-2. Add approved generic DCL command execution.
-3. Constrain commands to declared policy boundaries.
-4. Capture output and OpenVMS condition values.
-5. Add a non-interactive execution entry point.
-6. Define deterministic exit statuses and machine-readable output.
+Validated through M254.1-M254.3 OpenVMS evidence.
+
+1. Explicit read-only, workspace-write, and full policies - complete.
+2. Approved generic DCL command execution - complete.
+3. Command execution constrained by policy plus write/DCL gates - complete.
+4. Bounded output and exact OpenVMS condition capture - complete.
+5. Non-interactive one-shot DCL entry point - complete.
+6. Deterministic denial status plus machine-readable JSON output - complete.
 
 ## Phase 4 - Iterative engineering loop
 
