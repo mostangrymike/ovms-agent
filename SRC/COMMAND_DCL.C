@@ -170,6 +170,7 @@ int command_dcl_exec(agent_state *state,
     char result_note[1024];
     FILE *procedure;
     int status;
+    int written;
 
     if (output != NULL && output_size != 0U) {
         output[0] = '\0';
@@ -217,24 +218,31 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    if (fprintf(
-            procedure,
-            "$ DEFINE SYS$OUTPUT %s\n"
-            "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
-            "$ %s\n"
-            "$ OVMS_DCL_STATUS = $STATUS\n"
-            "$ EXIT 'OVMS_DCL_STATUS'\n",
-            output_path,
-            command) < 0 ||
-        fclose(procedure) != 0) {
+    written = fprintf(
+        procedure,
+        "$ DEFINE SYS$OUTPUT %s\n"
+        "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
+        "$ %s\n"
+        "$ OVMS_DCL_STATUS = $STATUS\n"
+        "$ EXIT 'OVMS_DCL_STATUS'\n",
+        output_path,
+        command);
+
+    if (written < 0) {
         (void)fclose(procedure);
+        dcl_remove_versions(procedure_path);
+        return 0;
+    }
+
+    if (fclose(procedure) != 0) {
         dcl_remove_versions(procedure_path);
         return 0;
     }
 
     openai_tx_model_call("DCL", command);
 
-    if (snprintf(invoke, sizeof(invoke), "@%s", procedure_path) < 0) {
+    written = snprintf(invoke, sizeof(invoke), "@%s", procedure_path);
+    if (written < 0 || (size_t)written >= sizeof(invoke)) {
         dcl_remove_versions(procedure_path);
         return 0;
     }
