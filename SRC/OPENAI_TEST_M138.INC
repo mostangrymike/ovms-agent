@@ -1,3 +1,10 @@
+int openai_m251_fence_old(void);
+int openai_m251_fence_new(void);
+int openai_m251_size_old(void);
+int openai_m251_size_new(void);
+int openai_m251_payload_ok_test(void);
+int openai_m251_narr_ok(void);
+
 {
     const char *path =
         "OVMS_AGENT_TEST_M138_BODY.TMP";
@@ -197,6 +204,84 @@
 
     openai_selftest_report(
         "M195 rejection preserves saved plan",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_fence_old();
+
+    openai_selftest_report(
+        "M251 fence in OLD payload rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_fence_new();
+
+    openai_selftest_report(
+        "M251 fence in NEW payload rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_size_old();
+
+    openai_selftest_report(
+        "M251 oversized OLD payload rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_size_new();
+
+    openai_selftest_report(
+        "M251 oversized NEW payload rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_payload_ok_test();
+
+    openai_selftest_report(
+        "M251 valid bounded payload accepted",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = openai_m251_narr_ok();
+
+    openai_selftest_report(
+        "M251 narrative fences allowed",
         ok,
         &passed_count,
         &failed_count
