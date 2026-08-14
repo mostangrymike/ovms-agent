@@ -1,3 +1,28 @@
+        if (strncmp(line, "target_path=", 12U) == 0) {
+            if (!saw_type ||
+                !saw_path ||
+                operation->is_block != 3 ||
+                saw_old ||
+                saw_new ||
+                !execute_copy_value(
+                    operation->old_text,
+                    sizeof(operation->old_text),
+                    line + 12)) {
+                (void)puts(
+                    "Saved rename target_path is invalid, duplicate, or out of order."
+                );
+                (void)fclose(file);
+                return 0;
+            }
+
+            /* rename_file is path + target_path only.  Reuse old_text to
+             * carry target_path internally and mark the normal payload
+             * requirements satisfied so END_OPERATION remains authoritative. */
+            saw_old = 1;
+            saw_new = 1;
+            continue;
+        }
+
         if (strncmp(line, "path=", 5U) == 0 &&
             (!saw_type ||
              saw_path ||

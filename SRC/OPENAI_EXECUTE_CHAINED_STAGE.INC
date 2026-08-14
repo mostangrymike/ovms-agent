@@ -185,6 +185,44 @@ static int execute_delete_precheck(
     return 1;
 }
 
+static int execute_rename_precheck(
+    const openai_saved_operation *operations,
+    unsigned int operation_count)
+{
+    unsigned int index;
+    unsigned int rename_count;
+
+    rename_count = 0U;
+
+    for (index = 0U; index < operation_count; ++index) {
+        if (operations[index].is_block != 3) {
+            continue;
+        }
+
+        ++rename_count;
+
+        if (!openai_path_is_safe(operations[index].path) ||
+            openai_path_is_sensitive(operations[index].path) ||
+            !openai_path_is_safe(operations[index].old_text) ||
+            openai_path_is_sensitive(operations[index].old_text)) {
+            (void)puts(
+                "Saved plan rename_file refused for unsafe source or target path."
+            );
+            return 0;
+        }
+    }
+
+    if (rename_count > 0U &&
+        (rename_count != 1U || operation_count != 1U)) {
+        (void)puts(
+            "M252 rename_file plans must contain exactly one operation."
+        );
+        return 0;
+    }
+
+    return 1;
+}
+
 static int execute_stage_operations_chained(
     edit_txn *transaction,
     const openai_saved_operation *operations,
@@ -205,6 +243,9 @@ static int execute_stage_operations_chained(
             operation_count) ||
         !execute_delete_precheck(
             operations,
+            operation_count) ||
+        !execute_rename_precheck(
+            operations,
             operation_count)) {
         return 0;
     }
@@ -223,6 +264,21 @@ static int execute_stage_operations_chained(
                     "Unable to stage delete_file operation for %s. "
                     "Use an existing explicit numeric file version such as ;1.\n",
                     operations[index].path
+                );
+                return 0;
+            }
+
+            continue;
+        }
+
+        if (operations[index].is_block == 3) {
+            if (!edit_txn_add_rename(
+                    transaction,
+                    operations[index].path,
+                    operations[index].old_text)) {
+                (void)puts(
+                    "Unable to stage rename_file operation. Use existing source "
+                    "and absent target explicit numeric versions in the same directory."
                 );
                 return 0;
             }
