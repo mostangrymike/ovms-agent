@@ -6,8 +6,6 @@
 
 #define M253_FAIL_RECORD_SIZE 32768U
 
-extern int fgetname(FILE *, char *);
-
 static void m253_fail_cleanup(const char *path)
 {
     while (remove(path) == 0) {
