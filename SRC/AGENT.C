@@ -79,6 +79,7 @@ int agent_initialize(agent_state *state)
     const char *dcl_enabled;
     const char *write_enabled;
     const char *inherited_root;
+    int quiet;
 
     if (state == NULL) {
         return 0;
@@ -92,6 +93,7 @@ int agent_initialize(agent_state *state)
     api_key = getenv("OPENAI_API_KEY");
     dcl_enabled = getenv("OVMS_AGENT_DCL_ENABLED");
     write_enabled = getenv("OVMS_AGENT_WRITE_ENABLED");
+    quiet = agent_value_is_true(getenv("OVMS_AGENT_QUIET"));
 
     state->api_key_defined =
         agent_api_key_present(api_key);
@@ -134,21 +136,23 @@ int agent_initialize(agent_state *state)
 
     state->project_root = state->project_root_text;
 
-    (void)puts("OVMS Agent");
-    (void)puts("Native agentic programming assistant for OpenVMS");
-    (void)printf("Version %s\n", OVMS_AGENT_VERSION);
+    if (!quiet) {
+        (void)puts("OVMS Agent");
+        (void)puts("Native agentic programming assistant for OpenVMS");
+        (void)printf("Version %s\n", OVMS_AGENT_VERSION);
 
-    if (state->api_key_defined) {
-        (void)puts("OpenAI API: configured.\n");
-    } else {
-        (void)puts("OpenAI API: not configured.");
-        (void)puts("OPENAI_API_KEY is not defined in this process.");
-        (void)puts(
-            "AI-backed commands are unavailable; local commands remain usable."
-        );
-        (void)puts(
-            "Define OPENAI_API_KEY before starting OVMS Agent, then restart.\n"
-        );
+        if (state->api_key_defined) {
+            (void)puts("OpenAI API: configured.\n");
+        } else {
+            (void)puts("OpenAI API: not configured.");
+            (void)puts("OPENAI_API_KEY is not defined in this process.");
+            (void)puts(
+                "AI-backed commands are unavailable; local commands remain usable."
+            );
+            (void)puts(
+                "Define OPENAI_API_KEY before starting OVMS Agent, then restart.\n"
+            );
+        }
     }
 
     return 1;
@@ -160,7 +164,9 @@ void agent_shutdown(agent_state *state)
         state->running = 0;
     }
 
-    (void)puts("OVMS Agent terminated.");
+    if (!agent_value_is_true(getenv("OVMS_AGENT_QUIET"))) {
+        (void)puts("OVMS Agent terminated.");
+    }
 }
 
 int agent_is_running(const agent_state *state)

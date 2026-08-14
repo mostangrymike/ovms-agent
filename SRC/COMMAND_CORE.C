@@ -8,6 +8,7 @@
 static const command_entry core_commands[] = {
     { "HELP", "Display available commands", command_help },
     { "VERSION", "Display agent version", command_version },
+    { "DCL", "Run one full-policy approved DCL command", command_dcl },
     { "QUIT", "Exit OVMS Agent", command_quit },
     { "EXIT", "Exit OVMS Agent", command_quit }
 };
