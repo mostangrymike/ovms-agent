@@ -61,10 +61,6 @@ $     FINAL_STATUS = RUN_STATUS
 $     GOTO FINISH
 $ ENDIF
 $
-$! The JSON must preserve the exact condition returned by the DCL command.
-$! Do not assume every successful OpenVMS command returns %X00000001.
-$ EXPECT_CONDITION = "%X" + F$FAO("!8XL",RUN_STATUS)
-$
 $ CHECK_NEEDLE = """executed"":true"
 $ GOSUB CHECK_TEXT
 $ IF .NOT. TEXT_FOUND
@@ -72,13 +68,22 @@ $ THEN
 $     FAILED_FIELD = "executed=true"
 $     GOTO JSON_FAIL
 $ ENDIF
-$ CHECK_NEEDLE = """condition"":""" + EXPECT_CONDITION + """"
-$ GOSUB CHECK_TEXT
-$ IF .NOT. TEXT_FOUND
+$
+$! Extract the condition emitted by the JSON envelope and compare it
+$! numerically with the exact process condition returned by @OVMS_AGENT.
+$! This accepts any OpenVMS success condition rather than assuming SS$_NORMAL.
+$ GOSUB CHECK_CONDITION
+$ IF .NOT. CONDITION_FOUND
 $ THEN
-$     FAILED_FIELD = "condition=" + EXPECT_CONDITION
+$     FAILED_FIELD = "condition field"
 $     GOTO JSON_FAIL
 $ ENDIF
+$ IF CONDITION_TEXT .NE. RUN_STATUS
+$ THEN
+$     FAILED_FIELD = "condition propagation"
+$     GOTO JSON_FAIL
+$ ENDIF
+$
 $ CHECK_NEEDLE = """success"":true"
 $ GOSUB CHECK_TEXT
 $ IF .NOT. TEXT_FOUND
@@ -88,7 +93,7 @@ $     GOTO JSON_FAIL
 $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M254 headless DCL policy/status evidence passed."
-$ WRITE SYS$OUTPUT "M254 preserved condition: ", EXPECT_CONDITION
+$ WRITE SYS$OUTPUT "M254 preserved condition: ", CONDITION_TEXT
 $ GOTO FINISH
 $
 $JSON_FAIL:
@@ -124,6 +129,25 @@ $ ENDIF
 $ GOTO CHECK_TEXT_LOOP
 $CHECK_TEXT_DONE:
 $ CLOSE CHECK_CHAN
+$ RETURN
+$
+$CHECK_CONDITION:
+$ CONDITION_FOUND = 0
+$ CONDITION_TEXT = ""
+$ IF CHECK_SPEC .EQS. "" THEN RETURN
+$ OPEN/READ COND_CHAN 'CHECK_SPEC'
+$CHECK_CONDITION_LOOP:
+$ READ/END=CHECK_CONDITION_DONE COND_CHAN COND_LINE
+$ COND_MARK = """condition"":"""
+$ COND_POS = F$LOCATE(COND_MARK,COND_LINE)
+$ IF COND_POS .GE. F$LENGTH(COND_LINE) THEN GOTO CHECK_CONDITION_LOOP
+$ COND_POS = COND_POS + F$LENGTH(COND_MARK)
+$ CONDITION_TEXT = F$EXTRACT(COND_POS,10,COND_LINE)
+$ IF F$LENGTH(CONDITION_TEXT) .NE. 10 THEN GOTO CHECK_CONDITION_DONE
+$ IF F$EXTRACT(0,2,CONDITION_TEXT) .NES. "%X" THEN GOTO CHECK_CONDITION_DONE
+$ CONDITION_FOUND = 1
+$CHECK_CONDITION_DONE:
+$ CLOSE COND_CHAN
 $ RETURN
 $
 $SHOW_OUTPUT:
