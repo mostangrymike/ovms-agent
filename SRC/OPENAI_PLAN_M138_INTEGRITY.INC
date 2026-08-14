@@ -348,6 +348,148 @@ static int openai_m195_check_begin_order(
     return 1;
 }
 
+#define OPENAI_M251_TEXT_LIMIT 4096U
+
+static int openai_m251_payload_ok(
+    const char *plan_text)
+{
+    static const char begin_old[] = "BEGIN_OLD_TEXT";
+    static const char end_old[] = "END_OLD_TEXT";
+    static const char begin_new[] = "BEGIN_NEW_TEXT";
+    static const char end_new[] = "END_NEW_TEXT";
+    const char *cursor;
+    const char *line_start;
+    int in_old;
+    int in_new;
+    size_t used;
+
+    if (plan_text == NULL) {
+        return 0;
+    }
+
+    cursor = plan_text;
+    line_start = plan_text;
+    in_old = 0;
+    in_new = 0;
+    used = 0U;
+
+    for (;;) {
+        if (*cursor == '\n' || *cursor == '\0') {
+            const char *content_end;
+            const char *payload;
+            size_t content_length;
+            size_t payload_length;
+            size_t index;
+
+            content_end = cursor;
+
+            if (content_end > line_start &&
+                content_end[-1] == '\r') {
+                --content_end;
+            }
+
+            content_length =
+                (size_t)(content_end - line_start);
+
+            if (!in_old && !in_new &&
+                content_length == sizeof(begin_old) - 1U &&
+                memcmp(
+                    line_start,
+                    begin_old,
+                    sizeof(begin_old) - 1U) == 0) {
+                in_old = 1;
+                used = 0U;
+            } else if (!in_old && !in_new &&
+                       content_length == sizeof(begin_new) - 1U &&
+                       memcmp(
+                           line_start,
+                           begin_new,
+                           sizeof(begin_new) - 1U) == 0) {
+                in_new = 1;
+                used = 0U;
+            } else if (in_old &&
+                       content_length == sizeof(end_old) - 1U &&
+                       memcmp(
+                           line_start,
+                           end_old,
+                           sizeof(end_old) - 1U) == 0) {
+                in_old = 0;
+                used = 0U;
+            } else if (in_new &&
+                       content_length == sizeof(end_new) - 1U &&
+                       memcmp(
+                           line_start,
+                           end_new,
+                           sizeof(end_new) - 1U) == 0) {
+                in_new = 0;
+                used = 0U;
+            } else if (in_old || in_new) {
+                payload = line_start;
+                payload_length = content_length;
+
+                if (in_old &&
+                    payload_length == sizeof(end_old) &&
+                    payload[0] == '\\' &&
+                    memcmp(
+                        payload + 1,
+                        end_old,
+                        sizeof(end_old) - 1U) == 0) {
+                    ++payload;
+                    --payload_length;
+                } else if (in_new &&
+                           payload_length == sizeof(end_new) &&
+                           payload[0] == '\\' &&
+                           memcmp(
+                               payload + 1,
+                               end_new,
+                               sizeof(end_new) - 1U) == 0) {
+                    ++payload;
+                    --payload_length;
+                }
+
+                index = 0U;
+
+                while (index < payload_length &&
+                       (payload[index] == ' ' ||
+                        payload[index] == '\t')) {
+                    ++index;
+                }
+
+                if (payload_length - index >= 3U &&
+                    payload[index] == '`' &&
+                    payload[index + 1U] == '`' &&
+                    payload[index + 2U] == '`') {
+                    (void)puts(
+                        "Implementation plan was not saved because "
+                        "an OLD or NEW payload contains a Markdown fence.");
+                    return 0;
+                }
+
+                if (used + payload_length + 1U >=
+                    OPENAI_M251_TEXT_LIMIT) {
+                    (void)puts(
+                        "Implementation plan was not saved because "
+                        "an OLD or NEW payload exceeds executor capacity.");
+                    return 0;
+                }
+
+                used += payload_length + 1U;
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    return 1;
+}
+
 static char *openai_m195_normalize_count(
     const char *plan_text)
 {
@@ -383,6 +525,10 @@ static char *openai_m195_normalize_count(
         (void)puts(
             "Implementation plan was not saved because "
             "its operation-block markers are invalid.");
+        return NULL;
+    }
+
+    if (!openai_m251_payload_ok(plan_text)) {
         return NULL;
     }
 
