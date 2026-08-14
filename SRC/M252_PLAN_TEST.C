@@ -3,6 +3,32 @@
 
 #include "openai_internal.h"
 
+/* OPENAI_PLAN.OBJ references the interactive command-input helpers that are
+ * normally supplied by MAIN.C.  This standalone parser regression does not
+ * exercise interactive input and cannot link MAIN.OBJ because it defines its
+ * own main(), so provide inert test-local definitions. */
+int command_line_complete(
+    const char *input,
+    size_t input_size,
+    int reached_eof)
+{
+    (void)input;
+    (void)input_size;
+    (void)reached_eof;
+    return 0;
+}
+
+int command_read_stream(
+    FILE *stream,
+    char *input,
+    size_t input_size)
+{
+    (void)stream;
+    (void)input;
+    (void)input_size;
+    return 0;
+}
+
 static int m252_write_plan(const char *path, const char *text)
 {
     FILE *file;
