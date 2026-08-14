@@ -38,11 +38,14 @@
             } else if (strcmp(type, "rename_file") == 0) {
                 operation->is_block = 3;
                 operation->is_create = 0;
+            } else if (strcmp(type, "move_file") == 0) {
+                operation->is_block = 4;
+                operation->is_create = 0;
             } else {
                 (void)puts(
                     "Saved operation type is unsupported; only replace_text, "
-                    "replace_block, create_file, delete_file, and rename_file "
-                    "are allowed."
+                    "replace_block, create_file, delete_file, rename_file, and "
+                    "move_file are allowed."
                 );
                 (void)fclose(file);
                 return 0;
