@@ -27,8 +27,48 @@ $     GOTO FINISH
 $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M256 M228 persistent-session foundation evidence passed."
-$ WRITE SYS$OUTPUT "M256 active-plan/step/approval resume evidence remains pending."
-$ WRITE SYS$OUTPUT "All implemented M256 foundation regressions passed."
+$
+$!-----------------------------------------------------------
+$! M256.2 resumed-session approval invalidation.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M256_RESUME_APPROVAL_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M256_RESUME_APPROVAL_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M256_RESUME_APPROVAL_TEST.EXE -
+[.BUILD]M256_RESUME_APPROVAL_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M256_RESUME_APPROVAL_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M256_RESUME_APPROVAL_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M256 resumed-session approval evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT "M256 resumed-session reapproval evidence passed."
+$ WRITE SYS$OUTPUT "M256 active-plan/step checkpoint evidence remains pending."
+$ WRITE SYS$OUTPUT "All implemented M256 session-resumption regressions passed."
+$ GOTO FINISH
+$
+$COMPILE_ERROR:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M256 focused regression compilation failed."
 $
 $FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
