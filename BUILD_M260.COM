@@ -15,6 +15,7 @@ $ VMS_VERSION = F$GETSYI("VERSION")
 $ ARCH_NAME = F$GETSYI("ARCH_NAME")
 $ NODE_NAME = F$GETSYI("NODENAME")
 $ OPERATOR = F$EDIT(F$GETJPI("","USERNAME"),"TRIM")
+$ MODEL_NAME = F$TRNLNM("OVMS_AGENT_MODEL")
 $
 $ WRITE SYS$OUTPUT ""
 $ WRITE SYS$OUTPUT "OVMS Agent Phase 9 final parity validation"
@@ -23,6 +24,14 @@ $ WRITE SYS$OUTPUT "OpenVMS version: ''VMS_VERSION'"
 $ WRITE SYS$OUTPUT "Architecture: ''ARCH_NAME'"
 $ WRITE SYS$OUTPUT "Node: ''NODE_NAME'"
 $ WRITE SYS$OUTPUT "Operator: ''OPERATOR'"
+$ IF MODEL_NAME .EQS. ""
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "Configured model: <OVMS_AGENT_MODEL not defined>"
+$     WRITE SYS$OUTPUT "M260 requires OVMS_AGENT_MODEL metadata for final validation."
+$     GOTO FINISH
+$ ENDIF
+$ WRITE SYS$OUTPUT "Configured model: ''MODEL_NAME'"
 $ WRITE SYS$OUTPUT ""
 $ WRITE SYS$OUTPUT "Compiler version:"
 $ CC/VERSION
