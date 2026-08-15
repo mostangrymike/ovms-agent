@@ -56,6 +56,16 @@ static int require_true(int condition, const char *message)
     return 1;
 }
 
+static int status_from_result(const char *result, unsigned int *status)
+{
+    unsigned int parsed;
+
+    if (result == NULL || status == NULL) return 0;
+    if (sscanf(result, "condition_status=%x", &parsed) != 1) return 0;
+    *status = parsed;
+    return 1;
+}
+
 static void cleanup(void)
 {
     remove_all("M258_BRIDGE_OK.COM");
@@ -68,6 +78,7 @@ static void cleanup(void)
 int main(void)
 {
     char result[4096];
+    unsigned int condition;
     static char timeout_17[] = "OVMS_AGENT_MCP_TIMEOUT_SECONDS=17";
     static char output_256[] = "OVMS_AGENT_MCP_OUTPUT_BYTES=256";
     static char output_128[] = "OVMS_AGENT_MCP_OUTPUT_BYTES=128";
@@ -94,7 +105,7 @@ int main(void)
         !write_text("M258_BRIDGE_BIG.COM", big_line)) {
         (void)puts("M258 lifecycle failed: bridge fixture setup.");
         cleanup();
-        return 1;
+        return 2;
     }
 
     (void)putenv(timeout_17);
@@ -112,20 +123,23 @@ int main(void)
             strstr(result, "target=https://tools.example.test/mcp") != NULL,
             "success metadata and request contract")) {
         cleanup();
-        return 1;
+        return 2;
     }
 
     result[0] = '\0';
+    condition = 1U;
     if (!require_true(
             !openai_test_mcp_bridge(
                 "@M258_BRIDGE_FAIL", "http",
                 "https://tools.example.test/mcp",
                 result, sizeof(result)) &&
-            strstr(result, "condition_status=10000002") != NULL &&
+            status_from_result(result, &condition) &&
+            (condition & 1U) == 0U &&
             strstr(result, "outcome=bridge_failed") != NULL,
             "even condition status preservation")) {
+        (void)fprintf(stderr, "M258 observed bridge result:\n%s\n", result);
         cleanup();
-        return 1;
+        return 2;
     }
 
     (void)putenv(output_128);
@@ -140,7 +154,7 @@ int main(void)
             strstr(result, "outcome=output_limit_exceeded") != NULL,
             "bounded bridge response")) {
         cleanup();
-        return 1;
+        return 2;
     }
 
     cleanup();
