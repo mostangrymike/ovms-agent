@@ -69,10 +69,14 @@ int main(void)
         "issues|http|https://tools.example.test/mcp;"
         "stream|sse|https://tools.example.test/events;"
         "bad|sse|file://bad";
+    static char net_allow[] = "OVMS_AGENT_NET_ALLOW=tools.example.test";
+    static char net_deny[] = "OVMS_AGENT_NET_DENY=";
     openai_mcp_result result;
     m246_probe probe;
     char output[4096];
 
+    (void)putenv(net_allow);
+    (void)putenv(net_deny);
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
