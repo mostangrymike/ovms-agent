@@ -13,7 +13,8 @@ $
 $ WRITE SYS$OUTPUT "Running M259 image-input regressions..."
 $
 $ IF F$SEARCH("[.BUILD]OPENAI_REQUEST_BASIC.OBJ;*") .EQS. "" .OR. -
-     F$SEARCH("[.BUILD]OPENAI_JSON_WRITE.OBJ;*") .EQS. ""
+     F$SEARCH("[.BUILD]OPENAI_JSON_WRITE.OBJ;*") .EQS. "" .OR. -
+     F$SEARCH("[.BUILD]OPENAI_IMAGE.OBJ;*") .EQS. ""
 $ THEN
 $     WRITE SYS$OUTPUT "M259 requires a successful @BUILD first."
 $     FINAL_STATUS = %X10000002
@@ -33,6 +34,7 @@ $
 $ LINK/EXECUTABLE=[.BUILD]M259_REQUEST_BASE_TEST.EXE -
 [.BUILD]M259_REQUEST_BASE_TEST.OBJ, -
 [.BUILD]OPENAI_REQUEST_BASIC.OBJ, -
+[.BUILD]OPENAI_IMAGE.OBJ, -
 [.BUILD]OPENAI_JSON_WRITE.OBJ
 $ IF .NOT. $STATUS
 $ THEN
@@ -78,7 +80,38 @@ $     GOTO FINISH
 $ ENDIF
 $ WRITE SYS$OUTPUT "M259 guarded image-ingestion evidence passed."
 $
-$ WRITE SYS$OUTPUT "M259 production request integration/logging evidence remains pending."
+$!-----------------------------------------------------------
+$! M259.3 multimodal Responses request serialization.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M259_REQUEST_IMAGE_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M259_REQUEST_IMAGE_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M259_REQUEST_IMAGE_TEST.EXE -
+[.BUILD]M259_REQUEST_IMAGE_TEST.OBJ, -
+[.BUILD]OPENAI_REQUEST_BASIC.OBJ, -
+[.BUILD]OPENAI_IMAGE.OBJ, -
+[.BUILD]OPENAI_JSON_WRITE.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M259_REQUEST_IMAGE_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M259_REQUEST_IMAGE_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M259 multimodal request serialization evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$ WRITE SYS$OUTPUT "M259 multimodal request serialization evidence passed."
+$
+$ WRITE SYS$OUTPUT "M259 command integration/metadata logging evidence remains pending."
 $ WRITE SYS$OUTPUT "All implemented M259 image-input regressions passed."
 $ GOTO FINISH
 $
