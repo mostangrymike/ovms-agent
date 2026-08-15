@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M257 reconciled
+**Document status:** Authoritative parity specification, M258 reconciled
 **Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -226,9 +226,9 @@ POSIX filesystem sequence.
 | CAP-022 | Persistent state and activity logs | VERIFIED | OVMS_AGENT.STATE and OVMS_AGENT_ACTIVITY.LOG                      |
 | CAP-023 | Resumable interactive sessions     | VERIFIED | M256 durable session objective, active-plan checkpoint, stale-file refusal, reapproval-on-resume, and two-image cross-process restart evidence |
 | CAP-024 | Project instruction files          | VERIFIED | M257 root plus directory-scoped OVMS_AGENT_INSTRUCTIONS.TXT discovery, precedence, active-file reporting, and PLAN/WRITE enforcement evidence |
-| CAP-025 | Configurable network policy        | MISSING  | No allow, deny, or approval-based outbound policy                 |
+| CAP-025 | Configurable network policy        | VERIFIED | M258 default-deny HTTP/SSE policy, explicit allow/deny domains, FULL-only one-shot exceptions, policy reporting, transport gating, and decision logging |
 | CAP-026 | Image input                        | MISSING  | No image ingestion or image reasoning interface                   |
-| CAP-027 | External tool extensibility        | MISSING  | External-tool work exists later; full capability requires separate reconciliation |
+| CAP-027 | External tool extensibility        | VERIFIED | M241-M247 registered MCP server/tool model plus M258 policy-gated stdio/HTTP/SSE bridges, bounded lifecycle contract, condition reporting, and terminal logging |
 
 ---
 
@@ -439,7 +439,7 @@ the final model goal. The focused OpenVMS driver completed with `%X00000001`.
 registered external tools through an explicit, inspectable, policy-controlled
 interface.
 
-**Current evidence:** External-tool support exists in later work, but image ingestion remains missing and the combined acceptance condition is not satisfied.
+**Current evidence:** M241-M247 plus M258 verify the external-tool half of this acceptance condition, including registered MCP tools, FULL approval, default-deny network policy, explicit allow/deny and exceptions, stdio/HTTP/SSE bridges, bounded output and condition-status reporting, and logging. Image ingestion remains MISSING, so the combined acceptance condition is not satisfied.
 
 ---
 
@@ -507,15 +507,17 @@ Validated through M232 and M257.1-M257.3 OpenVMS evidence.
 4. Display active instructions - complete.
 5. Add tests proving that instructions affect planning and execution - complete.
 
-## Phase 7 - Network and external tools
+## Phase 7 - Network and external tools - COMPLETE
 
-1. Define network-disabled behavior as the default.
-2. Add explicit domain allow and deny policies.
-3. Add approval for policy exceptions.
-4. Define a registered external-tool schema.
-5. Add lifecycle, timeout, output-size, and condition-status rules.
-6. Evaluate an MCP-compatible transport or an OpenVMS-native equivalent.
-7. Log all external-tool and network-policy decisions.
+Validated through M241-M247 and M258.1-M258.4 OpenVMS evidence.
+
+1. Define network-disabled behavior as the default - complete.
+2. Add explicit domain allow and deny policies - complete.
+3. Add approval for policy exceptions - complete.
+4. Define a registered external-tool schema - complete.
+5. Add lifecycle, timeout, output-size, and condition-status rules - complete; timeout enforcement is an explicit configured-bridge responsibility.
+6. Evaluate an MCP-compatible transport or an OpenVMS-native equivalent - complete through configured stdio/HTTP/SSE bridges.
+7. Log all external-tool and network-policy decisions - complete.
 
 ## Phase 8 - Image input
 
