@@ -8,7 +8,8 @@ $ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
 $ SET DEFAULT 'PROJECT_DIR'
 $
 $ FINAL_STATUS = 1
-$ M208_LOG = "[.BUILD]M255_M208.LOG;1"
+$ M208_LOG = "[.BUILD]M255_M208.LOG"
+$ CHECK_FILE = ""
 $
 $ WRITE SYS$OUTPUT "Running M255 iterative-repair regressions..."
 $
@@ -42,12 +43,15 @@ $     GOTO FINISH
 $ ENDIF
 $ WRITE SYS$OUTPUT "M255 M207 commit/rollback evidence passed."
 $
-$ IF F$SEARCH("[.BUILD]M255_M208.LOG;*") .NES. "" -
-      THEN DELETE/NOLOG [.BUILD]M255_M208.LOG;*
-$ DEFINE/USER SYS$OUTPUT [.BUILD]M255_M208.LOG
-$ DEFINE/USER SYS$ERROR SYS$OUTPUT
+$! Capture M208 exactly as the validated M254 driver captures one-shot output:
+$! clean all old versions, redirect only SYS$OUTPUT for the next image, then
+$! resolve the actual created filespec once and reuse it for every assertion.
+$ GOSUB CLEAN_M208
+$ DEFINE/USER/NOLOG SYS$OUTPUT 'M208_LOG'
 $ RUN [.BUILD]M208_REPAIR_RETRY_TEST
 $ M208_STATUS = $STATUS
+$ CHECK_FILE = F$SEARCH(M208_LOG)
+$
 $ IF .NOT. M208_STATUS
 $ THEN
 $     FINAL_STATUS = M208_STATUS
@@ -55,7 +59,13 @@ $     WRITE SYS$OUTPUT "M255 M208 bounded retry evidence failed."
 $     GOTO SHOW_M208
 $ ENDIF
 $
-$ CHECK_FILE = M208_LOG
+$ IF CHECK_FILE .EQS. ""
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 M208 output capture is missing."
+$     GOTO SHOW_M208
+$ ENDIF
+$
 $ CHECK_NEEDLE = "Repair execution summary:"
 $ GOSUB CHECK_TEXT
 $ IF .NOT. CHECK_FOUND
@@ -107,12 +117,18 @@ $ WRITE SYS$OUTPUT "All M255 iterative-repair regressions passed."
 $ GOTO FINISH
 $
 $SHOW_M208:
-$ WRITE SYS$OUTPUT "M255 captured M208 output:"
-$ IF F$SEARCH(M208_LOG) .NES. "" THEN TYPE 'M208_LOG'
+$ IF CHECK_FILE .EQS. ""
+$ THEN
+$     WRITE SYS$OUTPUT "M255 captured M208 output file is missing."
+$ ELSE
+$     WRITE SYS$OUTPUT "M255 captured M208 output:"
+$     TYPE 'CHECK_FILE'
+$ ENDIF
 $ GOTO FINISH
 $
 $CHECK_TEXT:
 $ CHECK_FOUND = 0
+$ IF CHECK_FILE .EQS. "" THEN RETURN
 $ OPEN/READ CHECK_INPUT 'CHECK_FILE'
 $CHECK_TEXT_LOOP:
 $ READ/END=CHECK_TEXT_DONE CHECK_INPUT CHECK_LINE
@@ -126,8 +142,13 @@ $CHECK_TEXT_DONE:
 $ CLOSE CHECK_INPUT
 $ RETURN
 $
+$CLEAN_M208:
+$ CLEAN_FILE = F$SEARCH(M208_LOG+";*")
+$ IF CLEAN_FILE .EQS. "" THEN RETURN
+$ DELETE/NOLOG/NOCONFIRM 'CLEAN_FILE'
+$ GOTO CLEAN_M208
+$
 $FINISH:
-$ IF F$SEARCH("[.BUILD]M255_M208.LOG;*") .NES. "" -
-      THEN DELETE/NOLOG [.BUILD]M255_M208.LOG;*
+$ GOSUB CLEAN_M208
 $ SET DEFAULT 'SAVED_DEFAULT'
 $ EXIT 'FINAL_STATUS'
