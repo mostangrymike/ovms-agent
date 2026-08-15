@@ -89,7 +89,7 @@ $ RUN [.BUILD]M259_AGENT_IMAGE_TEST
 $ IF .NOT. $STATUS THEN GOTO TEST_ERROR
 $ WRITE SYS$OUTPUT "M259 agent image command/logging evidence passed."
 $
-$ WRITE SYS$OUTPUT "M259 live API acceptance/reconciliation evidence remains pending."
+$ WRITE SYS$OUTPUT "M259 live API acceptance and Phase 8 reconciliation are recorded in doc/parity_audit_m259.md."
 $ WRITE SYS$OUTPUT "All implemented M259 image-input regressions passed."
 $ GOTO FINISH
 $
