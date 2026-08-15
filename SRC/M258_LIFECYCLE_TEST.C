@@ -4,6 +4,24 @@
 
 #include "openai_internal.h"
 
+/* Standalone regression stubs for command-layer helpers pulled in through
+   OPENAI_PLAN.OBJ. The lifecycle test does not exercise interactive input. */
+int command_line_complete(const char *input, size_t length, int eof)
+{
+    (void)input;
+    (void)length;
+    (void)eof;
+    return 0;
+}
+
+int command_read_stream(FILE *stream, char *buffer, size_t buffer_size)
+{
+    (void)stream;
+    (void)buffer;
+    (void)buffer_size;
+    return 0;
+}
+
 int openai_test_mcp_bridge(const char *bridge,
                            const char *transport,
                            const char *target,
