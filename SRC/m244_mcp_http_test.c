@@ -58,12 +58,16 @@ int main(void)
 {
     char output[4096];
     transport_probe probe;
+    static char net_allow[] = "OVMS_AGENT_NET_ALLOW=tools.example.test";
+    static char net_deny[] = "OVMS_AGENT_NET_DENY=";
     const char *config =
         "docs|stdio|@MCP_DOCS;"
         "issues|http|https://tools.example.test/mcp;"
         "stream|sse|https://tools.example.test/events;"
         "badhttp|http|file://not-http";
 
+    (void)putenv(net_allow);
+    (void)putenv(net_deny);
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
