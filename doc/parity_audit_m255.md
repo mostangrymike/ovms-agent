@@ -46,109 +46,129 @@ The Phase 4 roadmap additionally requires:
 
 ## Existing repair engine
 
-The repository already contains more of CP-017 than the authoritative status
-currently credits.
-
-### `AGENT/REPAIR`
-
 `SRC/COMMAND.C` recognizes `AGENT/REPAIR` explicitly and dispatches to
 `openai_agent_repair()`.
 
-`SRC/OPENAI_RETRY.C` implements the repair workflow. Relevant behavior includes:
+`SRC/OPENAI_RETRY.C` already provides the core loop:
 
-- captures the current controlled build result before planning,
-- builds a repair prompt from the current diagnostics,
-- creates a deterministic saved transactional repair plan,
+- captures the controlled build result before planning,
+- uses current diagnostics as repair-plan evidence,
+- creates a deterministic saved transactional plan,
 - requires plan approval in normal interactive use,
-- applies the saved plan transactionally,
-- rebuilds after the repair,
+- applies the plan transactionally,
+- rebuilds after each repair,
 - rolls back a failed repair transaction,
 - allows at most two repair attempts,
-- provides attempt 2 with the first rolled-back plan and the new diagnostics,
-- explicitly tells attempt 2 not to repeat the same ineffective repair.
+- provides attempt 2 with the first rolled-back plan and new diagnostics,
+- explicitly tells attempt 2 not to repeat the ineffective first repair,
+- stops rather than retrying when rollback safety is not proven.
 
-The two-attempt bound is literal in the implementation (`attempt <= 2U`).
+The attempt bound is literal in production code (`attempt <= 2U`).
+
+## Historical deterministic regressions
 
 ### M207 end-to-end transaction evidence
 
-`SRC/m207_repair_e2e_test.c` supplies deterministic plan/build hooks and proves:
-
-- failed-build diagnostics enter the repair workflow,
-- a two-file transactional repair commits when the controlled rebuild succeeds,
-- the same two-file transaction is rolled back when the controlled rebuild fails.
-
-Success message:
-
-```text
-End-to-end deterministic AGENT/REPAIR test passed.
-```
+`SRC/m207_repair_e2e_test.c` proves commit on successful rebuild and rollback on
+failed rebuild for a two-file transaction.
 
 ### M208 bounded iteration evidence
 
-`SRC/m208_repair_retry_test.c` proves both terminal paths of the two-attempt loop:
+`SRC/m208_repair_retry_test.c` proves both terminal two-attempt paths:
 
-- first repair fails, is rolled back, second repair succeeds and commits;
-- first repair fails and rolls back, second repair also fails, and original
-  contents are restored after the defined attempt limit.
+- failed attempt 1 rolls back, attempt 2 succeeds and commits;
+- both attempts fail, both roll back, and original contents remain after the
+  attempt limit.
 
-It additionally requires exactly three controlled build calls in each scenario:
-initial failure, attempt-1 rebuild, attempt-2 rebuild.
-
-Success message:
-
-```text
-Bounded two-attempt AGENT/REPAIR test passed.
-```
+It requires exactly three build calls: initial build, attempt-1 rebuild, and
+attempt-2 rebuild.
 
 ### M209 retry-context evidence
 
-`SRC/m209_repair_context_test.c` proves the second repair prompt contains:
+`SRC/m209_repair_context_test.c` proves attempt 2 receives:
 
 - the original user goal,
 - the first repair plan,
-- diagnostics from the failed first rebuild,
+- the failed first rebuild diagnostics,
 - explicit rollback context,
-- an instruction not to repeat the same ineffective repair.
+- an instruction not to repeat the ineffective repair.
 
-It repeats the second-attempt success and final-rollback state checks from M208.
+## M255.1 focused evidence - VALIDATED
 
-Success message:
+`BUILD_M255.COM` reruns M207, M208, and M209 as focused Phase 4 evidence after the
+normal build.
+
+Validated on VSI OpenVMS x86-64 on 15 August 2026:
 
 ```text
-Context-aware second-attempt AGENT/REPAIR test passed.
+@BUILD
+All regression tests passed.
+Build completed successfully.
+
+@BUILD_M255
+M255 M207 commit/rollback evidence passed.
+M255 M208 two-attempt bound evidence passed.
+M255 M209 context-aware retry evidence passed.
+All M255 iterative-repair regressions passed.
+
+$STATUS == "%X00000001"
 ```
 
-## M255.1 evidence reconciliation
+The observed M208/M209 traces additionally showed:
 
-M255.1 adds `BUILD_M255.COM` as a focused evidence driver over the existing M207,
-M208, and M209 regression images produced by the normal `@BUILD`.
+- attempt 1 failure followed by `Plan-wide rollback: PASS`,
+- context-aware attempt 2,
+- successful commit on attempt 2 in the success scenario,
+- `Plan-wide rollback: PASS` after attempt 2 failure,
+- the explicit two-attempt terminal message in the exhausted scenario.
 
-If the focused driver passes on OpenVMS after the normal build, the repository
-will have direct current evidence for the complete CP-017 behavioral contract:
+This is current OpenVMS evidence for the complete CP-017 behavioral contract.
+CP-017 is therefore ready for promotion to VERIFIED during final M255
+reconciliation.
 
-- failed diagnostics -> planning,
-- approval-aware transactional repair,
-- rebuild,
-- rollback after failed attempt,
-- context-aware retry,
-- success stop,
-- hard two-attempt stop.
+## M255.2 terminal execution report - IMPLEMENTED, AWAITING VMS VALIDATION
 
-At that point CP-017 should be promoted from PARTIAL to VERIFIED during M255
-reconciliation unless current source inspection uncovers a contrary acceptance
-requirement.
+Source inspection after M255.1 found one real Phase 4 roadmap gap: the repair
+engine persisted outcome evidence and printed terminal one-line messages, but did
+not itself produce a terminal execution summary plus final diff.
 
-## Remaining Phase 4 reconciliation
+M255.2 updates `SRC/OPENAI_RETRY.C` without changing repair semantics. On terminal
+repair execution outcomes it now prints:
 
-CP-017 and the full Phase 4 roadmap are not identical. After M255.1 validation,
-M255 must separately verify whether current persisted repair history/activity
-already satisfies the roadmap's final execution-summary requirement and whether a
-user-facing final diff is emitted or needs a small implementation addition.
+- `Repair execution summary:`,
+- terminal outcome,
+- attempts used out of the two-attempt maximum,
+- exact controlled build status plus odd/even success interpretation,
+- rollback state,
+- `Final diff:`, followed by the existing read-only `project_git_diff()` output.
 
-Phase 4 must not be marked COMPLETE until those roadmap items are evidenced.
+Reports are emitted for:
+
+- committed repair success,
+- unsafe stop when rollback safety is not proven,
+- two-attempt exhaustion after the final rollback.
+
+`BUILD_M255.COM` now captures the M208 output and deterministically verifies that
+both the committed and attempt-limit scenarios include the execution-summary and
+final-diff evidence. It uses line-by-line DCL text checks rather than relying on
+SEARCH no-match status semantics.
+
+M255.2 adds only static helper functions in `OPENAI_RETRY.C`. It introduces no new
+linker-visible C identifiers.
+
+## Reconciliation boundary
+
+If the updated normal `@BUILD` and focused `@BUILD_M255` both pass on OpenVMS,
+M255 has evidence for all five Phase 4 roadmap items. At that point the final M255
+documentation reconciliation may:
+
+- promote CP-017 from PARTIAL to VERIFIED,
+- mark Phase 4 COMPLETE,
+- leave later session, instruction, network, external-tool, and image gaps
+  unchanged.
 
 ## Compatibility rule
 
 OpenVMS V7.2 VAX / DEC C remains the target. Every production external identifier
-introduced by M255 must be 31 characters or fewer. M255.1 introduces no production
-C identifiers or linker-visible symbols.
+introduced by M255 must be 31 characters or fewer. M255.2 adds no external
+identifiers; both reporting helpers are `static`.
