@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M255 reconciled
+**Document status:** Authoritative parity specification, M256 reconciled
 **Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -224,7 +224,7 @@ POSIX filesystem sequence.
 | ID      | Capability                         | Status   | Current evidence                                                  |
 | ------- | ---------------------------------- | -------- | ----------------------------------------------------------------- |
 | CAP-022 | Persistent state and activity logs | VERIFIED | OVMS_AGENT.STATE and OVMS_AGENT_ACTIVITY.LOG                      |
-| CAP-023 | Resumable interactive sessions     | PARTIAL  | Durable state exists; complete task resumption is not implemented |
+| CAP-023 | Resumable interactive sessions     | VERIFIED | M256 durable session objective, active-plan checkpoint, stale-file refusal, reapproval-on-resume, and two-image cross-process restart evidence |
 | CAP-024 | Project instruction files          | MISSING  | Root-level support exists later; full directory-scoped CP-019 remains unverified |
 | CAP-025 | Configurable network policy        | MISSING  | No allow, deny, or approval-based outbound policy                 |
 | CAP-026 | Image input                        | MISSING  | No image ingestion or image reasoning interface                   |
@@ -398,14 +398,19 @@ terminal execution-summary/final-diff reporting.
 
 ## CP-018 - Resumable sessions
 
-**Status:** PARTIAL
+**Status:** VERIFIED
 
 **Pass condition:** After exiting and restarting OVMS Agent, the user can resume
 an unfinished task with its plan, approval state, completed steps, pending steps,
 and relevant context intact.
 
-**Current evidence:** Durable state and plan files exist, but complete interactive
-task resumption is not implemented.
+**Evidence:** M256 combines the existing M228 persistent-session lifecycle with a
+durable active-plan checkpoint. Resume restores the persistent objective and
+atomic-plan progress, reports completed/pending operation counts, clears prior
+plan approval so reapproval is required, validates the saved-plan checksum and
+file fingerprints before continuation, and refuses stale planned files. M256.4
+uses separate setup and resume images to prove the behavior across a real process
+restart boundary; the focused OpenVMS driver completed with `%X00000001`.
 
 ## CP-019 - Project instructions
 
@@ -472,13 +477,16 @@ Validated through M255 OpenVMS evidence.
 4. Rollback guarantees preserved across iterations - complete.
 5. Terminal execution summary and final diff - complete.
 
-## Phase 5 - Session resumption
+## Phase 5 - Session resumption - COMPLETE
 
-1. Persist task identity and user objective.
-2. Persist active plan and completed steps.
-3. Persist pending approvals without incorrectly reusing stale approval.
-4. Detect changed files before resumption.
-5. Add resume, list-session, and abandon-session operations.
+Validated through M228 and M256.1-M256.4 OpenVMS evidence.
+
+1. Persist task identity and user objective - complete.
+2. Persist active plan and completed/pending atomic-plan steps - complete.
+3. Persist pending approval state without reusing stale approval - complete.
+4. Detect changed files before resumption and refuse stale continuation - complete.
+5. Resume/list plus archive/delete abandon-session lifecycle - complete.
+6. Cross-process restart/resume acceptance evidence - complete.
 
 ## Phase 6 - Project instructions and configuration
 
