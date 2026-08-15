@@ -148,10 +148,13 @@ $ CC/OBJECT=[.BUILD]OPENAI_PARITY.OBJ -
 [.SRC]OPENAI_PARITY.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
+$! M256 compiles the mature session implementation through a thin wrapper
+$! that preserves all existing behavior while clearing stale plan approval
+$! after a successful persistent-session resume.
 $ CC/OBJECT=[.BUILD]OPENAI_SESSION.OBJ -
 /INCLUDE=([.SRC]) -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-[.SRC]OPENAI_SESSION.C
+[.SRC]OPENAI_SESSION_M256.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
 $ CC/OBJECT=[.BUILD]OPENAI_TRANSCRIPT.OBJ -
