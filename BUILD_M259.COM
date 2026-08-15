@@ -21,103 +21,91 @@ $     FINAL_STATUS = %X10000002
 $     GOTO FINISH
 $ ENDIF
 $
-$!-----------------------------------------------------------
-$! M259.1 preserve the mature text-only request baseline.
-$!-----------------------------------------------------------
+$! M259.1 text-only request baseline.
 $ CC/OBJECT=[.BUILD]M259_REQUEST_BASE_TEST.OBJ -
 /STANDARD=RELAXED_ANSI89 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
 /INCLUDE_DIRECTORY=([.SRC]) -
 [.SRC]M259_REQUEST_BASE_TEST.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$
 $ LINK/EXECUTABLE=[.BUILD]M259_REQUEST_BASE_TEST.EXE -
 [.BUILD]M259_REQUEST_BASE_TEST.OBJ, -
 [.BUILD]OPENAI_REQUEST_BASIC.OBJ, -
 [.BUILD]OPENAI_IMAGE.OBJ, -
 [.BUILD]OPENAI_JSON_WRITE.OBJ
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "Link failed for M259_REQUEST_BASE_TEST.EXE."
-$     GOTO FINISH
-$ ENDIF
-$
+$ IF .NOT. $STATUS THEN GOTO LINK_ERROR
 $ RUN [.BUILD]M259_REQUEST_BASE_TEST
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "M259 text-only request baseline evidence failed."
-$     GOTO FINISH
-$ ENDIF
+$ IF .NOT. $STATUS THEN GOTO TEST_ERROR
 $ WRITE SYS$OUTPUT "M259 text-only request baseline evidence passed."
 $
-$!-----------------------------------------------------------
-$! M259.2 guarded local binary ingestion and base64 preparation.
-$!-----------------------------------------------------------
+$! M259.2 guarded local image ingestion.
 $ CC/OBJECT=[.BUILD]M259_IMAGE_INGEST_TEST.OBJ -
 /STANDARD=RELAXED_ANSI89 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
 /INCLUDE_DIRECTORY=([.SRC]) -
 [.SRC]M259_IMAGE_INGEST_TEST.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$
 $ LINK/EXECUTABLE=[.BUILD]M259_IMAGE_INGEST_TEST.EXE -
 [.BUILD]M259_IMAGE_INGEST_TEST.OBJ
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "Link failed for M259_IMAGE_INGEST_TEST.EXE."
-$     GOTO FINISH
-$ ENDIF
-$
+$ IF .NOT. $STATUS THEN GOTO LINK_ERROR
 $ RUN [.BUILD]M259_IMAGE_INGEST_TEST
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "M259 guarded image-ingestion evidence failed."
-$     GOTO FINISH
-$ ENDIF
+$ IF .NOT. $STATUS THEN GOTO TEST_ERROR
 $ WRITE SYS$OUTPUT "M259 guarded image-ingestion evidence passed."
 $
-$!-----------------------------------------------------------
-$! M259.3 multimodal Responses request serialization.
-$!-----------------------------------------------------------
+$! M259.3 multimodal basic Responses request serialization.
 $ CC/OBJECT=[.BUILD]M259_REQUEST_IMAGE_TEST.OBJ -
 /STANDARD=RELAXED_ANSI89 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
 /INCLUDE_DIRECTORY=([.SRC]) -
 [.SRC]M259_REQUEST_IMAGE_TEST.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
-$
 $ LINK/EXECUTABLE=[.BUILD]M259_REQUEST_IMAGE_TEST.EXE -
 [.BUILD]M259_REQUEST_IMAGE_TEST.OBJ, -
 [.BUILD]OPENAI_REQUEST_BASIC.OBJ, -
 [.BUILD]OPENAI_IMAGE.OBJ, -
 [.BUILD]OPENAI_JSON_WRITE.OBJ
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "Link failed for M259_REQUEST_IMAGE_TEST.EXE."
-$     GOTO FINISH
-$ ENDIF
-$
+$ IF .NOT. $STATUS THEN GOTO LINK_ERROR
 $ RUN [.BUILD]M259_REQUEST_IMAGE_TEST
-$ IF .NOT. $STATUS
-$ THEN
-$     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "M259 multimodal request serialization evidence failed."
-$     GOTO FINISH
-$ ENDIF
+$ IF .NOT. $STATUS THEN GOTO TEST_ERROR
 $ WRITE SYS$OUTPUT "M259 multimodal request serialization evidence passed."
 $
-$ WRITE SYS$OUTPUT "M259 command integration/metadata logging evidence remains pending."
+$! M259.4 actual AGENT/IMAGE registration, agent tools, metadata-only logging.
+$ CC/OBJECT=[.BUILD]M259_AGENT_IMAGE_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M259_AGENT_IMAGE_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$ LINK/EXECUTABLE=[.BUILD]M259_AGENT_IMAGE_TEST.EXE -
+[.BUILD]M259_AGENT_IMAGE_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS THEN GOTO LINK_ERROR
+$ RUN [.BUILD]M259_AGENT_IMAGE_TEST
+$ IF .NOT. $STATUS THEN GOTO TEST_ERROR
+$ WRITE SYS$OUTPUT "M259 agent image command/logging evidence passed."
+$
+$ WRITE SYS$OUTPUT "M259 live API acceptance/reconciliation evidence remains pending."
 $ WRITE SYS$OUTPUT "All implemented M259 image-input regressions passed."
 $ GOTO FINISH
 $
 $COMPILE_ERROR:
 $ FINAL_STATUS = $STATUS
 $ WRITE SYS$OUTPUT "M259 focused regression compilation failed."
+$ GOTO FINISH
+$
+$LINK_ERROR:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M259 focused regression link failed."
+$ GOTO FINISH
+$
+$TEST_ERROR:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M259 focused regression failed."
 $
 $FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
