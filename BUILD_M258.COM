@@ -45,8 +45,41 @@ $ RUN [.BUILD]M247_MCP_FEEDBACK_TEST
 $ IF .NOT. $STATUS THEN GOTO TEST_ERROR
 $ WRITE SYS$OUTPUT "M258 M247 agent-feedback evidence passed."
 $
-$ WRITE SYS$OUTPUT "M258 network-policy/lifecycle evidence remains pending."
-$ WRITE SYS$OUTPUT "All implemented M258 foundation regressions passed."
+$!-----------------------------------------------------------
+$! M258.2 default-deny network policy engine.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M258_NET_POLICY_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M258_NET_POLICY_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M258_NET_POLICY_TEST.EXE -
+[.BUILD]M258_NET_POLICY_TEST.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M258_NET_POLICY_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M258_NET_POLICY_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M258 network-policy evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$ WRITE SYS$OUTPUT "M258 default-deny network-policy evidence passed."
+$
+$ WRITE SYS$OUTPUT "M258 MCP transport integration/lifecycle evidence remains pending."
+$ WRITE SYS$OUTPUT "All implemented M258 network/external-tool regressions passed."
+$ GOTO FINISH
+$
+$COMPILE_ERROR:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M258 focused regression compilation failed."
 $ GOTO FINISH
 $
 $TEST_ERROR:
