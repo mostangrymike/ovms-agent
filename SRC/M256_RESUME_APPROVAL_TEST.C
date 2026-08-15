@@ -5,13 +5,11 @@
 
 #define TEST_DATA "M256_SESSIONS.DAT"
 #define TEST_CUR  "M256_SESSION.CUR"
-#define TEST_TARGET "TEST/M256_CKPT_TARGET.TMP"
-#define PLAN_FILE "OVMS_AGENT_PLAN.TXT"
-#define PLAN_CHECK "OVMS_AGENT_PLAN.TXT.CHK"
 
 extern int openai_plan_approved;
 extern unsigned long openai_approved_hash;
 extern int openai_approval_invalidated;
+void openai_test_ckpt_clear(void);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -39,19 +37,6 @@ static void remove_all(const char *path)
     }
 }
 
-static int write_target(const char *text)
-{
-    FILE *file;
-
-    file = fopen(TEST_TARGET, "w");
-    if (file == NULL) return 0;
-    if (fputs(text, file) == EOF) {
-        (void)fclose(file);
-        return 0;
-    }
-    return fclose(file) == 0;
-}
-
 static void cleanup(void)
 {
     openai_test_session_paths(NULL, NULL);
@@ -59,9 +44,22 @@ static void cleanup(void)
     openai_test_ckpt_clear();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
-    remove_all(TEST_TARGET);
-    remove_all(PLAN_FILE);
-    remove_all(PLAN_CHECK);
+    remove_all("M256_PLAN_TARGET.TMP");
+    remove_all("OVMS_AGENT_PLAN.TXT");
+    remove_all("OVMS_AGENT_PLAN.TXT.CHK");
+}
+
+static int write_target(const char *text)
+{
+    FILE *file;
+
+    file = fopen("M256_PLAN_TARGET.TMP", "w");
+    if (file == NULL) return 0;
+    if (fputs(text, file) == EOF) {
+        (void)fclose(file);
+        return 0;
+    }
+    return fclose(file) == 0;
 }
 
 int main(void)
@@ -97,40 +95,52 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!write_target("alpha\n")) {
-        (void)puts("M256 failed: unable to create checkpoint target.");
+    if (!write_target("before\n")) {
+        (void)puts("M256 failed: unable to write plan target fixture.");
         cleanup();
         return EXIT_FAILURE;
     }
 
     plan_text =
         "Files to modify\n"
-        "TEST/M256_CKPT_TARGET.TMP\n"
+        "M256_PLAN_TARGET.TMP\n"
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "type=replace_text\n"
-        "path=TEST/M256_CKPT_TARGET.TMP\n"
-        "old_text=alpha\n"
-        "new_text=beta\n"
+        "path=M256_PLAN_TARGET.TMP\n"
+        "old_text=before\n"
+        "new_text=after\n"
         "END_OPERATION\n";
 
     if (!openai_plan_save("m256 checkpoint goal", plan_text)) {
-        (void)puts("M256 failed: unable to save checkpoint plan.");
+        (void)puts("M256 failed: unable to create checkpoint plan fixture.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    /* Same persistent current session owns this active plan and may bind it. */
+    /* First resume binds the active plan to the still-current session. */
     if (!openai_session_resume(id)) {
-        (void)puts("M256 failed: unable to bind active plan checkpoint.");
+        (void)puts("M256 failed: unable to bind checkpoint on resume.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    /* Change a fingerprinted file. Silent continuation must now be refused. */
-    if (!write_target("alpha changed\n") ||
-        openai_session_resume(id)) {
-        (void)puts("M256 failed: stale planned file did not block resume.");
+    /* A later resume with unchanged fingerprints must remain valid. */
+    if (!openai_session_resume(id)) {
+        (void)puts("M256 failed: unchanged checkpoint did not resume.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    /* Change the fingerprinted file; continuation must now be refused. */
+    if (!write_target("changed\n")) {
+        (void)puts("M256 failed: unable to mutate plan target fixture.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (openai_session_resume(id)) {
+        (void)puts("M256 failed: stale planned-file checkpoint resumed.");
         cleanup();
         return EXIT_FAILURE;
     }
