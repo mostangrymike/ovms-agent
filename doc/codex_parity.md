@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M256 reconciled
+**Document status:** Authoritative parity specification, M257 reconciled
 **Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -225,7 +225,7 @@ POSIX filesystem sequence.
 | ------- | ---------------------------------- | -------- | ----------------------------------------------------------------- |
 | CAP-022 | Persistent state and activity logs | VERIFIED | OVMS_AGENT.STATE and OVMS_AGENT_ACTIVITY.LOG                      |
 | CAP-023 | Resumable interactive sessions     | VERIFIED | M256 durable session objective, active-plan checkpoint, stale-file refusal, reapproval-on-resume, and two-image cross-process restart evidence |
-| CAP-024 | Project instruction files          | MISSING  | Root-level support exists later; full directory-scoped CP-019 remains unverified |
+| CAP-024 | Project instruction files          | VERIFIED | M257 root plus directory-scoped OVMS_AGENT_INSTRUCTIONS.TXT discovery, precedence, active-file reporting, and PLAN/WRITE enforcement evidence |
 | CAP-025 | Configurable network policy        | MISSING  | No allow, deny, or approval-based outbound policy                 |
 | CAP-026 | Image input                        | MISSING  | No image ingestion or image reasoning interface                   |
 | CAP-027 | External tool extensibility        | MISSING  | External-tool work exists later; full capability requires separate reconciliation |
@@ -414,13 +414,22 @@ restart boundary; the focused OpenVMS driver completed with `%X00000001`.
 
 ## CP-019 - Project instructions
 
-**Status:** MISSING
+**Status:** VERIFIED
 
 **Pass condition:** OVMS Agent automatically discovers project instruction files,
 applies root and directory-specific instructions, reports which instructions are
 active, and enforces them during planning and execution.
 
-**Current evidence:** Root-level instruction support exists in later work, but directory-specific scope and the complete acceptance condition have not been verified.
+**Evidence:** M257 preserves M232 root instruction behavior and adds bounded
+directory-scoped `OVMS_AGENT_INSTRUCTIONS.TXT` discovery from safe
+project-relative task paths. Matching scopes are ordered broad-to-specific, deeper
+rules are appended later with explicit precedence, active scoped files and
+truncation state are reported, and unsafe traversal/device tokens are rejected.
+M257.2 proves root+nested discovery, ordering, active-file reporting, and root-only
+fallback. M257.3 runs the real `OPENAI_AGENT.C` PLAN and WRITE entry paths with a
+capture stub at the final agent-mode boundary and proves that both workflows
+receive the root rule, scoped rule, precedence marker, and original request in
+the final model goal. The focused OpenVMS driver completed with `%X00000001`.
 
 ## CP-020 - Image input and external tools
 
@@ -488,13 +497,15 @@ Validated through M228 and M256.1-M256.4 OpenVMS evidence.
 5. Resume/list plus archive/delete abandon-session lifecycle - complete.
 6. Cross-process restart/resume acceptance evidence - complete.
 
-## Phase 6 - Project instructions and configuration
+## Phase 6 - Project instructions and configuration - COMPLETE
 
-1. Define an OpenVMS-friendly project instruction filename.
-2. Support root and directory-specific instruction scope.
-3. Define precedence and size limits.
-4. Display active instructions.
-5. Add tests proving that instructions affect planning and execution.
+Validated through M232 and M257.1-M257.3 OpenVMS evidence.
+
+1. Define an OpenVMS-friendly project instruction filename - complete.
+2. Support root and directory-specific instruction scope - complete.
+3. Define precedence and size limits - complete.
+4. Display active instructions - complete.
+5. Add tests proving that instructions affect planning and execution - complete.
 
 ## Phase 7 - Network and external tools
 
