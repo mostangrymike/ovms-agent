@@ -8,6 +8,7 @@ $ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
 $ SET DEFAULT 'PROJECT_DIR'
 $
 $ FINAL_STATUS = 1
+$ M208_LOG = ""
 $
 $ WRITE SYS$OUTPUT "Running M255 iterative-repair regressions..."
 $
@@ -41,14 +42,65 @@ $     GOTO FINISH
 $ ENDIF
 $ WRITE SYS$OUTPUT "M255 M207 commit/rollback evidence passed."
 $
+$ IF F$SEARCH("[.BUILD]M255_M208.LOG;*") .NES. "" -
+      THEN DELETE/NOLOG [.BUILD]M255_M208.LOG;*
+$ DEFINE/USER SYS$OUTPUT [.BUILD]M255_M208.LOG
+$ DEFINE/USER SYS$ERROR [.BUILD]M255_M208.LOG
 $ RUN [.BUILD]M208_REPAIR_RETRY_TEST
-$ IF .NOT. $STATUS
+$ M208_STATUS = $STATUS
+$ IF .NOT. M208_STATUS
 $ THEN
-$     FINAL_STATUS = $STATUS
+$     FINAL_STATUS = M208_STATUS
 $     WRITE SYS$OUTPUT "M255 M208 bounded retry evidence failed."
+$     GOTO SHOW_M208
+$ ENDIF
+$
+$ M208_LOG = F$SEARCH("[.BUILD]M255_M208.LOG;*")
+$ IF M208_LOG .EQS. ""
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 M208 output capture is missing."
 $     GOTO FINISH
 $ ENDIF
-$ WRITE SYS$OUTPUT "M255 M208 two-attempt bound evidence passed."
+$
+$ CHECK_FILE = M208_LOG
+$ CHECK_NEEDLE = "Repair execution summary:"
+$ GOSUB CHECK_TEXT
+$ IF .NOT. CHECK_FOUND
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 repair execution summary evidence missing."
+$     GOTO SHOW_M208
+$ ENDIF
+$
+$ CHECK_NEEDLE = "Outcome:  committed"
+$ GOSUB CHECK_TEXT
+$ IF .NOT. CHECK_FOUND
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 committed terminal outcome evidence missing."
+$     GOTO SHOW_M208
+$ ENDIF
+$
+$ CHECK_NEEDLE = "Outcome:  attempt-limit"
+$ GOSUB CHECK_TEXT
+$ IF .NOT. CHECK_FOUND
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 attempt-limit terminal outcome evidence missing."
+$     GOTO SHOW_M208
+$ ENDIF
+$
+$ CHECK_NEEDLE = "Final diff:"
+$ GOSUB CHECK_TEXT
+$ IF .NOT. CHECK_FOUND
+$ THEN
+$     FINAL_STATUS = %X10000002
+$     WRITE SYS$OUTPUT "M255 final diff evidence missing."
+$     GOTO SHOW_M208
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT "M255 M208 two-attempt bound/report evidence passed."
 $
 $ RUN [.BUILD]M209_REPAIR_CONTEXT_TEST
 $ IF .NOT. $STATUS
@@ -60,7 +112,34 @@ $ ENDIF
 $ WRITE SYS$OUTPUT "M255 M209 context-aware retry evidence passed."
 $
 $ WRITE SYS$OUTPUT "All M255 iterative-repair regressions passed."
+$ GOTO FINISH
+$
+$SHOW_M208:
+$ IF M208_LOG .EQS. "" THEN M208_LOG = F$SEARCH("[.BUILD]M255_M208.LOG;*")
+$ IF M208_LOG .NES. ""
+$ THEN
+$     WRITE SYS$OUTPUT "M255 captured M208 output:"
+$     TYPE 'M208_LOG'
+$ ENDIF
+$ GOTO FINISH
+$
+$CHECK_TEXT:
+$ CHECK_FOUND = 0
+$ OPEN/READ CHECK_INPUT 'CHECK_FILE'
+$CHECK_TEXT_LOOP:
+$ READ/END=CHECK_TEXT_DONE CHECK_INPUT CHECK_LINE
+$ IF F$LOCATE(CHECK_NEEDLE,CHECK_LINE) .LT. F$LENGTH(CHECK_LINE)
+$ THEN
+$     CHECK_FOUND = 1
+$     GOTO CHECK_TEXT_DONE
+$ ENDIF
+$ GOTO CHECK_TEXT_LOOP
+$CHECK_TEXT_DONE:
+$ CLOSE CHECK_INPUT
+$ RETURN
 $
 $FINISH:
+$ IF F$SEARCH("[.BUILD]M255_M208.LOG;*") .NES. "" -
+      THEN DELETE/NOLOG [.BUILD]M255_M208.LOG;*
 $ SET DEFAULT 'SAVED_DEFAULT'
 $ EXIT 'FINAL_STATUS'
