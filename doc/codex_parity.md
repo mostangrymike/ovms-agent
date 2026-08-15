@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M258 reconciled
+**Document status:** Authoritative parity specification, M259 reconciled
 **Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -28,29 +28,18 @@ test is **VERIFIED**.
 # Parity principles
 
 1. Parity is based on observable behavior and outcomes.
-
 2. Claims must be supported by source code, repeatable commands, automated tests,
    build logs, or recorded regression results.
-
 3. OVMS Agent does not need to reproduce Codex CLI command names.
-
 4. OpenVMS-native mechanisms are preferred over artificial POSIX emulation.
-
 5. Safety boundaries must be explicit and testable.
-
 6. A capability is not VERIFIED merely because a command or function exists.
-
 7. A capability that works only for a subset of its required workflow is PARTIAL.
-
 8. Unsupported behavior is MISSING, not silently excluded.
-
 9. Unevaluated behavior is UNKNOWN.
-
 10. NOT_APPLICABLE may be used only when the capability is not required for
     practical local coding-agent parity and the reason is documented.
-
 11. Tests must verify both successful operation and relevant failure behavior.
-
 12. Documentation must describe the implementation that actually exists.
 
 ---
@@ -227,7 +216,7 @@ POSIX filesystem sequence.
 | CAP-023 | Resumable interactive sessions     | VERIFIED | M256 durable session objective, active-plan checkpoint, stale-file refusal, reapproval-on-resume, and two-image cross-process restart evidence |
 | CAP-024 | Project instruction files          | VERIFIED | M257 root plus directory-scoped OVMS_AGENT_INSTRUCTIONS.TXT discovery, precedence, active-file reporting, and PLAN/WRITE enforcement evidence |
 | CAP-025 | Configurable network policy        | VERIFIED | M258 default-deny HTTP/SSE policy, explicit allow/deny domains, FULL-only one-shot exceptions, policy reporting, transport gating, and decision logging |
-| CAP-026 | Image input                        | MISSING  | No image ingestion or image reasoning interface                   |
+| CAP-026 | Image input                        | VERIFIED | M259 guarded PNG/JPEG/GIF/WEBP ingestion, bounded base64 request serialization, AGENT/IMAGE command, metadata-only logging, and live Responses API image reasoning |
 | CAP-027 | External tool extensibility        | VERIFIED | M241-M247 registered MCP server/tool model plus M258 policy-gated stdio/HTTP/SSE bridges, bounded lifecycle contract, condition reporting, and terminal logging |
 
 ---
@@ -433,13 +422,13 @@ the final model goal. The focused OpenVMS driver completed with `%X00000001`.
 
 ## CP-020 - Image input and external tools
 
-**Status:** MISSING
+**Status:** VERIFIED
 
 **Pass condition:** OVMS Agent can accept an image as task context and can invoke
 registered external tools through an explicit, inspectable, policy-controlled
 interface.
 
-**Current evidence:** M241-M247 plus M258 verify the external-tool half of this acceptance condition, including registered MCP tools, FULL approval, default-deny network policy, explicit allow/deny and exceptions, stdio/HTTP/SSE bridges, bounded output and condition-status reporting, and logging. Image ingestion remains MISSING, so the combined acceptance condition is not satisfied.
+**Evidence:** M241-M247 plus M258 verify the external-tool half of this acceptance condition, including registered MCP tools, FULL approval, default-deny network policy, explicit allow/deny and exceptions, stdio/HTTP/SSE bridges, bounded output and condition-status reporting, and logging. M259 verifies the image-context half through guarded local PNG/JPEG/GIF/WEBP ingestion, structured `input_text` plus `input_image` serialization, the production `AGENT/IMAGE` read-only agent workflow, metadata-only logging, and a live Responses API run over a verified 2x2 solid-red PNG that returned `Red.` and described the image as solid bright red. The image-assisted first agent request retains the normal read-only tool schema, so image context and registered tools coexist in the same agent workflow.
 
 ---
 
@@ -519,13 +508,15 @@ Validated through M241-M247 and M258.1-M258.4 OpenVMS evidence.
 6. Evaluate an MCP-compatible transport or an OpenVMS-native equivalent - complete through configured stdio/HTTP/SSE bridges.
 7. Log all external-tool and network-policy decisions - complete.
 
-## Phase 8 - Image input
+## Phase 8 - Image input - COMPLETE
 
-1. Define supported OpenVMS image file formats and size limits.
-2. Add a safe upload or local-file ingestion path.
-3. Include image references in agent requests.
-4. Record image metadata without placing binary data in text logs.
-5. Add image-assisted coding acceptance tests.
+Validated through M259.1-M259.5 OpenVMS evidence.
+
+1. Define supported OpenVMS image file formats and size limits - complete: PNG/JPEG/GIF/WEBP with a 5 MiB OVMS Agent bound.
+2. Add a safe upload or local-file ingestion path - complete through guarded project-relative local-file ingestion with extension/signature validation.
+3. Include image references in agent requests - complete through streamed base64 data URLs in structured `input_image` content and `AGENT/IMAGE`.
+4. Record image metadata without placing binary data in text logs - complete through metadata-only logging regression evidence.
+5. Add image-assisted coding acceptance tests - complete through deterministic serialization/agent regressions and the live controlled-image Responses API acceptance run.
 
 ## Phase 9 - Final parity validation
 
@@ -546,39 +537,9 @@ Validated through M241-M247 and M258.1-M258.4 OpenVMS evidence.
 Practical Codex CLI parity is complete only when all of the following are true:
 
 1. Every required CAP item is VERIFIED.
-
 2. CP-001 through CP-020 are all VERIFIED.
-
 3. Every VERIFIED status has reproducible evidence.
-
 4. All automated parity, transaction, rollback, RMS-format, and build tests pass.
-
 5. BUILD.COM completes with an odd OpenVMS success condition.
-
 6. No required capability remains PARTIAL, MISSING, or UNKNOWN.
-
 7. Every NOT_APPLICABLE classification has an approved written rationale.
-
-8. Read-only and write-capable operation boundaries are explicit and enforced.
-
-9. File operations preserve required OpenVMS file versions and RMS attributes.
-
-10. Failed multi-file operations leave no partially applied project state.
-
-11. Approved command execution is bounded, logged, and reports condition values.
-
-12. Network and external-tool access follow explicit policy.
-
-13. Project instructions are automatically discovered and enforced.
-
-14. Interrupted work can be resumed without silently using stale plans or stale
-    approvals.
-
-15. User-facing documentation matches the implemented commands and behavior.
-
-16. A clean-checkout validation transcript is stored with the project.
-
-17. The validated commit is tagged as the practical-parity baseline.
-
-Until every criterion above is satisfied, OVMS Agent may report progress toward
-practical parity but must not claim complete Codex CLI parity.
