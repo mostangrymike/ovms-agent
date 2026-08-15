@@ -3,14 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define M259_IMAGE_MAX_BYTES (5UL * 1024UL * 1024UL)
-#define M259_IMAGE_PATH_MAX 512U
+#include "openai_image.h"
 
-typedef struct openai_image_meta {
-    char path[M259_IMAGE_PATH_MAX];
-    char media_type[24];
-    unsigned long size;
-} openai_image_meta;
+#define M259_IMAGE_MAX_BYTES (5UL * 1024UL * 1024UL)
 
 static int m259_image_safe_path(const char *path)
 {
@@ -137,7 +132,7 @@ int openai_image_info(const char *path, openai_image_meta *meta)
     FILE *file;
     unsigned char head[16];
     size_t count;
-    char normalized[M259_IMAGE_PATH_MAX];
+    char normalized[OPENAI_IMAGE_PATH_MAX];
     char extension[8];
     const char *media_type;
     unsigned long size;
