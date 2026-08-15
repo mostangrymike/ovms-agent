@@ -10,6 +10,26 @@ extern int openai_plan_approved;
 extern unsigned long openai_approved_hash;
 extern int openai_approval_invalidated;
 
+int command_line_complete(const char *input,
+                          size_t input_size,
+                          int reached_eof)
+{
+    (void)input;
+    (void)input_size;
+    (void)reached_eof;
+    return 0;
+}
+
+int command_read_stream(FILE *stream,
+                        char *input,
+                        size_t input_size)
+{
+    (void)stream;
+    (void)input;
+    (void)input_size;
+    return 0;
+}
+
 static void remove_all(const char *path)
 {
     while (remove(path) == 0) {
