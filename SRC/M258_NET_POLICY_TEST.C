@@ -5,10 +5,23 @@
 #include "openai_internal.h"
 
 static const char *m258_policy_name = "read-only";
+static unsigned int m258_log_calls;
+static int m258_log_status;
+static char m258_log_event[512];
 
 const char *openai_approval_name(void)
 {
     return m258_policy_name;
+}
+
+void openai_log_event(const char *workflow, const char *event, int status)
+{
+    if (workflow != NULL && strcmp(workflow, "NETWORK") == 0) {
+        ++m258_log_calls;
+        m258_log_status = status;
+        (void)snprintf(m258_log_event, sizeof(m258_log_event), "%s",
+                       event != NULL ? event : "");
+    }
 }
 
 #include "OPENAI_NETWORK.C"
@@ -34,18 +47,24 @@ int main(void)
     (void)putenv(allow_none);
     (void)putenv(deny_none);
     openai_test_net_reset();
+    m258_log_calls = 0U;
+    m258_log_event[0] = '\0';
 
     if (!require_true(
             !openai_net_check("https://tools.example.test/mcp", detail, sizeof(detail)) &&
             strstr(detail, "decision=deny") != NULL &&
-            strstr(detail, "default deny") != NULL,
-            "default deny")) return 1;
+            strstr(detail, "default deny") != NULL &&
+            m258_log_calls == 1U && m258_log_status == 2 &&
+            strstr(m258_log_event, "decision=deny") != NULL,
+            "default deny and logging")) return 1;
 
     (void)putenv(allow_rules);
     if (!require_true(
             openai_net_check("https://tools.example.test/mcp", detail, sizeof(detail)) &&
-            strstr(detail, "allow list") != NULL,
-            "exact allow")) return 1;
+            strstr(detail, "allow list") != NULL &&
+            m258_log_status == 1 &&
+            strstr(m258_log_event, "decision=allow") != NULL,
+            "exact allow and logging")) return 1;
 
     if (!require_true(
             openai_net_check("https://api.allowed.test/events", detail, sizeof(detail)) &&
@@ -95,8 +114,10 @@ int main(void)
             "one-shot exception consumed")) return 1;
 
     if (!require_true(
-            !openai_net_check("file://tools.example.test/mcp", detail, sizeof(detail)),
-            "non-network URL refused")) return 1;
+            !openai_net_check("file://tools.example.test/mcp", detail, sizeof(detail)) &&
+            m258_log_status == 2 &&
+            strstr(m258_log_event, "invalid HTTP/SSE endpoint") != NULL,
+            "non-network URL refused and logged")) return 1;
 
     openai_test_net_reset();
     (void)putenv(allow_none);
