@@ -68,16 +68,32 @@ Observed results:
 
 The intentional failure cases printed by M252/M255 are regression stimuli, not suite failures; each enclosing focused driver reached its documented success result.
 
+## Canonical-main validation
+
+After PR #12 merged, M260 was rerun on canonical `main` at merge commit `65580140c3c01573216359263ee0cbc59f550456`.
+
+Recorded environment:
+
+- validation time: `15-AUG-2026 14:06:57.25`;
+- OpenVMS version: `V9.2-3`;
+- architecture: `x86_64`;
+- node: `X86923`;
+- test operator: `MIKE`;
+- configured model: `gpt-5.1`;
+- compiler: `VSI C x86-64 V7.7-003 (GEM 50Z9T) on OpenVMS x86_64 V9.2-3`.
+
+The canonical-main run again completed all nine stages successfully, ended with `$STATUS == "%X00000001"`, and left `git status -sb` at `## main...origin/main`.
+
 ## Final parity state
 
-After the successful M260 release-candidate run:
+After the successful release-candidate and canonical-main M260 runs:
 
 - CAP-001 through CAP-027 are VERIFIED;
 - CP-001 through CP-020 are VERIFIED;
 - every automated parity, transaction, rollback, RMS-format, network/external-tool, session, project-instruction, repair, and image-input driver invoked by M260 passed;
 - no required capability remains PARTIAL, MISSING, or UNKNOWN;
-- Phase 9 automated validation is COMPLETE;
-- practical Codex CLI parity criteria are satisfied subject only to merging this evidence-only M260 branch, validating canonical `main`, and tagging that validated canonical commit.
+- Phase 9 automated and canonical validation is COMPLETE;
+- practical Codex CLI parity criteria are satisfied, pending only publication of a real Git tag on the final reconciled canonical commit.
 
 ## Compatibility
 
@@ -85,6 +101,6 @@ M260 introduces no C source, no new production object, and no linker-visible ide
 
 Filename audit: `BUILD_M260.COM` and `doc/parity_audit_m260.md` do not collide by case with existing canonical paths.
 
-## Post-merge/tag gate
+## Final reconciliation/tag gate
 
-The validated release tag must be created only after M260 is merged and `BUILD_M260.COM` is rerun successfully on canonical `main`. This ensures the tag identifies the exact canonical commit that carries the final validation driver and evidence record rather than the pre-merge feature head.
+This audit is reconciled on a documentation-only branch created from validated canonical merge `65580140c3c01573216359263ee0cbc59f550456`. After that documentation-only reconciliation is merged, `BUILD_M260.COM` must be rerun once more on the resulting canonical `main` commit. If it remains `%X00000001` with a clean synchronized tree, that exact canonical commit is the validated release target and should receive the final Git tag.
