@@ -8,7 +8,7 @@ $ PROJECT_DIR = F$PARSE(PROCEDURE,,,"DEVICE") + -
 $ SET DEFAULT 'PROJECT_DIR'
 $
 $ FINAL_STATUS = 1
-$ M208_LOG = ""
+$ M208_LOG = "[.BUILD]M255_M208.LOG;1"
 $
 $ WRITE SYS$OUTPUT "Running M255 iterative-repair regressions..."
 $
@@ -55,8 +55,7 @@ $     WRITE SYS$OUTPUT "M255 M208 bounded retry evidence failed."
 $     GOTO SHOW_M208
 $ ENDIF
 $
-$ M208_LOG = F$SEARCH("[.BUILD]M255_M208.LOG;*")
-$ IF M208_LOG .EQS. ""
+$ IF F$SEARCH(M208_LOG) .EQS. ""
 $ THEN
 $     FINAL_STATUS = %X10000002
 $     WRITE SYS$OUTPUT "M255 M208 output capture is missing."
@@ -115,8 +114,7 @@ $ WRITE SYS$OUTPUT "All M255 iterative-repair regressions passed."
 $ GOTO FINISH
 $
 $SHOW_M208:
-$ IF M208_LOG .EQS. "" THEN M208_LOG = F$SEARCH("[.BUILD]M255_M208.LOG;*")
-$ IF M208_LOG .NES. ""
+$ IF F$SEARCH(M208_LOG) .NES. ""
 $ THEN
 $     WRITE SYS$OUTPUT "M255 captured M208 output:"
 $     TYPE 'M208_LOG'
