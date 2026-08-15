@@ -3,8 +3,49 @@
 #include <string.h>
 
 #include "openai_internal.h"
+#include "project.h"
 
 int openai_plan_clear_files(const char *plan_path);
+
+static const char *openai_repair_rollback_text(void)
+{
+    if (openai_last_rollback == OPENAI_ROLLBACK_SUCCEEDED) {
+        return "succeeded";
+    }
+
+    if (openai_last_rollback == OPENAI_ROLLBACK_FAILED) {
+        return "failed";
+    }
+
+    return "not-required";
+}
+
+static void openai_repair_report(const agent_state *state,
+                                 const char *outcome,
+                                 unsigned int attempt)
+{
+    (void)puts("");
+    (void)puts("Repair execution summary:");
+    (void)printf("  Outcome:  %s\n",
+                 outcome != NULL ? outcome : "unknown");
+    (void)printf("  Attempts: %u of 2\n", attempt);
+
+    if (openai_last_build_known) {
+        (void)printf(
+            "  Build:    status %d (%s)\n",
+            openai_last_build_status,
+            (openai_last_build_status & 1) != 0 ? "success" : "failure"
+        );
+    } else {
+        (void)puts("  Build:    status unavailable");
+    }
+
+    (void)printf("  Rollback: %s\n",
+                 openai_repair_rollback_text());
+    (void)puts("");
+    (void)puts("Final diff:");
+    project_git_diff(state);
+}
 
 int openai_plan_is_noop_text(const char *text)
 {
@@ -698,6 +739,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "repair_succeeded",
                 (int)attempt
             );
+            openai_repair_report(state, "committed", attempt);
             free(previous_plan);
             return;
         }
@@ -720,6 +762,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "unsafe_retry_state",
                 (int)attempt
             );
+            openai_repair_report(state, "unsafe-stop", attempt);
             free(previous_plan);
             return;
         }
@@ -742,6 +785,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 "retry_limit_reached",
                 2
             );
+            openai_repair_report(state, "attempt-limit", attempt);
             free(previous_plan);
             return;
         }

@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +76,10 @@ void openai_log_repair_attempt()
 }
 
 void openai_plan_approval_clear()
+{
+}
+
+void project_git_diff()
 {
 }
 

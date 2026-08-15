@@ -1,7 +1,7 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M254 reconciled
-**Baseline date:** 14 August 2026
+**Document status:** Authoritative parity specification, M255 reconciled
+**Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
 
@@ -215,7 +215,7 @@ POSIX filesystem sequence.
 | CAP-016 | BUILD.COM execution              | VERIFIED | run_build, BUILD, and automatic build regressions                           |
 | CAP-017 | OpenVMS status handling          | VERIFIED | Odd-status success handling in build workflows                              |
 | CAP-018 | Transaction rollback             | VERIFIED | edit_txn rollback, M154-M159, M252, and M253 failure regressions            |
-| CAP-019 | Iterative edit-build-test repair | PARTIAL  | AGENT/FIX and AGENT/RETRY exist; autonomous convergence remains incomplete  |
+| CAP-019 | Iterative edit-build-test repair | VERIFIED | M255 AGENT/REPAIR two-attempt convergence, rollback, retry-context, terminal summary, and final-diff evidence |
 | CAP-020 | Arbitrary approved DCL execution | VERIFIED | M254 explicit DCL command with full/write/DCL gates, bounded output, logging, and exact condition capture |
 | CAP-021 | Non-interactive agent execution  | VERIFIED | M254 one-shot @OVMS_AGENT DCL JSON mode with deterministic policy denial and exact OpenVMS process status |
 
@@ -385,14 +385,16 @@ nonexistent, and create them transactionally during approved execution.
 
 ## CP-017 - Iterative repair
 
-**Status:** PARTIAL
+**Status:** VERIFIED
 
 **Pass condition:** The agent can inspect a failed build, produce a bounded repair,
 execute it after required approval, rebuild, and repeat until success or a defined
 attempt limit is reached.
 
-**Current evidence:** AGENT/FIX, AGENT/RETRY, build execution, and rollback pieces
-exist, but the complete autonomous loop is not verified.
+**Evidence:** M255 focused OpenVMS evidence over M207-M209 proves failed-build
+diagnostics feed planning, transactional repair and rebuild, rollback before
+retry, context-aware second attempt, success stop, two-attempt exhaustion, and
+terminal execution-summary/final-diff reporting.
 
 ## CP-018 - Resumable sessions
 
@@ -460,13 +462,15 @@ Validated through M254.1-M254.3 OpenVMS evidence.
 5. Non-interactive one-shot DCL entry point - complete.
 6. Deterministic denial status plus machine-readable JSON output - complete.
 
-## Phase 4 - Iterative engineering loop
+## Phase 4 - Iterative engineering loop - COMPLETE
 
-1. Connect diagnostic parsing to repair planning.
-2. Add bounded edit-build-test iteration.
-3. Stop on success, repeated failure, unsafe action, or attempt limit.
-4. Preserve rollback guarantees across iterations.
-5. Produce an execution summary and final diff.
+Validated through M255 OpenVMS evidence.
+
+1. Diagnostic parsing connected to repair planning - complete.
+2. Bounded edit-build-test iteration - complete.
+3. Stop on success, unsafe rollback state, or attempt limit - complete.
+4. Rollback guarantees preserved across iterations - complete.
+5. Terminal execution summary and final diff - complete.
 
 ## Phase 5 - Session resumption
 
