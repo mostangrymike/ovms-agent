@@ -27,8 +27,45 @@ $     GOTO FINISH
 $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M257 M232 root-instruction foundation evidence passed."
-$ WRITE SYS$OUTPUT "M257 directory-scope/precedence evidence remains pending."
-$ WRITE SYS$OUTPUT "All implemented M257 foundation regressions passed."
+$
+$ CC/OBJECT=[.BUILD]M257_SCOPE_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M257_SCOPE_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M257_SCOPE_TEST.EXE -
+[.BUILD]M257_SCOPE_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M257_SCOPE_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M257_SCOPE_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M257 directory-scope/precedence evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT "M257 directory-scope/precedence evidence passed."
+$ WRITE SYS$OUTPUT "M257 planning/execution enforcement evidence remains pending."
+$ WRITE SYS$OUTPUT "All implemented M257 project-instruction regressions passed."
+$ GOTO FINISH
+$
+$COMPILE_ERROR:
+$ FINAL_STATUS = $STATUS
+$ WRITE SYS$OUTPUT "M257 focused regression compilation failed."
 $
 $FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
