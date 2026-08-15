@@ -37,36 +37,47 @@ The procedure stops on the first even OpenVMS condition value and preserves that
 
 `BUILD.COM` contains the broad historical regression baseline, including the earlier capability foundation. Focused milestone drivers begin at M252 in canonical root, so there is no separate `BUILD_M251.COM` to invoke.
 
-## Required preconditions
+## Final release-candidate validation
 
-Before the final run:
+The exact-head M260 release-candidate run completed successfully on 15 August 2026.
 
-- branch/checkout must be synchronized with its GitHub ref;
-- `git status -sb` must show no local modifications or untracked validation artifacts relevant to the repository;
-- the live M259 image fixture must not remain in the project root;
-- API credentials/configuration used for the image acceptance must remain valid if any live evidence is repeated.
+Recorded environment:
 
-## Metadata
+- validation time: `15-AUG-2026 14:03:04.32`;
+- OpenVMS version: `V9.2-3`;
+- architecture: `x86_64`;
+- node: `X86923`;
+- test operator: `MIKE`;
+- configured model: `gpt-5.1`;
+- compiler: `VSI C x86-64 V7.7-003 (GEM 50Z9T) on OpenVMS x86_64 V9.2-3`.
 
-`BUILD_M260.COM` prints:
+Observed results:
 
-- validation time;
-- OpenVMS version;
-- architecture;
-- node;
-- test operator; and
-- compiler version (`CC/VERSION`).
+- canonical `BUILD.COM` passed;
+- M252 guarded delete/rename/move and parser/execution regressions passed;
+- M253 RMS/isolation and structural rollback evidence passed;
+- M254 execution-mode policy/status evidence passed;
+- M255 bounded iterative-repair commit, rollback, retry-context, and attempt-limit evidence passed;
+- M256 persistent/resumable-session, stale-plan refusal, reapproval, and cross-process restart evidence passed;
+- M257 project-instruction scope, precedence, and PLAN/WRITE enforcement evidence passed;
+- M258 MCP/network-policy/lifecycle evidence passed;
+- M259 image-ingestion, multimodal serialization, command/logging evidence passed, with the prior live API image acceptance recorded in `doc/parity_audit_m259.md`;
+- terminal M260 message reported `M260 Phase 9 automated parity suite passed.`;
+- final `$STATUS` was `%X00000001`;
+- `git status -sb` remained `## m260-final-parity...origin/m260-final-parity`.
 
-The configured OpenAI API model must be recorded from the final validation environment/transcript. M260 will not infer or guess that value from source.
+The intentional failure cases printed by M252/M255 are regression stimuli, not suite failures; each enclosing focused driver reached its documented success result.
 
-## Current parity state before final run
+## Final parity state
 
-After M259 reconciliation:
+After the successful M260 release-candidate run:
 
 - CAP-001 through CAP-027 are VERIFIED;
 - CP-001 through CP-020 are VERIFIED;
-- Phase 8 is COMPLETE;
-- Phase 9 remains pending until the aggregate run succeeds and the final metadata/tag are recorded.
+- every automated parity, transaction, rollback, RMS-format, network/external-tool, session, project-instruction, repair, and image-input driver invoked by M260 passed;
+- no required capability remains PARTIAL, MISSING, or UNKNOWN;
+- Phase 9 automated validation is COMPLETE;
+- practical Codex CLI parity criteria are satisfied subject only to merging this evidence-only M260 branch, validating canonical `main`, and tagging that validated canonical commit.
 
 ## Compatibility
 
@@ -74,12 +85,6 @@ M260 introduces no C source, no new production object, and no linker-visible ide
 
 Filename audit: `BUILD_M260.COM` and `doc/parity_audit_m260.md` do not collide by case with existing canonical paths.
 
-## Completion criteria
+## Post-merge/tag gate
 
-M260 can be reconciled as complete only after a clean OpenVMS run shows:
-
-- every invoked procedure succeeds;
-- final `$STATUS` is `%X00000001` (or another documented odd success value, with `%X00000001` preferred by the authoritative checklist);
-- the working tree remains clean;
-- environment metadata and configured model are recorded; and
-- the validated canonical commit is tagged after merge/post-merge validation.
+The validated release tag must be created only after M260 is merged and `BUILD_M260.COM` is rerun successfully on canonical `main`. This ensures the tag identifies the exact canonical commit that carries the final validation driver and evidence record rather than the pre-merge feature head.
