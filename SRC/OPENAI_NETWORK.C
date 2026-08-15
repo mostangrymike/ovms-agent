@@ -131,7 +131,10 @@ int openai_net_check(const char *url, char *detail, size_t detail_size)
     if (!m258_host_from_url(url, host, sizeof(host))) {
         written = snprintf(detail, detail_size,
             "Network policy refused invalid HTTP/SSE endpoint.");
-        return written >= 0 && (size_t)written < detail_size ? 0 : 0;
+        if (written >= 0 && (size_t)written < detail_size) {
+            openai_log_event("NETWORK", detail, 2);
+        }
+        return 0;
     }
 
     allow = getenv("OVMS_AGENT_NET_ALLOW");
@@ -155,6 +158,7 @@ int openai_net_check(const char *url, char *detail, size_t detail_size)
         "Network policy: host=%s decision=%s reason=%s",
         host, allowed ? "allow" : "deny", reason);
     if (written < 0 || (size_t)written >= detail_size) return 0;
+    openai_log_event("NETWORK", detail, allowed ? 1 : 2);
     return allowed;
 }
 
