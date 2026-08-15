@@ -26,9 +26,7 @@ The working tree was clean and synchronized with `origin/main`.
 
 ## Authoritative Phase 6 target
 
-CAP-024 and CP-019 remain MISSING.
-
-CP-019 requires OVMS Agent to:
+CAP-024 / CP-019 require OVMS Agent to:
 
 - automatically discover project instruction files;
 - apply root and directory-specific instructions;
@@ -45,15 +43,15 @@ Phase 6 additionally requires:
 
 ## Existing instruction foundation
 
-`SRC/openai_instructions.c` already defines the OpenVMS-friendly root instruction filename:
+The existing M232 implementation defines the OpenVMS-friendly instruction filename:
 
 ```text
 OVMS_AGENT_INSTRUCTIONS.TXT
 ```
 
-The existing implementation:
+The preserved base implementation:
 
-- resolves the file relative to `state->project_root`;
+- resolves the root file relative to `state->project_root`;
 - loads at most 4095 bytes into a bounded buffer;
 - strips carriage returns and trailing whitespace;
 - reports loaded/not-found/error state, source filespec, byte count, truncation, and limit;
@@ -61,9 +59,9 @@ The existing implementation:
 - supports explicit reload; and
 - composes loaded instructions ahead of the current request under a `PROJECT INSTRUCTIONS` section.
 
-`SRC/openai_agent.c` calls `openai_instr_compose()` before project-map and Git-context composition, so the resulting instruction context already reaches AGENT/PLAN, AGENT/WRITE, AGENT/FIX, and read-only AGENT workflows.
+`SRC/OPENAI_AGENT.C` calls `openai_instr_compose()` before project-map and Git-context composition, so the resulting instruction context reaches AGENT/PLAN, AGENT/WRITE, AGENT/FIX, and read-only AGENT workflows.
 
-## Existing M232 evidence
+## M232 foundation evidence
 
 `SRC/m232_instr_test.c` proves:
 
@@ -71,45 +69,95 @@ The existing implementation:
 - creation and reload of a root instruction file;
 - loaded status and no truncation for a small fixture;
 - exact instruction display;
-- instruction composition into the model request context; and
+- root instruction composition into model request context; and
 - parity reporting for project instructions/reload.
 
-This is strong root-scope evidence but does not satisfy CP-019.
+M257.1 reran that foundation on the Phase 6 branch after a successful full `@BUILD` and completed with `%X00000001`.
 
-## Confirmed Phase 6 gaps
+## M257 implementation
 
-### Root-only discovery
+M257 preserves the proven root loader in `SRC/OPENAI_INSTRUCTIONS_BASE.C` and routes the existing lowercase `SRC/openai_instructions.c` build entry through `SRC/OPENAI_INSTRUCTIONS_M257.C`.
 
-The current loader resolves exactly one `OVMS_AGENT_INSTRUCTIONS.TXT` at the project root (or a test override). It does not walk from the project root toward a target directory and therefore cannot apply directory-specific instructions.
+Directory-scoped discovery is additive. For safe project-relative paths found in the current goal, M257:
 
-### No scoped precedence
+1. derives parent directory prefixes;
+2. probes each prefix for `OVMS_AGENT_INSTRUCTIONS.TXT`;
+3. orders matching scopes from broadest to deepest;
+4. appends deeper instructions later so they take precedence over conflicting broader guidance;
+5. caps scope count, path sizes, each scoped instruction buffer, and aggregate composed instruction data;
+6. rejects unsafe directory tokens containing traversal, absolute-device syntax, or backslashes; and
+7. records active scoped files plus truncation state in status/show output.
 
-Because only one instruction file can be active, there is no defined precedence between root and nested directory instruction files.
+A goal without a safe project-relative path retains the original root-only behavior.
 
-### Active-file reporting is singular
+## M257.2 scope and precedence evidence
 
-Status reports one filespec and one loaded buffer. CP-019 requires reporting the complete set of active instruction files/scopes.
+`SRC/M257_SCOPE_TEST.C` proves:
 
-### Planning/execution evidence is incomplete
+- the root M232 instruction remains active;
+- a task targeting `TEST/M257_TARGET.C` discovers `TEST/OVMS_AGENT_INSTRUCTIONS.TXT` automatically;
+- the root rule appears before the scoped rule;
+- the model context contains an explicit precedence statement that later/deeper scopes override conflicting broader instructions;
+- status reports the active scoped file; and
+- a goal with no scoped project path falls back to root-only instructions.
 
-M232 proves composition into a generic request buffer, but it does not prove root+nested scope selection or precedence for a target path used by planning/execution.
+Validated OpenVMS output:
 
-## M257 implementation direction
+```text
+Project instruction context bundle test passed.
+M257 M232 root-instruction foundation evidence passed.
+M257 directory-scoped instruction precedence test passed.
+M257 directory-scope/precedence evidence passed.
+All implemented M257 project-instruction regressions passed.
 
-Preserve the proven root behavior and extend it rather than replacing it.
+$STATUS == "%X00000001"
+```
 
-Proposed precedence:
+## M257.3 planning/write enforcement evidence
 
-1. discover `OVMS_AGENT_INSTRUCTIONS.TXT` at the project root;
-2. for a target project-relative path, inspect each parent directory from root toward the target directory;
-3. concatenate matching instruction files from broadest to most specific scope;
-4. later/more-specific instruction text appears after broader text and therefore has precedence where instructions conflict;
-5. enforce a bounded aggregate size and report truncation/refusal deterministically;
-6. expose all active instruction files and their order;
-7. prove root-only, nested, precedence, missing, oversize, and planning-context behavior with focused OpenVMS regressions.
+`SRC/M257_CONTEXT_TEST.C` uses the real production `OPENAI_AGENT.C` entry path and intercepts only the final `openai_agent_mode()` boundary. No network/API call is required.
 
-## Compatibility rule
+The test requires:
 
-OpenVMS V7.2 VAX / DEC C remains the target. Every newly introduced externally visible identifier must be 31 characters or fewer before compile/link. Prefer `static` helpers and reuse existing public interfaces where possible.
+- `openai_agent_plan()` to reach the final boundary as `OPENAI_WORKFLOW_PLAN` with write disabled;
+- `openai_agent_write()` to reach the final boundary as `OPENAI_WORKFLOW_WRITE` with write enabled;
+- both captured model goals to contain the root instruction, scoped instruction, precedence marker, and original project-relative request; and
+- root instruction text to precede scoped instruction text in both real workflow contexts.
 
-M257.1 introduces no production C identifiers or linker-visible symbols.
+Validated OpenVMS output:
+
+```text
+M257 planning/write instruction enforcement test passed.
+M257 planning/write enforcement evidence passed.
+All M257 project-instruction regressions passed.
+
+$STATUS == "%X00000001"
+```
+
+The working tree remained clean and synchronized with `origin/m257-project-instructions`.
+
+## Acceptance reconciliation
+
+M257 now satisfies the full CP-019 pass condition:
+
+- automatic project-instruction discovery: verified;
+- root instruction scope: verified by M232/M257.1;
+- directory-specific scope: verified by M257.2;
+- deterministic broad-to-specific precedence: verified by M257.2;
+- bounded loading/composition and truncation reporting: implemented and exercised by the root/scoped loaders;
+- active instruction reporting: verified by M257.2; and
+- planning/write enforcement: verified by M257.3 through the real production entry path.
+
+Therefore:
+
+- **CAP-024 Project instruction files -> VERIFIED**
+- **CP-019 Project instructions -> VERIFIED**
+- **Phase 6 - Project instructions and configuration -> COMPLETE**
+
+This does not change CAP-025, CAP-026, CAP-027, or CP-020. Practical Codex parity is not yet complete.
+
+## VAX compatibility audit
+
+OpenVMS V7.2 VAX / DEC C remains the target. M257 was audited against the 31-character external identifier limit.
+
+New externally visible base aliases introduced by the wrapper remain within the limit; scoped implementation helpers are `static`. The repository also avoids a case-distinct `OPENAI_INSTRUCTIONS.C` / `openai_instructions.c` collision: the existing lowercase source path is the canonical build entry.
