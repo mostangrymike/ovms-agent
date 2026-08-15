@@ -29,7 +29,7 @@ $
 $ WRITE SYS$OUTPUT "M256 M228 persistent-session foundation evidence passed."
 $
 $!-----------------------------------------------------------
-$! M256.2 resumed-session approval invalidation.
+$! M256.2/M256.3 resumed-session approval + checkpoint safety.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M256_RESUME_APPROVAL_TEST.OBJ -
 /STANDARD=RELAXED_ANSI89 -
@@ -57,12 +57,12 @@ $ RUN [.BUILD]M256_RESUME_APPROVAL_TEST
 $ IF .NOT. $STATUS
 $ THEN
 $     FINAL_STATUS = $STATUS
-$     WRITE SYS$OUTPUT "M256 resumed-session approval evidence failed."
+$     WRITE SYS$OUTPUT "M256 resumed-session checkpoint evidence failed."
 $     GOTO FINISH
 $ ENDIF
 $
-$ WRITE SYS$OUTPUT "M256 resumed-session reapproval evidence passed."
-$ WRITE SYS$OUTPUT "M256 active-plan/step checkpoint evidence remains pending."
+$ WRITE SYS$OUTPUT "M256 resumed-session reapproval/checkpoint evidence passed."
+$ WRITE SYS$OUTPUT "M256 stale planned-file resume refusal evidence passed."
 $ WRITE SYS$OUTPUT "All implemented M256 session-resumption regressions passed."
 $ GOTO FINISH
 $
