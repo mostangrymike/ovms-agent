@@ -1,6 +1,6 @@
 # OVMS Agent Practical Codex CLI Parity Specification
 
-**Document status:** Authoritative parity specification, M259 reconciled
+**Document status:** Authoritative parity specification, M260 reconciled
 **Baseline date:** 15 August 2026
 **Target platform:** OpenVMS V7.2 VAX and later
 **Reference:** Current open-source Codex CLI behavior
@@ -518,23 +518,24 @@ Validated through M259.1-M259.5 OpenVMS evidence.
 4. Record image metadata without placing binary data in text logs - complete through metadata-only logging regression evidence.
 5. Add image-assisted coding acceptance tests - complete through deterministic serialization/agent regressions and the live controlled-image Responses API acceptance run.
 
-## Phase 9 - Final parity validation
+## Phase 9 - Final parity validation - COMPLETE
 
-1. Run CP-001 through CP-020 on a clean checkout.
-2. Run all rollback and RMS-format regressions.
-3. Run BUILD.COM successfully.
-4. Confirm final status `%X00000001`.
-5. Confirm every required capability is VERIFIED.
-6. Confirm no undocumented MISSING or UNKNOWN items remain.
-7. Record the validation date, OpenVMS version, architecture, compiler version,
-   model, and test operator.
-8. Tag the validated commit.
+Validated through M260 release-candidate and canonical-main OpenVMS evidence.
+
+1. Run CP-001 through CP-020 on a clean synchronized checkout - complete through the M260 aggregate suite and mapped VERIFIED evidence.
+2. Run all rollback and RMS-format regressions - complete through `BUILD.COM`, M252, M253, and M255 evidence.
+3. Run BUILD.COM successfully - complete.
+4. Confirm final status `%X00000001` - complete on release-candidate and canonical-main runs.
+5. Confirm every required capability is VERIFIED - complete for CAP-001 through CAP-027.
+6. Confirm no undocumented MISSING or UNKNOWN items remain - complete.
+7. Record validation date, OpenVMS version, architecture, compiler version, model, and test operator - complete in `doc/parity_audit_m260.md`.
+8. Tag the validated commit - publication step pending the final documentation-only reconciliation rerun on canonical `main`; the tag must identify that exact validated canonical commit.
 
 ---
 
 # Definition of done
 
-Practical Codex CLI parity is complete only when all of the following are true:
+Practical Codex CLI parity implementation and validation criteria are satisfied when all of the following are true:
 
 1. Every required CAP item is VERIFIED.
 2. CP-001 through CP-020 are all VERIFIED.
@@ -543,3 +544,5 @@ Practical Codex CLI parity is complete only when all of the following are true:
 5. BUILD.COM completes with an odd OpenVMS success condition.
 6. No required capability remains PARTIAL, MISSING, or UNKNOWN.
 7. Every NOT_APPLICABLE classification has an approved written rationale.
+
+M260 satisfies items 1 through 7. The final Git tag is the release-publication marker for the validated canonical commit and does not alter the implementation or test result.
