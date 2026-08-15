@@ -73,7 +73,41 @@ $     GOTO FINISH
 $ ENDIF
 $ WRITE SYS$OUTPUT "M258 default-deny network-policy evidence passed."
 $
-$ WRITE SYS$OUTPUT "M258 MCP transport integration/lifecycle evidence remains pending."
+$!-----------------------------------------------------------
+$! M258.3 enforce policy in the real MCP HTTP/SSE entry points.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M258_MCP_NET_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M258_MCP_NET_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M258_MCP_NET_TEST.EXE -
+[.BUILD]M258_MCP_NET_TEST.OBJ, -
+[.BUILD]AGENT.OBJ, -
+[.BUILD]COMMAND_MODULES.OPT/OPTIONS, -
+[.BUILD]PROJECT.OBJ, -
+[.BUILD]OPENAI_MODULES.OPT/OPTIONS, -
+[.BUILD]EDIT.OBJ, -
+[.BUILD]UTIL.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M258_MCP_NET_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M258_MCP_NET_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M258 MCP network-policy integration evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$ WRITE SYS$OUTPUT "M258 MCP network-policy integration evidence passed."
+$
+$ WRITE SYS$OUTPUT "M258 lifecycle/timeout/logging evidence remains pending."
 $ WRITE SYS$OUTPUT "All implemented M258 network/external-tool regressions passed."
 $ GOTO FINISH
 $
