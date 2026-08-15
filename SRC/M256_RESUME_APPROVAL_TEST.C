@@ -5,6 +5,7 @@
 
 #define TEST_DATA "M256_SESSIONS.DAT"
 #define TEST_CUR  "M256_SESSION.CUR"
+#define TEST_TARGET "TEST/M256_PLAN_TARGET.TMP"
 
 extern int openai_plan_approved;
 extern unsigned long openai_approved_hash;
@@ -44,7 +45,7 @@ static void cleanup(void)
     openai_test_ckpt_clear();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
-    remove_all("M256_PLAN_TARGET.TMP");
+    remove_all(TEST_TARGET);
     remove_all("OVMS_AGENT_PLAN.TXT");
     remove_all("OVMS_AGENT_PLAN.TXT.CHK");
 }
@@ -53,7 +54,7 @@ static int write_target(const char *text)
 {
     FILE *file;
 
-    file = fopen("M256_PLAN_TARGET.TMP", "w");
+    file = fopen(TEST_TARGET, "w");
     if (file == NULL) return 0;
     if (fputs(text, file) == EOF) {
         (void)fclose(file);
@@ -103,11 +104,11 @@ int main(void)
 
     plan_text =
         "Files to modify\n"
-        "M256_PLAN_TARGET.TMP\n"
+        "TEST/M256_PLAN_TARGET.TMP\n"
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "type=replace_text\n"
-        "path=M256_PLAN_TARGET.TMP\n"
+        "path=TEST/M256_PLAN_TARGET.TMP\n"
         "old_text=before\n"
         "new_text=after\n"
         "END_OPERATION\n";
