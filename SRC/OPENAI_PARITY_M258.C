@@ -31,6 +31,10 @@ static int m258_mcp_net_gate(const char *config,
     detail[0] = '\0';
     if (config == NULL || arguments == NULL) return 1;
 
+    /* Preserve the mature M243-M246 refusal ordering: FULL approval and
+       endpoint syntax are checked before M258 network authorization. */
+    if (strcmp(openai_approval_name(), "full") != 0) return 1;
+
     cursor = arguments;
     if (!openai_mcp_call_token(&cursor, server, sizeof(server)) ||
         !openai_mcp_call_token(&cursor, tool, sizeof(tool))) return 1;
@@ -40,6 +44,7 @@ static int m258_mcp_net_gate(const char *config,
         if (!openai_equal_ci(server, servers[index].name)) continue;
         if (openai_equal_ci(servers[index].transport, "http") ||
             openai_equal_ci(servers[index].transport, "sse")) {
+            if (!openai_mcp_http_target_valid(servers[index].target)) return 1;
             return openai_net_check(servers[index].target,
                                     detail, detail_size);
         }
