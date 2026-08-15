@@ -59,8 +59,37 @@ $     GOTO FINISH
 $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M257 directory-scope/precedence evidence passed."
-$ WRITE SYS$OUTPUT "M257 planning/execution enforcement evidence remains pending."
-$ WRITE SYS$OUTPUT "All implemented M257 project-instruction regressions passed."
+$
+$!-----------------------------------------------------------
+$! M257.3 prove scoped instructions reach PLAN and WRITE.
+$!-----------------------------------------------------------
+$ CC/OBJECT=[.BUILD]M257_CONTEXT_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+/INCLUDE_DIRECTORY=([.SRC]) -
+[.SRC]M257_CONTEXT_TEST.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
+$ LINK/EXECUTABLE=[.BUILD]M257_CONTEXT_TEST.EXE -
+[.BUILD]M257_CONTEXT_TEST.OBJ, -
+[.BUILD]OPENAI_INSTRUCTIONS.OBJ
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "Link failed for M257_CONTEXT_TEST.EXE."
+$     GOTO FINISH
+$ ENDIF
+$
+$ RUN [.BUILD]M257_CONTEXT_TEST
+$ IF .NOT. $STATUS
+$ THEN
+$     FINAL_STATUS = $STATUS
+$     WRITE SYS$OUTPUT "M257 planning/write enforcement evidence failed."
+$     GOTO FINISH
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT "M257 planning/write enforcement evidence passed."
+$ WRITE SYS$OUTPUT "All M257 project-instruction regressions passed."
 $ GOTO FINISH
 $
 $COMPILE_ERROR:
