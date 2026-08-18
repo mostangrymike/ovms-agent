@@ -36,48 +36,268 @@ static int plan_path_safe(const char *path)
     return 1;
 }
 
-static int plan_path_exists(
-    char paths[][OPENAI_PLAN_PATH_SIZE],
+typedef struct plan_scope_file {
+    char path[OPENAI_PLAN_PATH_SIZE];
+    int expect_missing;
+} plan_scope_file;
+
+static int plan_scope_find(
+    plan_scope_file files[],
     unsigned int count,
     const char *path)
 {
     unsigned int index;
 
     for (index = 0U; index < count; ++index) {
-        if (strcmp(paths[index], path) == 0) {
-            return 1;
+        if (strcmp(files[index].path, path) == 0) {
+            return (int)index;
         }
     }
 
-    return 0;
+    return -1;
 }
 
-static unsigned int plan_collect_paths(
-    const char *plan_text,
-    char paths[][OPENAI_PLAN_PATH_SIZE])
+static int plan_scope_add(
+    plan_scope_file files[],
+    unsigned int *count,
+    const char *path,
+    int expect_missing)
 {
-    const char *position;
-    const char *section_end;
-    unsigned int count;
+    struct stat file_status;
+    int index;
+    int status;
 
-    position = strstr(plan_text, "Files to modify");
-
-    if (position != NULL) {
-        section_end = strstr(position, "Files to create");
-    } else {
-        position = plan_text;
-        section_end = NULL;
+    if (files == NULL ||
+        count == NULL ||
+        path == NULL ||
+        !plan_path_safe(path) ||
+        strlen(path) >= OPENAI_PLAN_PATH_SIZE) {
+        return 0;
     }
 
-    count = 0U;
+    index = plan_scope_find(files, *count, path);
+
+    if (index >= 0) {
+        return files[index].expect_missing == expect_missing;
+    }
+
+    if (*count >= OPENAI_PLAN_MAX_FILES) {
+        return 0;
+    }
+
+    errno = 0;
+    status = stat(path, &file_status);
+
+    if (expect_missing) {
+        if (status == 0 || errno != ENOENT) {
+            return 0;
+        }
+    } else if (status != 0) {
+        return 0;
+    }
+
+    (void)strcpy(files[*count].path, path);
+    files[*count].expect_missing = expect_missing;
+    ++(*count);
+    return 1;
+}
+
+static int plan_line_value(
+    const char *start,
+    const char *end,
+    const char *prefix,
+    char *value,
+    size_t value_size)
+{
+    size_t prefix_length;
+    size_t length;
+
+    prefix_length = strlen(prefix);
+
+    if ((size_t)(end - start) < prefix_length ||
+        memcmp(start, prefix, prefix_length) != 0) {
+        return 0;
+    }
+
+    start += prefix_length;
+    length = (size_t)(end - start);
+
+    if (length == 0U || length >= value_size) {
+        return -1;
+    }
+
+    (void)memcpy(value, start, length);
+    value[length] = '\0';
+    return 1;
+}
+
+static int plan_collect_ops(
+    const char *plan_text,
+    plan_scope_file files[],
+    unsigned int *count)
+{
+    const char *section;
+    const char *cursor;
+    const char *line_start;
+    int in_operation;
+    int in_payload;
+    char type[32];
+    char path[OPENAI_PLAN_PATH_SIZE];
+    char target[OPENAI_PLAN_PATH_SIZE];
+
+    section = strstr(plan_text, "operation_count=");
+
+    if (section == NULL) {
+        return -1;
+    }
+
+    cursor = section;
+    line_start = section;
+    in_operation = 0;
+    in_payload = 0;
+    type[0] = '\0';
+    path[0] = '\0';
+    target[0] = '\0';
+
+    for (;;) {
+        if (*cursor == '\n' || *cursor == '\0') {
+            const char *end;
+            size_t length;
+            int result;
+
+            end = cursor;
+            if (end > line_start && end[-1] == '\r') {
+                --end;
+            }
+            length = (size_t)(end - line_start);
+
+            if (length == 15U &&
+                memcmp(line_start, "BEGIN_OPERATION", 15U) == 0) {
+                if (in_operation) {
+                    return 0;
+                }
+                in_operation = 1;
+                in_payload = 0;
+                type[0] = '\0';
+                path[0] = '\0';
+                target[0] = '\0';
+            } else if (length == 13U &&
+                       memcmp(line_start, "END_OPERATION", 13U) == 0) {
+                int missing;
+
+                if (!in_operation || in_payload ||
+                    type[0] == '\0' || path[0] == '\0') {
+                    return 0;
+                }
+
+                if (strcmp(type, "create_file") == 0) {
+                    missing = 1;
+                } else if (strcmp(type, "replace_block") == 0 ||
+                           strcmp(type, "delete_file") == 0 ||
+                           strcmp(type, "rename_file") == 0 ||
+                           strcmp(type, "move_file") == 0) {
+                    missing = 0;
+                } else {
+                    return 0;
+                }
+
+                if (!plan_scope_add(files, count, path, missing)) {
+                    return 0;
+                }
+
+                if (target[0] != '\0') {
+                    if ((strcmp(type, "rename_file") != 0 &&
+                         strcmp(type, "move_file") != 0) ||
+                        !plan_scope_add(files, count, target, 1)) {
+                        return 0;
+                    }
+                }
+
+                in_operation = 0;
+            } else if (in_operation) {
+                if (length == 14U &&
+                    (memcmp(line_start, "BEGIN_OLD_TEXT", 14U) == 0 ||
+                     memcmp(line_start, "BEGIN_NEW_TEXT", 14U) == 0)) {
+                    if (in_payload) {
+                        return 0;
+                    }
+                    in_payload = 1;
+                } else if (length == 12U &&
+                           (memcmp(line_start, "END_OLD_TEXT", 12U) == 0 ||
+                            memcmp(line_start, "END_NEW_TEXT", 12U) == 0)) {
+                    if (!in_payload) {
+                        return 0;
+                    }
+                    in_payload = 0;
+                } else if (!in_payload) {
+                    result = plan_line_value(
+                        line_start, end, "type=",
+                        type, sizeof(type));
+                    if (result < 0) {
+                        return 0;
+                    }
+                    if (result == 0) {
+                        result = plan_line_value(
+                            line_start, end, "path=",
+                            path, sizeof(path));
+                    }
+                    if (result < 0) {
+                        return 0;
+                    }
+                    if (result == 0) {
+                        result = plan_line_value(
+                            line_start, end, "target_path=",
+                            target, sizeof(target));
+                    }
+                    if (result < 0) {
+                        return 0;
+                    }
+                }
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    return !in_operation && !in_payload;
+}
+
+static int plan_token_candidate(
+    const char *candidate)
+{
+    return strchr(candidate, '/') != NULL ||
+           strcmp(candidate, "BUILD.COM") == 0 ||
+           strcmp(candidate, "OPENAI_MODULES.OPT") == 0 ||
+           strcmp(candidate, "BUILD_OPENAI_MODULES.COM") == 0;
+}
+
+static int plan_collect_section(
+    const char *start,
+    const char *end,
+    int expect_missing,
+    plan_scope_file files[],
+    unsigned int *count)
+{
+    const char *position;
+
+    if (start == NULL) {
+        return 1;
+    }
+
+    position = start;
 
     while (*position != '\0' &&
-           (section_end == NULL || position < section_end) &&
-           count < OPENAI_PLAN_MAX_FILES) {
-        const char *start;
+           (end == NULL || position < end)) {
+        const char *token_start;
         size_t length;
         char candidate[OPENAI_PLAN_PATH_SIZE];
-        struct stat file_status;
 
         if (!(isalpha((unsigned char)*position) ||
               *position == '.' ||
@@ -86,19 +306,21 @@ static unsigned int plan_collect_paths(
             continue;
         }
 
-        start = position;
+        token_start = position;
 
         while (*position != '\0' &&
-               plan_path_char((unsigned char)*position)) {
+               (end == NULL || position < end) &&
+               (plan_path_char((unsigned char)*position) ||
+                *position == ';' ||
+                *position == '$')) {
             ++position;
         }
 
-        length = (size_t)(position - start);
+        length = (size_t)(position - token_start);
 
         while (length > 0U &&
-               (start[length - 1U] == '.' ||
-                start[length - 1U] == ',' ||
-                start[length - 1U] == ';')) {
+               (token_start[length - 1U] == '.' ||
+                token_start[length - 1U] == ',')) {
             --length;
         }
 
@@ -106,37 +328,90 @@ static unsigned int plan_collect_paths(
             continue;
         }
 
-        (void)memcpy(candidate, start, length);
+        (void)memcpy(candidate, token_start, length);
         candidate[length] = '\0';
 
-        if (strchr(candidate, '/') == NULL &&
-            strcmp(candidate, "BUILD.COM") != 0 &&
-            strcmp(candidate, "OPENAI_MODULES.OPT") != 0 &&
-            strcmp(candidate, "BUILD_OPENAI_MODULES.COM") != 0) {
+        if (!plan_token_candidate(candidate)) {
             continue;
         }
 
-        if (!plan_path_safe(candidate) ||
-            plan_path_exists(paths, count, candidate)) {
-            continue;
+        if (!plan_scope_add(
+                files,
+                count,
+                candidate,
+                expect_missing)) {
+            return 0;
         }
-
-        if (stat(candidate, &file_status) != 0) {
-            continue;
-        }
-
-        (void)strcpy(paths[count], candidate);
-        ++count;
     }
 
-    return count;
+    return 1;
+}
+
+static int plan_collect_paths(
+    const char *plan_text,
+    plan_scope_file files[],
+    unsigned int *count_out)
+{
+    const char *modify;
+    const char *create;
+    const char *ordered;
+    int result;
+    unsigned int count;
+
+    if (plan_text == NULL ||
+        files == NULL ||
+        count_out == NULL) {
+        return 0;
+    }
+
+    count = 0U;
+    result = plan_collect_ops(plan_text, files, &count);
+
+    if (result == 1) {
+        *count_out = count;
+        return 1;
+    }
+
+    if (result == 0) {
+        return 0;
+    }
+
+    modify = strstr(plan_text, "Files to modify");
+    create = strstr(plan_text, "Files to create");
+
+    if (modify != NULL) {
+        if (!plan_collect_section(
+                modify,
+                create,
+                0,
+                files,
+                &count)) {
+            return 0;
+        }
+    }
+
+    if (create != NULL) {
+        ordered = strstr(create, "Ordered edits");
+
+        if (!plan_collect_section(
+                create,
+                ordered,
+                1,
+                files,
+                &count)) {
+            return 0;
+        }
+    }
+
+    *count_out = count;
+    return 1;
 }
 
 static int plan_write_contents(
     FILE *file,
     const char *goal,
     const char *plan_text,
-    char paths[][OPENAI_PLAN_PATH_SIZE],
+    plan_scope_file files[],
     unsigned int path_count)
 {
     time_t now;
@@ -178,11 +453,22 @@ static int plan_write_contents(
     for (index = 0U; index < path_count; ++index) {
         struct stat file_status;
 
-        if (stat(paths[index], &file_status) == 0) {
+        if (files[index].expect_missing) {
+            if (fprintf(
+                    file,
+                    "file=%s|missing=1\n",
+                    files[index].path) < 0) {
+                return 0;
+            }
+        } else {
+            if (stat(files[index].path, &file_status) != 0) {
+                return 0;
+            }
+
             if (fprintf(
                     file,
                     "file=%s|size=%lu|modified=%ld\n",
-                    paths[index],
+                    files[index].path,
                     (unsigned long)file_status.st_size,
                     (long)file_status.st_mtime) < 0) {
                 return 0;
@@ -203,7 +489,7 @@ int openai_plan_save(const char *goal,
 {
     FILE *file;
     size_t total_size;
-    char paths[OPENAI_PLAN_MAX_FILES][OPENAI_PLAN_PATH_SIZE];
+    plan_scope_file files[OPENAI_PLAN_MAX_FILES];
     unsigned int path_count;
     int success;
 
@@ -234,7 +520,13 @@ int openai_plan_save(const char *goal,
         return 0;
     }
 
-    path_count = plan_collect_paths(plan_text, paths);
+    if (!plan_collect_paths(plan_text, files, &path_count)) {
+        (void)puts(
+            "Implementation plan was not saved because "
+            "its file scope is malformed, ambiguous, or stale."
+        );
+        return 0;
+    }
 
     file = fopen(OPENAI_PLAN_FILE, "w");
 
@@ -251,7 +543,7 @@ int openai_plan_save(const char *goal,
         file,
         goal,
         plan_text,
-        paths,
+        files,
         path_count
     );
 
@@ -318,6 +610,7 @@ int openai_plan_file_current(const char *plan_path, int verbose)
     while (fgets(line, sizeof(line), file) != NULL) {
         int format_value;
         unsigned int file_count;
+        unsigned int missing_flag;
         char path[OPENAI_PLAN_PATH_SIZE];
         unsigned long saved_size;
         long saved_modified;
@@ -359,6 +652,55 @@ int openai_plan_file_current(const char *plan_path, int verbose)
         if (sscanf(line, "file_count=%u", &file_count) == 1) {
             expected_files = file_count;
             saw_file_count = 1;
+            continue;
+        }
+
+        if (sscanf(
+                line,
+                "file=%255[^|]|missing=%u",
+                path,
+                &missing_flag) == 2) {
+            struct stat file_status;
+            int stat_status;
+
+            ++checked_files;
+
+            if (!plan_path_safe(path) || missing_flag != 1U) {
+                current = 0;
+
+                if (verbose) {
+                    (void)printf(
+                        "Plan contains an invalid missing-file scope: %s\n",
+                        path
+                    );
+                }
+
+                continue;
+            }
+
+            errno = 0;
+            stat_status = stat(path, &file_status);
+
+            if (stat_status == 0) {
+                current = 0;
+
+                if (verbose) {
+                    (void)printf(
+                        "Plan is stale: %s now exists.\n",
+                        path
+                    );
+                }
+            } else if (errno != ENOENT) {
+                current = 0;
+
+                if (verbose) {
+                    (void)printf(
+                        "Plan is stale: %s cannot be checked safely.\n",
+                        path
+                    );
+                }
+            }
+
             continue;
         }
 
@@ -408,6 +750,18 @@ int openai_plan_file_current(const char *plan_path, int verbose)
                         path
                     );
                 }
+            }
+
+            continue;
+        }
+
+        if (strncmp(line, "file=", 5U) == 0) {
+            current = 0;
+
+            if (verbose) {
+                (void)puts(
+                    "Saved plan contains a malformed file-scope record."
+                );
             }
         }
     }
