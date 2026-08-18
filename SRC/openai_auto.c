@@ -1,4 +1,5 @@
 #include "openai_internal.h"
+#include "rms_write.h"
 
 #define OPENAI_AUTO_TURNS_DEFAULT 12U
 #define OPENAI_AUTO_TURNS_MAX 32U
@@ -12,6 +13,7 @@ static unsigned int openai_auto_cur_turns = 0U;
 static unsigned int openai_auto_cur_tools = 0U;
 static unsigned int openai_auto_cur_writes = 0U;
 static int openai_auto_cur_workflow = OPENAI_WORKFLOW_NONE;
+static int openai_auto_write_blocked = 0;
 
 static unsigned int openai_auto_last_turns = 0U;
 static unsigned int openai_auto_last_tools = 0U;
@@ -76,6 +78,13 @@ void openai_auto_begin(int workflow)
     openai_auto_cur_tools = 0U;
     openai_auto_cur_writes = 0U;
     openai_auto_cur_workflow = workflow;
+    openai_auto_write_blocked = 0;
+
+    if (workflow == OPENAI_WORKFLOW_WRITE) {
+        rms_run_begin();
+    } else {
+        rms_run_commit();
+    }
 }
 
 unsigned int openai_auto_turn_limit(int workflow)
@@ -100,6 +109,7 @@ void openai_auto_note_tool(void)
 int openai_auto_allow_write(void)
 {
     if (openai_auto_cur_writes >= openai_auto_write_cfg()) {
+        openai_auto_write_blocked = 1;
         return 0;
     }
 
@@ -107,8 +117,21 @@ int openai_auto_allow_write(void)
     return 1;
 }
 
+int openai_auto_partial_limit(void)
+{
+    if (openai_auto_cur_workflow != OPENAI_WORKFLOW_WRITE ||
+        !rms_run_has_writes()) {
+        return 0;
+    }
+
+    return openai_auto_write_blocked ||
+           openai_auto_cur_turns >= openai_auto_turn_cfg();
+}
+
 void openai_auto_finish(const char *reason)
 {
+    int rollback_needed;
+
     openai_auto_last_turns = openai_auto_cur_turns;
     openai_auto_last_tools = openai_auto_cur_tools;
     openai_auto_last_writes = openai_auto_cur_writes;
@@ -116,6 +139,32 @@ void openai_auto_finish(const char *reason)
 
     if (reason == NULL || *reason == '\0') {
         reason = "unknown";
+    }
+
+    rollback_needed =
+        openai_auto_cur_workflow == OPENAI_WORKFLOW_WRITE &&
+        rms_run_has_writes() &&
+        (strcmp(reason, "final") != 0 || openai_auto_write_blocked);
+
+    if (rollback_needed) {
+        (void)puts(
+            "Incomplete guarded write detected; restoring pre-run "
+            "OpenVMS file versions."
+        );
+
+        if (rms_run_rollback()) {
+            (void)puts(
+                "Guarded write rollback complete. No partial file "
+                "changes remain."
+            );
+        } else {
+            (void)puts(
+                "Guarded write rollback failed. Inspect the affected "
+                "OpenVMS file versions before continuing."
+            );
+        }
+    } else {
+        rms_run_commit();
     }
 
     (void)strncpy(
