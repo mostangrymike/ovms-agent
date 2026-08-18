@@ -101,15 +101,37 @@ static int test_stream_restore(const char *path,
                                const char *expected)
 {
     FILE *file;
+    char new_path[512];
+    char modified[1024];
     char text[1024];
+    int written;
 
-    file = fopen(path, "a");
+    written = snprintf(
+        modified,
+        sizeof(modified),
+        "%sGAP008 local stream modification\n",
+        expected
+    );
+    if (written < 0 || (size_t)written >= sizeof(modified)) {
+        return 0;
+    }
+
+    written = snprintf(new_path, sizeof(new_path), "%s;", path);
+    if (written < 0 || (size_t)written >= sizeof(new_path)) {
+        return 0;
+    }
+
+    file = fopen(new_path, "w");
     if (file == NULL) {
         return 0;
     }
 
-    if (fputs("GAP008 local stream modification\n", file) == EOF ||
-        fclose(file) != 0) {
+    if (fputs(modified, file) == EOF) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    if (fclose(file) != 0) {
         return 0;
     }
 
@@ -179,6 +201,7 @@ int main(void)
     char original_spec[512];
     char restored_spec[512];
     char text[1024];
+    int append_ok;
 
     file = fopen(GAP008_PATH, "r");
     if (file == NULL) {
@@ -194,12 +217,17 @@ int main(void)
     (void)fclose(file);
 
     file = fopen(GAP008_PATH, "a");
-    if (file == NULL ||
-        fputs("GAP008 local modification after commit\n", file) == EOF ||
-        fclose(file) != 0) {
-        if (file != NULL) {
-            (void)fclose(file);
-        }
+    if (file == NULL) {
+        (void)puts("M265: unable to create local fixture modification.");
+        return 2;
+    }
+
+    append_ok =
+        fputs("GAP008 local modification after commit\n", file) != EOF;
+    if (fclose(file) != 0) {
+        append_ok = 0;
+    }
+    if (!append_ok) {
         (void)puts("M265: unable to create local fixture modification.");
         return 2;
     }
