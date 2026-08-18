@@ -4,9 +4,21 @@ This file is a plain-language catalog of the capabilities currently present in O
 
 ## Project inspection
 
-OVMS Agent can inspect an OpenVMS project, show its directory tree, read files, search source text, and build a code map for artificial-intelligence-assisted work.
+OVMS Agent can inspect an OpenVMS project, show its directory tree, read files, search source text, and build code lookup information for artificial-intelligence-assisted work.
 
 The project map recognizes C and COBOL source files. COBOL files ending in `.COB`, `.COBOL`, or `.CBL` are treated as source code. `.CPY` copy files are treated as supporting files so they remain available as context without being confused with primary source files.
+
+## AI provider profiles
+
+OVMS Agent can switch artificial intelligence services without rebuilding the program.
+
+Named profiles are stored outside the project repository in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT`. Each profile keeps a service address, model, and service access key. The key is entered without terminal echo and is masked in normal output.
+
+`PROVIDER LIST`, `PROVIDER SHOW`, `PROVIDER USE`, `PROVIDER ADD`, and `PROVIDER DELETE` manage profiles. `MODEL` shows or changes the model associated with the active profile.
+
+A service address may point directly to an AI provider or to an intermediary such as Requesty. AI-backed commands use the active profile consistently.
+
+Multi-turn agent work keeps its continuation information locally by carrying earlier model output and tool results into later requests. It does not require the artificial intelligence service to retain a previous response identifier.
 
 ## Guarded source changes
 
@@ -14,19 +26,31 @@ OVMS Agent can make bounded source changes while preserving native OpenVMS file 
 
 After a successful automatic write, saved file-reading results are discarded so the next read opens the newest OpenVMS file version rather than returning older saved contents.
 
-For automatic multi-file work, OVMS Agent tracks the exact file versions that existed before the run. If the run stops incomplete because of an automatic limit or error, it restores all affected files to their pre-run state. It also avoids making an unnecessary final artificial-intelligence request while partial changes are still waiting to be undone.
+For automatic multi-file work, OVMS Agent tracks the exact file versions that existed before the run. If the run stops incomplete because of an automatic limit or error, it restores all affected files to their pre-run state.
 
 ## Build and repair support
 
 The project's `BUILD.COM` remains authoritative.
 
-When the top-level `BUILD` command fails, OVMS Agent keeps the build status and captured output in its failed-build record so repair planning can inspect the same failure the user just saw. Temporary capture files are removed, and stale failed-build evidence is removed after a later successful build.
+When the top-level `BUILD` command fails, OVMS Agent keeps the build status and captured output so repair planning can inspect the same failure the user just saw. Temporary capture files are removed, and stale failed-build evidence is removed after a later successful build.
 
-Supervised repair protects explicitly required code behavior. If a repair candidate would remove a required code-like goal term such as `LIST`, OVMS Agent rejects that candidate before the normal patch confirmation and write path. An explicit user request to remove, delete, disable, drop, or omit that feature is still allowed.
+Supervised repair protects explicitly required code behavior. If a repair candidate would remove a required code-like goal term such as `LIST`, OVMS Agent rejects that candidate before the normal patch confirmation and write path. An explicit request to remove or disable that feature is still allowed.
+
+## GitHub profiles and guarded authentication
+
+OVMS Agent can store named GitHub profiles outside the repository in `SYS$LOGIN:OVMS_AGENT_GITHUB.DAT`. A profile contains the repository, user name, branch, and token. Tokens are entered without terminal echo and are masked in normal output.
+
+`GITHUB LIST`, `GITHUB SHOW`, `GITHUB USE`, `GITHUB ADD`, and `GITHUB DELETE` manage those profiles.
+
+For guarded FETCH, PULL, PUSH, and CLONE operations, OVMS Agent checks the OpenVMS Git prerequisites, creates short-lived authentication data scoped to the configured repository, disables interactive credential prompting, and verifies that the saved credentials can read that repository before running the requested operation.
+
+For FETCH, PULL, and PUSH, the current checkout must match the repository named by the active saved profile. A mismatch is refused instead of allowing credentials to be applied to the wrong repository.
+
+Temporary authentication, probe, and command files are removed across OpenVMS file versions after the operation. Existing approval controls remain in force, including FULL approval for PUSH.
 
 ## Safety controls
 
-OVMS Agent uses bounded write counts, approval checks, path safety checks, sensitive-file checks, OpenVMS file-version handling, controlled builds, and rollback behavior to reduce the chance that an incomplete agent run leaves a project in a partially changed state.
+OVMS Agent uses bounded write counts, approval checks, path safety checks, sensitive-file checks, OpenVMS file-version handling, controlled builds, rollback behavior, and repository-bound authentication checks to reduce the chance that an incomplete or misdirected operation damages a project.
 
 Write and command-execution capabilities remain controlled rather than being enabled without user intent.
 
@@ -38,6 +62,6 @@ New linker-visible names must remain within the 31-character external identifier
 
 ## Additional capabilities
 
-OVMS Agent also includes read-only project assistance, implementation planning, structured file creation and modification, Git-aware context, guarded GitHub operations, persistent sessions and transcripts, language awareness for major OpenVMS development languages, image input, and approval-controlled external tool connections.
+OVMS Agent also includes read-only project assistance, implementation planning, structured file creation and modification, Git-aware context, persistent sessions and transcripts, language awareness for major OpenVMS development languages, image input, and approval-controlled external tool connections.
 
 The exact command set continues to evolve, but safety and native OpenVMS behavior take priority over imitating Unix-oriented development tools.

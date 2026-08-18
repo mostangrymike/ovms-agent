@@ -2,6 +2,17 @@
 #include <stdlib.h>
 
 #include "agent.h"
+#include "llm_config.h"
+
+const llm_provider *llm_prov_active(void)
+{
+    return NULL;
+}
+
+const char *llm_api_key(void)
+{
+    return NULL;
+}
 
 int main(void)
 {

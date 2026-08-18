@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "agent.h"
+#include "llm_config.h"
 
 static int agent_value_is_true(const char *value)
 {
@@ -79,6 +80,7 @@ int agent_initialize(agent_state *state)
     const char *dcl_enabled;
     const char *write_enabled;
     const char *inherited_root;
+    const llm_provider *provider;
     int quiet;
 
     if (state == NULL) {
@@ -90,7 +92,7 @@ int agent_initialize(agent_state *state)
     state->project_root_text[0] = '\0';
 
     inherited_root = getenv("OVMS_AGENT_ROOT");
-    api_key = getenv("OPENAI_API_KEY");
+    api_key = llm_api_key();
     dcl_enabled = getenv("OVMS_AGENT_DCL_ENABLED");
     write_enabled = getenv("OVMS_AGENT_WRITE_ENABLED");
     quiet = agent_value_is_true(getenv("OVMS_AGENT_QUIET"));
@@ -141,16 +143,19 @@ int agent_initialize(agent_state *state)
         (void)puts("Native agentic programming assistant for OpenVMS");
         (void)printf("Version %s\n", OVMS_AGENT_VERSION);
 
-        if (state->api_key_defined) {
-            (void)puts("OpenAI API: configured.\n");
-        } else {
-            (void)puts("OpenAI API: not configured.");
-            (void)puts("OPENAI_API_KEY is not defined in this process.");
-            (void)puts(
-                "AI-backed commands are unavailable; local commands remain usable."
+        provider = llm_prov_active();
+
+        if (state->api_key_defined && provider != NULL) {
+            (void)printf(
+                "AI provider: %s (%s).\n\n",
+                provider->name,
+                provider->model
             );
+        } else {
+            (void)puts("AI provider: not configured.");
+            (void)puts("AI-backed commands are unavailable; local commands remain usable.");
             (void)puts(
-                "Define OPENAI_API_KEY before starting OVMS Agent, then restart.\n"
+                "Use PROVIDER ADD to configure an artificial intelligence service.\n"
             );
         }
     }

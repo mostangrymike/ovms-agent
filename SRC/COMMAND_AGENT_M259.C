@@ -1,7 +1,11 @@
 #include <string.h>
 
+#include "github_m262.h"
+
 #define command_register_agent command_register_agent_base
+#define openai_show_github m262_show_github
 #include "COMMAND_AGENT.C"
+#undef openai_show_github
 #undef command_register_agent
 
 void openai_agent_image(agent_state *state,

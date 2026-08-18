@@ -5,6 +5,9 @@
 
 #define COMMAND_REGISTRY_MAX 256U
 
+void command_register_provider(void);
+void command_register_github(void);
+
 static command_entry command_registry[COMMAND_REGISTRY_MAX];
 static size_t command_registry_used;
 static int command_registry_ready;
@@ -61,6 +64,8 @@ void command_registry_initialize(void)
     command_register_project();
     command_register_symbol();
     command_register_agent();
+    command_register_provider();
+    command_register_github();
 
     command_registry_ready = 1;
 }
