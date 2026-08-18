@@ -6,23 +6,15 @@
 #undef execute_replace_text_tool
 #undef execute_replace_lines_tool
 
-static char *m264_text_candidate(const char *arguments,
-                                 char **path_out)
+static int m264_guard_text(const char *arguments)
 {
     char *path;
     char *old_text;
     char *new_text;
-    char *content;
-    char *match;
-    char *second;
-    char *result;
-    size_t prefix;
-    size_t old_len;
-    size_t new_len;
-    size_t content_len;
-    size_t result_len;
+    char *original;
+    char reason[256];
+    int safe;
 
-    *path_out = NULL;
     path = extract_string_argument(arguments, "path");
     old_text = extract_string_argument(arguments, "old_text");
     new_text = extract_string_argument(arguments, "new_text");
@@ -32,59 +24,27 @@ static char *m264_text_candidate(const char *arguments,
         free(path);
         free(old_text);
         free(new_text);
-        return NULL;
+        return 1;
     }
 
-    content = openai_read_text_file(path);
-    if (content == NULL) {
+    original = openai_read_text_file(path);
+    if (original == NULL) {
         free(path);
         free(old_text);
         free(new_text);
-        return NULL;
+        return 1;
     }
 
-    match = strstr(content, old_text);
-    if (match == NULL) {
-        free(content);
-        free(path);
-        free(old_text);
-        free(new_text);
-        return NULL;
-    }
-    second = strstr(match + strlen(old_text), old_text);
-    if (second != NULL) {
-        free(content);
-        free(path);
-        free(old_text);
-        free(new_text);
-        return NULL;
-    }
-
-    prefix = (size_t)(match - content);
-    old_len = strlen(old_text);
-    new_len = strlen(new_text);
-    content_len = strlen(content);
-    result_len = prefix + new_len +
-        (content_len - prefix - old_len);
-    result = (char *)malloc(result_len + 1U);
-    if (result != NULL) {
-        if (prefix > 0U) (void)memcpy(result, content, prefix);
-        if (new_len > 0U) {
-            (void)memcpy(result + prefix, new_text, new_len);
-        }
-        (void)memcpy(result + prefix + new_len,
-                     match + old_len,
-                     content_len - prefix - old_len);
-        result[result_len] = '\0';
-        *path_out = path;
-        path = NULL;
-    }
-
-    free(content);
+    safe = cobol_text_safe(path, original, old_text, new_text,
+                           reason, sizeof(reason));
+    free(original);
     free(path);
     free(old_text);
     free(new_text);
-    return result;
+    if (!safe) {
+        (void)printf("COBOL structural edit refused: %s\n", reason);
+    }
+    return safe;
 }
 
 static char *m264_lines_candidate(const char *arguments,
@@ -208,16 +168,7 @@ openai_replace_result execute_replace_text_tool(
     const char *arguments,
     char **display_path)
 {
-    char *path;
-    char *candidate;
-    int safe;
-
-    path = NULL;
-    candidate = m264_text_candidate(arguments, &path);
-    safe = m264_guard_candidate(path, candidate);
-    free(candidate);
-    free(path);
-    if (!safe) return OPENAI_REPLACE_ERROR;
+    if (!m264_guard_text(arguments)) return OPENAI_REPLACE_ERROR;
     return m263_rep_text(state, arguments, display_path);
 }
 
