@@ -4,6 +4,8 @@
 #include "openai_request_agent.h"
 #include "openai_tool_schema.h"
 
+int openai_auto_partial_limit(void);
+
 int write_create_agent_request(
     const char *model,
     const char *instructions,
@@ -65,11 +67,6 @@ int write_create_agent_request(
         success = 0;
     }
 
-    /*
-     * The first response may inspect existing project files. Once context
-     * exists, require the model to invoke create_file instead of asking for
-     * confirmation in ordinary text.
-     */
     if (success &&
         previous_id != NULL &&
         *previous_id != '\0') {
@@ -106,12 +103,12 @@ int write_create_agent_request(
 }
 
 int write_agent_request_mode(const char *model,
-                                    const char *instructions,
-                                    const char *user_prompt,
-                                    const char *previous_id,
-                                    const char *call_id,
-                                    const char *tool_output,
-                                    int allow_write)
+                             const char *instructions,
+                             const char *user_prompt,
+                             const char *previous_id,
+                             const char *call_id,
+                             const char *tool_output,
+                             int allow_write)
 {
     FILE *file;
     int success;
@@ -200,7 +197,6 @@ int write_agent_request_mode(const char *model,
     return 1;
 }
 
-
 int write_agent_final_request(
     const char *model,
     const char *previous_id,
@@ -214,6 +210,14 @@ int write_agent_final_request(
         "inspected or changed anything not present in the supplied evidence.";
     FILE *file;
     int success;
+
+    if (openai_auto_partial_limit()) {
+        (void)puts(
+            "Incomplete guarded write reached its automatic limit; "
+            "skipping final synthesis so rollback can run immediately."
+        );
+        return 0;
+    }
 
     if (model == NULL ||
         previous_id == NULL || *previous_id == '\0' ||
@@ -261,11 +265,11 @@ int write_agent_final_request(
 }
 
 int write_agent_request(const char *model,
-                               const char *instructions,
-                               const char *user_prompt,
-                               const char *previous_id,
-                               const char *call_id,
-                               const char *tool_output)
+                        const char *instructions,
+                        const char *user_prompt,
+                        const char *previous_id,
+                        const char *call_id,
+                        const char *tool_output)
 {
     FILE *file;
     int success;
