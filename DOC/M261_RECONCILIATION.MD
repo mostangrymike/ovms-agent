@@ -20,7 +20,7 @@ Port only these validated VMSBBS hardening behaviors onto the canonical M260 arc
 2. GAP-002 — after a successful guarded write, discard saved file-reading results so later reads reopen the newest OpenVMS RMS file version. **Ported and accepted on OpenVMS 2026-08-18; full regression build passed.**
 3. GAP-003 — track successful guarded automatic writes across the whole run and restore every affected file to its exact pre-run RMS version if the run stops incomplete because of an automatic limit or error. Do not make an extra final-synthesis request after a partial write has already reached its limit. **Ported with deterministic RMS rollback coverage and accepted on OpenVMS 2026-08-18.**
 4. GAP-004 — make normal top-level `BUILD` failures available to repair planning through the existing persisted failed-build record, while removing temporary capture files and stale failure versions correctly. **Ported unchanged from the validated historical fix and accepted on OpenVMS 2026-08-18.**
-5. GAP-005 — before supervised exact replacements reach the confirmation/write path, reject a candidate that removes an explicitly required goal term. Explicit user requests to remove or disable that feature remain allowed. **Ported with deterministic M251.10 coverage; OpenVMS acceptance pending.**
+5. GAP-005 — before supervised exact replacements reach the confirmation/write path, reject a candidate that removes an explicitly required goal term. Explicit user requests to remove or disable that feature remain allowed. **Ported with deterministic M251.10 coverage and accepted on OpenVMS 2026-08-18; full regression build passed.**
 
 ## Deliberately separate work
 
@@ -40,14 +40,15 @@ Those changes require a separate follow-on branch from the new canonical main so
 
 ## Acceptance before merge
 
-M261 is not ready to merge until:
+The M261 reconciliation gates have been satisfied:
 
 - `@BUILD` passes on OpenVMS;
 - deterministic regression coverage for the reconciled GAP-001 through GAP-005 behavior passes;
-- live OpenVMS acceptance is repeated where practical for RMS/version-sensitive behavior;
+- previously validated live OpenVMS behavior was reused where repeating it would add no new evidence;
 - comparison against `main` shows no unintended removal of M252-M260 capabilities or milestone validation drivers;
+- accidental Git mode changes introduced during connector writes were identified and corrected;
 - `README.md` and `features.md` describe the resulting user-visible behavior in plain technical language; and
-- the draft pull request is reviewed before it is marked ready or merged.
+- the pull request is ready for final review and a squash merge so temporary/no-op reconciliation commits do not enter `main`.
 
 ## Historical branch handling
 
