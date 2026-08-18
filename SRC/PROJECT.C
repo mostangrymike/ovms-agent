@@ -487,6 +487,10 @@ static int grep_file_type(const char *name)
 
     return strcmp(extension, "C") == 0 ||
            strcmp(extension, "H") == 0 ||
+           strcmp(extension, "COB") == 0 ||
+           strcmp(extension, "COBOL") == 0 ||
+           strcmp(extension, "CBL") == 0 ||
+           strcmp(extension, "CPY") == 0 ||
            strcmp(extension, "COM") == 0 ||
            strcmp(extension, "OPT") == 0 ||
            strcmp(extension, "MD") == 0 ||
