@@ -10,4 +10,12 @@ int cobol_edit_safe(
     char *reason,
     size_t reason_size);
 
+int cobol_text_safe(
+    const char *path,
+    const char *original,
+    const char *old_text,
+    const char *new_text,
+    char *reason,
+    size_t reason_size);
+
 #endif
