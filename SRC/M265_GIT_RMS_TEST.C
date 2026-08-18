@@ -3,9 +3,18 @@
 #include <string.h>
 
 #include "git_rms_restore.h"
+#include "rms_write.h"
 
 #define GAP008_PATH "TEST/GAP008_RMS.TXT"
 #define GAP008_EXPECTED "repository version\nlocal newer version\n"
+#define GAP008_OPT_PATH "TEST/GAP008_RECORD.OPT"
+#define GAP008_OPT_TEXT \
+    "[.BUILD]OPENAI_REPAIR.OBJ\n" \
+    "[.BUILD]GIT_RMS_RESTORE.OBJ\n"
+#define GAP008_COM_PATH "TEST/GAP008_RECORD.COM"
+#define GAP008_COM_TEXT \
+    "$ WRITE SYS$OUTPUT \"GAP008\"\n" \
+    "$ EXIT\n"
 
 static int read_text(const char *path, char *text, size_t text_size)
 {
@@ -41,6 +50,35 @@ static int read_text(const char *path, char *text, size_t text_size)
 
     text[used] = '\0';
     return fclose(file) == 0;
+}
+
+static int test_record_restore(const char *path,
+                               const char *expected)
+{
+    char modified[1024];
+    char text[1024];
+    int written;
+
+    written = snprintf(
+        modified,
+        sizeof(modified),
+        "%sGAP008 local record modification\n",
+        expected
+    );
+    if (written < 0 || (size_t)written >= sizeof(modified)) {
+        return 0;
+    }
+
+    if (!rms_write_text_file(path, modified)) {
+        return 0;
+    }
+
+    if (!git_rms_restore_head(path)) {
+        return 0;
+    }
+
+    return read_text(path, text, sizeof(text)) &&
+           strcmp(text, expected) == 0;
 }
 
 int main(void)
@@ -107,6 +145,16 @@ int main(void)
         return 2;
     }
     (void)fclose(history);
+
+    if (!test_record_restore(GAP008_OPT_PATH, GAP008_OPT_TEXT)) {
+        (void)puts("M265: RMS-aware OPT restore failed.");
+        return 2;
+    }
+
+    if (!test_record_restore(GAP008_COM_PATH, GAP008_COM_TEXT)) {
+        (void)puts("M265: RMS-aware COM restore failed.");
+        return 2;
+    }
 
     (void)puts("M265 GAP-008 RMS-aware Git restore regression passed.");
     return 1;
