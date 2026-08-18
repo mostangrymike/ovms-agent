@@ -36,6 +36,12 @@ When the top-level `BUILD` command fails, OVMS Agent keeps the build status and 
 
 Supervised repair protects explicitly required code behavior. If a repair candidate would remove a required code-like goal term such as `LIST`, OVMS Agent rejects that candidate before the normal patch confirmation and write path. An explicit request to remove or disable that feature is still allowed.
 
+## Git context and RMS versions
+
+Git-aware context resolves working-tree files through normal OpenVMS RMS versionless access. If a tracked file has multiple RMS versions, OVMS Agent compares the committed Git content with the newest RMS version by using temporary single-version files instead of asking Git to hash the RMS source file directly.
+
+This keeps Git status, diff, changed-path, and model context usable when VSI Git would otherwise report short-read or hash failures, and it does not purge or delete any user source versions.
+
 ## GitHub profiles and guarded authentication
 
 OVMS Agent can store named GitHub profiles outside the repository in `SYS$LOGIN:OVMS_AGENT_GITHUB.DAT`. A profile contains the repository, user name, branch, and token. Tokens are entered without terminal echo and are masked in normal output.
