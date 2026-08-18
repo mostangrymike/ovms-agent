@@ -23,6 +23,27 @@ static int expect_safe(const char *path,
     return 1;
 }
 
+static int expect_text(const char *path,
+                       const char *before,
+                       const char *old_text,
+                       const char *new_text,
+                       int wanted,
+                       const char *name)
+{
+    char reason[256];
+    int actual;
+
+    actual = cobol_text_safe(path, before, old_text, new_text,
+                             reason, sizeof(reason));
+    if (actual != wanted) {
+        (void)printf("M264 failed: %s (%s)\n",
+                     name,
+                     reason[0] != '\0' ? reason : "no reason");
+        return 0;
+    }
+    return 1;
+}
+
 int main(void)
 {
     static const char before[] =
@@ -100,7 +121,17 @@ int main(void)
         !expect_safe("M264.COB", before, duplicate_para, 0,
                      "duplicated paragraph accepted") ||
         !expect_safe("M264.C", before, duplicate_if, 1,
-                     "non-COBOL file affected")) {
+                     "non-COBOL file affected") ||
+        !expect_text("M264.COB", before,
+                     "           IF A = B",
+                     "           IF A = B\n           IF A = B",
+                     0,
+                     "exact-text duplicate IF accepted") ||
+        !expect_text("M264.COB", before,
+                     "DISPLAY \"MATCH\"",
+                     "DISPLAY \"MATCHED\"",
+                     1,
+                     "exact-text ordinary edit rejected")) {
         return EXIT_FAILURE;
     }
 
