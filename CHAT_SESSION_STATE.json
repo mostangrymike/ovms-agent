@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T18:55:00-05:00",
+  "updated_at": "2026-08-18T18:59:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -67,11 +67,11 @@
       "vax_symbols": "No new production linker-visible symbols from GAP-009 helpers; helpers are static. Existing git_rms_restore_head remains <=31 characters."
     },
     "git_restore_hardening": {
-      "discovery": "OpenVMS Git `git show HEAD:TEST_M266_PLAN_SCOPE.COM` failed with no such device or address even though `git cat-file -s` reported a 1551-byte blob. Old GITRESTORE captured zero bytes and falsely verified an empty restored file.",
-      "fix": "GIT_RMS_RESTORE.C now captures Git content with `git cat-file -p` and independently verifies expected blob size with `git cat-file -s`, preventing empty-capture false success for nonempty blobs.",
+      "discovery": "OpenVMS Git git show failed for a newly added record-sensitive .COM blob even though git cat-file -s reported the correct nonzero blob size. Old GITRESTORE captured zero bytes and falsely verified an empty restored file.",
+      "fix": "GIT_RMS_RESTORE.C now captures Git content with git cat-file -p and independently verifies expected blob size with git cat-file -s, preventing empty-capture false success for nonempty blobs.",
       "live_result": "PASS: rebuilt agent restored TEST_M266_PLAN_SCOPE.COM as nonzero Variable-length RMS file with carriage-return carriage control and complete expected procedure contents."
     },
-    "github_diff": "PR #30 merged with 7 changed files, +802/-78. Temporary repair fixture changes were retained as modernization to current structured replace_block form."
+    "github_diff": "PR #30 merged with 7 changed files, +802/-78."
   },
   "separate_findings": [
     "Native Git checkout/pull on this OpenVMS Git build can still fail on RMS-versioned paths; safe recovery uses git fetch plus git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
@@ -83,19 +83,13 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "local_branch_name": "m265-rms-record-restore-fix",
-    "metadata_head_before_post_merge_sync": "5b942cb82d91bff1806e3efa9beb65880e185c30",
+    "metadata_head": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
     "local_untracked": "m264_gap007.cob",
     "known_status_artifacts": [
       "SRC/M266_PLAN_SCOPE_TEST.C may show M due only to 100644 -> 100755 mode mapping.",
       "TEST_M266_PLAN_SCOPE.COM may show M because native Git cannot hash its Variable-record RMS representation."
     ],
     "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty M253 checkout and should not be reset until its local changes are reviewed."
-  },
-  "next_issue_candidate": {
-    "issue": 19,
-    "title": "GAP-010: Generated COBOL count formatting is inconsistent",
-    "state_at_last_check": "OPEN",
-    "rule": "Verify live GitHub issue state before beginning work."
   },
   "resume_protocol": [
     "In a new chat, read this file first.",
