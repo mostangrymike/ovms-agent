@@ -7,8 +7,6 @@
 #define GAP008_PATH "TEST/GAP008_RMS.TXT"
 #define GAP008_EXPECTED "repository version\nlocal newer version\n"
 
-extern int fgetname(FILE *, char *);
-
 static int read_text(const char *path, char *text, size_t text_size)
 {
     FILE *file;
