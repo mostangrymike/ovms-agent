@@ -447,7 +447,9 @@ int rms_replace_text_file(
             default:
                 file_descriptor = creat(
                     path,
-                    0
+                    0,
+                    "rat=cr",
+                    "rfm=var"
                 );
 
                 if (file_descriptor < 0) {
