@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "cobol_guard.h"
 
@@ -303,4 +304,73 @@ int cobol_edit_safe(const char *path,
     }
 
     return 1;
+}
+
+int cobol_text_safe(const char *path,
+                    const char *original,
+                    const char *old_text,
+                    const char *new_text,
+                    char *reason,
+                    size_t reason_size)
+{
+    const char *match;
+    const char *second;
+    char *candidate;
+    size_t prefix;
+    size_t old_len;
+    size_t new_len;
+    size_t original_len;
+    size_t candidate_len;
+    int safe;
+
+    cob_reason(reason, reason_size, "");
+    if (!cob_ext(path)) return 1;
+    if (original == NULL || old_text == NULL || new_text == NULL ||
+        *old_text == '\0') {
+        cob_reason(reason, reason_size,
+                   "COBOL exact-text validation lacks valid edit text.");
+        return 0;
+    }
+
+    match = strstr(original, old_text);
+    if (match == NULL) {
+        cob_reason(reason, reason_size,
+                   "COBOL exact-text validation could not find old_text.");
+        return 0;
+    }
+    second = strstr(match + strlen(old_text), old_text);
+    if (second != NULL) {
+        cob_reason(reason, reason_size,
+                   "COBOL exact-text validation requires unique old_text.");
+        return 0;
+    }
+
+    prefix = (size_t)(match - original);
+    old_len = strlen(old_text);
+    new_len = strlen(new_text);
+    original_len = strlen(original);
+    candidate_len = prefix + new_len +
+        (original_len - prefix - old_len);
+    candidate = (char *)malloc(candidate_len + 1U);
+    if (candidate == NULL) {
+        cob_reason(reason, reason_size,
+                   "COBOL exact-text validation could not allocate candidate.");
+        return 0;
+    }
+
+    if (prefix > 0U) {
+        (void)memcpy(candidate, original, prefix);
+    }
+    if (new_len > 0U) {
+        (void)memcpy(candidate + prefix, new_text, new_len);
+    }
+    (void)memcpy(candidate + prefix + new_len,
+                 match + old_len,
+                 original_len - prefix - old_len);
+    candidate[candidate_len] = '\0';
+
+    safe = cobol_edit_safe(path, original, candidate,
+                           reason, reason_size);
+    free(candidate);
+    return safe;
 }
