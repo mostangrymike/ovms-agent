@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T16:43:00-05:00",
+  "updated_at": "2026-08-18T16:45:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -72,10 +72,16 @@
       "finding": "AGENT/TOOL/RUN cannot directly invoke model-only replace_text; direct table exposes READ, SEARCH, GREP, LIST, TREE, GITSTATUS, GITDIFF, EDIT, PATCH, BUILD, RUN, MCP.",
       "status": "verified from SRC/openai_transcript.c",
       "implication": "A deterministic regression should call execute_replace_text_tool()/validator directly rather than relying on LLM tool selection."
+    },
+    {
+      "finding": "Current M264 branch was fetched and fast-forwarded successfully on OpenVMS, and full @BUILD completed with all regression tests passed.",
+      "status": "accepted build gate",
+      "observed_output": "All regression tests passed. Build completed successfully."
     }
   ],
   "m264_remote_changes": {
     "branch_created_from": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
+    "head_at_build_pass": "63fdcba6921129bff57ee877baf92b1009056981",
     "commits_ahead_at_last_check": 6,
     "files_changed": [
       "BUILD_OPENAI_MODULES.COM",
@@ -98,21 +104,19 @@
       "m263_rep_lines"
     ],
     "vax_symbol_limit_status": "All listed new external identifiers are <=31 characters.",
-    "validation_status": "GitHub diff/scope audit done; OpenVMS @BUILD not yet reported after these changes."
+    "validation_status": "GitHub diff/scope audit done; OpenVMS full @BUILD PASSED with all regression tests."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
-    "expected_local_branch": "m264-gap007-cobol-structure",
-    "last_known_untracked_fixture": "m264_gap007.cob",
-    "fixture_restored_state": "Version ;1 normal variable-length RMS text, longest record 33 bytes, structurally coherent single IF/ELSE/END-IF.",
-    "next_commands_previously_requested": [
-      "$ git fetch origin",
-      "$ git branch --set-upstream-to=origin/m264-gap007-cobol-structure m264-gap007-cobol-structure",
-      "$ git pull --ff-only",
-      "$ git status --short",
-      "$ @BUILD"
-    ],
-    "next_required_evidence": "Full OpenVMS @BUILD output for current M264 branch. If build passes, run focused/live structural refusal acceptance and then VMSBBS acceptance."
+    "branch": "m264-gap007-cobol-structure",
+    "tracking": "origin/m264-gap007-cobol-structure",
+    "head_after_pull": "63fdcba",
+    "last_known_status": "Only untracked m264_gap007.cob",
+    "fixture": "M264_GAP007.COB",
+    "fixture_state": "Version ;1 normal variable-length RMS text, longest record 33 bytes, structurally coherent single IF/ELSE/END-IF.",
+    "build_status": "PASS",
+    "build_output": "All regression tests passed. Build completed successfully.",
+    "next_required_evidence": "Live structural-refusal acceptance on disposable COBOL fixture through M264 path, then live VMSBBS acceptance for original GAP-007 corruption pattern."
   },
   "github_operating_model": {
     "principle": "GitHub = development control plane; OpenVMS = OS/runtime acceptance environment.",
