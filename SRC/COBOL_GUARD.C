@@ -14,6 +14,7 @@ typedef struct cob_scope_count {
     long eval_close;
     long search_open;
     long search_close;
+    long program_end;
     char para[COB_NAME_COUNT][COB_NAME_MAX];
     unsigned int para_count[COB_NAME_COUNT];
     unsigned int para_used;
@@ -86,6 +87,22 @@ static int cob_token_at(const char *line, const char *word)
     return !cob_word_char((unsigned char)line[n]);
 }
 
+static int cob_two_tokens(const char *line,
+                          const char *first,
+                          const char *second)
+{
+    char a[24];
+    char b[24];
+
+    if (line == NULL || first == NULL || second == NULL) return 0;
+    a[0] = '\0';
+    b[0] = '\0';
+    if (sscanf(line, " %23[A-Za-z-] %23[A-Za-z-]", a, b) != 2) {
+        return 0;
+    }
+    return cob_eq_ci(a, first) && cob_eq_ci(b, second);
+}
+
 static int cob_comment(const char *line)
 {
     const char *p;
@@ -126,7 +143,7 @@ static int cob_reserved_label(const char *name)
         "WORKING-STORAGE", "LOCAL-STORAGE", "LINKAGE", "FILE",
         "IF", "ELSE", "END-IF", "EVALUATE", "END-EVALUATE",
         "SEARCH", "END-SEARCH", "PERFORM", "END-PERFORM",
-        "STOP", "GOBACK", "EXIT"
+        "STOP", "GOBACK", "EXIT", "END", "PROGRAM"
     };
     unsigned int i;
 
@@ -198,6 +215,9 @@ static void cob_scan(const char *text, cob_scope_count *out)
             if (cob_token_at(line, "END-EVALUATE")) ++out->eval_close;
             if (cob_token_at(line, "SEARCH")) ++out->search_open;
             if (cob_token_at(line, "END-SEARCH")) ++out->search_close;
+            if (cob_two_tokens(line, "END", "PROGRAM")) {
+                ++out->program_end;
+            }
             cob_scan_label(line, out);
         }
         if (end == NULL) break;
@@ -237,7 +257,31 @@ static int cob_dup_names(cob_scope_count *before,
                            before->section_used, names[i]) :
             cob_name_count(before->para, before->para_count,
                            before->para_used, names[i]);
-        if (prior > 0U && counts[i] > prior) return 1;
+        if (counts[i] > prior && counts[i] > 1U) return 1;
+    }
+    return 0;
+}
+
+static int cob_missing_names(cob_scope_count *before,
+                             cob_scope_count *after,
+                             int sections)
+{
+    unsigned int i;
+    char (*names)[COB_NAME_MAX];
+    unsigned int *counts;
+    unsigned int used;
+    unsigned int now;
+
+    names = sections ? before->section : before->para;
+    counts = sections ? before->section_count : before->para_count;
+    used = sections ? before->section_used : before->para_used;
+    for (i = 0U; i < used; ++i) {
+        now = sections ?
+            cob_name_count(after->section, after->section_count,
+                           after->section_used, names[i]) :
+            cob_name_count(after->para, after->para_count,
+                           after->para_used, names[i]);
+        if (now < counts[i]) return 1;
     }
     return 0;
 }
@@ -292,14 +336,29 @@ int cobol_edit_safe(const char *path,
                    "COBOL edit changes SEARCH scope without matching END-SEARCH structure.");
         return 0;
     }
+    if (after.program_end != before.program_end) {
+        cob_reason(reason, reason_size,
+                   "COBOL edit changes END PROGRAM structure.");
+        return 0;
+    }
     if (cob_dup_names(&before, &after, 0)) {
         cob_reason(reason, reason_size,
-                   "COBOL edit duplicates an existing paragraph label.");
+                   "COBOL edit duplicates a paragraph label.");
         return 0;
     }
     if (cob_dup_names(&before, &after, 1)) {
         cob_reason(reason, reason_size,
-                   "COBOL edit duplicates an existing SECTION label.");
+                   "COBOL edit duplicates a SECTION label.");
+        return 0;
+    }
+    if (cob_missing_names(&before, &after, 0)) {
+        cob_reason(reason, reason_size,
+                   "COBOL edit removes or renames an existing paragraph boundary.");
+        return 0;
+    }
+    if (cob_missing_names(&before, &after, 1)) {
+        cob_reason(reason, reason_size,
+                   "COBOL edit removes or renames an existing SECTION boundary.");
         return 0;
     }
 
