@@ -75,6 +75,27 @@ static char *read_request(void)
     return text;
 }
 
+static int write_response_fixture(void)
+{
+    FILE *file;
+
+    file = fopen(OPENAI_RESPONSE_FILE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fputs(
+            "{\"output\":[{\"type\":\"function_call\","
+            "\"call_id\":\"call_m251_last\","
+            "\"name\":\"search_file\","
+            "\"arguments\":\"{}\"}]}\n",
+            file) == EOF) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    return fclose(file) == 0;
+}
 
 static int test_nonempty_output(void)
 {
@@ -108,6 +129,27 @@ int main(void)
     }
 
     remove_all(OPENAI_REQUEST_FILE);
+    remove_all(OPENAI_RESPONSE_FILE);
+
+    if (!write_agent_request_mode(
+            "m251-test-model",
+            "M251 test instructions",
+            "M251 synthesis goal",
+            NULL,
+            NULL,
+            NULL,
+            0)) {
+        (void)puts("M251 failed: initial local-context request failed.");
+        remove_all(OPENAI_REQUEST_FILE);
+        return EXIT_FAILURE;
+    }
+
+    if (!write_response_fixture()) {
+        (void)puts("M251 failed: unable to write response fixture.");
+        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(OPENAI_RESPONSE_FILE);
+        return EXIT_FAILURE;
+    }
 
     if (!write_agent_final_request(
             "m251-test-model",
@@ -116,6 +158,7 @@ int main(void)
             "last tool result")) {
         (void)puts("M251 failed: final request writer returned failure.");
         remove_all(OPENAI_REQUEST_FILE);
+        remove_all(OPENAI_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
 
@@ -124,13 +167,16 @@ int main(void)
     if (request == NULL) {
         (void)puts("M251 failed: unable to read final request.");
         remove_all(OPENAI_REQUEST_FILE);
+        remove_all(OPENAI_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
 
     ok =
         strstr(request, "\"model\":\"m251-test-model\"") != NULL &&
+        strstr(request, "\"previous_response_id\"") == NULL &&
+        strstr(request, "M251 synthesis goal") != NULL &&
         strstr(request,
-            "\"previous_response_id\":\"resp_m251_prev\"") != NULL &&
+            "\"type\":\"function_call\"") != NULL &&
         strstr(request,
             "\"type\":\"function_call_output\"") != NULL &&
         strstr(request, "\"call_id\":\"call_m251_last\"") != NULL &&
@@ -142,10 +188,11 @@ int main(void)
 
     free(request);
     remove_all(OPENAI_REQUEST_FILE);
+    remove_all(OPENAI_RESPONSE_FILE);
 
     if (!ok) {
         (void)puts(
-            "M251 failed: final synthesis request was not tool-free."
+            "M251 failed: provider-neutral final synthesis request was invalid."
         );
         return EXIT_FAILURE;
     }
