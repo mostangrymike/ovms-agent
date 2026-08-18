@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T17:52:00-05:00",
+  "updated_at": "2026-08-18T18:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -17,76 +17,50 @@
     "M262": "provider-neutral/install/release/GitHub profile reconciliation",
     "M263": "GAP-006 RMS-aware Git context",
     "M264": "GAP-007 COBOL structural bounded-edit guard",
-    "M265": "GAP-008 RMS-aware guarded Git restore"
+    "M265": "GAP-008 RMS-aware guarded Git restore, including post-merge RMS record-format correction"
   },
   "m264": {
     "issue": 16,
     "issue_state": "CLOSED completed",
     "pull_request": 27,
-    "pr_state": "MERGED",
-    "branch": "m264-gap007-cobol-structure",
-    "branch_head": "08ad49146fabf30a61883625581f32ffd9f2d8ec",
     "merge_commit": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92"
   },
   "m265": {
     "issue": 17,
-    "issue_state": "CLOSED completed",
-    "pull_request": 28,
-    "pr_state": "MERGED",
-    "branch": "gap008-rms-git-restore",
-    "branch_head": "dcfc1c05b5177292d7e825f45a1349a38fd6cda3",
-    "merge_commit": "285d9ab55dc0696acc008f8e0b6747b31a16bf74",
-    "base": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92",
-    "files_changed": [
-      "BUILD_OPENAI_MODULES.COM",
-      "SRC/GIT_RMS_RESTORE.C",
-      "SRC/GIT_RMS_RESTORE.H",
-      "SRC/M265_GIT_RMS_TEST.C",
-      "SRC/OPENAI_TRANSCRIPT_M265.C",
-      "TEST/GAP008_RMS.TXT",
-      "openai_modules.opt"
-    ],
-    "scope": "+430/-1 across 7 files from M264 base; no unrelated files.",
-    "vax_external_symbols": [
-      "git_rms_restore_head"
-    ],
-    "vax_symbol_limit_status": "New linker-visible symbol is 20 characters, <=31.",
-    "reproduction": {
-      "result": "PASS",
-      "native_git_restore": "git restore gap008_rms.txt failed with unable to create file ...: file exists, removed the newer RMS working version, left an older numbered version effective, and Git diff then failed with short read/cannot hash.",
-      "important_note": "Native git show HEAD:path also parsed unreliably on this OpenVMS Git build when invoked directly from DCL."
+    "issue_state": "CLOSED completed after corrective PR #29",
+    "initial_pull_request": 28,
+    "initial_merge_commit": "285d9ab55dc0696acc008f8e0b6747b31a16bf74",
+    "corrective_pull_request": 29,
+    "corrective_branch": "m265-rms-record-restore-fix",
+    "corrective_branch_head": "6444ded16b8e864e4d40da36e5da6d68f13d65dc",
+    "corrective_merge_commit": "31461b480133db4ad86f5449c943dec2c8589047",
+    "guarded_entry": "AGENT/TOOL/RUN GITRESTORE <path>",
+    "production_symbol": "git_rms_restore_head",
+    "vax_symbol_limit_status": "20 characters, <=31; corrective PR adds no production linker-visible symbols.",
+    "initial_acceptance": "Guarded restore created a new highest RMS version, preserved prior versions, restored Git HEAD as effective, and honored workspace approval/write gate.",
+    "post_merge_defect": {
+      "discovery": "Native git pull to merged main failed on TEST/GAP008_RMS.TXT with file exists. Recovery advanced HEAD/index via git reset --mixed --no-refresh, then used GITRESTORE on incoming files.",
+      "failure": "GITRESTORE of BUILD_OPENAI_MODULES.COM and openai_modules.opt created 0KB effective files; subsequent @BUILD failed with 136 undefined linker symbols.",
+      "root_cause": "rms_replace_text_file used bare creat(path,0) for existing non-stream .OPT/.COM/.CLD files instead of explicit OpenVMS variable-record/carriage-control attributes.",
+      "fix": "Corrective PR #29 uses creat(path,0,\"rat=cr\",\"rfm=var\") for the non-stream control-file replacement path.",
+      "recovery": "Known-good historical Stream_LF versions of BUILD_OPENAI_MODULES.COM and openai_modules.opt were copied forward with destination trailing semicolon; @BUILD then passed and Git was clean."
     },
-    "implementation": {
-      "helper": "git_rms_restore_head(path)",
-      "strategy": "Capture HEAD:path through a quoted DCL Git command into a temporary single-version file, write those contents through rms_replace_text_file as a new highest RMS version, then verify versionless OpenVMS access exactly matches HEAD.",
-      "guarded_entry": "AGENT/TOOL/RUN GITRESTORE <path>",
-      "safety": "Reuses existing AGENT/TOOL/RUN workspace approval and write gate, plus explicit local confirmation before restore."
-    },
-    "openvms_build": {
-      "focused_regression": "PASS: M265 GAP-008 RMS-aware Git restore regression passed.",
-      "clean_dependency_build": "PASS after deleting all RMS_WRITE.OBJ, OPENAI_TRANSCRIPT.OBJ, and GIT_RMS_RESTORE.OBJ versions before @BUILD.",
-      "full_build": "PASS: All regression tests passed; Build completed successfully."
-    },
-    "live_acceptance": {
-      "result": "PASS",
-      "fixture": "TEST/GAP008_RMS.TXT with pre-existing ;1 through ;5 and a live appended modification in ;5.",
-      "approval": "AGENT/APPROVAL/SET workspace with OVMS_AGENT_WRITE_ENABLED=YES.",
-      "command": "AGENT/TOOL/RUN GITRESTORE TEST/GAP008_RMS.TXT",
-      "confirmation": "User answered y.",
-      "agent_result": "Git HEAD contents restored and verified as the effective OpenVMS file version.",
-      "rms_result": "Created GAP008_RMS.TXT;6 and preserved ;1 through ;5.",
-      "effective_contents": "Versionless TYPE showed repository version / local newer version, exactly matching tracked HEAD fixture; live modification disappeared.",
-      "git_result": "Tracked fixture returned clean; only unrelated untracked m264_gap007.cob remained."
-    },
-    "github_actions": "No workflow runs were associated with the branch head or merge commit; acceptance used direct OpenVMS evidence."
+    "corrective_regression": {
+      "files": ["SRC/RMS_WRITE.C", "SRC/M265_GIT_RMS_TEST.C", "TEST/GAP008_RECORD.OPT", "TEST/GAP008_RECORD.COM"],
+      "scope": "4 files, +180/-7 relative to initial M265 merge; no unrelated changes.",
+      "coverage": "Exercises both Stream_LF and native variable-record .OPT/.COM restore paths. Stream mutation creates a new highest RMS version rather than modifying the original tracked version. Test cleanup removes only versions it created.",
+      "live_result": "PASS: strengthened @BUILD completed with all regression tests passed; final git status contained only unrelated untracked m264_gap007.cob; fixture TYPE matched Git HEAD exactly.",
+      "rms_result": "Variable-record restore produced nonzero variable-length files with carriage-return carriage control instead of 0KB files."
+    }
   },
   "separate_findings": [
+    "Native Git checkout/pull on this OpenVMS Git build can still fail on RMS-versioned paths; safe recovery used git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
     "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records; do not conflate with GAP-007 or GAP-008.",
     "Provider/model tool-use capability varies; anthropic/claude-haiku-4-5 through Requesty narrated without issuing tools in the M264 workflow."
   ],
   "local_openvms_state": {
-    "ovms_agent_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
-    "current_local_branch_before_post_merge_sync": "gap008-rms-git-restore at dcfc1c0",
+    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
+    "current_branch_at_last_acceptance": "m265-rms-record-restore-fix at 6444ded",
     "local_untracked": "m264_gap007.cob",
     "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty M253 checkout and should not be reset until its local changes are reviewed."
   },
@@ -98,9 +72,8 @@
   "resume_protocol": [
     "In a new chat, read this file first.",
     "Verify current GitHub main head and open issues before choosing the next milestone.",
-    "M265 is complete: PR #28 merged and issue #17 closed.",
-    "Expected main head after M265 merge is 285d9ab55dc0696acc008f8e0b6747b31a16bf74; verify live before acting.",
+    "M265/GAP-008 is complete only including corrective PR #29; expected main head after correction is 31461b480133db4ad86f5449c943dec2c8589047.",
     "Use GitHub as repository source of truth and OpenVMS for DEC C/VAX, RMS, DCL, and live acceptance evidence.",
-    "Before next milestone, sync the active OpenVMS checkout back to merged main, but preserve unrelated untracked m264_gap007.cob and do not touch the older dirty canonical-named M253 checkout until reviewed."
+    "Before next milestone, sync the active OpenVMS checkout to corrected main using RMS-safe recovery if native checkout/pull hits file-exists behavior; preserve unrelated untracked m264_gap007.cob."
   ]
 }
