@@ -7,6 +7,20 @@
 #include "project.h"
 #include "util.h"
 
+#define COMMAND_BUILD_CAPTURE "OVMS_AGENT_BUILD_CAPTURE.TXT"
+#define COMMAND_FAILED_BUILD "OVMS_AGENT_FAILED_BUILD.TXT"
+
+static void command_remove_versions(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    while (remove(path) == 0) {
+        /* Remove every OpenVMS file version, newest first. */
+    }
+}
+
 static const command_entry project_commands[] = {
     { "ROOT", "Display the project root", command_root },
     { "STATUS", "Display agent status", command_status },
@@ -34,8 +48,95 @@ void command_register_project(void)
 void command_build(agent_state *state,
                    const char *arguments)
 {
+    FILE *capture;
+    FILE *failed;
+    char line[2048];
+    int status;
+    int save_ok;
+
     (void)arguments;
-    project_build(state);
+
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
+
+    command_remove_versions(COMMAND_BUILD_CAPTURE);
+
+    (void)puts("Building project...");
+    (void)puts("");
+
+    status = system(
+        "@BUILD.COM/OUTPUT=OVMS_AGENT_BUILD_CAPTURE.TXT"
+    );
+
+    capture = fopen(COMMAND_BUILD_CAPTURE, "r");
+    failed = NULL;
+    save_ok = 1;
+
+    if ((status & 1) == 0) {
+        command_remove_versions(COMMAND_FAILED_BUILD);
+        failed = fopen(COMMAND_FAILED_BUILD, "w");
+
+        if (failed == NULL ||
+            fprintf(failed,
+                    "OpenVMS build status: %d (failure)\n\n",
+                    status) < 0) {
+            save_ok = 0;
+        }
+    } else {
+        command_remove_versions(COMMAND_FAILED_BUILD);
+    }
+
+    if (capture == NULL) {
+        (void)puts("Unable to read captured build output.");
+        save_ok = 0;
+    } else {
+        while (fgets(line, sizeof(line), capture) != NULL) {
+            (void)fputs(line, stdout);
+
+            if (failed != NULL &&
+                fputs(line, failed) == EOF) {
+                save_ok = 0;
+            }
+        }
+
+        if (ferror(capture)) {
+            (void)puts("Warning: unable to read complete build output.");
+            save_ok = 0;
+        }
+
+        if (fclose(capture) != 0) {
+            save_ok = 0;
+        }
+    }
+
+    if (failed != NULL &&
+        fclose(failed) != 0) {
+        save_ok = 0;
+    }
+
+    command_remove_versions(COMMAND_BUILD_CAPTURE);
+
+    (void)puts("");
+
+    if ((status & 1) != 0) {
+        (void)puts("Build completed successfully.");
+    } else {
+        if (!save_ok) {
+            command_remove_versions(COMMAND_FAILED_BUILD);
+            (void)puts(
+                "Warning: unable to save failed build output."
+            );
+        }
+
+        (void)printf(
+            "Build failed with OpenVMS status %d.\n",
+            status
+        );
+    }
 }
 
 void command_tree(agent_state *state,
