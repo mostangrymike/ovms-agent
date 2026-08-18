@@ -111,6 +111,30 @@ int main(void)
         "           END-IF\n"
         "           STOP RUN.\n"
         "       END PROGRAM GAP007.\n";
+    static const char missing_para[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP007.\n"
+        "       PROCEDURE DIVISION.\n"
+        "           IF A = B\n"
+        "               DISPLAY \"MATCH\"\n"
+        "           ELSE\n"
+        "               DISPLAY \"NO MATCH\"\n"
+        "           END-IF\n"
+        "           STOP RUN.\n"
+        "       END PROGRAM GAP007.\n";
+    static const char duplicate_end[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP007.\n"
+        "       PROCEDURE DIVISION.\n"
+        "       MAIN-PARA.\n"
+        "           IF A = B\n"
+        "               DISPLAY \"MATCH\"\n"
+        "           ELSE\n"
+        "               DISPLAY \"NO MATCH\"\n"
+        "           END-IF\n"
+        "           STOP RUN.\n"
+        "       END PROGRAM GAP007.\n"
+        "       END PROGRAM GAP007.\n";
 
     if (!expect_safe("M264.COB", before, duplicate_if, 0,
                      "duplicated IF accepted") ||
@@ -120,6 +144,10 @@ int main(void)
                      "ordinary COBOL text edit rejected") ||
         !expect_safe("M264.COB", before, duplicate_para, 0,
                      "duplicated paragraph accepted") ||
+        !expect_safe("M264.COB", before, missing_para, 0,
+                     "missing paragraph boundary accepted") ||
+        !expect_safe("M264.COB", before, duplicate_end, 0,
+                     "duplicate END PROGRAM accepted") ||
         !expect_safe("M264.C", before, duplicate_if, 1,
                      "non-COBOL file affected") ||
         !expect_text("M264.COB", before,
