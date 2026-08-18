@@ -52,6 +52,75 @@ static int read_text(const char *path, char *text, size_t text_size)
     return fclose(file) == 0;
 }
 
+static int current_spec(const char *path,
+                        char *spec,
+                        size_t spec_size)
+{
+    FILE *file;
+
+    if (path == NULL || spec == NULL || spec_size == 0U) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fgetname(file, spec) == 0) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    (void)fclose(file);
+    spec[spec_size - 1U] = '\0';
+    return 1;
+}
+
+static int cleanup_to_spec(const char *path,
+                           const char *original_spec)
+{
+    char spec[512];
+
+    for (;;) {
+        if (!current_spec(path, spec, sizeof(spec))) {
+            return 0;
+        }
+
+        if (strcmp(spec, original_spec) == 0) {
+            return 1;
+        }
+
+        if (remove(spec) != 0) {
+            return 0;
+        }
+    }
+}
+
+static int test_stream_restore(const char *path,
+                               const char *expected)
+{
+    FILE *file;
+    char text[1024];
+
+    file = fopen(path, "a");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fputs("GAP008 local stream modification\n", file) == EOF ||
+        fclose(file) != 0) {
+        return 0;
+    }
+
+    if (!git_rms_restore_head(path)) {
+        return 0;
+    }
+
+    return read_text(path, text, sizeof(text)) &&
+           strcmp(text, expected) == 0;
+}
+
 static int test_record_restore(const char *path,
                                const char *expected)
 {
@@ -79,6 +148,28 @@ static int test_record_restore(const char *path,
 
     return read_text(path, text, sizeof(text)) &&
            strcmp(text, expected) == 0;
+}
+
+static int test_control_restore(const char *path,
+                                const char *expected)
+{
+    char original_spec[512];
+    int ok;
+
+    if (!current_spec(path, original_spec, sizeof(original_spec))) {
+        return 0;
+    }
+
+    ok = test_stream_restore(path, expected);
+    if (ok) {
+        ok = test_record_restore(path, expected);
+    }
+
+    if (!cleanup_to_spec(path, original_spec)) {
+        return 0;
+    }
+
+    return ok;
 }
 
 int main(void)
@@ -146,12 +237,12 @@ int main(void)
     }
     (void)fclose(history);
 
-    if (!test_record_restore(GAP008_OPT_PATH, GAP008_OPT_TEXT)) {
+    if (!test_control_restore(GAP008_OPT_PATH, GAP008_OPT_TEXT)) {
         (void)puts("M265: RMS-aware OPT restore failed.");
         return 2;
     }
 
-    if (!test_record_restore(GAP008_COM_PATH, GAP008_COM_TEXT)) {
+    if (!test_control_restore(GAP008_COM_PATH, GAP008_COM_TEXT)) {
         (void)puts("M265: RMS-aware COM restore failed.");
         return 2;
     }
