@@ -86,6 +86,8 @@ When the top-level BUILD command fails, the failure status and captured build ou
 
 Supervised repair also protects explicitly required behavior. If a proposed repair would remove a required code-like goal term such as LIST, the candidate is rejected before the normal patch confirmation and write path. An explicit request to remove or disable that feature is still allowed.
 
+Git context on OpenVMS is RMS-aware. When a tracked working-tree file has multiple RMS versions, OVMS Agent resolves the current source through normal versionless RMS access and compares that newest version with the committed Git content through temporary single-version files. This avoids VSI Git hash/read failures on such files while preserving every user source version.
+
 OpenVMS Requirements
 
 OVMS Agent is developed for OpenVMS and uses native OpenVMS facilities. The current development environment is OpenVMS on x86-64. The project is also written with older DEC C and VAX constraints in mind where practical.
