@@ -18,7 +18,7 @@ Port only these validated VMSBBS hardening behaviors onto the canonical M260 arc
 
 1. GAP-001 — recognize COBOL `.COB`, `.COBOL`, and `.CBL` files as source code, while treating `.CPY` copy files as supporting/dependency material. **Ported and accepted on OpenVMS 2026-08-18.**
 2. GAP-002 — after a successful guarded write, discard saved file-reading results so later reads reopen the newest OpenVMS RMS file version. **Ported and accepted on OpenVMS 2026-08-18; full regression build passed.**
-3. GAP-003 — track successful guarded automatic writes across the whole run and restore every affected file to its exact pre-run RMS version if the run stops incomplete because of an automatic limit or error. Do not make an extra final-synthesis request after a partial write has already reached its limit. **Ported with deterministic rollback coverage; OpenVMS build acceptance pending.**
+3. GAP-003 — track successful guarded automatic writes across the whole run and restore every affected file to its exact pre-run RMS version if the run stops incomplete because of an automatic limit or error. Do not make an extra final-synthesis request after a partial write has already reached its limit. **Ported with deterministic rollback coverage and a final-synthesis guard; OpenVMS build acceptance pending.**
 4. GAP-004 — make normal top-level `BUILD` failures available to repair planning through the existing persisted failed-build record, while removing temporary capture files and stale failure versions correctly.
 5. GAP-005 — before supervised exact replacements reach the confirmation/write path, reject a candidate that removes an explicitly required goal term. Explicit user requests to remove or disable that feature remain allowed.
 
