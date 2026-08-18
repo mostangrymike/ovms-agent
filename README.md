@@ -62,6 +62,20 @@ BLISS
 
 OVMS Agent does not assume that every compiler is installed. The project's own BUILD.COM remains authoritative for how a project is built.
 
+Hardened OpenVMS Project Editing
+
+OVMS Agent includes several protections specifically for real OpenVMS projects and RMS file versions.
+
+COBOL files ending in .COB, .COBOL, or .CBL are recognized as source code. .CPY copy files are treated as supporting project files so they are available as context without being mistaken for primary source files.
+
+After a successful automatic write, saved file-reading results are discarded. A later read therefore opens the newest OpenVMS file version rather than returning older saved contents.
+
+For bounded automatic multi-file changes, OVMS Agent tracks the exact file versions that existed before the run. If the run stops incomplete because of an automatic limit or error, all affected file changes are undone back to the pre-run state. The agent also avoids making an unnecessary final artificial-intelligence request while partial changes are waiting to be undone.
+
+When the top-level BUILD command fails, the failure status and captured build output are saved for repair planning. Temporary capture files are removed, and stale failed-build evidence is removed after a later successful build.
+
+Supervised repair also protects explicitly required behavior. If a proposed repair would remove a required code-like goal term such as LIST, the candidate is rejected before the normal patch confirmation and write path. An explicit request to remove or disable that feature is still allowed.
+
 OpenVMS Requirements
 
 OVMS Agent is developed for OpenVMS and uses native OpenVMS facilities.
