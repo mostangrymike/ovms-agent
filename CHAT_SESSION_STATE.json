@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T18:20:00-05:00",
+  "updated_at": "2026-08-18T18:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -17,7 +17,8 @@
     "M262": "provider-neutral/install/release/GitHub profile reconciliation",
     "M263": "GAP-006 RMS-aware Git context",
     "M264": "GAP-007 COBOL structural bounded-edit guard",
-    "M265": "GAP-008 RMS-aware guarded Git restore, including post-merge RMS record-format correction"
+    "M265": "GAP-008 RMS-aware guarded Git restore, including post-merge RMS record-format correction",
+    "M266": "GAP-009 saved plan file-scope metadata with focused OpenVMS regression and Git capture hardening"
   },
   "m264": {
     "issue": 16,
@@ -44,36 +45,64 @@
       "root_cause": "rms_replace_text_file used bare creat(path,0) for existing non-stream .OPT/.COM/.CLD files instead of explicit OpenVMS variable-record/carriage-control attributes.",
       "fix": "Corrective PR #29 uses creat(path,0,\"rat=cr\",\"rfm=var\") for the non-stream control-file replacement path.",
       "recovery": "Known-good historical Stream_LF versions of BUILD_OPENAI_MODULES.COM and openai_modules.opt were copied forward with destination trailing semicolon; @BUILD then passed and Git was clean."
-    },
-    "corrective_regression": {
-      "files": ["SRC/RMS_WRITE.C", "SRC/M265_GIT_RMS_TEST.C", "TEST/GAP008_RECORD.OPT", "TEST/GAP008_RECORD.COM"],
-      "scope": "4 files, +180/-7 relative to initial M265 merge; no unrelated changes.",
-      "coverage": "Exercises both Stream_LF and native variable-record .OPT/.COM restore paths. Stream mutation creates a new highest RMS version rather than modifying the original tracked version. Test cleanup removes only versions it created.",
-      "live_result": "PASS: strengthened @BUILD completed with all regression tests passed; final git status contained only unrelated untracked m264_gap007.cob; fixture TYPE matched Git HEAD exactly.",
-      "rms_result": "Variable-record restore produced nonzero variable-length files with carriage-return carriage control instead of 0KB files."
     }
   },
+  "m266": {
+    "issue": 18,
+    "issue_state": "CLOSED completed",
+    "branch": "gap009-plan-file-count",
+    "accepted_head": "5b942cb82d91bff1806e3efa9beb65880e185c30",
+    "pull_request": 30,
+    "merge_commit": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
+    "scope": "Saved-plan file_count and file-scope persistence for existing and planned-new files, zero-file handling, fail-closed malformed/unsafe scope, focused regression, and RMS Git capture hardening discovered during acceptance.",
+    "metadata_format": {
+      "existing": "file=<path>|size=<size>|modified=<mtime>",
+      "planned_missing": "file=<path>|missing=1",
+      "saved_plan_format": "format=1 preserved"
+    },
+    "acceptance": {
+      "full_build": "PASS: @BUILD reported All regression tests passed and Build completed successfully; BUILD_STATUS=%X00000001.",
+      "focused_test": "PASS: @TEST_M266_PLAN_SCOPE printed M266 GAP-009 saved plan file-scope regression passed.; TEST_STATUS=%X00000001.",
+      "negative_case": "Expected malformed/ambiguous/stale warning is emitted by deliberate unsafe ../BAD.TXT test and is part of passing coverage.",
+      "vax_symbols": "No new production linker-visible symbols from GAP-009 helpers; helpers are static. Existing git_rms_restore_head remains <=31 characters."
+    },
+    "git_restore_hardening": {
+      "discovery": "OpenVMS Git `git show HEAD:TEST_M266_PLAN_SCOPE.COM` failed with no such device or address even though `git cat-file -s` reported a 1551-byte blob. Old GITRESTORE captured zero bytes and falsely verified an empty restored file.",
+      "fix": "GIT_RMS_RESTORE.C now captures Git content with `git cat-file -p` and independently verifies expected blob size with `git cat-file -s`, preventing empty-capture false success for nonempty blobs.",
+      "live_result": "PASS: rebuilt agent restored TEST_M266_PLAN_SCOPE.COM as nonzero Variable-length RMS file with carriage-return carriage control and complete expected procedure contents."
+    },
+    "github_diff": "PR #30 merged with 7 changed files, +802/-78. Temporary repair fixture changes were retained as modernization to current structured replace_block form."
+  },
   "separate_findings": [
-    "Native Git checkout/pull on this OpenVMS Git build can still fail on RMS-versioned paths; safe recovery used git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
-    "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records; do not conflate with GAP-007 or GAP-008.",
+    "Native Git checkout/pull on this OpenVMS Git build can still fail on RMS-versioned paths; safe recovery uses git fetch plus git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
+    "Native Git cannot reliably hash some Variable-record OpenVMS files; after M266 acceptance git diff on TEST_M266_PLAN_SCOPE.COM failed with short read/cannot hash even though the effective file contents were correct.",
+    "A newly materialized C file can appear mode-only modified (100644 -> 100755) in local Git on OpenVMS despite identical content; use GitHub branch diff as source of truth.",
+    "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records; do not conflate with GAP-007/GAP-008/GAP-009.",
     "Provider/model tool-use capability varies; anthropic/claude-haiku-4-5 through Requesty narrated without issuing tools in the M264 workflow."
   ],
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
-    "current_branch_at_last_acceptance": "m265-rms-record-restore-fix at 6444ded",
+    "local_branch_name": "m265-rms-record-restore-fix",
+    "metadata_head_before_post_merge_sync": "5b942cb82d91bff1806e3efa9beb65880e185c30",
     "local_untracked": "m264_gap007.cob",
+    "known_status_artifacts": [
+      "SRC/M266_PLAN_SCOPE_TEST.C may show M due only to 100644 -> 100755 mode mapping.",
+      "TEST_M266_PLAN_SCOPE.COM may show M because native Git cannot hash its Variable-record RMS representation."
+    ],
     "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty M253 checkout and should not be reset until its local changes are reviewed."
   },
-  "future_issues_not_active": {
-    "18": "GAP-009 saved plan metadata file_count=0",
-    "19": "GAP-010 COBOL count formatting",
-    "rule": "Do not invent milestone scope; verify live GitHub issues and choose next work from the tracker."
+  "next_issue_candidate": {
+    "issue": 19,
+    "title": "GAP-010: Generated COBOL count formatting is inconsistent",
+    "state_at_last_check": "OPEN",
+    "rule": "Verify live GitHub issue state before beginning work."
   },
   "resume_protocol": [
     "In a new chat, read this file first.",
     "Verify current GitHub main head and open issues before choosing the next milestone.",
-    "M265/GAP-008 is complete only including corrective PR #29; expected main head after correction is 31461b480133db4ad86f5449c943dec2c8589047.",
+    "M266/GAP-009 is accepted and merged; expected main head after PR #30 is 677a00e1724e328f4e7d94ac576bdb0a6e4be787 unless newer work has landed.",
     "Use GitHub as repository source of truth and OpenVMS for DEC C/VAX, RMS, DCL, and live acceptance evidence.",
-    "Before next milestone, sync the active OpenVMS checkout to corrected main using RMS-safe recovery if native checkout/pull hits file-exists behavior; preserve unrelated untracked m264_gap007.cob."
+    "To align the active OpenVMS checkout after merge, prefer git fetch plus git reset --mixed --no-refresh origin/main; avoid native checkout/pull materialization on RMS-sensitive paths. Preserve unrelated untracked m264_gap007.cob.",
+    "Expect local Git status artifacts for Variable-record files and Unix mode mapping; do not treat them as source changes without content evidence."
   ]
 }
