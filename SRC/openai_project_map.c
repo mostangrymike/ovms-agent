@@ -253,11 +253,15 @@ static int openai_map_kind(const char *path)
             (void)memcpy(extension, dot, length);
             extension[length] = '\0';
 
-            if (openai_map_ci_equal(extension, ".C")) {
+            if (openai_map_ci_equal(extension, ".C") ||
+                openai_map_ci_equal(extension, ".COB") ||
+                openai_map_ci_equal(extension, ".COBOL") ||
+                openai_map_ci_equal(extension, ".CBL")) {
                 return OPENAI_MAP_SOURCE;
             }
 
-            if (openai_map_ci_equal(extension, ".H")) {
+            if (openai_map_ci_equal(extension, ".H") ||
+                openai_map_ci_equal(extension, ".CPY")) {
                 return OPENAI_MAP_HEADER;
             }
         }

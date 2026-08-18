@@ -11,6 +11,20 @@
 #define RMS_WRITE_COMMAND_SIZE 1024U
 #define RMS_WRITE_PATH_SIZE 512U
 #define RMS_WRITE_RECORD_SIZE 32767U
+#define RMS_RUN_MAX_FILES 16U
+
+extern int fgetname(FILE *, char *);
+
+typedef struct rms_run_file {
+    char path[RMS_WRITE_PATH_SIZE];
+    char original_spec[RMS_WRITE_PATH_SIZE];
+    unsigned int existed_before;
+    unsigned int written;
+} rms_run_file;
+
+static rms_run_file rms_run_files[RMS_RUN_MAX_FILES];
+static unsigned int rms_run_count = 0U;
+static int rms_run_active = 0;
 
 static int rms_write_case_equal(
     const char *left,
@@ -34,6 +48,198 @@ static int rms_write_case_equal(
     }
 
     return *left == '\0' && *right == '\0';
+}
+
+static int rms_run_get_spec(
+    const char *path,
+    char *spec,
+    size_t spec_size)
+{
+    FILE *file;
+    int status;
+
+    if (path == NULL || spec == NULL || spec_size == 0U) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    status = fgetname(file, spec);
+    (void)fclose(file);
+
+    if (status == 0) {
+        return 0;
+    }
+
+    spec[spec_size - 1U] = '\0';
+    return 1;
+}
+
+static int rms_run_find(const char *path)
+{
+    unsigned int index;
+
+    for (index = 0U; index < rms_run_count; ++index) {
+        if (rms_write_case_equal(rms_run_files[index].path, path)) {
+            return (int)index;
+        }
+    }
+
+    return -1;
+}
+
+static int rms_run_capture(const char *path)
+{
+    rms_run_file *file;
+    int index;
+
+    if (!rms_run_active) {
+        return 1;
+    }
+
+    index = rms_run_find(path);
+    if (index >= 0) {
+        return 1;
+    }
+
+    if (rms_run_count >= RMS_RUN_MAX_FILES ||
+        strlen(path) >= RMS_WRITE_PATH_SIZE) {
+        return 0;
+    }
+
+    file = &rms_run_files[rms_run_count];
+    (void)memset(file, 0, sizeof(*file));
+    (void)strcpy(file->path, path);
+
+    if (rms_run_get_spec(
+            path,
+            file->original_spec,
+            sizeof(file->original_spec))) {
+        file->existed_before = 1U;
+    } else {
+        file->existed_before = 0U;
+        file->original_spec[0] = '\0';
+    }
+
+    ++rms_run_count;
+    return 1;
+}
+
+static void rms_run_mark(const char *path)
+{
+    int index;
+
+    if (!rms_run_active) {
+        return;
+    }
+
+    index = rms_run_find(path);
+    if (index >= 0) {
+        rms_run_files[index].written = 1U;
+    }
+}
+
+static int rms_run_result(const char *path, int success)
+{
+    if (success) {
+        rms_run_mark(path);
+    }
+
+    return success;
+}
+
+void rms_run_begin(void)
+{
+    (void)memset(rms_run_files, 0, sizeof(rms_run_files));
+    rms_run_count = 0U;
+    rms_run_active = 1;
+}
+
+void rms_run_commit(void)
+{
+    (void)memset(rms_run_files, 0, sizeof(rms_run_files));
+    rms_run_count = 0U;
+    rms_run_active = 0;
+}
+
+int rms_run_has_writes(void)
+{
+    unsigned int index;
+
+    for (index = 0U; index < rms_run_count; ++index) {
+        if (rms_run_files[index].written) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int rms_run_rollback(void)
+{
+    unsigned int index;
+    int success;
+
+    if (!rms_run_active) {
+        return 1;
+    }
+
+    success = 1;
+    index = rms_run_count;
+
+    while (index > 0U) {
+        rms_run_file *file;
+        char current_spec[RMS_WRITE_PATH_SIZE];
+
+        --index;
+        file = &rms_run_files[index];
+
+        if (!file->written) {
+            continue;
+        }
+
+        if (file->existed_before) {
+            for (;;) {
+                if (!rms_run_get_spec(
+                        file->path,
+                        current_spec,
+                        sizeof(current_spec))) {
+                    success = 0;
+                    break;
+                }
+
+                if (strcmp(current_spec, file->original_spec) == 0) {
+                    file->written = 0U;
+                    break;
+                }
+
+                if (remove(current_spec) != 0) {
+                    success = 0;
+                    break;
+                }
+            }
+        } else {
+            while (rms_run_get_spec(
+                       file->path,
+                       current_spec,
+                       sizeof(current_spec))) {
+                if (remove(current_spec) != 0) {
+                    success = 0;
+                    break;
+                }
+            }
+
+            if (success) {
+                file->written = 0U;
+            }
+        }
+    }
+
+    rms_run_active = 0;
+    return success;
 }
 
 static int rms_write_has_extension(
@@ -72,9 +278,6 @@ static int rms_write_emit_record(
         return 0;
     }
 
-    /*
-     * On OpenVMS record files, one write() call emits one RMS record.
-     */
     if (length == 0U) {
         return write(file_descriptor, "", 0U) >= 0;
     }
@@ -188,6 +391,10 @@ int rms_replace_text_file(
         return 0;
     }
 
+    if (!rms_run_capture(path)) {
+        return 0;
+    }
+
     if (!rms_path_requires_record_writer(path)) {
         FILE *file;
 
@@ -202,7 +409,7 @@ int rms_replace_text_file(
             return 0;
         }
 
-        return fclose(file) == 0;
+        return rms_run_result(path, fclose(file) == 0);
     } else {
         struct stat stat_buffer;
         int have_stat;
@@ -231,7 +438,10 @@ int rms_replace_text_file(
                         return 0;
                     }
 
-                    return fclose(file) == 0;
+                    return rms_run_result(
+                        path,
+                        fclose(file) == 0
+                    );
                 }
 
             default:
@@ -253,7 +463,10 @@ int rms_replace_text_file(
                     return 0;
                 }
 
-                return close(file_descriptor) == 0;
+                return rms_run_result(
+                    path,
+                    close(file_descriptor) == 0
+                );
             }
         } else {
             if (errno == ENOENT) {
@@ -277,7 +490,10 @@ int rms_replace_text_file(
                     return 0;
                 }
 
-                return close(file_descriptor) == 0;
+                return rms_run_result(
+                    path,
+                    close(file_descriptor) == 0
+                );
             }
 
             return 0;

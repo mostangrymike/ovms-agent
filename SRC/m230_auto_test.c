@@ -3,8 +3,12 @@
 #include <string.h>
 
 #include "openai_internal.h"
+#include "rms_write.h"
 
 #define TEST_TX "M230_TRANSCRIPT.DAT"
+#define TEST_ROLLBACK "M230_ROLLBACK.TXT"
+
+int openai_auto_partial_limit(void);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -31,12 +35,55 @@ static void cleanup(void)
     openai_auto_test_limits(0U, 0U);
     openai_auto_reset();
     openai_test_tx_path(NULL);
+    rms_run_commit();
     remove_all(TEST_TX);
+    remove_all(TEST_ROLLBACK);
+}
+
+static int write_text(const char *path, const char *text)
+{
+    FILE *file;
+
+    file = fopen(path, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fputs(text, file) == EOF) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    return fclose(file) == 0;
+}
+
+static int file_contains(const char *path, const char *text)
+{
+    FILE *file;
+    char buffer[256];
+    int found;
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    found = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        if (strstr(buffer, text) != NULL) {
+            found = 1;
+            break;
+        }
+    }
+
+    (void)fclose(file);
+    return found;
 }
 
 int main(void)
 {
     char output[16384];
+    unsigned int index;
 
     cleanup();
     openai_test_tx_path(TEST_TX);
@@ -79,6 +126,41 @@ int main(void)
         strstr(output, "Model/tool turns: 5") == NULL ||
         strstr(output, "Write actions:    2") == NULL) {
         (void)puts("M230 failed: autonomous limits display.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!write_text(TEST_ROLLBACK, "before\n")) {
+        (void)puts("M230 failed: rollback fixture create.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    openai_auto_test_limits(2U, 2U);
+    openai_auto_begin(OPENAI_WORKFLOW_WRITE);
+
+    if (!openai_auto_allow_write() ||
+        !rms_replace_text_file(TEST_ROLLBACK, "after\n")) {
+        (void)puts("M230 failed: rollback fixture write.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    for (index = 0U; index < 2U; ++index) {
+        openai_auto_note_turn();
+    }
+
+    if (!openai_auto_partial_limit()) {
+        (void)puts("M230 failed: partial write limit detection.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    openai_auto_finish("turn-limit");
+
+    if (!file_contains(TEST_ROLLBACK, "before") ||
+        file_contains(TEST_ROLLBACK, "after")) {
+        (void)puts("M230 failed: incomplete write rollback.");
         cleanup();
         return EXIT_FAILURE;
     }

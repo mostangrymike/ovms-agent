@@ -12,4 +12,9 @@ int rms_replace_text_file(
     const char *path,
     const char *text);
 
+void rms_run_begin(void);
+void rms_run_commit(void);
+int rms_run_rollback(void);
+int rms_run_has_writes(void);
+
 #endif /* OVMS_AGENT_RMS_WRITE_H */

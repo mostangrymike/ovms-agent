@@ -4,6 +4,10 @@
 
 #include "openai_internal.h"
 
+#define M233_COB "SRC/M233_SAMPLE.COB"
+#define M233_CBL "SRC/M233_SAMPLE.CBL"
+#define M233_CPY "SRC/M233_SAMPLE.CPY"
+
 int command_line_complete(const char *input,
                           size_t input_size,
                           int reached_eof)
@@ -18,6 +22,30 @@ int command_read_stream(FILE *stream,
     (void)stream; (void)input; (void)input_size; return 0;
 }
 
+static void m233_cleanup(void)
+{
+    while (remove(M233_COB) == 0) {
+    }
+    while (remove(M233_CBL) == 0) {
+    }
+    while (remove(M233_CPY) == 0) {
+    }
+}
+
+static int m233_write_sample(const char *path,
+                             const char *text)
+{
+    FILE *sample;
+
+    sample = fopen(path, "w");
+    if (sample == NULL) {
+        return 0;
+    }
+
+    (void)fputs(text, sample);
+    return fclose(sample) == 0;
+}
+
 int main(void)
 {
     agent_state state;
@@ -25,12 +53,25 @@ int main(void)
 
     while (remove("M233_PROJECT_MAP_DIAG.TXT") == 0) {
     }
+    m233_cleanup();
+
+    if (!m233_write_sample(
+            M233_COB, "       IDENTIFICATION DIVISION.\n") ||
+        !m233_write_sample(
+            M233_CBL, "       IDENTIFICATION DIVISION.\n") ||
+        !m233_write_sample(
+            M233_CPY, "       01  M233-SAMPLE PIC X.\n")) {
+        (void)puts("M233 failed: unable to create COBOL samples.");
+        m233_cleanup();
+        return EXIT_FAILURE;
+    }
 
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
 
     if (!openai_project_refresh(&state)) {
         (void)puts("M233 failed: project refresh.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -38,16 +79,28 @@ int main(void)
             &state, output, sizeof(output)) ||
         strstr(output, "OVMS Agent project map") == NULL ||
         strstr(output, "Sources:") == NULL ||
+        strstr(output, "Headers:") == NULL ||
         strstr(output, "Tests:") == NULL ||
-        strstr(output, "Build:") == NULL) {
+        strstr(output, "Build:") == NULL ||
+        (strstr(output, "M233_SAMPLE.CPY") == NULL &&
+         strstr(output, "m233_sample.cpy") == NULL)) {
         (void)puts("M233 failed: project map.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
     if (!openai_project_src_text(
             &state, output, sizeof(output)) ||
-        (strstr(output, "OPENAI_") == NULL &&
+        (strstr(output, "LLM_") == NULL &&
+         strstr(output, "llm_") == NULL &&
+         strstr(output, "OPENAI_") == NULL &&
          strstr(output, "openai_") == NULL) ||
+        (strstr(output, "M233_SAMPLE.COB") == NULL &&
+         strstr(output, "m233_sample.cob") == NULL) ||
+        (strstr(output, "M233_SAMPLE.CBL") == NULL &&
+         strstr(output, "m233_sample.cbl") == NULL) ||
+        strstr(output, "M233_SAMPLE.CPY") != NULL ||
+        strstr(output, "m233_sample.cpy") != NULL ||
         strstr(output, ".C;") != NULL ||
         strstr(output, ".c;") != NULL) {
         FILE *diag;
@@ -62,6 +115,7 @@ int main(void)
         (void)puts(
             "Repository map saved to M233_PROJECT_MAP_DIAG.TXT."
         );
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -70,6 +124,7 @@ int main(void)
         (strstr(output, "M233_PROJECT_TEST.C") == NULL &&
          strstr(output, "m233_project_test.c") == NULL)) {
         (void)puts("M233 failed: test classification.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -78,6 +133,7 @@ int main(void)
         (strstr(output, "BUILD.COM") == NULL &&
          strstr(output, "build.com") == NULL)) {
         (void)puts("M233 failed: build classification.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -87,6 +143,7 @@ int main(void)
         strstr(output, "MODEL TASK CONTEXT") == NULL ||
         strstr(output, "Inspect parser.") == NULL) {
         (void)puts("M233 failed: repository context composition.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -94,9 +151,11 @@ int main(void)
         strstr(output, "Repository map:       available") == NULL ||
         strstr(output, "Context preloading:   available") == NULL) {
         (void)puts("M233 failed: parity status.");
+        m233_cleanup();
         return EXIT_FAILURE;
     }
 
+    m233_cleanup();
     (void)puts("Autonomous repository map bundle test passed.");
     return EXIT_SUCCESS;
 }

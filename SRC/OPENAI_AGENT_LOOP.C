@@ -312,6 +312,8 @@ void openai_agent_mode(agent_state *state,
                 );
 
                 if (patch_ok) {
+                    openai_cache_free(cache);
+                    openai_cache_init(cache);
                     (void)openai_git_refresh(state);
                     openai_log_event(
                         openai_workflow_name(openai_last_workflow),
@@ -386,6 +388,8 @@ void openai_agent_mode(agent_state *state,
                 );
 
                 if (replace_result == OPENAI_REPLACE_APPLIED) {
+                    openai_cache_free(cache);
+                    openai_cache_init(cache);
                     (void)openai_git_refresh(state);
                     openai_log_event(
                         openai_workflow_name(openai_last_workflow),

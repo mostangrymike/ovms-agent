@@ -5,6 +5,9 @@
 
 #include "openai_plan_sensitive.inc"
 
+#define OPENAI_GOAL_GUARD_TEXT_ONLY 1
+#include "OPENAI_GOAL_GUARD.INC"
+
 /*
  * Link-only stubs for unrelated OPENAI_RETRY.C entry points.
  * The regression executes only the prompt-builder functions below.
@@ -98,6 +101,11 @@ char *openai_build_repair_prompt(const char *goal,
 int main(void)
 {
     char *prompt;
+    char reason[256];
+    static const char list_block[] =
+        "IF WS-CMD = 'LIST'\n"
+        "    PERFORM CMD-LIST\n"
+        "END-IF\n";
 
     prompt = openai_build_goal_prompt(
         "Repair the reported runtime behavior",
@@ -162,8 +170,71 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (goal_guard_text_ok(
+            "Complete the bounded LIST implementation.",
+            list_block,
+            "CONTINUE\n",
+            reason,
+            sizeof(reason)) ||
+        strstr(reason, "LIST") == NULL) {
+        (void)puts(
+            "M251.10 failed: goal-regressing LIST removal was not rejected."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!goal_guard_text_ok(
+            "Complete the bounded LIST implementation.",
+            list_block,
+            list_block,
+            reason,
+            sizeof(reason))) {
+        (void)puts(
+            "M251.10 failed: goal-preserving LIST repair was rejected."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!goal_guard_text_ok(
+            "Remove LIST support from this command parser.",
+            list_block,
+            "CONTINUE\n",
+            reason,
+            sizeof(reason))) {
+        (void)puts(
+            "M251.10 failed: explicitly requested LIST removal was rejected."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (goal_guard_text_ok(
+            "Do not remove LIST support from this command parser.",
+            list_block,
+            "CONTINUE\n",
+            reason,
+            sizeof(reason))) {
+        (void)puts(
+            "M251.10 failed: negated LIST removal was not protected."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!goal_guard_text_ok(
+            "User goal:\nPreserve LIST behavior.\n\n"
+            "Current failed build result:\n%COBOL-E-BUILD failed\n",
+            "COBOL diagnostic cleanup text\n",
+            "diagnostic cleanup text\n",
+            reason,
+            sizeof(reason))) {
+        (void)puts(
+            "M251.10 failed: build diagnostics leaked into protected terms."
+        );
+        return EXIT_FAILURE;
+    }
+
     (void)puts("M251.8 user-directed repair regression passed.");
     (void)puts("M251.9 credential screening regression passed.");
     (void)puts("M251.9 no-op repair regression passed.");
+    (void)puts("M251.10 repair goal-preservation regression passed.");
     return EXIT_SUCCESS;
 }

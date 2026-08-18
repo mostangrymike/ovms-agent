@@ -4,6 +4,8 @@
 #include "openai_request_agent.h"
 #include "openai_tool_schema.h"
 
+int openai_auto_partial_limit(void);
+
 int write_create_agent_request(
     const char *model,
     const char *instructions,
@@ -214,6 +216,14 @@ int write_agent_final_request(
         "inspected or changed anything not present in the supplied evidence.";
     FILE *file;
     int success;
+
+    if (openai_auto_partial_limit()) {
+        (void)puts(
+            "Incomplete guarded write reached its automatic limit; "
+            "skipping final synthesis so rollback can run immediately."
+        );
+        return 0;
+    }
 
     if (model == NULL ||
         previous_id == NULL || *previous_id == '\0' ||
