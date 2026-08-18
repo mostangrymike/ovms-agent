@@ -4,15 +4,15 @@
 #include "openai_request_build.h"
 #include "openai_request_agent.h"
 #include "openai_request_basic.h"
+#include "llm_config.h"
 
 void openai_send(agent_state *state,
-                        const char *prompt,
-                        int continue_conversation)
+                 const char *prompt,
+                 int continue_conversation)
 {
     const char *api_key;
     const char *model;
     const char *previous_id;
-    int status;
 
     (void)state;
 
@@ -30,17 +30,18 @@ void openai_send(agent_state *state,
         return;
     }
 
-    api_key = getenv("OPENAI_API_KEY");
+    api_key = llm_api_key();
+    model = llm_model();
 
     if (api_key == NULL || *api_key == '\0') {
-        (void)puts("OPENAI_API_KEY is not defined.");
+        (void)puts(
+            "No service access key is configured for the active AI provider."
+        );
         return;
     }
 
-    model = getenv("OVMS_AGENT_MODEL");
-
     if (model == NULL || *model == '\0') {
-        (void)puts("OVMS_AGENT_MODEL is not defined.");
+        (void)puts("No model is configured for the active AI provider.");
         return;
     }
 
@@ -57,25 +58,15 @@ void openai_send(agent_state *state,
         return;
     }
 
-    (void)puts("Sending request to OpenAI...");
+    (void)puts("Sending request to configured AI provider...");
 
-    status = system(
-        "curl --silent --show-error "
-        "--output " OPENAI_RESPONSE_FILE " "
-        "--header @" OPENAI_HEADERS_FILE " "
-        "--data-binary @" OPENAI_REQUEST_FILE " "
-        "https://api.openai.com/v1/responses"
-    );
-
-    remove_temporary_files();
-
-    if ((status & 1) == 0) {
-        (void)printf(
-            "curl failed with OpenVMS status %d.\n",
-            status
-        );
+    if (!perform_openai_request()) {
+        remove_temporary_files();
+        (void)puts("AI provider request failed.");
         return;
     }
+
+    remove_temporary_files();
 
     if (!display_clean_response()) {
         (void)puts("");
