@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T16:58:00-05:00",
+  "updated_at": "2026-08-18T17:08:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -26,7 +26,10 @@
     "milestone": "M264",
     "branch": "m264-gap007-cobol-structure",
     "issue": 16,
+    "pull_request": 27,
     "issue_title": "GAP-007: COBOL structural edits can duplicate or corrupt nesting",
+    "pr_title": "M264 guard COBOL structural bounded edits",
+    "pr_state": "OPEN and mergeable; do not merge yet because the issue's explicit live VMSBBS acceptance criterion has not been directly exercised through a model tool call.",
     "issue_acceptance": [
       "Reproduce recorded structural-edit failure on disposable COBOL fixture.",
       "A proposed bounded edit must not duplicate enclosing control/paragraph structure.",
@@ -36,60 +39,41 @@
       "Add focused regression coverage using COBOL fixtures.",
       "Full OpenVMS @BUILD passes.",
       "Live VMSBBS acceptance confirms original corruption pattern no longer occurs."
-    ],
-    "compatibility": [
-      "Preserve OpenVMS COBOL source conventions/storage/calling assumptions.",
-      "Do not assume NUL-terminated COBOL data where fixed lengths are used.",
-      "New linker-visible C identifiers <=31 characters.",
-      "Avoid implicit declarations/non-C89 constructs in VAX-facing C."
     ]
   },
   "session_findings": [
     {
       "finding": "Manual PATCH reproduction accepted duplicate COBOL IF line and produced invalid nesting.",
       "fixture": "M264_GAP007.COB",
-      "bad_edit": "Replace one IF A = B with two consecutive IF A = B lines while retaining one END-IF.",
-      "status": "reproduced via manual PATCH"
+      "status": "reproduced; manual PATCH path is separate from automated bounded-write path"
     },
     {
-      "finding": "Manual PROJECT.C project_patch() has a separate RMS defect: fopen(...,\"w\") + fwrite(flat_buffer) created variable-record files with longest record 1 byte, causing TYPE to print one character per line.",
-      "evidence": "M264_GAP007.COB;1 longest record 33 bytes; PATCH-created ;2 longest record 1 byte.",
-      "scope_note": "Separate from GAP-007 automated-agent structural safety; do not conflate without explicit issue/scope decision."
-    },
-    {
-      "finding": "Actual automated agent replace_text/replace_lines implementations are in SRC/OPENAI_TOOLS.C and use edit_txn -> rms_replace_text_file(), so their RMS write path is distinct from manual PATCH.",
-      "status": "verified from GitHub"
-    },
-    {
-      "finding": "Plain AGENT is read-only; AGENT/WRITE is guarded write workflow.",
-      "status": "verified from SRC/COMMAND_AGENT.C"
-    },
-    {
-      "finding": "Requesty anthropic/claude-haiku-4-5 repeatedly narrated intent but did not issue the requested replace_text tool call, so live model-driven fixture reproduction never entered the M264 guard.",
-      "status": "observed twice live",
-      "implication": "Do not keep retrying the same provider prompt; use deterministic regression and live VMSBBS acceptance instead."
-    },
-    {
-      "finding": "AGENT/TOOL/RUN cannot directly invoke model-only replace_text; direct table exposes READ, SEARCH, GREP, LIST, TREE, GITSTATUS, GITDIFF, EDIT, PATCH, BUILD, RUN, MCP.",
-      "status": "verified from SRC/openai_transcript.c"
+      "finding": "Requesty anthropic/claude-haiku-4-5 repeatedly narrated the next step but emitted no tool call for AGENT/WRITE or AGENT/FIX tests.",
+      "status": "observed live multiple times",
+      "implication": "The M264 structural guard was not reached through the configured live model; record this as provider/tool-use limitation, not a guard pass/failure."
     },
     {
       "finding": "Original VMSBBS GAP-007 record documents duplicated/overlapping procedure paragraphs, ambiguous paragraph names, missing paragraph header, and invalid/extra END PROGRAM nesting after AGENT/FIX line-range replacement.",
-      "status": "verified from mostangrymike/vmsbbs commit 9aef5f36cb5dcfbd0ef5e93794727772c4359bee"
+      "status": "verified from mostangrymike/vmsbbs history"
     },
     {
-      "finding": "M264 guard was expanded to cover exact duplicate-IF replacement, duplicate paragraph/SECTION names, removal/renaming of existing paragraph/SECTION boundaries, and changed END PROGRAM structure.",
-      "status": "implemented and covered by focused regression"
+      "finding": "M264 guard covers unbalanced IF/EVALUATE/SEARCH scopes, duplicate paragraph/SECTION names, removal/renaming of existing paragraph/SECTION boundaries, changed END PROGRAM count, and exact-text candidate validation.",
+      "status": "implemented and regression-covered"
     },
     {
-      "finding": "OpenVMS full @BUILD passed on M264 head 08ad491 after the expanded GAP-007 coverage.",
+      "finding": "Full OpenVMS @BUILD passed on branch head 08ad49146fabf30a61883625581f32ffd9f2d8ec after expanded GAP-007 coverage.",
       "status": "accepted build gate",
       "observed_output": "All regression tests passed. Build completed successfully."
+    },
+    {
+      "finding": "A disposable Git-backed VMSBBS acceptance checkout was successfully created at SYS$SYSDEVICE:[MIKE.M264_GAP007_VMSBBS_GIT3] using BACKUP, and the pre-corruption VMSBBS_CMDS_BROKEN.COB fixture was installed as tracked VMSBBS_CMDS.COB modification.",
+      "status": "acceptance environment valid"
     }
   ],
   "m264_remote_changes": {
     "branch_created_from": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
     "head_at_latest_build_pass": "08ad49146fabf30a61883625581f32ffd9f2d8ec",
+    "commits_ahead": 12,
     "files_changed_from_m263": [
       "BUILD_OPENAI_MODULES.COM",
       "SRC/COBOL_GUARD.C",
@@ -98,13 +82,6 @@
       "SRC/OPENAI_TOOLS_M264.C",
       "openai_modules.opt"
     ],
-    "intent": {
-      "SRC/COBOL_GUARD.C/H": "Deterministic COBOL structural validator plus exact-text candidate safety function.",
-      "SRC/OPENAI_TOOLS_M264.C": "M264 wrapper around existing automated replacement tools so COBOL candidates are validated before existing confirmation/write path.",
-      "SRC/M264_COBOL_TEST.C": "Focused structural regression coverage including exact duplicate-IF, paragraph/SECTION boundaries, and END PROGRAM structure.",
-      "BUILD_OPENAI_MODULES.COM": "Compile guard, compile OPENAI_TOOLS.OBJ from M264 wrapper, build/run M264 regression.",
-      "openai_modules.opt": "Add COBOL_GUARD.OBJ."
-    },
     "new_external_symbols_checked": [
       "cobol_edit_safe",
       "cobol_text_safe",
@@ -112,60 +89,25 @@
       "m263_rep_lines"
     ],
     "vax_symbol_limit_status": "All listed new external identifiers are <=31 characters.",
-    "validation_status": "GitHub scope audit complete; OpenVMS full @BUILD PASSED at 08ad491."
+    "validation_status": "Full GitHub scope audit complete; OpenVMS full @BUILD PASSED at 08ad491; PR #27 open and mergeable."
   },
   "local_openvms_state": {
     "active_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "branch": "m264-gap007-cobol-structure",
-    "tracking": "origin/m264-gap007-cobol-structure",
     "head_after_latest_pull": "08ad491",
     "last_known_status": "Only untracked m264_gap007.cob",
-    "fixture": "M264_GAP007.COB",
     "build_status": "PASS",
-    "build_output": "All regression tests passed. Build completed successfully.",
-    "other_checkout_note": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] is an older dirty M253 checkout on branch m253-vmsbbs-gaps with modified OPENAI_MODULES.OPT and untracked m253_gap001.patch and ovms_agent_v0_3_0.zip. Do not overwrite/reset it until old local state is reviewed.",
-    "next_required_evidence": "Live VMSBBS acceptance against original GAP-007 scenario in SYS$SYSDEVICE:[MIKE.VMSBBS], then GitHub PR/issue closeout if accepted."
+    "vmsbbs_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.M264_GAP007_VMSBBS_GIT3]",
+    "vmsbbs_acceptance_state": "Git repo at VMSBBS main 0c678dd; tracked vmsbbs_cmds.cob replaced with pre-corruption LIST-dispatch/missing-CMD-LIST fixture; AGENT/FIX started but model emitted no tool call.",
+    "next_required_evidence": "Either exercise the live VMSBBS edit through a tool-capable configured model/provider, or explicitly decide whether deterministic wrapper/regression acceptance is sufficient to waive the live-model criterion. Until then leave PR #27 and issue #16 open."
   },
   "github_operating_model": {
-    "principle": "GitHub = development control plane; OpenVMS = OS/runtime acceptance environment.",
-    "github_tasks": [
-      "Repository file reads/searches",
-      "Branch state",
-      "Issue/PR metadata",
-      "Diffs and commit audits",
-      "PR creation and review follow-up",
-      "Check/status inspection",
-      "Cross-repo acceptance-history inspection"
-    ],
-    "openvms_tasks": [
-      "DEC C/VAX compilation and linking",
-      "RMS record/version semantics",
-      "DCL behavior",
-      "Live OVMS Agent behavior",
-      "VMSBBS acceptance"
-    ]
-  },
-  "future_issues_not_active": {
-    "17": "GAP-008 Git checkout RMS versions",
-    "18": "GAP-009 saved plan metadata file_count=0",
-    "19": "GAP-010 COBOL count formatting",
-    "rule": "Do not invent M265+ scope; use GitHub issues as source of truth."
-  },
-  "important_repo_constraints": {
-    "preserve": "Accepted M260-M263 work and root-level modular build architecture.",
-    "must_remain_deleted": [
-      "SRC/API_CLIENT.C",
-      "SRC/API_CLIENT.H",
-      "SRC/OVMS_AGENT.C",
-      "SRC/AGENT_TYPES.H",
-      "old monolithic BUILD.COM architecture"
-    ]
+    "principle": "GitHub = development control plane; OpenVMS = OS/runtime acceptance environment."
   },
   "resume_protocol": [
     "In a new chat, read this file from branch chat-session-state first.",
-    "Then fetch current GitHub issue #16, main head, m264-gap007-cobol-structure head/diff, and VMSBBS GAP-007 record because this file may lag live repo state.",
-    "Do not trust stale next-step fields if GitHub shows later commits/PR/merge state.",
-    "Continue using GitHub as repository source of truth and OpenVMS only for live acceptance evidence.",
-    "Update this persistence file after meaningful milestone state changes during the chat."
+    "Then fetch issue #16 and PR #27 plus current main/m264 branch state.",
+    "Do not merge PR #27 or close #16 unless live VMSBBS criterion is satisfied or consciously waived with an explicit acceptance decision.",
+    "Continue using GitHub as repository source of truth and OpenVMS only for live acceptance evidence."
   ]
 }
