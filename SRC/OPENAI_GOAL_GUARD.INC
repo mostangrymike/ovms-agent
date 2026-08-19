@@ -249,8 +249,8 @@ static char *goal_guard_line_text(const char *arguments)
         return NULL;
     }
 
-    if (!openai_path_is_safe(path) ||
-        openai_path_is_sensitive(path) ||
+    if (!llm_path_is_safe(path) ||
+        llm_path_is_sensitive(path) ||
         first_line < 1L ||
         last_line < first_line ||
         last_line - first_line > 2000L) {
