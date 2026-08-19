@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define OPENAI_CONTEXT_MAX 8192U
 #define OPENAI_CONTEXT_META 2048U
