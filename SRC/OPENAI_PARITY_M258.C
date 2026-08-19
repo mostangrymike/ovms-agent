@@ -1,5 +1,5 @@
 /* M258 Phase 7 network-policy/lifecycle wrapper around mature MCP support. */
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int openai_net_check(const char *url, char *detail, size_t detail_size);
 
