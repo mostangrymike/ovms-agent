@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define OPENAI_INSTR_FILE "OVMS_AGENT_INSTRUCTIONS.TXT"
 #define OPENAI_INSTR_MAX 4096U
