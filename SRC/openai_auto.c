@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "rms_write.h"
 
 #define OPENAI_AUTO_TURNS_DEFAULT 12U
