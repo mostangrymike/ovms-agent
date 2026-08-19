@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_SESS "M231_SESSIONS.DAT"
 #define TEST_CUR  "M231_SESSION.CUR"
