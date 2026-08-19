@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_tool_schema.h"
 
 int command_line_complete(const char *a,size_t b,int c)
