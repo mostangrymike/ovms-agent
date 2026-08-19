@@ -10,6 +10,8 @@ typedef struct llm_file_cache_entry {
 
 void llm_cache_init(llm_file_cache_entry *cache);
 void llm_cache_free(llm_file_cache_entry *cache);
+const char *llm_cache_lookup(const llm_file_cache_entry *cache,
+                             const char *path);
 int llm_cache_store(llm_file_cache_entry *cache,
                     const char *path,
                     const char *content);
