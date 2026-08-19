@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Standalone regression stubs for command-layer helpers pulled in through
    OPENAI_PLAN.OBJ. The lifecycle test does not exercise interactive input. */
