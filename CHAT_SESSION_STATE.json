@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T16:13:00-05:00",
+  "updated_at": "2026-08-19T16:14:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -25,9 +25,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "47a536294e9fc4aec0fe8bfe6262754b329f8da2",
+    "latest_vax_green_head": "2aae5381bc14fcf4d7ca7423ea370c53a0f85845",
     "current_github_head": "2aae5381bc14fcf4d7ca7423ea370c53a0f85845",
-    "current_github_head_status": "GitHub-audited CACHE consumer migration awaiting VAX acceptance.",
+    "current_github_head_status": "VAX-green authoritative checkpoint; continue CACHE-family drain from this head.",
     "path_family": {
       "status": "complete and VAX-green",
       "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0",
@@ -43,18 +43,16 @@
     },
     "cache_family": {
       "status": "in progress",
-      "latest_vax_green_checkpoint": "47a536294e9fc4aec0fe8bfe6262754b329f8da2",
+      "latest_vax_green_checkpoint": "2aae5381bc14fcf4d7ca7423ea370c53a0f85845",
       "completed_vax_green": [
         "SRC/OPENAI_TOOL_REGISTRY.H now includes LLM_CACHE.H and uses llm_file_cache_entry.",
         "SRC/OPENAI_TOOL_REGISTRY.C uses llm_file_cache_entry.",
-        "Full VAX @BUILD passed with BUILD_STATUS=%X00000001."
-      ],
-      "pending_vax_acceptance": [
-        "GitHub head 2aae5381bc14fcf4d7ca7423ea370c53a0f85845 migrates SRC/OPENAI_CREATE_M261_CORE.C from openai_file_cache_entry / OPENAI_AGENT_CACHE_SIZE / openai_cache_init/free to llm equivalents."
+        "SRC/OPENAI_CREATE_M261_CORE.C now uses llm_file_cache_entry, LLM_AGENT_CACHE_SIZE, llm_cache_init, and llm_cache_free.",
+        "Full VAX @BUILD passed with all regression tests and BUILD_STATUS=%X00000001 at 2aae5381bc14fcf4d7ca7423ea370c53a0f85845."
       ],
       "next": [
-        "VAX-accept 2aae5381bc14fcf4d7ca7423ea370c53a0f85845.",
         "Continue branch-live CACHE consumer audit and migration for openai_file_cache_entry, OPENAI_AGENT_CACHE_SIZE, and openai_cache_init/free/lookup/store.",
+        "Prefer a small coherent GitHub batch before the next VAX acceptance build.",
         "Only after all live consumers are drained, switch LLM_INTERNAL.H from openai_cache.h to LLM_CACHE.H and delete OPENAI_CACHE.H."
       ]
     },
