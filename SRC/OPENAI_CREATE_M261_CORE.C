@@ -45,7 +45,7 @@ void openai_agent_create(agent_state *state, const char *goal)
     char *call_id;
     unsigned int turn;
     int create_attempted;
-    openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
+    llm_file_cache_entry cache[LLM_AGENT_CACHE_SIZE];
 
     openai_last_workflow = OPENAI_WORKFLOW_CREATE;
     openai_log_event("AGENT/CREATE", "start", 0);
@@ -93,7 +93,7 @@ void openai_agent_create(agent_state *state, const char *goal)
     tool_output = NULL;
     call_id = NULL;
     create_attempted = 0;
-    openai_cache_init(cache);
+    llm_cache_init(cache);
 
     (void)puts("Starting guarded file-creation agent...");
 
@@ -152,7 +152,7 @@ void openai_agent_create(agent_state *state, const char *goal)
             free(json);
             remove_temporary_files();
             free(previous_id);
-            openai_cache_free(cache);
+            llm_cache_free(cache);
             free(owned_instructions);
             return;
         }
@@ -243,7 +243,7 @@ void openai_agent_create(agent_state *state, const char *goal)
             free(previous_id);
             free(call_id);
             free(tool_output);
-            openai_cache_free(cache);
+            llm_cache_free(cache);
             free(owned_instructions);
             return;
         } else {
@@ -278,6 +278,6 @@ void openai_agent_create(agent_state *state, const char *goal)
     free(previous_id);
     free(call_id);
     free(tool_output);
-    openai_cache_free(cache);
+    llm_cache_free(cache);
     free(owned_instructions);
 }
