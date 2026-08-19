@@ -19,8 +19,8 @@ static int m264_guard_text(const char *arguments)
     old_text = extract_string_argument(arguments, "old_text");
     new_text = extract_string_argument(arguments, "new_text");
     if (path == NULL || old_text == NULL || new_text == NULL ||
-        *old_text == '\0' || !openai_path_is_safe(path) ||
-        openai_path_is_sensitive(path)) {
+        *old_text == '\0' || !llm_path_is_safe(path) ||
+        llm_path_is_sensitive(path)) {
         free(path);
         free(old_text);
         free(new_text);
@@ -72,7 +72,7 @@ static char *m264_lines_candidate(const char *arguments,
         !extract_integer_argument(arguments, "last_line", &last_line) ||
         first_line < 1L || last_line < first_line ||
         last_line - first_line > 2000L ||
-        !openai_path_is_safe(path) || openai_path_is_sensitive(path)) {
+        !llm_path_is_safe(path) || llm_path_is_sensitive(path)) {
         free(path);
         free(new_text);
         return NULL;
