@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "command_internal.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Standalone regression stubs for command-layer helpers pulled in through
    OPENAI_PLAN.OBJ. The agent-image test does not exercise interactive input. */
