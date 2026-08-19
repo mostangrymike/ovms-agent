@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define M233_COB "SRC/M233_SAMPLE.COB"
 #define M233_CBL "SRC/M233_SAMPLE.CBL"
