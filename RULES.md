@@ -1,0 +1,158 @@
+# OVMS Agent Project Rules
+
+This file records durable operating rules learned during development of OVMS Agent. These are standing project rules, not milestone history. Update this file whenever a new durable rule is established or an existing rule is corrected.
+
+## 1. Source of Truth and Tooling
+
+- **GitHub is the development control plane and repository source of truth.**
+- Use the connected GitHub repository for committed file contents, branch state, repository searches, diffs, edits, deletes, commits, issues, pull requests, comments, labels, commit history, and CI/check metadata whenever possible.
+- **OpenVMS is the hardware/OS acceptance environment.** Use it for DEC C/VAX compile and link behavior, RMS semantics and record formats, DCL behavior, runtime behavior, live acceptance, and generated or uncommitted files.
+- Do not ask for a VAX-side `SEARCH` or similar repository-discovery command when GitHub can answer the question.
+- Maximize GitHub use by default; use VAX-side source editing only when GitHub whole-file replacement would be unsafe or impractical, especially for very large files or RMS-sensitive workflows.
+- A local/VAX blob SHA is an acceptance cross-check, not a substitute for GitHub repository discovery or branch state.
+- Do not mix OVMS Agent build architecture with VMSBBS or unrelated projects.
+
+## 2. GitHub Search Discipline
+
+- GitHub code-search results are **candidate discovery only**. The code-search index may be stale.
+- Every plausible live consumer or build entry discovered by search must be fetched from the exact active branch before declaring a namespace or naming family drained.
+- Exact branch-live file content overrides stale search snippets.
+- For large files whose connector fetch is truncated, use blob SHA/blob fetch or another exact branch-live retrieval method rather than inferring unseen content.
+- Before a GitHub whole-file update, fetch the exact live file and SHA first, change only the intended text, then compare the resulting commit/diff.
+- Audit direct GitHub edit batches with a commit comparison before relying on them.
+
+## 3. OpenVMS / DEC C / VAX Constraints
+
+- Treat the DEC C/VAX **31-character external identifier limit as a hard constraint**.
+- Before every milestone, fix, or package, verify every newly introduced externally visible function, global variable, and linker-visible symbol is 31 characters or fewer.
+- Shorten identifiers proactively; do not rely on compiler truncation.
+- Avoid implicit function declarations.
+- Keep VAX-facing C compatible with C89 / DEC C conventions unless a specific existing subsystem demonstrably requires otherwise.
+- Do not introduce modern C syntax casually into VAX-facing code.
+- Include-only changes and call-site renames that introduce no new external symbols still require normal compile/link acceptance but do not create new linker-name risk.
+
+## 4. Filename and Naming Conventions
+
+- **Repository filenames should be UPPERCASE by default.** Use lowercase only when uppercase creates a concrete external, portability, or tooling blocker.
+- Do not mass-rename unrelated historical files merely for case normalization during another milestone. Normalize opportunistically when files are otherwise being renamed, then perform a dedicated audit when appropriate.
+- Generic architecture names should use **LLM**, not **OpenAI**, when the concept is provider-neutral.
+- Preserve `OpenAI` naming only when it represents genuinely OpenAI-specific protocol, configuration, compatibility, or provider semantics.
+- Naming cleanup must not remove OpenAI provider support.
+- Preserve Requesty and other OpenAI-compatible provider compatibility while neutralizing generic architecture names.
+- Generic user-visible wording should say `LLM` or `provider` rather than `OpenAI` when the behavior is provider-neutral.
+- Generic linker/build artifact names should use `LLM`, not `OPENAI`.
+
+## 5. Editing and Command Presentation
+
+- When giving commands to paste **inside OVMS Agent**, omit the `OVMS-AGENT>` / `ovms-agent>` prompt prefix.
+- For EDT line-mode instructions, do **not** include the leading `*` prompt marker before commands such as `SUBSTITUTE` or `FIND`.
+- DCL examples may include the `$` prompt marker when useful.
+- Prefer exact, pasteable commands and concrete next steps.
+- Do not ask the user to repeat information or diagnostics already supplied.
+
+## 6. Git on OpenVMS
+
+- Native OpenVMS Git HTTPS authentication is known to work when the credential helper is disabled per invocation.
+- Preferred fetch pattern:
+
+  ```text
+  git -c credential.helper= fetch -v --progress origin
+  ```
+
+- Preferred push pattern for the active M267 branch:
+
+  ```text
+  git -c credential.helper= push -v --progress origin "HEAD:m267-llm-naming"
+  ```
+
+- GitHub username is entered normally; use a GitHub PAT when Git asks for the password.
+- Native VAX Git worktree/index operations can be unreliable on RMS files. Do not assume `git pull`, `git reset`, or `git add` has materialized or indexed files correctly merely because it returned success.
+- When native Git cannot hash or stage an RMS file reliably, verify the physical file, use `git hash-object`, and if necessary use lower-level index operations such as `git update-index --cacheinfo` only with verified blob SHAs and repository modes.
+- `git hash-object` without `-w` computes a SHA but does not store a new blob in the object database. Use `git hash-object -w` when a new blob must be referenced by the index.
+- Preserve existing repository executable-mode bits unless there is an intentional reason to change them.
+- EDT can cause local mode drift. Normalize the Git index mode before committing when required.
+
+## 7. RMS and Working-Tree Safety
+
+- GitHub branch content remains authoritative when native Git cannot reliably hash or materialize OpenVMS RMS files.
+- `git fetch` plus `git reset --mixed --no-refresh` may update index/ref state without reconstructing the working file correctly on OpenVMS.
+- Use the guarded RMS-aware restore mechanism for changed tracked files when a branch update must be materialized safely.
+- For branch-side deletions, explicitly remove stale OpenVMS file versions when necessary before acceptance builds.
+- OpenVMS file versioning can leave stale physical versions behind even after repository deletion; verify physical deletion when the build must prove a compatibility shim is truly gone.
+- Be alert for RMS record-format damage from generic write paths. Repository correctness does not substitute for live RMS acceptance.
+
+## 8. Change-Slice Discipline
+
+- Make naming migrations in **bounded, coherent families** rather than global blind replacements.
+- Prefer several small, branch-verified GitHub edits in one coherent batch before asking for a VAX acceptance build, when that safely reduces round trips.
+- Keep compatibility shims until all branch-live production consumers are proven migrated.
+- Delete compatibility shims only after live consumers are drained and the neutral replacement has already passed acceptance.
+- After shim deletion, physically remove stale VAX versions and run a full acceptance build.
+- Historical/archival source files should not drive production migration work unless there is evidence they are compiled or otherwise live. Classify them explicitly during final survivor audits.
+- Generated metadata/index files may contain stale names; determine whether they are live build/runtime inputs before letting them block a production migration.
+
+## 9. Build and Acceptance Rules
+
+- A naming family is not complete merely because GitHub diffs look correct.
+- A family reaches a durable acceptance checkpoint only after the relevant OpenVMS build/tests pass.
+- Use a full `@BUILD` for bounded-stage acceptance when the changed surface can affect compilation/linking or when a compatibility shim/file is removed.
+- Record the final DCL status explicitly, for example:
+
+  ```text
+  WRITE SYS$OUTPUT "BUILD_STATUS=''$STATUS'"
+  ```
+
+- `%X00000001` is the expected successful status in established acceptance flows.
+- Focused regression procedures should also report their final status when used as milestone evidence.
+- Do not commit a consumer transition that references new build artifacts unless the new artifacts are also present in the same commit or already exist on the target branch.
+- Do not declare a migration complete from search results alone; compiler/linker feedback on VAX is authoritative acceptance evidence for missed live consumers.
+
+## 10. Diff, Commit, and Push Hygiene
+
+- Before committing, inspect the staged file set and staged diff.
+- Confirm there are no unintended files, mode changes, or broad formatting changes.
+- Keep commits scoped to one coherent change family or corrective step.
+- After a direct GitHub edit or deletion, compare the previous and new branch heads to confirm only intended changes occurred.
+- When a VAX-tested local commit is pushed, verify the resulting GitHub branch state before deleting compatibility files or beginning the next family.
+- Do not leave the branch in a state where build consumers reference files that do not exist in the same branch.
+
+## 11. Milestone Tracking and Durable State
+
+- GitHub issue **#31** is the tracking issue for M267 generic OpenAI-to-LLM naming cleanup.
+- Update the tracking issue at meaningful, durable checkpoints rather than for every tiny edit.
+- Maintain `CHAT_SESSION_STATE.json` on the `chat-session-state` branch as durable cross-chat state.
+- Update durable chat state when a new VAX-green checkpoint or materially changed resume instruction has been established.
+- Do not mark an untested GitHub head as `latest_vax_green_head`.
+- The resume workflow should read durable state first, then verify the live GitHub branch and tracking issue before acting.
+- **Maintain this `RULES.md` file whenever a new standing project rule is learned, corrected, or superseded.**
+
+## 12. M267-Specific Rules
+
+- M267 goal: eradicate **generic** `OpenAI` filenames and namespaces in favor of `LLM` while preserving genuinely provider-specific OpenAI semantics.
+- No generic production filename should contain `OpenAI` at final acceptance.
+- No generic production C namespace should contain `openai_` or `OPENAI_` at final acceptance.
+- Generic linker/build artifact names must use `LLM`.
+- Tests and internal fixtures should migrate unless they intentionally exercise provider-specific or compatibility behavior.
+- Final M267 acceptance must classify remaining OpenAI occurrences as one of:
+  - provider-specific and intentional,
+  - compatibility-specific and intentional,
+  - archival/historical and explicitly exempted,
+  - generated and regenerated/justified,
+  - or remaining naming debt to remove.
+- Final M267 acceptance requires a full VAX `@BUILD`, all applicable regressions, and the normal DEC C/VAX identifier audit.
+
+## 13. Known Project Backlog Rules
+
+- Do not mix unrelated backlog fixes into a naming slice unless they block acceptance.
+- Native Git/RMS checkout synchronization deficiencies are a separate technical backlog; use the established guarded restore workaround during milestone work.
+- `PROJECT.C`/patch write-path RMS behavior is a separate backlog unless it directly blocks the current acceptance task.
+- Build/test version accumulation in `.BUILD` can exhaust disk space. Clean generated EXE/OBJ versions when necessary; long-term build cleanup hardening remains separate work.
+- Provider/model tool-use capabilities vary; the agent architecture should remain provider-agnostic rather than hard-coding assumptions from one LLM provider.
+
+## 14. Superseded / Explicitly Rejected Work
+
+- GAP-010 was explicitly discarded and must not be revived unless the user later explicitly requests it.
+
+---
+
+When a conflict appears between this file and a newer explicit user instruction, the newer explicit instruction wins. Update this file to reflect the new standing rule once the correction is established.
