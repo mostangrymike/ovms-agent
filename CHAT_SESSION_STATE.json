@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-18T18:59:00-05:00",
+  "updated_at": "2026-08-19T13:12:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -8,7 +8,7 @@
     "agent_prompt_prefix": "When giving lines to paste into OVMS Agent, omit the OVMS-AGENT> prompt prefix.",
     "vax_external_identifier_limit": "Treat DEC C/VAX 31-character external identifier limit as hard. Audit every newly introduced externally visible function/global/linker-visible symbol before packaging every milestone/fix.",
     "vax_c_compatibility": "Avoid implicit function declarations and non-C89 constructs in VAX-facing C.",
-    "github_source_of_truth": "Use connected GitHub as source of truth for committed repository files, searches, branches, diffs, issues, PRs, comments, and history. Ask user for OpenVMS commands only for runtime/build/RMS/DCL/live acceptance evidence GitHub cannot provide.",
+    "github_source_of_truth": "Use connected GitHub as source of truth for committed repository files, searches, branches, diffs, issues, PRs, comments, and history. Use OpenVMS for DEC C/VAX, RMS, DCL, runtime, and live acceptance evidence.",
     "project_isolation": "Do not mix OVMS Agent build architecture with VMSBBS or other projects."
   },
   "accepted_milestones": {
@@ -17,86 +17,88 @@
     "M262": "provider-neutral/install/release/GitHub profile reconciliation",
     "M263": "GAP-006 RMS-aware Git context",
     "M264": "GAP-007 COBOL structural bounded-edit guard",
-    "M265": "GAP-008 RMS-aware guarded Git restore, including post-merge RMS record-format correction",
-    "M266": "GAP-009 saved plan file-scope metadata with focused OpenVMS regression and Git capture hardening"
-  },
-  "m264": {
-    "issue": 16,
-    "issue_state": "CLOSED completed",
-    "pull_request": 27,
-    "merge_commit": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92"
+    "M265": "GAP-008 RMS-aware guarded Git restore, including corrective RMS record-format fix",
+    "M266": "GAP-009 saved plan file-scope metadata with RMS Git capture hardening"
   },
   "m265": {
     "issue": 17,
-    "issue_state": "CLOSED completed after corrective PR #29",
-    "initial_pull_request": 28,
-    "initial_merge_commit": "285d9ab55dc0696acc008f8e0b6747b31a16bf74",
     "corrective_pull_request": 29,
-    "corrective_branch": "m265-rms-record-restore-fix",
-    "corrective_branch_head": "6444ded16b8e864e4d40da36e5da6d68f13d65dc",
     "corrective_merge_commit": "31461b480133db4ad86f5449c943dec2c8589047",
-    "guarded_entry": "AGENT/TOOL/RUN GITRESTORE <path>",
     "production_symbol": "git_rms_restore_head",
-    "vax_symbol_limit_status": "20 characters, <=31; corrective PR adds no production linker-visible symbols.",
-    "initial_acceptance": "Guarded restore created a new highest RMS version, preserved prior versions, restored Git HEAD as effective, and honored workspace approval/write gate.",
-    "post_merge_defect": {
-      "discovery": "Native git pull to merged main failed on TEST/GAP008_RMS.TXT with file exists. Recovery advanced HEAD/index via git reset --mixed --no-refresh, then used GITRESTORE on incoming files.",
-      "failure": "GITRESTORE of BUILD_OPENAI_MODULES.COM and openai_modules.opt created 0KB effective files; subsequent @BUILD failed with 136 undefined linker symbols.",
-      "root_cause": "rms_replace_text_file used bare creat(path,0) for existing non-stream .OPT/.COM/.CLD files instead of explicit OpenVMS variable-record/carriage-control attributes.",
-      "fix": "Corrective PR #29 uses creat(path,0,\"rat=cr\",\"rfm=var\") for the non-stream control-file replacement path.",
-      "recovery": "Known-good historical Stream_LF versions of BUILD_OPENAI_MODULES.COM and openai_modules.opt were copied forward with destination trailing semicolon; @BUILD then passed and Git was clean."
-    }
+    "rms_fix": "rms_replace_text_file uses creat(path,0,\"rat=cr\",\"rfm=var\") for non-stream control-file replacement."
   },
   "m266": {
     "issue": 18,
-    "issue_state": "CLOSED completed",
-    "branch": "gap009-plan-file-count",
-    "accepted_head": "5b942cb82d91bff1806e3efa9beb65880e185c30",
     "pull_request": 30,
     "merge_commit": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
-    "scope": "Saved-plan file_count and file-scope persistence for existing and planned-new files, zero-file handling, fail-closed malformed/unsafe scope, focused regression, and RMS Git capture hardening discovered during acceptance.",
-    "metadata_format": {
-      "existing": "file=<path>|size=<size>|modified=<mtime>",
-      "planned_missing": "file=<path>|missing=1",
-      "saved_plan_format": "format=1 preserved"
-    },
-    "acceptance": {
-      "full_build": "PASS: @BUILD reported All regression tests passed and Build completed successfully; BUILD_STATUS=%X00000001.",
-      "focused_test": "PASS: @TEST_M266_PLAN_SCOPE printed M266 GAP-009 saved plan file-scope regression passed.; TEST_STATUS=%X00000001.",
-      "negative_case": "Expected malformed/ambiguous/stale warning is emitted by deliberate unsafe ../BAD.TXT test and is part of passing coverage.",
-      "vax_symbols": "No new production linker-visible symbols from GAP-009 helpers; helpers are static. Existing git_rms_restore_head remains <=31 characters."
-    },
-    "git_restore_hardening": {
-      "discovery": "OpenVMS Git git show failed for a newly added record-sensitive .COM blob even though git cat-file -s reported the correct nonzero blob size. Old GITRESTORE captured zero bytes and falsely verified an empty restored file.",
-      "fix": "GIT_RMS_RESTORE.C now captures Git content with git cat-file -p and independently verifies expected blob size with git cat-file -s, preventing empty-capture false success for nonempty blobs.",
-      "live_result": "PASS: rebuilt agent restored TEST_M266_PLAN_SCOPE.COM as nonzero Variable-length RMS file with carriage-return carriage control and complete expected procedure contents."
-    },
-    "github_diff": "PR #30 merged with 7 changed files, +802/-78."
+    "acceptance": "Full @BUILD and focused TEST_M266_PLAN_SCOPE passed with %X00000001.",
+    "git_restore_hardening": "GIT_RMS_RESTORE.C captures Git content with git cat-file -p and independently verifies blob size with git cat-file -s."
   },
-  "separate_findings": [
-    "Native Git checkout/pull on this OpenVMS Git build can still fail on RMS-versioned paths; safe recovery uses git fetch plus git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
-    "Native Git cannot reliably hash some Variable-record OpenVMS files; after M266 acceptance git diff on TEST_M266_PLAN_SCOPE.COM failed with short read/cannot hash even though the effective file contents were correct.",
-    "A newly materialized C file can appear mode-only modified (100644 -> 100755) in local Git on OpenVMS despite identical content; use GitHub branch diff as source of truth.",
-    "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records; do not conflate with GAP-007/GAP-008/GAP-009.",
-    "Provider/model tool-use capability varies; anthropic/claude-haiku-4-5 through Requesty narrated without issuing tools in the M264 workflow."
-  ],
+  "m267": {
+    "issue": 31,
+    "branch": "m267-llm-naming",
+    "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
+    "accepted_checkpoint_head": "27cc1e895e33ec000b627aae7848995598313032",
+    "accepted_checkpoint_date": "2026-08-19",
+    "checkpoint_status": "VAX-green authoritative GitHub checkpoint; M267 continues beyond this checkpoint.",
+    "completed_checkpoint_work": [
+      "Added neutral LLM_PATH, LLM_CACHE, LLM_TYPES, and LLM_INTERNAL families.",
+      "Migrated all discovered current-version direct consumers from openai_internal.h to llm_internal.h.",
+      "Deleted SRC/OPENAI_INTERNAL.H compatibility shim.",
+      "VAX acceptance SEARCH [.SRC]*.*;0 \"openai_internal.h\" returned no matches.",
+      "Added explicit declaration for openai_mcp_run_result_base in SRC/OPENAI_PARITY_M258.C after DEC C exposed an implicit-function defect. Identifier length is 26 characters and satisfies the VAX 31-character limit.",
+      "Full VAX @BUILD after shim deletion and corrections reported All regression tests passed and BUILD_STATUS=%X00000001."
+    ],
+    "checkpoint_commits": {
+      "shim_deleted": "3e3243c24edd41d8006f23c669dded948b955eb5",
+      "mcp_base_prototype_fix": "091d4226ea940f22b6b6947fd6dcd83e246d6068",
+      "final_three_test_consumers_vax_green": "27cc1e895e33ec000b627aae7848995598313032"
+    },
+    "final_three_consumers": [
+      "SRC/m206_diagnostics_plan_test.c",
+      "SRC/m208_repair_retry_test.c",
+      "SRC/m209_repair_context_test.c"
+    ],
+    "next_work": [
+      "Continue family-by-family generic openai_/OPENAI_ namespace migration; do not use blind global rename.",
+      "Switch neutral internal-header dependencies from legacy OPENAI_PATH.H / OPENAI_CACHE.H to LLM equivalents where safe.",
+      "Rename generic build artifacts BUILD_OPENAI_MODULES.COM and openai_modules.opt and update BUILD.COM/options/tests/docs.",
+      "Eventually rename remaining generic production filenames and audit provider-specific OpenAI survivors.",
+      "LOG family remains deferred because of broad entanglement."
+    ]
+  },
+  "git_transport": {
+    "status": "Native OpenVMS Git HTTPS fetch and push are working when terminal credentials are forced for the invocation.",
+    "successful_fetch_pattern": "git -c credential.helper= fetch -v --progress origin",
+    "successful_push_pattern": "git -c credential.helper= push -v --progress origin \"HEAD:m267-llm-naming\"",
+    "credential_note": "The successful operations prompted for GitHub username and token. Prior %X0035A401 failures without this override do not mean native Git networking is generally broken.",
+    "latest_push": "091d422..27cc1e8 HEAD -> m267-llm-naming, PUSH_STATUS=%X00000001"
+  },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "local_branch_name": "m265-rms-record-restore-fix",
-    "metadata_head": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
-    "local_untracked": "m264_gap007.cob",
-    "known_status_artifacts": [
-      "SRC/M266_PLAN_SCOPE_TEST.C may show M due only to 100644 -> 100755 mode mapping.",
-      "TEST_M266_PLAN_SCOPE.COM may show M because native Git cannot hash its Variable-record RMS representation."
+    "metadata_head": "27cc1e895e33ec000b627aae7848995598313032",
+    "known_unrelated_status": [
+      "GIT_RESTORE.COM may show modified because of RMS representation/versioning.",
+      "SRC/LLM_CACHE.H, SRC/LLM_INTERNAL.H, SRC/LLM_PATH.C, SRC/LLM_PATH.H, SRC/LLM_TYPES.H may show modified because of OpenVMS/RMS representation despite accepted contents.",
+      "SRC/M266_PLAN_SCOPE_TEST.C and TEST_M266_PLAN_SCOPE.COM may show modified due mode/RMS hashing artifacts.",
+      "m264_gap007.cob is unrelated untracked scratch content.",
+      "m267_include.patch is unrelated untracked scratch content."
     ],
-    "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty M253 checkout and should not be reset until its local changes are reviewed."
+    "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty checkout and should not be reset until its local changes are reviewed."
   },
+  "separate_findings": [
+    "Native Git checkout/pull materialization can still be unsafe on RMS-versioned paths; preferred synchronization is git fetch plus git reset --mixed --no-refresh followed by guarded GITRESTORE for affected tracked files.",
+    "Native Git cannot reliably hash some Variable-record OpenVMS files; GitHub branch content/diff remains repository source of truth.",
+    "A C file can appear mode-only modified (100644 -> 100755) locally on OpenVMS despite identical content.",
+    "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records.",
+    "Provider/model tool-use capability varies."
+  ],
   "resume_protocol": [
     "In a new chat, read this file first.",
-    "Verify current GitHub main head and open issues before choosing the next milestone.",
-    "M266/GAP-009 is accepted and merged; expected main head after PR #30 is 677a00e1724e328f4e7d94ac576bdb0a6e4be787 unless newer work has landed.",
-    "Use GitHub as repository source of truth and OpenVMS for DEC C/VAX, RMS, DCL, and live acceptance evidence.",
-    "To align the active OpenVMS checkout after merge, prefer git fetch plus git reset --mixed --no-refresh origin/main; avoid native checkout/pull materialization on RMS-sensitive paths. Preserve unrelated untracked m264_gap007.cob.",
-    "Expect local Git status artifacts for Variable-record files and Unix mode mapping; do not treat them as source changes without content evidence."
+    "Verify live GitHub m267-llm-naming head before acting; expected accepted checkpoint is 27cc1e895e33ec000b627aae7848995598313032 unless newer work exists.",
+    "Use GitHub as repository source of truth and OpenVMS for DEC C/VAX, RMS, DCL, runtime, and live acceptance.",
+    "Preserve unrelated OpenVMS scratch/untracked files unless explicitly asked to remove them.",
+    "Continue M267 with bounded, buildable namespace/file-family slices and audit all new external identifiers against the 31-character VAX limit."
   ]
 }
