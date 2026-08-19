@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define PATCH_MAX_HUNKS 16U
 #define PATCH_PATH_MAX 256U
