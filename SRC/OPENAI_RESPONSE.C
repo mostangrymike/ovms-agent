@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_json_parse.h"
 #include "openai_response.h"
 
