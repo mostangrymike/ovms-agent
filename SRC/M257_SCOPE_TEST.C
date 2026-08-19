@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define ROOT_FILE "M257_ROOT_INSTR.TXT"
 #define SCOPE_FILE "TEST/OVMS_AGENT_INSTRUCTIONS.TXT"
