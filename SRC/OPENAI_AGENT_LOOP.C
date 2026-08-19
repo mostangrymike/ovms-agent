@@ -48,7 +48,7 @@ void openai_agent_mode(agent_state *state,
     unsigned int turn;
     unsigned int turn_limit;
     int write_attempted;
-    openai_file_cache_entry cache[OPENAI_AGENT_CACHE_SIZE];
+    llm_file_cache_entry cache[LLM_AGENT_CACHE_SIZE];
 
     if (workflow == OPENAI_WORKFLOW_PLAN) {
         openai_last_workflow = OPENAI_WORKFLOW_PLAN;
@@ -126,7 +126,7 @@ void openai_agent_mode(agent_state *state,
     write_attempted = 0;
     openai_auto_begin(workflow);
     turn_limit = openai_auto_turn_limit(workflow);
-    openai_cache_init(cache);
+    llm_cache_init(cache);
 
     if (build_after_write) {
         (void)puts("Starting supervised fix-and-build agent...");
@@ -215,7 +215,7 @@ void openai_agent_mode(agent_state *state,
                 free(json);
                 remove_temporary_files();
                 free(previous_id);
-                openai_cache_free(cache);
+                llm_cache_free(cache);
                 free(owned_instructions);
                 return;
             }
@@ -225,7 +225,7 @@ void openai_agent_mode(agent_state *state,
             free(json);
             remove_temporary_files();
             free(previous_id);
-            openai_cache_free(cache);
+            llm_cache_free(cache);
             free(owned_instructions);
             return;
         }
@@ -312,8 +312,8 @@ void openai_agent_mode(agent_state *state,
                 );
 
                 if (patch_ok) {
-                    openai_cache_free(cache);
-                    openai_cache_init(cache);
+                    llm_cache_free(cache);
+                    llm_cache_init(cache);
                     (void)openai_git_refresh(state);
                     openai_log_event(
                         openai_workflow_name(openai_last_workflow),
@@ -388,8 +388,8 @@ void openai_agent_mode(agent_state *state,
                 );
 
                 if (replace_result == OPENAI_REPLACE_APPLIED) {
-                    openai_cache_free(cache);
-                    openai_cache_init(cache);
+                    llm_cache_free(cache);
+                    llm_cache_init(cache);
                     (void)openai_git_refresh(state);
                     openai_log_event(
                         openai_workflow_name(openai_last_workflow),
@@ -700,7 +700,7 @@ void openai_agent_mode(agent_state *state,
             free(previous_id);
             free(call_id);
             free(tool_output);
-            openai_cache_free(cache);
+            llm_cache_free(cache);
             free(owned_instructions);
             return;
         } else {
@@ -785,7 +785,7 @@ void openai_agent_mode(agent_state *state,
                             free(json);
                             remove_temporary_files();
                             free(previous_id);
-                            openai_cache_free(cache);
+                            llm_cache_free(cache);
                             free(owned_instructions);
                             return;
                         }
@@ -795,7 +795,7 @@ void openai_agent_mode(agent_state *state,
                         free(json);
                         remove_temporary_files();
                         free(previous_id);
-                        openai_cache_free(cache);
+                        llm_cache_free(cache);
                         free(owned_instructions);
                         return;
                     }
@@ -832,6 +832,6 @@ void openai_agent_mode(agent_state *state,
     free(previous_id);
     free(call_id);
     free(tool_output);
-    openai_cache_free(cache);
+    llm_cache_free(cache);
     free(owned_instructions);
 }

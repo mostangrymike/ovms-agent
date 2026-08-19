@@ -142,33 +142,33 @@ char *make_tool_error(const char *message,
     return result;
 }
 
-void openai_cache_init(openai_file_cache_entry *cache)
+void llm_cache_init(llm_file_cache_entry *cache)
 {
     unsigned int index;
 
-    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+    for (index = 0U; index < LLM_AGENT_CACHE_SIZE; ++index) {
         cache[index].path = NULL;
         cache[index].content = NULL;
     }
 }
 
-void openai_cache_free(openai_file_cache_entry *cache)
+void llm_cache_free(llm_file_cache_entry *cache)
 {
     unsigned int index;
 
-    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+    for (index = 0U; index < LLM_AGENT_CACHE_SIZE; ++index) {
         free(cache[index].path);
         free(cache[index].content);
     }
 }
 
-const char *openai_cache_lookup(
-    const openai_file_cache_entry *cache,
+const char *llm_cache_lookup(
+    const llm_file_cache_entry *cache,
     const char *path)
 {
     unsigned int index;
 
-    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+    for (index = 0U; index < LLM_AGENT_CACHE_SIZE; ++index) {
         if (cache[index].path != NULL &&
             strlen(cache[index].path) == strlen(path) &&
             llm_contains_ignore_case(cache[index].path, path)) {
@@ -179,7 +179,7 @@ const char *openai_cache_lookup(
     return NULL;
 }
 
-int openai_cache_store(openai_file_cache_entry *cache,
+int llm_cache_store(llm_file_cache_entry *cache,
                               const char *path,
                               const char *content)
 {
@@ -187,13 +187,13 @@ int openai_cache_store(openai_file_cache_entry *cache,
     char *path_copy;
     char *content_copy;
 
-    for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
+    for (index = 0U; index < LLM_AGENT_CACHE_SIZE; ++index) {
         if (cache[index].path == NULL) {
             break;
         }
     }
 
-    if (index == OPENAI_AGENT_CACHE_SIZE) {
+    if (index == LLM_AGENT_CACHE_SIZE) {
         return 0;
     }
 
@@ -382,7 +382,7 @@ char *execute_read_file_range_tool(
 
 char *execute_read_file_tool(
     const char *arguments,
-    openai_file_cache_entry *cache,
+    llm_file_cache_entry *cache,
     int *cache_hit,
     char **display_path)
 {
@@ -412,7 +412,7 @@ char *execute_read_file_tool(
         return output;
     }
 
-    cached = openai_cache_lookup(cache, path);
+    cached = llm_cache_lookup(cache, path);
 
     if (cached != NULL) {
         *cache_hit = 1;
@@ -442,7 +442,7 @@ char *execute_read_file_tool(
                 path
             );
             if (output != NULL) {
-                (void)openai_cache_store(cache, path, output);
+                (void)llm_cache_store(cache, path, output);
             }
             free(path);
             return output;
@@ -454,7 +454,7 @@ char *execute_read_file_tool(
     if (output == NULL) {
         output = make_tool_error("Unable to read file", path);
     } else {
-        (void)openai_cache_store(cache, path, output);
+        (void)llm_cache_store(cache, path, output);
     }
 
     free(path);

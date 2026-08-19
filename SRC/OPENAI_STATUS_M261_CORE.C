@@ -224,7 +224,7 @@ unsigned int openai_run_selftest(agent_state *state)
     const openai_tool_descriptor *read_descriptor;
     const openai_tool_descriptor *replace_descriptor;
     const openai_tool_descriptor *build_descriptor;
-    openai_file_cache_entry test_cache[OPENAI_AGENT_CACHE_SIZE];
+    llm_file_cache_entry test_cache[LLM_AGENT_CACHE_SIZE];
     const char *cached_text;
     char *malformed_text;
     long integer_value;
@@ -378,21 +378,21 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
-    openai_cache_init(test_cache);
+    llm_cache_init(test_cache);
     openai_selftest_report(
         "case-insensitive cache lookup",
-        openai_cache_store(
+        llm_cache_store(
             test_cache,
             "SRC/SELFTEST.C",
             "cached self-test text") &&
-        (cached_text = openai_cache_lookup(
+        (cached_text = llm_cache_lookup(
             test_cache,
             "src/selftest.c")) != NULL &&
         strcmp(cached_text, "cached self-test text") == 0,
         &passed_count,
         &failed_count
     );
-    openai_cache_free(test_cache);
+    llm_cache_free(test_cache);
 
     malformed_text = extract_output_text_from_json(malformed_json);
     openai_selftest_report(
@@ -494,7 +494,7 @@ unsigned int openai_run_selftest(agent_state *state)
         const char *large_path;
         FILE *large_file;
         unsigned long count;
-        openai_file_cache_entry large_cache[OPENAI_AGENT_CACHE_SIZE];
+        llm_file_cache_entry large_cache[LLM_AGENT_CACHE_SIZE];
         char *large_output;
         char *large_display;
         int large_cache_hit;
@@ -515,7 +515,7 @@ unsigned int openai_run_selftest(agent_state *state)
             }
         }
 
-        openai_cache_init(large_cache);
+        llm_cache_init(large_cache);
         large_display = NULL;
         large_cache_hit = 0;
         large_output = large_created ?
@@ -539,7 +539,7 @@ unsigned int openai_run_selftest(agent_state *state)
 
         free(large_output);
         free(large_display);
-        openai_cache_free(large_cache);
+        llm_cache_free(large_cache);
         (void)remove(large_path);
     }
 

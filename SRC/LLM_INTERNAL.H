@@ -12,7 +12,7 @@
 #include "openai.h"
 #include "openai_log.h"
 #include "LLM_PATH.H"
-#include "openai_cache.h"
+#include "LLM_CACHE.H"
 #include "openai_tool_schema.h"
 #include "openai_tool_registry.h"
 #include "openai_response.h"
@@ -222,8 +222,8 @@ void openai_send(agent_state *state,
 char *openai_read_text_file(const char *path);
 char *make_tool_error(const char *message,
                              const char *path);
-const char *openai_cache_lookup(
-    const openai_file_cache_entry *cache,
+const char *llm_cache_lookup(
+    const llm_file_cache_entry *cache,
     const char *path);
 char *openai_duplicate_text(const char *text);
 char *execute_read_file_range_tool(
@@ -233,7 +233,7 @@ char *execute_read_file_range_tool(
     long *display_end);
 char *execute_read_file_tool(
     const char *arguments,
-    openai_file_cache_entry *cache,
+    llm_file_cache_entry *cache,
     int *cache_hit,
     char **display_path);
 int openai_join_path(const char *parent,
