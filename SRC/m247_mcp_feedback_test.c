@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Standalone regression link stubs. The M247 test links command_agent.c
    for the MCP command surface but does not exercise interactive input. */
