@@ -864,15 +864,15 @@ void openai_patch_dry_cmd(const char *arguments);
 void openai_patch_apply_cmd(const char *arguments);
 void openai_patch_last_cmd(void);
 
-char *openai_result_make(const char *tool,
+char *llm_result_make(const char *tool,
                          const char *status,
                          const char *effect,
                          int code,
                          const char *arguments,
                          const char *output);
-char *openai_build_result(const char *output, int status);
-int openai_result_last_text(char *output, size_t output_size);
-void openai_show_result_last(void);
+char *llm_build_result(const char *output, int status);
+int llm_result_last_text(char *output, size_t output_size);
+void llm_show_result_last(void);
 
 int openai_session_results_text(const char *arguments,
                                 char *output, size_t output_size);

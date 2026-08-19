@@ -260,7 +260,7 @@ void openai_agent_mode(agent_state *state,
                 cache
             );
 
-            tool_output = openai_result_make(
+            tool_output = llm_result_make(
                 name,
                 raw_output != NULL ? "ok" : "error",
                 "read",
@@ -289,7 +289,7 @@ void openai_agent_mode(agent_state *state,
             int patch_ok;
 
             if (!openai_auto_allow_write()) {
-                tool_output = openai_result_make(
+                tool_output = llm_result_make(
                     name, "limit", "write", 0,
                     arguments,
                     "Autonomous write limit reached."
@@ -320,7 +320,7 @@ void openai_agent_mode(agent_state *state,
                         "patch_applied",
                         1
                     );
-                    tool_output = openai_result_make(
+                    tool_output = llm_result_make(
                         name, "applied", "write", 1,
                         arguments, patch_summary
                     );
@@ -337,7 +337,7 @@ void openai_agent_mode(agent_state *state,
                         "patch_failed",
                         0
                     );
-                    tool_output = openai_result_make(
+                    tool_output = llm_result_make(
                         name, "error", "write", 0,
                         arguments, patch_summary
                     );
@@ -360,7 +360,7 @@ void openai_agent_mode(agent_state *state,
             int use_lines;
 
             if (!openai_auto_allow_write()) {
-                tool_output = openai_result_make(
+                tool_output = llm_result_make(
                     name, "limit", "write", 0,
                     arguments,
                     "Autonomous write limit reached."
@@ -396,7 +396,7 @@ void openai_agent_mode(agent_state *state,
                         "patch_applied",
                         1
                     );
-                    tool_output = openai_result_make(
+                    tool_output = llm_result_make(
                         name, "applied", "write", 1,
                         arguments,
                         "Patch applied successfully. Git context was "
@@ -415,7 +415,7 @@ void openai_agent_mode(agent_state *state,
                         "patch_declined",
                         0
                     );
-                    tool_output = openai_result_make(
+                    tool_output = llm_result_make(
                         name, "declined", "write", 0,
                         arguments,
                         "Patch declined by local user; do not assume it "
@@ -431,7 +431,7 @@ void openai_agent_mode(agent_state *state,
                         "patch_failed",
                         0
                     );
-                    tool_output = openai_result_make(
+                    tool_output = llm_result_make(
                         name, "error", "write", 0,
                         arguments, "Patch failed."
                     );
@@ -509,7 +509,7 @@ void openai_agent_mode(agent_state *state,
                     if (build_output != NULL) {
                         char *normalized_build;
 
-                        normalized_build = openai_build_result(
+                        normalized_build = llm_build_result(
                             build_output, build_status
                         );
 
@@ -527,7 +527,7 @@ void openai_agent_mode(agent_state *state,
                     } else {
                         char *normalized_build;
 
-                        normalized_build = openai_build_result(
+                        normalized_build = llm_build_result(
                             NULL, build_status
                         );
 
@@ -704,7 +704,7 @@ void openai_agent_mode(agent_state *state,
             free(owned_instructions);
             return;
         } else {
-            tool_output = openai_result_make(
+            tool_output = llm_result_make(
                 name, "unsupported", "unknown", 0,
                 arguments, "Unsupported tool requested."
             );

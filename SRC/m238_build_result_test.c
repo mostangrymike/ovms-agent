@@ -13,7 +13,7 @@ int main(void)
     char *result;
     char parity[8192];
 
-    result = openai_build_result(
+    result = llm_build_result(
         "Building OVMS Agent Version 2...\n"
         "All regression tests passed.\n"
         "Build completed successfully.\n",
@@ -32,7 +32,7 @@ int main(void)
     }
     free(result);
 
-    result = openai_build_result(
+    result = llm_build_result(
         "%CC-E-UNDECLARED, identifier BROKEN is undefined.\n"
         "%LINK-E-UNDEFSYMS, undefined symbols\n",
         2
@@ -50,7 +50,7 @@ int main(void)
     }
     free(result);
 
-    if (!openai_result_last_text(parity, sizeof(parity)) ||
+    if (!llm_result_last_text(parity, sizeof(parity)) ||
         strstr(parity, "tool: run_build") == NULL ||
         strstr(parity, "status: failure") == NULL ||
         strstr(parity, "%CC-E-UNDECLARED") == NULL) {
