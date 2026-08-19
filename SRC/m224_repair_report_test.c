@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M224_REPAIR_REPORT.LOG"
 #define TEST_CSV "M224_REPAIR_REPORT.CSV"
