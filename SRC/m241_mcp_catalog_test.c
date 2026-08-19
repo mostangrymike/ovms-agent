@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Regression-test stubs for command-layer helpers pulled in indirectly
  * through the modular OpenAI/command link set.  M239 established this
