@@ -2,6 +2,13 @@
 #include "llm_internal.h"
 
 int openai_net_check(const char *url, char *detail, size_t detail_size);
+int openai_mcp_run_result_base(const char *config,
+                               const char *arguments,
+                               openai_mcp_executor_fn stdio_executor,
+                               openai_mcp_executor_fn http_executor,
+                               openai_mcp_executor_fn sse_executor,
+                               void *context,
+                               openai_mcp_result *result);
 
 /* Keep the mature implementations available as base entry points while
    replacing only the production bridge executors and public M258 gates. */
