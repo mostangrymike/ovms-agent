@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *input, size_t input_size, int reached_eof)
 {
