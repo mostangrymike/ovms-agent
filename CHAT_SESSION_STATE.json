@@ -1,17 +1,10 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T16:30:00-05:00",
+  "updated_at": "2026-08-19T16:54:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
-  "user_rules": {
-    "agent_prompt_prefix": "When giving lines to paste into OVMS Agent, omit the OVMS-AGENT> prompt prefix.",
-    "vax_external_identifier_limit": "Treat DEC C/VAX 31-character external identifier limit as hard. Audit every newly introduced externally visible function/global/linker-visible symbol before packaging every milestone/fix.",
-    "vax_c_compatibility": "Avoid implicit function declarations and non-C89 constructs in VAX-facing C.",
-    "github_source_of_truth": "Maximize connected GitHub use. GitHub is source of truth for committed repository files, branch-live searches/verification, diffs, edits, deletes, commits, issues, PRs, comments, and history. Use OpenVMS only for DEC C/VAX, RMS, DCL, runtime, and live acceptance evidence.",
-    "github_search_caveat": "GitHub code-search index may be stale at the M266 baseline. Use search only to discover candidate paths; branch-fetch every candidate from m267-llm-naming before acting.",
-    "project_isolation": "Do not mix OVMS Agent build architecture with VMSBBS or other projects."
-  },
+  "rules_file": "RULES.md on m267-llm-naming is the durable standing project-rule document; maintain it whenever a standing rule is learned, corrected, or superseded.",
   "accepted_milestones": {
     "M260": "final parity/reconcile",
     "M261": "VAX portability/VMSBBS hardening",
@@ -25,69 +18,52 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
-    "current_github_head": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
-    "current_github_head_status": "VAX-green authoritative checkpoint; PATH and CACHE families are complete and physical compatibility shims are removed.",
+    "latest_vax_green_head": "9bd4dca88cf21f268273ff020a1bc54751f13432",
+    "current_github_head": "9bd4dca88cf21f268273ff020a1bc54751f13432",
+    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, and generic build-artifact families are complete; RULES.md is present on the branch.",
     "path_family": {
       "status": "complete and VAX-green",
-      "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0",
-      "completed": [
-        "Migrated live PATH consumers to llm_path_* names.",
-        "Late live consumer SRC/OPENAI_JSON_PARSE.C was caught by DEC C/VAX after compatibility-header bypass and migrated to llm_path_is_sensitive.",
-        "SRC/LLM_INTERNAL.H includes LLM_PATH.H directly.",
-        "BUILD.COM compiles SRC/LLM_PATH.C to LLM_PATH.OBJ.",
-        "openai_modules.opt links LLM_PATH.OBJ.",
-        "Deleted SRC/OPENAI_PATH.H and SRC/OPENAI_PATH.C compatibility shims.",
-        "Full VAX @BUILD after physical shim deletion passed with BUILD_STATUS=%X00000001."
-      ]
+      "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"
     },
     "cache_family": {
       "status": "complete and VAX-green",
-      "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
+      "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"
+    },
+    "build_artifact_family": {
+      "status": "complete and VAX-green",
+      "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432",
       "completed": [
-        "SRC/OPENAI_TOOL_REGISTRY.H includes LLM_CACHE.H and uses llm_file_cache_entry.",
-        "SRC/OPENAI_TOOL_REGISTRY.C uses llm_file_cache_entry.",
-        "SRC/OPENAI_CREATE_M261_CORE.C uses llm_file_cache_entry, LLM_AGENT_CACHE_SIZE, llm_cache_init, and llm_cache_free.",
-        "SRC/OPENAI_TOOLS.C defines llm_cache_init/free/lookup/store and uses llm_file_cache_entry / LLM_AGENT_CACHE_SIZE.",
-        "SRC/OPENAI_AGENT_LOOP.C uses only LLM cache type/size/functions.",
-        "SRC/OPENAI_STATUS_M261_CORE.C self-tests use only LLM cache type/size/functions.",
-        "SRC/LLM_INTERNAL.H includes LLM_CACHE.H directly and uses LLM cache declarations.",
-        "Deleted SRC/OPENAI_CACHE.H compatibility shim in GitHub and physically deleted all OpenVMS RMS versions.",
-        "Full VAX @BUILD after physical shim deletion passed with all regression tests and BUILD_STATUS=%X00000001."
+        "Created BUILD_LLM_MODULES.COM and LLM_MODULES.OPT using uppercase repository naming.",
+        "Migrated BUILD.COM, SRC/OPENAI_PLAN.C, and TEST_M266_PLAN_SCOPE.COM to the neutral artifact names.",
+        "Committed the VAX-tested transition at c6730a4c57016f2f10f84a4b72c6f67978db275a.",
+        "Added RULES.md at 14aa31ee8a4872763d6f7f004dbe0746f6d99c7f.",
+        "Deleted BUILD_OPENAI_MODULES.COM and openai_modules.opt from GitHub.",
+        "Physically deleted stale OpenVMS versions of both old artifacts.",
+        "Full @BUILD passed all regressions with BUILD_STATUS=%X00000001.",
+        "@TEST_M266_PLAN_SCOPE passed with M266_STATUS=%X00000001."
       ]
     },
     "next_work": [
-      "Continue M267 with the next bounded generic OpenAI naming family using GitHub-first branch-live verification and several safe edits per VAX acceptance build.",
-      "Rename generic build artifacts BUILD_OPENAI_MODULES.COM and openai_modules.opt in a dedicated bounded slice when their references are fully branch-verified.",
-      "Continue remaining generic production filename and namespace cleanup; do not use blind global rename.",
-      "Final repository-wide survivor audit must distinguish genuine OpenAI provider/protocol compatibility from generic naming debt.",
-      "LOG family remains deferred because of broad entanglement unless it becomes the most efficient next family."
+      "Continue M267 with the next bounded generic OpenAI naming family using RULES.md and GitHub-first branch-live verification.",
+      "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
+      "LOG family remains a separate broad family unless it becomes the most efficient next target.",
+      "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
     ]
   },
   "git_transport": {
-    "status": "Native OpenVMS Git HTTPS fetch and push work with credential helper disabled per invocation.",
     "fetch_pattern": "git -c credential.helper= fetch -v --progress origin",
     "push_pattern": "git -c credential.helper= push -v --progress origin \"HEAD:m267-llm-naming\""
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "local_branch_name": "m265-rms-record-restore-fix",
-    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; guarded @GIT_RESTORE for changed tracked files; physically delete removed compatibility shims when required; @BUILD for acceptance.",
-    "canonical_checkout_cleanup_pending": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT] remains an older dirty checkout and should not be reset until its local changes are reviewed."
+    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use guarded RMS-aware restore for changed tracked files; physically delete removed files when required; @BUILD for acceptance."
   },
-  "separate_findings": [
-    "Native Git checkout/pull materialization can still be unsafe on RMS-versioned paths; guarded GIT_RESTORE is the accepted synchronization mechanism for changed tracked files.",
-    "Native Git cannot reliably hash some Variable-record OpenVMS files; GitHub branch content/diff remains repository source of truth.",
-    "A C file can appear mode-only modified locally on OpenVMS despite identical content; normalize Git index mode before committing.",
-    "Manual PROJECT.C PATCH has a separate RMS write defect that can create one-character variable records.",
-    "Generated .BUILD EXE/OBJ OpenVMS versions can exhaust disk; build cleanup hardening remains backlog.",
-    "Provider/model tool-use capability varies."
-  ],
   "resume_protocol": [
-    "Read this file first in a new chat.",
-    "Fetch issue #31 and verify live m267-llm-naming head before acting; expected VAX-green head is 45c095e78c357f4a3f1a9c206c9f9c249a35acdc unless newer work exists.",
-    "Use GitHub as repository source of truth and maximize GitHub edits/audits/tracking; use OpenVMS only for DEC C/VAX, RMS, DCL, runtime, and acceptance.",
-    "Continue M267 with coherent bounded family slices, preferring several branch-verified GitHub edits per VAX acceptance build when safe.",
-    "Audit every new external identifier against the VAX 31-character limit."
+    "Read this file and RULES.md first in a new chat.",
+    "Fetch issue #31 and verify live m267-llm-naming head before acting.",
+    "Expected latest VAX-green head is 9bd4dca88cf21f268273ff020a1bc54751f13432 unless newer accepted work exists.",
+    "Use GitHub as repository source of truth and OpenVMS as DEC C/VAX/RMS/DCL/runtime acceptance environment.",
+    "Continue with coherent bounded family slices and audit every new external identifier against the VAX 31-character limit."
   ]
 }
