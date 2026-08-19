@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M215_REPAIR_EXPORT.LOG"
 #define TEST_OUT "M215_REPAIR_EXPORT.TXT"
