@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "agent.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TARGET_A "TEST/M208_TARGET_A.TMP"
 #define TARGET_B "TEST/M208_TARGET_B.TMP"
