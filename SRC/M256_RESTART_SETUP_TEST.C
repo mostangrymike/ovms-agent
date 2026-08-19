@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_plan.h"
 
 #define TEST_DATA "M256_RST_SESSIONS.DAT"
