@@ -8,6 +8,7 @@
 #define openai_file_cache_entry llm_file_cache_entry
 #define openai_cache_init llm_cache_init
 #define openai_cache_free llm_cache_free
+#define openai_cache_lookup llm_cache_lookup
 #define openai_cache_store llm_cache_store
 
 #endif /* OPENAI_CACHE_H */
