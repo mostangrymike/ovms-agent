@@ -1,17 +1,13 @@
 #ifndef OPENAI_CACHE_H
 #define OPENAI_CACHE_H
 
-#define OPENAI_AGENT_CACHE_SIZE 8
+/* Transitional compatibility shim. New code should include LLM_CACHE.H. */
+#include "LLM_CACHE.H"
 
-typedef struct openai_file_cache_entry {
-    char *path;
-    char *content;
-} openai_file_cache_entry;
-
-void openai_cache_init(openai_file_cache_entry *cache);
-void openai_cache_free(openai_file_cache_entry *cache);
-int openai_cache_store(openai_file_cache_entry *cache,
-                       const char *path,
-                       const char *content);
+#define OPENAI_AGENT_CACHE_SIZE LLM_AGENT_CACHE_SIZE
+#define openai_file_cache_entry llm_file_cache_entry
+#define openai_cache_init llm_cache_init
+#define openai_cache_free llm_cache_free
+#define openai_cache_store llm_cache_store
 
 #endif /* OPENAI_CACHE_H */
