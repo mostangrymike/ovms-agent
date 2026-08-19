@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_image.h"
 
 int openai_agent_image_set(const char *path);
