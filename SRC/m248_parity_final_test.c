@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "command_internal.h"
 
 /* Standalone regression link stubs. The full project option files pull in
