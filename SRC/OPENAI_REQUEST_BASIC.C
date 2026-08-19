@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_image.h"
 #include "openai_request_basic.h"
 
