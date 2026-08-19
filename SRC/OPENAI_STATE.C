@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_state_m109_path_helpers.inc"
 
 static void openai_state_note_save_result(int save_succeeded);
