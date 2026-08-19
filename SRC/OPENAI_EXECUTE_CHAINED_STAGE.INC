@@ -111,8 +111,8 @@ static int execute_create_precheck(
             continue;
         }
 
-        if (!openai_path_is_safe(operations[index].path) ||
-            openai_path_is_sensitive(operations[index].path)) {
+        if (!llm_path_is_safe(operations[index].path) ||
+            llm_path_is_sensitive(operations[index].path)) {
             (void)printf(
                 "Saved plan create_file refused for path: %s\n",
                 operations[index].path
@@ -164,8 +164,8 @@ static int execute_delete_precheck(
 
         ++delete_count;
 
-        if (!openai_path_is_safe(operations[index].path) ||
-            openai_path_is_sensitive(operations[index].path)) {
+        if (!llm_path_is_safe(operations[index].path) ||
+            llm_path_is_sensitive(operations[index].path)) {
             (void)printf(
                 "Saved plan delete_file refused for path: %s\n",
                 operations[index].path
@@ -201,10 +201,10 @@ static int execute_rename_precheck(
 
         ++rename_count;
 
-        if (!openai_path_is_safe(operations[index].path) ||
-            openai_path_is_sensitive(operations[index].path) ||
-            !openai_path_is_safe(operations[index].old_text) ||
-            openai_path_is_sensitive(operations[index].old_text)) {
+        if (!llm_path_is_safe(operations[index].path) ||
+            llm_path_is_sensitive(operations[index].path) ||
+            !llm_path_is_safe(operations[index].old_text) ||
+            llm_path_is_sensitive(operations[index].old_text)) {
             (void)puts(
                 "Saved plan rename_file refused for unsafe source or target path."
             );
@@ -239,10 +239,10 @@ static int execute_move_precheck(
 
         ++move_count;
 
-        if (!openai_path_is_safe(operations[index].path) ||
-            openai_path_is_sensitive(operations[index].path) ||
-            !openai_path_is_safe(operations[index].old_text) ||
-            openai_path_is_sensitive(operations[index].old_text)) {
+        if (!llm_path_is_safe(operations[index].path) ||
+            llm_path_is_sensitive(operations[index].path) ||
+            !llm_path_is_safe(operations[index].old_text) ||
+            llm_path_is_sensitive(operations[index].old_text)) {
             (void)puts(
                 "Saved plan move_file refused for unsafe source or target path."
             );
@@ -374,8 +374,8 @@ static int execute_stage_operations_chained(
             continue;
         }
 
-        if (!openai_path_is_safe(operations[index].path) ||
-            openai_path_is_sensitive(operations[index].path)) {
+        if (!llm_path_is_safe(operations[index].path) ||
+            llm_path_is_sensitive(operations[index].path)) {
             (void)printf(
                 "Saved plan execution refused for path: %s\n",
                 operations[index].path
