@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 static const char *m258_policy_name = "read-only";
 static unsigned int m258_log_calls;
