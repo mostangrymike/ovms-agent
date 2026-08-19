@@ -171,7 +171,7 @@ const char *openai_cache_lookup(
     for (index = 0U; index < OPENAI_AGENT_CACHE_SIZE; ++index) {
         if (cache[index].path != NULL &&
             strlen(cache[index].path) == strlen(path) &&
-            openai_contains_ignore_case(cache[index].path, path)) {
+            llm_contains_ignore_case(cache[index].path, path)) {
             return cache[index].content;
         }
     }
@@ -267,7 +267,7 @@ char *execute_read_file_range_tool(
     *display_start = start_line;
     *display_end = end_line;
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         char *error;
 
         error = make_tool_error(
@@ -278,7 +278,7 @@ char *execute_read_file_range_tool(
         return error;
     }
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         char *error;
 
         error = make_tool_error(
@@ -403,7 +403,7 @@ char *execute_read_file_tool(
 
     *display_path = openai_duplicate_text(path);
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         output = make_tool_error(
             "Unsafe or invalid project-relative path",
             path
@@ -507,7 +507,7 @@ char *execute_list_directory_tool(const char *arguments,
     *display_path = openai_duplicate_text(target);
 
     if (strcmp(target, ".") != 0 &&
-        !openai_path_is_safe(target)) {
+        !llm_path_is_safe(target)) {
         output = make_tool_error(
             "Unsafe or invalid project-relative path",
             target
@@ -548,7 +548,7 @@ char *execute_list_directory_tool(const char *arguments,
         if (strcmp(entry->d_name, ".") == 0 ||
             strcmp(entry->d_name, "..") == 0 ||
             strncmp(entry->d_name, ".git", 4U) == 0 ||
-            openai_listing_entry_hidden(entry->d_name)) {
+            llm_listing_entry_hidden(entry->d_name)) {
             continue;
         }
 
@@ -625,7 +625,7 @@ char *execute_search_file_tool(const char *arguments,
     *display_path = openai_duplicate_text(path);
     *display_pattern = openai_duplicate_text(pattern);
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         output = make_tool_error(
             "Unsafe or invalid project-relative path",
             path
@@ -635,7 +635,7 @@ char *execute_search_file_tool(const char *arguments,
         return output;
     }
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         output = make_tool_error(
             "Access denied for sensitive path",
             path
@@ -738,7 +738,7 @@ openai_create_result execute_create_file_tool(
 
     *display_path = openai_duplicate_text(path);
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         (void)printf(
             "Unsafe or invalid project-relative path: %s\n",
             path
@@ -748,7 +748,7 @@ openai_create_result execute_create_file_tool(
         return OPENAI_CREATE_ERROR;
     }
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         (void)printf(
             "Access denied for sensitive path: %s\n",
             path
@@ -883,14 +883,14 @@ openai_replace_result execute_replace_lines_tool(
 
     *display_path = openai_duplicate_text(path);
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         (void)printf("Unsafe or invalid project-relative path: %s\n", path);
         free(path);
         free(new_text);
         return OPENAI_REPLACE_ERROR;
     }
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         (void)printf("Access denied for sensitive path: %s\n", path);
         free(path);
         free(new_text);
@@ -1137,7 +1137,7 @@ openai_replace_result execute_replace_text_tool(
 
     *display_path = openai_duplicate_text(path);
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         (void)printf(
             "Unsafe or invalid project-relative path: %s\n",
             path
@@ -1148,7 +1148,7 @@ openai_replace_result execute_replace_text_tool(
         return OPENAI_REPLACE_ERROR;
     }
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         (void)printf(
             "Access denied for sensitive path: %s\n",
             path
