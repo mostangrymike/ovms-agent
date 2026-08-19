@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
