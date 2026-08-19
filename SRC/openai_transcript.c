@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "command_internal.h"
 
 #define OPENAI_TRANSCRIPT_FILE "OVMS_AGENT_TRANSCRIPT.DAT"
