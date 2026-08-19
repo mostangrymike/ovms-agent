@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /*
  * Link-only stubs required by OPENAI_PLAN.OBJ.
