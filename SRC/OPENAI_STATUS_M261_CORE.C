@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_prompts.h"
 #include "openai_execute.h"
 
