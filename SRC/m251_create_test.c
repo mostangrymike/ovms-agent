@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_EMPTY "M251_EMPTY.TMP"
 #define TEST_FENCE "M251_FENCE.TMP"
