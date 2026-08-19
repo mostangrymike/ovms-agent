@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_request_basic.h"
 
 static int m259_read_request(char *output, size_t output_size)
