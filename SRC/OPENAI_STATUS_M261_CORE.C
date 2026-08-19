@@ -248,69 +248,69 @@ unsigned int openai_run_selftest(agent_state *state)
 
     openai_selftest_report(
         "safe project path accepted",
-        openai_path_is_safe("SRC/MAIN.C"),
+        llm_path_is_safe("SRC/MAIN.C"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "parent traversal rejected",
-        !openai_path_is_safe("../LOGIN.COM"),
+        !llm_path_is_safe("../LOGIN.COM"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "device-qualified path rejected",
-        !openai_path_is_safe("SYS$LOGIN:LOGIN.COM"),
+        !llm_path_is_safe("SYS$LOGIN:LOGIN.COM"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "API-key filename blocked",
-        openai_path_is_sensitive("OPENAIKEY.TXT"),
+        llm_path_is_sensitive("OPENAIKEY.TXT"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "header filename blocked",
-        openai_path_is_sensitive("OVMS_AGENT_HEADERS.TXT"),
+        llm_path_is_sensitive("OVMS_AGENT_HEADERS.TXT"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "ordinary source not sensitive",
-        !openai_path_is_sensitive("SRC/OPENAI.C"),
+        !llm_path_is_sensitive("SRC/OPENAI.C"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "lowercase key filename blocked",
-        openai_path_is_sensitive("config/server.key"),
+        llm_path_is_sensitive("config/server.key"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "object listing entry hidden",
-        openai_listing_entry_hidden("OPENAI_AGENT.OBJ"),
+        llm_listing_entry_hidden("OPENAI_AGENT.OBJ"),
         &passed_count,
         &failed_count
     );
 
     openai_selftest_report(
         "backup listing entries hidden",
-        openai_listing_entry_hidden(
+        llm_listing_entry_hidden(
             "OPENAI_TOOLS.C_M251_14_BACKUP") &&
-        openai_listing_entry_hidden(
+        llm_listing_entry_hidden(
             "OPENAI_STATUS_BEFORE_M96_REPAIR.C") &&
-        openai_listing_entry_hidden("LEGACY.C.BAK") &&
-        openai_listing_entry_hidden("LEGACY.C.OLD") &&
-        !openai_listing_entry_hidden("OPENAI_TOOLS.C"),
+        llm_listing_entry_hidden("LEGACY.C.BAK") &&
+        llm_listing_entry_hidden("LEGACY.C.OLD") &&
+        !llm_listing_entry_hidden("OPENAI_TOOLS.C"),
         &passed_count,
         &failed_count
     );
@@ -786,7 +786,7 @@ void openai_review_file(agent_state *state, const char *path)
         return;
     }
 
-    if (!openai_path_is_safe(path)) {
+    if (!llm_path_is_safe(path)) {
         (void)puts("Unsafe or invalid project-relative path.");
         return;
     }
