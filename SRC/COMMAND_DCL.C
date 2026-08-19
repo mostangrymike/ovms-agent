@@ -6,7 +6,7 @@
 
 #include "agent.h"
 #include "command_internal.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define DCL_COMMAND_MAX 768U
 #define DCL_OUTPUT_MAX 32768U
