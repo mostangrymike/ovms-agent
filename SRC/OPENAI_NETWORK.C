@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define M258_NET_HOST_MAX 256U
 #define M258_NET_RULE_MAX 1024U
