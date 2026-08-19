@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include "openai_repair.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 static void lowercase(char *s)
 {
