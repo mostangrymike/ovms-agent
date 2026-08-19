@@ -51,7 +51,7 @@ int openai_tool_is_replace(const openai_tool_descriptor *descriptor)
 char *openai_tool_execute_read(
     const openai_tool_descriptor *descriptor,
     const char *arguments,
-    openai_file_cache_entry *cache)
+    llm_file_cache_entry *cache)
 {
     char *tool_output;
 
