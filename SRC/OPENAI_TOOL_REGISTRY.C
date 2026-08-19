@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_tool_registry.h"
 
 static const openai_tool_descriptor tool_registry[] = {
