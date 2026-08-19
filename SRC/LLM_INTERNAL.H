@@ -11,7 +11,7 @@
 
 #include "openai.h"
 #include "openai_log.h"
-#include "openai_path.h"
+#include "LLM_PATH.H"
 #include "openai_cache.h"
 #include "openai_tool_schema.h"
 #include "openai_tool_registry.h"
@@ -218,7 +218,7 @@ void openai_test_set_log_path(const char *path);
 void openai_send(agent_state *state,
                         const char *prompt,
                         int continue_conversation);
-#include "openai_path.h"
+#include "LLM_PATH.H"
 char *openai_read_text_file(const char *path);
 char *make_tool_error(const char *message,
                              const char *path);
