@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define OPENAI_APPROVAL_READ 0
 #define OPENAI_APPROVAL_WORK 1
@@ -717,7 +717,7 @@ int openai_mcp_info_text(const char *config,
             "---------------------------------\n"
             "Name:      %s\n"
             "Transport: %s\n"
-            "Target:    %s\n"
+            "Target:     %s\n"
             "State:     configured (transport execution pending)\n",
             servers[index].name,
             servers[index].transport,
