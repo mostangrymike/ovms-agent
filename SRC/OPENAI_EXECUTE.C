@@ -439,9 +439,9 @@ static int execute_stage_operations(
          ++index) {
         char *replacement;
 
-        if (!openai_path_is_safe(
+        if (!llm_path_is_safe(
                 operations[index].path) ||
-            openai_path_is_sensitive(
+            llm_path_is_sensitive(
                 operations[index].path)) {
             (void)printf(
                 "Saved plan execution refused for path: %s\n",
