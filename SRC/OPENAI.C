@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 char previous_response_id[OPENAI_RESPONSE_ID_SIZE];
 
