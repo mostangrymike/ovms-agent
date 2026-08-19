@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T16:54:00-05:00",
+  "updated_at": "2026-08-19T17:16:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,9 +18,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "9bd4dca88cf21f268273ff020a1bc54751f13432",
-    "current_github_head": "9bd4dca88cf21f268273ff020a1bc54751f13432",
-    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, and generic build-artifact families are complete; RULES.md is present on the branch.",
+    "latest_vax_green_head": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
+    "current_github_head": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
+    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, generic build-artifact, and TOOL RESULT families are complete; RULES.md is present on the branch.",
     "path_family": {
       "status": "complete and VAX-green",
       "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"
@@ -43,6 +43,19 @@
         "@TEST_M266_PLAN_SCOPE passed with M266_STATUS=%X00000001."
       ]
     },
+    "tool_result_family": {
+      "status": "complete and VAX-green",
+      "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
+      "completed": [
+        "Added uppercase SRC/LLM_TOOL_RESULT.C and switched BUILD_LLM_MODULES.COM / LLM_MODULES.OPT to LLM_TOOL_RESULT.",
+        "Neutralized OPENAI_RESULT_* macros and openai_result_* / openai_build_result APIs to LLM_RESULT_* and llm_* names.",
+        "Migrated LLM_INTERNAL.H, OPENAI_AGENT_LOOP.C, m237_result_test.c, and m238_build_result_test.c consumers.",
+        "Transition commit 2d205eccb78beb113e0a5adf64de00a2260bcf0b passed full VAX @BUILD before old-file deletion.",
+        "Deleted obsolete SRC/openai_tool_result.c in 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
+        "Physically deleted all OpenVMS versions of OPENAI_TOOL_RESULT.C and reran full @BUILD successfully with BUILD_STATUS=%X00000001.",
+        "All new externally visible llm_* result functions are under the DEC C/VAX 31-character external identifier limit."
+      ]
+    },
     "next_work": [
       "Continue M267 with the next bounded generic OpenAI naming family using RULES.md and GitHub-first branch-live verification.",
       "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
@@ -62,7 +75,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is 9bd4dca88cf21f268273ff020a1bc54751f13432 unless newer accepted work exists.",
+    "Expected latest VAX-green head is 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6 unless newer accepted work exists.",
     "Use GitHub as repository source of truth and OpenVMS as DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Continue with coherent bounded family slices and audit every new external identifier against the VAX 31-character limit."
   ]
