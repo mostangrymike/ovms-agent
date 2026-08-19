@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 static int openai_m150_write_plan(
     const char *path,
