@@ -4,7 +4,7 @@
 #include "openai_plan.h"
 #include "openai_repair.h"
 #include "openai_state.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #include "command_agent_execute_dry.inc"
 static void command_agent_approve(
