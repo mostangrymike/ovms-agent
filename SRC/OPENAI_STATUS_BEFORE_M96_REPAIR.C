@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 const char *openai_workflow_name(int workflow)
 {
