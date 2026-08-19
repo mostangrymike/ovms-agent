@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_DATA "M256_SESSIONS.DAT"
 #define TEST_CUR  "M256_SESSION.CUR"
