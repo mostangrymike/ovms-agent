@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* OPENAI_PLAN.OBJ references the interactive command-input helpers that are
  * normally supplied by MAIN.C.  This standalone parser regression does not
