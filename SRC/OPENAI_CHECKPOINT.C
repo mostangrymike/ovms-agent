@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_plan.h"
 
 #define M256_CKPT_FILE "OVMS_AGENT_CHECKPOINTS.DAT"
