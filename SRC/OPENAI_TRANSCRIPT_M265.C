@@ -52,6 +52,7 @@ static int m265_git_batch_split(
     char *end;
     unsigned int used;
     size_t length;
+    int more;
 
     if (text == NULL || buffer == NULL || buffer_size == 0U ||
         paths == NULL || count == NULL) {
@@ -76,6 +77,7 @@ static int m265_git_batch_split(
         while (*cursor != '\0' && *cursor != ',') {
             ++cursor;
         }
+        more = (*cursor == ',');
         end = cursor;
 
         while (end > start &&
@@ -94,8 +96,7 @@ static int m265_git_batch_split(
 
         paths[used++] = start;
 
-        if (*cursor == ',') {
-            *cursor = '\0';
+        if (more) {
             ++cursor;
             if (*cursor == '\0') {
                 return 0;
