@@ -1,5 +1,5 @@
-#ifndef OPENAI_INTERNAL_H
-#define OPENAI_INTERNAL_H
+#ifndef LLM_INTERNAL_H
+#define LLM_INTERNAL_H
 
 #include <ctype.h>
 #include <dirent.h>
@@ -883,4 +883,4 @@ void openai_show_session_results(const char *arguments);
 void openai_show_session_result(const char *arguments);
 void openai_session_clear_res_cmd(const char *arguments);
 
-#endif /* OPENAI_INTERNAL_H */
+#endif /* LLM_INTERNAL_H */
