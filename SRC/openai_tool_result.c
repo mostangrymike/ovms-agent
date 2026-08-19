@@ -25,93 +25,77 @@ static void result_copy(char *dst, size_t dst_size,
     dst[length] = '\0';
 }
 
-static int result_append(char *dst, size_t dst_size,
-                         const char *text, int *truncated)
+char *openai_result_make(const char *tool,
+                         const char *status,
+                         const char *effect,
+                         int code,
+                         const char *arguments,
+                         const char *output)
 {
-    size_t used;
-    size_t available;
-    size_t length;
+    char arg_text[OPENAI_RESULT_ARG_MAX];
+    char out_text[OPENAI_RESULT_OUT_MAX];
+    char *result;
+    int truncated = 0;
+    int written;
 
-    if (dst == NULL || dst_size == 0U || text == NULL) return 0;
-    used = strlen(dst);
-    if (used >= dst_size - 1U) {
-        if (truncated != NULL) *truncated = 1;
-        return 0;
+    result_copy(arg_text, sizeof(arg_text), arguments, &truncated);
+    result_copy(out_text, sizeof(out_text), output, &truncated);
+
+    result = (char *)malloc(OPENAI_RESULT_MAX);
+    if (result == NULL) return NULL;
+
+    written = snprintf(
+        result, OPENAI_RESULT_MAX,
+        "TOOL RESULT\n"
+        "-----------\n"
+        "tool: %s\n"
+        "status: %s\n"
+        "code: %d\n"
+        "effect: %s\n"
+        "truncated: %s\n"
+        "arguments:\n%s\n"
+        "output:\n%s\n",
+        tool != NULL ? tool : "unknown",
+        status != NULL ? status : "unknown",
+        code,
+        effect != NULL ? effect : "unknown",
+        truncated ? "yes" : "no",
+        arg_text[0] != '\0' ? arg_text : "(none)",
+        out_text[0] != '\0' ? out_text : "(none)"
+    );
+
+    if (written < 0 || (size_t)written >= OPENAI_RESULT_MAX) {
+        free(result);
+        return NULL;
     }
-    available = dst_size - used - 1U;
-    length = strlen(text);
-    if (length > available) {
-        length = available;
-        if (truncated != NULL) *truncated = 1;
-    }
-    if (length > 0U) (void)memcpy(dst + used, text, length);
-    dst[used + length] = '\0';
-    return length > 0U;
+
+    (void)strncpy(openai_result_last, result,
+                  sizeof(openai_result_last) - 1U);
+    openai_result_last[sizeof(openai_result_last) - 1U] = '\0';
+    return result;
 }
 
-static void result_sanitize(char *text)
+char *openai_build_result(const char *output, int status)
 {
-    unsigned char *cursor;
-
-    if (text == NULL) return;
-    cursor = (unsigned char *)text;
-    while (*cursor != '\0') {
-        if (*cursor == '\r') *cursor = '\n';
-        else if (*cursor < 32U && *cursor != '\n' && *cursor != '\t') {
-            *cursor = ' ';
-        }
-        ++cursor;
-    }
+    return openai_result_make(
+        "run_build",
+        (status & 1) != 0 ? "success" : "failure",
+        "execute",
+        status,
+        "{}",
+        output != NULL ? output : "Unable to capture build output."
+    );
 }
 
-int openai_tool_result_normalize(const char *name,
-                                 const char *arguments,
-                                 const char *output,
-                                 char *normalized,
-                                 size_t normalized_size)
+int openai_result_last_text(char *output, size_t output_size)
 {
-    char safe_name[64];
-    char safe_args[OPENAI_RESULT_ARG_MAX];
-    char safe_output[OPENAI_RESULT_OUT_MAX];
-    int truncated;
-
-    if (normalized == NULL || normalized_size == 0U ||
-        name == NULL || *name == '\0') return 0;
-
-    truncated = 0;
-    result_copy(safe_name, sizeof(safe_name), name, &truncated);
-    result_copy(safe_args, sizeof(safe_args), arguments, &truncated);
-    result_copy(safe_output, sizeof(safe_output), output, &truncated);
-    result_sanitize(safe_name);
-    result_sanitize(safe_args);
-    result_sanitize(safe_output);
-
-    normalized[0] = '\0';
-    (void)result_append(normalized, normalized_size,
-                        "Tool: ", &truncated);
-    (void)result_append(normalized, normalized_size,
-                        safe_name, &truncated);
-    (void)result_append(normalized, normalized_size,
-                        "\nArguments: ", &truncated);
-    (void)result_append(normalized, normalized_size,
-                        safe_args[0] != '\0' ? safe_args : "(none)",
-                        &truncated);
-    (void)result_append(normalized, normalized_size,
-                        "\nOutput:\n", &truncated);
-    (void)result_append(normalized, normalized_size,
-                        safe_output[0] != '\0' ? safe_output : "(none)",
-                        &truncated);
-    if (truncated) {
-        (void)result_append(normalized, normalized_size,
-                            "\n[normalized result truncated]", NULL);
-    }
-
-    result_copy(openai_result_last, sizeof(openai_result_last),
-                normalized, NULL);
-    return 1;
+    int written;
+    if (output == NULL || output_size == 0U) return 0;
+    written = snprintf(output, output_size, "%s", openai_result_last);
+    return written >= 0 && (size_t)written < output_size;
 }
 
-const char *openai_tool_result_last(void)
+void openai_show_result_last(void)
 {
-    return openai_result_last;
+    (void)puts(openai_result_last);
 }
