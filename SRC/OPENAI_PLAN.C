@@ -274,8 +274,8 @@ static int plan_token_candidate(
 {
     return strchr(candidate, '/') != NULL ||
            strcmp(candidate, "BUILD.COM") == 0 ||
-           strcmp(candidate, "OPENAI_MODULES.OPT") == 0 ||
-           strcmp(candidate, "BUILD_OPENAI_MODULES.COM") == 0;
+           strcmp(candidate, "LLM_MODULES.OPT") == 0 ||
+           strcmp(candidate, "BUILD_LLM_MODULES.COM") == 0;
 }
 
 static int plan_collect_section(
