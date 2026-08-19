@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "openai_tool_schema.h"
 #include "openai_transport.h"
 #include "openai_request_build.h"
