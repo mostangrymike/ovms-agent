@@ -4,7 +4,7 @@
 #include "gh_auth.h"
 #include "github_m262.h"
 #include "llm_config.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 static int m262_blank(const char *text)
 {
