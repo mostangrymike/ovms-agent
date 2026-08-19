@@ -1,10 +1,12 @@
 #ifndef OPENAI_PATH_H
 #define OPENAI_PATH_H
 
-int openai_path_is_safe(const char *path);
-int openai_contains_ignore_case(const char *text,
-                                const char *pattern);
-int openai_path_is_sensitive(const char *path);
-int openai_listing_entry_hidden(const char *name);
+/* Transitional compatibility shim. New code should include LLM_PATH.H. */
+#include "LLM_PATH.H"
+
+#define openai_path_is_safe llm_path_is_safe
+#define openai_contains_ignore_case llm_contains_ignore_case
+#define openai_path_is_sensitive llm_path_is_sensitive
+#define openai_listing_entry_hidden llm_listing_entry_hidden
 
 #endif /* OPENAI_PATH_H */
