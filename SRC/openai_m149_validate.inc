@@ -1,4 +1,4 @@
-#include "OPENAI_INTERNAL.H"
+#include "LLM_INTERNAL.H"
 
 static int openai_m149_write_text(
     const char *path,
