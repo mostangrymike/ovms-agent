@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define OPENAI_SESSION_FILE "OVMS_AGENT_SESSIONS.DAT"
 #define OPENAI_CURRENT_FILE "OVMS_AGENT_SESSION.CUR"
