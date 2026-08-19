@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int openai_confirm_restore(const char *path)
 {
