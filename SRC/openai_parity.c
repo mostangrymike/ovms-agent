@@ -717,7 +717,7 @@ int openai_mcp_info_text(const char *config,
             "---------------------------------\n"
             "Name:      %s\n"
             "Transport: %s\n"
-            "Target:     %s\n"
+            "Target:    %s\n"
             "State:     configured (transport execution pending)\n",
             servers[index].name,
             servers[index].transport,
