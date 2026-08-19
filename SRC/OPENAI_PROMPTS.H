@@ -7,12 +7,12 @@ const char *openai_prompt_write(void);
 const char *openai_prompt_create(void);
 
 /*
- * OPENAI_AGENT_LOOP.C includes OPENAI_INTERNAL.H before this header.  Keep
- * the supervised-repair guard file-local and intercept only replacement
- * calls made by that loop.  Other modules may include this header, but they
- * do not invoke the replacement helpers through these macros.
+ * The agent loop includes the internal header before this header. Keep the
+ * supervised-repair guard file-local and intercept only replacement calls
+ * made by that loop. During M267, accept either the legacy compatibility
+ * guard or the provider-neutral LLM internal guard.
  */
-#ifdef OPENAI_INTERNAL_H
+#if defined(OPENAI_INTERNAL_H) || defined(LLM_INTERNAL_H)
 #include "OPENAI_GOAL_GUARD.INC"
 
 static openai_replace_result openai_guard_rep_text(
