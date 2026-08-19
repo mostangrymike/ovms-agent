@@ -13,7 +13,7 @@ char *read_entire_file(const char *path, size_t *length_out)
     char *data;
     size_t actual;
 
-    if (openai_path_is_sensitive(path)) {
+    if (llm_path_is_sensitive(path)) {
         (void)printf("Access denied for sensitive path: %s\n", path);
         return NULL;
     }
