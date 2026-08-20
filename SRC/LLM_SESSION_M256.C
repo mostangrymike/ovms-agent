@@ -15,7 +15,7 @@
 #undef openai_session_resume
 #undef openai_session_resume_cmd
 
-#include "openai_checkpoint.c"
+#include "LLM_CHECKPOINT.INC"
 
 static int m256_resume_id(const char *arguments, char id[9])
 {
