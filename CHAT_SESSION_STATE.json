@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T08:50:00-05:00",
+  "updated_at": "2026-08-20T09:05:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -19,8 +19,8 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
     "latest_vax_green_head": "1a61c3a039e70375c4bb565988fd7321deae294d",
-    "current_github_head": "1a61c3a039e70375c4bb565988fd7321deae294d",
-    "current_github_head_status": "The complete generic JSON wrapper/writer/parser/header family is fully neutralized and VAX-green at 1a61c3a0. SRC/LLM_INTERNAL.H now includes LLM_JSON_PARSE.H and LLM_JSON_WRITE.H directly; temporary OPENAI_JSON_PARSE.H and OPENAI_JSON_WRITE.H compatibility headers are deleted on GitHub and physically absent on the VAX acceptance tree. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001.",
+    "current_github_head": "64b9442a74e736e682238110ad450ca1bb78eb1e",
+    "current_github_head_status": "NETWORK family is branch-complete and GitHub-audited at 64b9442a but pending VAX acceptance. SRC/OPENAI_NETWORK.C is renamed to SRC/LLM_NETWORK.C; generic openai_net_allow_once/openai_net_check/openai_net_policy_text/openai_test_net_reset are migrated to llm_net_allow_once/llm_net_check/llm_net_policy_text/llm_test_net_reset; BUILD_LLM_MODULES.COM and LLM_MODULES.OPT use LLM_NETWORK.OBJ; focused M258 policy/integration consumers and the parity network gate use the neutral names. BUILD_M258.COM also now links the already-accepted LLM_MODULES.OPT name so focused network acceptance does not depend on a stale OPENAI_MODULES.OPT artifact. Compare from 1a61c3a0 to 64b9442a shows only the intended seven-file delta. No NETWORK identifier exceeds the DEC C/VAX 31-character external identifier limit.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -31,8 +31,21 @@
     "json_wrapper_family": {"status": "complete and VAX-green", "checkpoint": "08c41186d3087271445c213e857d4f458e19501a"},
     "json_writer_family": {"status": "complete and VAX-green", "checkpoint": "1a61c3a039e70375c4bb565988fd7321deae294d"},
     "json_parser_family": {"status": "complete and VAX-green", "checkpoint": "1a61c3a039e70375c4bb565988fd7321deae294d"},
+    "network_family": {
+      "status": "branch-complete, pending VAX acceptance",
+      "checkpoint": "64b9442a74e736e682238110ad450ca1bb78eb1e",
+      "details": [
+        "Production source is SRC/LLM_NETWORK.C and build/link artifact is LLM_NETWORK.OBJ.",
+        "Generic external names are llm_net_allow_once, llm_net_check, llm_net_policy_text, and llm_test_net_reset; all are <=31 characters.",
+        "Focused M258_NET_POLICY_TEST.C and M258_MCP_NET_TEST.C consumers use the neutral names.",
+        "OPENAI_PARITY_M258.C uses llm_net_check while retaining unrelated OpenAI/MCP names for later classification.",
+        "BUILD_M258.COM uses LLM_MODULES.OPT for its focused integration links.",
+        "VAX full @BUILD and focused @BUILD_M258 acceptance are still required."
+      ]
+    },
     "next_work": [
-      "Inventory the live m267-llm-naming branch for the next smallest coherent generic OpenAI filename/namespace family; classify provider-specific versus generic before editing.",
+      "VAX-accept NETWORK head 64b9442a74e736e682238110ad450ca1bb78eb1e: restore BUILD_LLM_MODULES.COM, BUILD_M258.COM, LLM_MODULES.OPT, SRC/LLM_NETWORK.C, SRC/M258_NET_POLICY_TEST.C, SRC/M258_MCP_NET_TEST.C, and SRC/OPENAI_PARITY_M258.C; physically delete stale SRC/OPENAI_NETWORK.C and [.BUILD]OPENAI_NETWORK.OBJ; run full @BUILD and focused @BUILD_M258 with explicit status checks.",
+      "If both are green, mark NETWORK complete/VAX-green at 64b9442a, update issue #31 and durable state, then inventory the next bounded generic OpenAI naming family.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -51,6 +64,7 @@
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
     "Expected latest VAX-green head is 1a61c3a039e70375c4bb565988fd7321deae294d unless newer accepted work exists.",
+    "Current GitHub head 64b9442a74e736e682238110ad450ca1bb78eb1e is the audited NETWORK naming slice and is not VAX-green until full @BUILD and focused @BUILD_M258 pass.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, use GIT_RESTORE.COM batch script; quote mixed-case Git paths so DCL does not uppercase them."
