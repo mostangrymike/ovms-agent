@@ -80,6 +80,7 @@ This file records durable operating rules learned during development of OVMS Age
 - `git fetch` plus `git reset --mixed --no-refresh` may update index/ref state without reconstructing the working file correctly on OpenVMS.
 - Use the guarded RMS-aware restore mechanism for changed tracked files when a branch update must be materialized safely.
 - **When multiple Git restores are required, use the `GIT_RESTORE.COM` batch script instead of issuing multiple individual `GITRESTORE` operations.**
+- **Keep each quoted comma-separated `GIT_RESTORE.COM` path list short enough to stay below DCL command-element limits.** If a long restore command triggers `%DCL-W-TKNOVF`, assume that batch did not materialize the requested files; split the same branch-live restore set into several smaller verified batches before deleting stale files or building.
 - For branch-side deletions, explicitly remove stale OpenVMS file versions when necessary before acceptance builds.
 - OpenVMS file versioning can leave stale physical versions behind even after repository deletion; verify physical deletion when the build must prove a compatibility shim is truly gone.
 - Be alert for RMS record-format damage from generic write paths. Repository correctness does not substitute for live RMS acceptance.
