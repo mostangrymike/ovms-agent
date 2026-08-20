@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_PROJECT_MAP.H"
 
 #define M233_COB "SRC/M233_SAMPLE.COB"
 #define M233_CBL "SRC/M233_SAMPLE.CBL"
@@ -69,13 +70,13 @@ int main(void)
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
 
-    if (!openai_project_refresh(&state)) {
+    if (!llm_project_refresh(&state)) {
         (void)puts("M233 failed: project refresh.");
         m233_cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_map_text(
+    if (!llm_project_map_text(
             &state, output, sizeof(output)) ||
         strstr(output, "OVMS Agent project map") == NULL ||
         strstr(output, "Sources:") == NULL ||
@@ -89,7 +90,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_src_text(
+    if (!llm_project_src_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "LLM_") == NULL &&
          strstr(output, "llm_") == NULL &&
@@ -119,7 +120,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_tests_text(
+    if (!llm_project_tests_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "M233_PROJECT_TEST.C") == NULL &&
          strstr(output, "m233_project_test.c") == NULL)) {
@@ -128,7 +129,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_build_text(
+    if (!llm_project_build_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "BUILD.COM") == NULL &&
          strstr(output, "build.com") == NULL)) {
@@ -137,7 +138,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_compose(
+    if (!llm_project_compose(
             &state, "Inspect parser.", output, sizeof(output)) ||
         strstr(output, "REPOSITORY MAP") == NULL ||
         strstr(output, "MODEL TASK CONTEXT") == NULL ||
