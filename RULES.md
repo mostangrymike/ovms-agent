@@ -5,10 +5,11 @@ This file records durable operating rules learned during development of OVMS Age
 ## 1. Source of Truth and Tooling
 
 - **GitHub is the development control plane and repository source of truth.**
-- Use the connected GitHub repository for committed file contents, branch state, repository searches, diffs, edits, deletes, commits, issues, pull requests, comments, labels, commit history, and CI/check metadata whenever possible.
+- **Always maximize use of GitHub.** Use the connected GitHub repository for repository discovery, committed file contents, branch state, searches, diffs, edits, deletes, commits, issues, pull requests, comments, labels, commit history, and CI/check metadata whenever the capability exists.
+- **Make source-code and repository-file edits on GitHub by default.** Do not ask the user to perform routine source edits on OpenVMS when the same edit can be made safely through GitHub. VAX-side editing is an exception reserved for cases where GitHub editing is technically unsafe or unavailable, such as a genuinely impractical whole-file operation or an RMS-specific acceptance repair.
+- **Track project work, milestones, defects, gaps, and meaningful checkpoints with GitHub issues.** Update the applicable GitHub issue as work progresses and create/use a GitHub issue when durable project work needs tracking.
 - **OpenVMS is the hardware/OS acceptance environment.** Use it for DEC C/VAX compile and link behavior, RMS semantics and record formats, DCL behavior, runtime behavior, live acceptance, and generated or uncommitted files.
 - Do not ask for a VAX-side `SEARCH` or similar repository-discovery command when GitHub can answer the question.
-- Maximize GitHub use by default; use VAX-side source editing only when GitHub whole-file replacement would be unsafe or impractical, especially for very large files or RMS-sensitive workflows.
 - A local/VAX blob SHA is an acceptance cross-check, not a substitute for GitHub repository discovery or branch state.
 - Do not mix OVMS Agent build architecture with VMSBBS or unrelated projects.
 
@@ -119,6 +120,7 @@ This file records durable operating rules learned during development of OVMS Age
 
 ## 11. Milestone Tracking and Durable State
 
+- **Use GitHub issues as the durable issue/work tracker for OVMS Agent.** Significant gaps, defects, milestones, and project work should be represented and maintained there rather than only in chat or local notes.
 - GitHub issue **#31** is the tracking issue for M267 generic OpenAI-to-LLM naming cleanup.
 - Update the tracking issue at meaningful, durable checkpoints rather than for every tiny edit.
 - Maintain `CHAT_SESSION_STATE.json` on the `chat-session-state` branch as durable cross-chat state.
