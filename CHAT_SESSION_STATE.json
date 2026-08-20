@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T21:27:00-05:00",
+  "updated_at": "2026-08-19T21:39:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,28 +18,32 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "6837b8d849e9aa4035f60d7b369866636369285b",
-    "current_github_head": "b28ee625f4edd33dd93066a63246ab51bda78feb",
-    "current_github_head_status": "PROMPTS namespace is VAX-green at 6837b8d. Subsequent RULES.md-only commits added stronger GitHub-first/max-work rules. PROMPTS filename migration is now in progress on GitHub: SRC/LLM_PROMPTS.H and SRC/LLM_PROMPTS.C exist at current head, but build/link entries and remaining consumers have not yet been switched, so current head is not yet an acceptance checkpoint.",
+    "latest_vax_green_head": "99dbb500cfee444f2a23a574423ce9e339ffc756",
+    "current_github_head": "0f0f9454e61d016cd2fb7fff83763c018f0ae4ea",
+    "current_github_head_status": "PROMPTS filename/artifact transition is VAX-green at 99dbb500 with full @BUILD and all regressions. Newer head 0f0f945 additionally migrates OPENAI_AGENT.C and OPENAI_CREATE_M261_CORE.C to include LLM_PROMPTS.H directly and awaits VAX acceptance.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
     "tool_result_family": {"status": "complete and VAX-green", "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6"},
     "tool_schema_family": {"status": "complete and VAX-green", "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001"},
     "prompts_family": {
-      "status": "in progress",
+      "status": "in progress; filename/artifact checkpoint VAX-green, consumer drain continuing",
       "namespace_checkpoint": "6837b8d849e9aa4035f60d7b369866636369285b",
-      "namespace_checkpoint_status": "VAX-green with full @BUILD and BUILD_STATUS=%X00000001 after RMS-safe batch restore using GIT_RESTORE.COM.",
+      "filename_artifact_checkpoint": "99dbb500cfee444f2a23a574423ce9e339ffc756",
+      "filename_artifact_status": "VAX-green with full @BUILD, all regression tests passed, BUILD_STATUS=%X00000001 after RMS-safe GIT_RESTORE.COM batch materialization.",
       "current_transition": [
-        "Four external prompt symbols are neutral: llm_prompt_read_only, llm_prompt_plan, llm_prompt_write, llm_prompt_create.",
-        "Temporary source compatibility aliases remain for openai_prompt_* callers.",
-        "SRC/LLM_PROMPTS.H added at 701c250dcfdd73d57b6d6c32400e34e333621a12.",
-        "SRC/LLM_PROMPTS.C added at b28ee625f4edd33dd93066a63246ab51bda78feb.",
-        "Do not delete OPENAI_PROMPTS.C/H yet. Next switch BUILD_LLM_MODULES.COM and LLM_MODULES.OPT, migrate exact branch-live includes, VAX-build, then drain compatibility aliases/files."
+        "Neutral production artifacts SRC/LLM_PROMPTS.C, SRC/LLM_PROMPTS.H and LLM_PROMPTS.OBJ are active in build/link.",
+        "External prompt symbols are llm_prompt_read_only, llm_prompt_plan, llm_prompt_write, llm_prompt_create; all are within the DEC C/VAX 31-character limit.",
+        "Temporary openai_prompt_* source aliases remain in LLM_PROMPTS.H while consumers are drained.",
+        "OPENAI_AGENT.C and OPENAI_CREATE_M261_CORE.C now include LLM_PROMPTS.H directly at current GitHub head 0f0f9454e61d016cd2fb7fff83763c018f0ae4ea.",
+        "Large/live OPENAI_AGENT_LOOP.C and OPENAI_STATUS_M261_CORE.C still include openai_prompts.h and must be migrated safely on GitHub before obsolete OPENAI_PROMPTS.H/C can be deleted.",
+        "Do not rename openai_prompt_plan_m90.inc, openai_m150c_validate.inc, or OPENAI_GOAL_GUARD.INC blindly; treat them as separate bounded subfamilies."
       ]
     },
     "next_work": [
-      "Continue PROMPTS filename migration entirely on GitHub: switch build/link artifacts to LLM_PROMPTS, migrate exact branch-live includes to LLM_PROMPTS.H, compare diffs, then ask for one VAX sync/@BUILD.",
+      "VAX-accept current head 0f0f9454e61d016cd2fb7fff83763c018f0ae4ea after RMS-safe restore of the two changed tracked consumers.",
+      "Continue draining large/live old PROMPTS header consumers on GitHub without risky blind whole-file rewrites; preserve aliases until all live callers use LLM_PROMPTS.H/llm_prompt_* directly.",
+      "Delete obsolete OPENAI_PROMPTS.C/H only after exact branch-live verification and a green build with neutral consumers.",
       "When multiple tracked files need RMS-safe materialization on VAX, use GIT_RESTORE.COM batch script.",
       "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -57,7 +61,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is 6837b8d849e9aa4035f60d7b369866636369285b unless newer accepted work exists.",
+    "Expected latest VAX-green head is 99dbb500cfee444f2a23a574423ce9e339ffc756 unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips."
   ]
