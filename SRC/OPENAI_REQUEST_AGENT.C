@@ -5,7 +5,7 @@
 #include "llm_internal.h"
 #include "openai_request_agent.h"
 #include "LLM_TOOL_SCHEMA.H"
-#include "OPENAI_AGENT_CTX.H"
+#include "LLM_AGENT_CTX.H"
 #include "LLM_JSON_PARSE.H"
 
 #define OPENAI_AGENT_GOAL_MAX 8192U
@@ -35,13 +35,13 @@ static int openai_update_local_ctx(const char *call_id,
         return 0;
     }
 
-    if (!openai_agent_ctx_add_items(items)) {
+    if (!llm_agent_ctx_add_items(items)) {
         free(items);
         return 0;
     }
     free(items);
 
-    return openai_agent_ctx_add_tool(call_id, tool_output);
+    return llm_agent_ctx_add_tool(call_id, tool_output);
 }
 
 static int openai_write_local_input(FILE *file,
@@ -61,14 +61,14 @@ static int openai_write_local_input(FILE *file,
             return 0;
         }
 
-        openai_agent_ctx_reset();
+        llm_agent_ctx_reset();
         (void)strcpy(openai_agent_goal, user_prompt);
     } else if (!openai_update_local_ctx(call_id, tool_output)) {
         return 0;
     }
 
     if (fputs(",\"input\":", file) == EOF ||
-        !openai_agent_ctx_write(file, user_prompt) ||
+        !llm_agent_ctx_write(file, user_prompt) ||
         fputc(',', file) == EOF) {
         return 0;
     }
@@ -255,7 +255,7 @@ int write_agent_final_request(
         fputs("\",\"instructions\":\"", file) == EOF ||
         !json_write_escaped(file, instructions) ||
         fputs("\",\"input\":", file) == EOF ||
-        !openai_agent_ctx_write_final(file, openai_agent_goal) ||
+        !llm_agent_ctx_write_final(file, openai_agent_goal) ||
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
