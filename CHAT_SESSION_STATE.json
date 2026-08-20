@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T13:06:00-05:00",
+  "updated_at": "2026-08-20T18:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,9 +17,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "9e38e13ccd281c0695977237c6c1b920c8f66182",
-    "current_github_head": "987dc31d8cfcb1a8a9d6d813c792babaefc77c0d",
-    "current_github_head_status": "INSTRUCTIONS deeper filename migration is VAX-green at 9e38e13c. Pending GIT_CONTEXT core filename transition at 987dc31d moves the M262 core to LLM_GIT_CONTEXT_M262_CORE.C and leaves only a one-line compatibility shim at the old core path; LLM_GIT_CONTEXT.C now includes the neutral core filename.",
+    "latest_vax_green_head": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc",
+    "current_github_head": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc",
+    "current_github_head_status": "VAX-green. OpenVMS fetched/reset to 52a089f8, physically deleted obsolete duplicate LLM_EXECUTE_COUNT_HANDLER_M103.INC and LLM_EXECUTE_TOPLEVEL_GUARD_M100.INC RMS versions, and canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -50,20 +50,20 @@
       "agent_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
       "agent_loop_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
       "instructions_filename_complete": "9e38e13ccd281c0695977237c6c1b920c8f66182",
-      "git_context_top_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
-      "parity_top_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3"
+      "git_context_core_complete": "70ca554896c4bd9a9d61ae98d625c71f73627825",
+      "parity_core_complete": "034c15cb46616a12d9357e025828a2b7decd7650",
+      "parity_filename_complete": "e6fe804508fc7c4847024108c9089ed5c0d450fa",
+      "execute_duplicate_cleanup": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc"
     },
     "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
     "next_work": [
-      "VAX-accept GIT_CONTEXT core filename transition at 987dc31d.",
-      "Then migrate PARITY deeper core filename stack.",
-      "Then coordinated generic openai_*/OPENAI_* namespaces/headers/consumers.",
+      "Run an exact branch-live survivor audit at 52a089f8, separating generic openai_*/OPENAI_* names from genuine OpenAI provider/protocol/config/compatibility semantics.",
+      "Migrate remaining generic namespaces/headers/consumers in bounded coherent slices, with GitHub as edit/source-of-truth plane and VAX as acceptance plane.",
       "Finish with survivor classification, <=31-character external-symbol audit, full VAX build/regressions, and close issue #31 only after final acceptance."
     ]
   },
   "local_openvms_state": {
-    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
-    "local_branch_name": "m265-rms-record-restore-fix",
-    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use short verified GIT_RESTORE.COM batches; physically remove obsolete RMS files when required; @BUILD for acceptance"
+    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
+    "sync_pattern": "git -c credential.helper= fetch -v --progress origin; git reset --mixed --no-refresh origin/m267-llm-naming; use short verified GIT_RESTORE.COM batches; physically remove obsolete RMS files when required; @BUILD for acceptance"
   }
 }
