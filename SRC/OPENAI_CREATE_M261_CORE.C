@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_prompts.h"
+#include "LLM_PROMPTS.H"
 
 
 static char *create_prompt_rules(const char *base)
