@@ -62,7 +62,7 @@ static const char prompt_plan[] =
 #endif
 
 #include "LLM_PROMPT_PLAN_M90.INC"
-#include "openai_m150c_validate.inc"
+#include "LLM_M150C_VALIDATE.INC"
 
 static const char prompt_write[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
