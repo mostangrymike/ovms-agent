@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_plan.h"
+#include "LLM_PLAN.H"
 
 #define GAP009_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
 #define GAP009_CHECK_FILE "OVMS_AGENT_PLAN.TXT.CHK"
