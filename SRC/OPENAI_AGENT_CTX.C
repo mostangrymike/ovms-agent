@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "OPENAI_AGENT_CTX.H"
-#include "OPENAI_JSON_WRITE.H"
+#include "LLM_JSON_WRITE.H"
 
 #define OPENAI_AGENT_CTX_MAX 131072U
 
