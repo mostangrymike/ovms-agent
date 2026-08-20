@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T08:44:00-05:00",
+  "updated_at": "2026-08-20T08:46:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -19,52 +19,39 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
     "latest_vax_green_head": "447cfa485d868a8a36de83bb84f05f8d6404fd9f",
-    "current_github_head": "447cfa485d868a8a36de83bb84f05f8d6404fd9f",
-    "current_github_head_status": "JSON parser family is complete and VAX-green at 447cfa48. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001 after restoring the seven branch-live parser/build consumers and physically deleting stale SRC/OPENAI_JSON_PARSE.C and [.BUILD]OPENAI_JSON_PARSE.OBJ. JSON writer remains VAX-green at 96028781. The only remaining JSON naming debt is the pair of temporary compatibility headers OPENAI_JSON_WRITE.H and OPENAI_JSON_PARSE.H, both retained solely because branch-live LLM_INTERNAL.H still includes the old names.",
+    "current_github_head": "1a61c3a039e70375c4bb565988fd7321deae294d",
+    "current_github_head_status": "JSON writer and parser families are VAX-green through 447cfa48. Current GitHub head 1a61c3a0 is a bounded three-file shim-removal slice pending VAX acceptance: SRC/LLM_INTERNAL.H changes only two includes to LLM_JSON_PARSE.H and LLM_JSON_WRITE.H, and the temporary SRC/OPENAI_JSON_PARSE.H and SRC/OPENAI_JSON_WRITE.H compatibility headers are deleted. Compare from 447cfa48 to 1a61c3a0 shows exactly those three files with no unrelated changes.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
     "tool_result_family": {"status": "complete and VAX-green", "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6"},
     "tool_schema_family": {"status": "complete and VAX-green", "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001"},
-    "prompts_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f"
-    },
-    "goal_guard_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "a155a3678e25460427ce6bb1db576db1c590b266"
-    },
-    "json_wrapper_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "08c41186d3087271445c213e857d4f458e19501a"
-    },
+    "prompts_family": {"status": "complete and VAX-green", "checkpoint": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f"},
+    "goal_guard_family": {"status": "complete and VAX-green", "checkpoint": "a155a3678e25460427ce6bb1db576db1c590b266"},
+    "json_wrapper_family": {"status": "complete and VAX-green", "checkpoint": "08c41186d3087271445c213e857d4f458e19501a"},
     "json_writer_family": {
-      "status": "complete and VAX-green with temporary compatibility header",
+      "status": "complete and VAX-green through writer transition; final shim deletion pending VAX at current head",
       "checkpoint": "96028781b3c5308fdbcdac46fa843abafc42e9b0",
       "details": [
         "Production compiles SRC/LLM_JSON_WRITE.C to LLM_JSON_WRITE.OBJ and links that neutral artifact.",
         "Neutral header is SRC/LLM_JSON_WRITE.H; exported json_write_escaped API was already provider-neutral and was not renamed.",
-        "SRC/OPENAI_JSON_WRITE.H remains only as a documented compatibility shim because branch-live LLM_INTERNAL.H still includes the old header name.",
-        "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
+        "Current head deletes the former OPENAI_JSON_WRITE.H compatibility shim after LLM_INTERNAL.H moved to LLM_JSON_WRITE.H.",
+        "Writer transition full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
       ]
     },
     "json_parser_family": {
-      "status": "complete and VAX-green with temporary compatibility header",
+      "status": "complete and VAX-green through parser transition; final shim deletion pending VAX at current head",
       "checkpoint": "447cfa485d868a8a36de83bb84f05f8d6404fd9f",
       "details": [
-        "SRC/OPENAI_JSON_PARSE.C is renamed to SRC/LLM_JSON_PARSE.C; the only content change is its include from openai_json_parse.h to LLM_JSON_PARSE.H.",
-        "Neutral header SRC/LLM_JSON_PARSE.H preserves the provider-neutral parser APIs and uses LLM_JSON_PARSE_H guard.",
+        "Production uses SRC/LLM_JSON_PARSE.C and SRC/LLM_JSON_PARSE.H with LLM_JSON_PARSE.OBJ.",
         "SRC/OPENAI_RESPONSE.C and SRC/OPENAI_REQUEST_AGENT.C include LLM_JSON_PARSE.H directly.",
-        "BUILD_LLM_MODULES.COM compiles LLM_JSON_PARSE.OBJ from LLM_JSON_PARSE.C and LLM_MODULES.OPT links LLM_JSON_PARSE.OBJ.",
-        "SRC/OPENAI_JSON_PARSE.H remains only as a documented compatibility shim for LLM_INTERNAL.H.",
-        "No external identifier changes were introduced.",
-        "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
+        "Current head deletes the former OPENAI_JSON_PARSE.H compatibility shim after LLM_INTERNAL.H moved to LLM_JSON_PARSE.H.",
+        "Parser transition full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
       ]
     },
     "next_work": [
-      "Migrate the two JSON includes in branch-live SRC/LLM_INTERNAL.H directly to LLM_JSON_PARSE.H and LLM_JSON_WRITE.H, then delete both temporary OPENAI_JSON_* compatibility headers in one bounded GitHub commit.",
-      "Use exact branch-live content and an atomic tree/commit when practical; compare the accepted head to the new head before VAX handoff.",
-      "After shim deletion, physically delete stale VAX OPENAI_JSON_PARSE.H and OPENAI_JSON_WRITE.H versions and run full @BUILD with explicit BUILD_STATUS.",
+      "VAX-accept current head 1a61c3a039e70375c4bb565988fd7321deae294d: restore SRC/LLM_INTERNAL.H, physically delete all RMS versions of SRC/OPENAI_JSON_PARSE.H and SRC/OPENAI_JSON_WRITE.H, run full @BUILD, and record BUILD_STATUS.",
+      "If green, mark the complete JSON wrapper/writer/parser/header family fully neutralized and VAX-green at 1a61c3a0, update issue #31 and durable state, then inventory the next bounded generic OpenAI naming family.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes."
     ]
@@ -82,6 +69,7 @@
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
     "Expected latest VAX-green head is 447cfa485d868a8a36de83bb84f05f8d6404fd9f unless newer accepted work exists.",
+    "Current GitHub head 1a61c3a039e70375c4bb565988fd7321deae294d is the three-file JSON shim-removal slice and is not VAX-green until accepted.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, use GIT_RESTORE.COM batch script; quote mixed-case Git paths so DCL does not uppercase them."
