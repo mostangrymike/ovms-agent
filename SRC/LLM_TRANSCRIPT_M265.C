@@ -2,7 +2,7 @@
 
 #define openai_tool_run openai_tool_run_base
 #define openai_tool_run_cmd openai_tool_run_cmd_base
-#include "openai_transcript.c"
+#include "LLM_TRANSCRIPT_CORE.INC"
 #undef openai_tool_run
 #undef openai_tool_run_cmd
 
