@@ -5,8 +5,8 @@
 
 #include "openai_plan_sensitive.inc"
 
-#define OPENAI_GOAL_GUARD_TEXT_ONLY 1
-#include "OPENAI_GOAL_GUARD.INC"
+#define LLM_GOAL_GUARD_TEXT_ONLY 1
+#include "LLM_GOAL_GUARD.INC"
 
 /*
  * Link-only stubs for unrelated OPENAI_RETRY.C entry points.
