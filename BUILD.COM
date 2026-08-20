@@ -447,7 +447,7 @@ $ ENDIF
 $
 $!-----------------------------------------------------------
 $! Build M251 user-directed repair regression.
-$! Link only OPENAI_RETRY.OBJ plus local stubs so MAIN.OBJ is not required.
+$! Link only LLM_RETRY.OBJ plus local stubs so MAIN.OBJ is not required.
 $!-----------------------------------------------------------
 $ CC/OBJECT=[.BUILD]M251_REPAIR_GOAL_TEST.OBJ -
 /STANDARD=RELAXED_ANSI89 -
@@ -458,7 +458,7 @@ $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
 $ LINK/EXECUTABLE=[.BUILD]M251_REPAIR_GOAL_TEST.EXE -
 [.BUILD]M251_REPAIR_GOAL_TEST.OBJ, -
-[.BUILD]OPENAI_RETRY.OBJ
+[.BUILD]LLM_RETRY.OBJ
 $ IF .NOT. $STATUS
 $ THEN
 $     FINAL_STATUS = $STATUS
