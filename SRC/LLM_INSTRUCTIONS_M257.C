@@ -14,7 +14,7 @@
 #define openai_show_instr openai_show_instr_base
 #define openai_instr_reload_cmd openai_instr_reload_cmd_base
 #define openai_test_instr_path openai_test_instr_path_base
-#include "openai_instructions.c"
+#include "LLM_INSTRUCTIONS.C"
 #undef openai_instr_reload
 #undef openai_instr_compose
 #undef openai_instr_status_text
