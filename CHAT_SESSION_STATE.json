@@ -1,1 +1,69 @@
-{"note":"state update pending after VAX acceptance"}
+{
+  "schema": "ovms-agent-chat-state-v1",
+  "updated_at": "2026-08-20T13:06:00-05:00",
+  "repository": "mostangrymike/ovms-agent",
+  "persistence_branch": "chat-session-state",
+  "rules_file": "RULES.md on m267-llm-naming",
+  "accepted_milestones": {
+    "M260": "final parity/reconcile",
+    "M261": "VAX portability/VMSBBS hardening",
+    "M262": "provider-neutral/install/release/GitHub profile reconciliation",
+    "M263": "GAP-006 RMS-aware Git context",
+    "M264": "GAP-007 COBOL structural bounded-edit guard",
+    "M265": "GAP-008 RMS-aware guarded Git restore",
+    "M266": "GAP-009 saved plan file-scope metadata"
+  },
+  "m267": {
+    "issue": 31,
+    "branch": "m267-llm-naming",
+    "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
+    "latest_vax_green_head": "9e38e13ccd281c0695977237c6c1b920c8f66182",
+    "current_github_head": "987dc31d8cfcb1a8a9d6d813c792babaefc77c0d",
+    "current_github_head_status": "INSTRUCTIONS deeper filename migration is VAX-green at 9e38e13c. Pending GIT_CONTEXT core filename transition at 987dc31d moves the M262 core to LLM_GIT_CONTEXT_M262_CORE.C and leaves only a one-line compatibility shim at the old core path; LLM_GIT_CONTEXT.C now includes the neutral core filename.",
+    "accepted_families": {
+      "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
+      "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
+      "build_artifact": "9bd4dca88cf21f268273ff020a1bc54751f13432",
+      "tool_result": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
+      "tool_schema": "a146c196d7d5f867668aed9fd809f27263288001",
+      "prompts": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
+      "goal_guard": "a155a3678e25460427ce6bb1db576db1c590b266",
+      "json": "1a61c3a039e70375c4bb565988fd7321deae294d",
+      "network": "64b9442a74e736e682238110ad450ca1bb78eb1e",
+      "transport": "973a07783ebaf3e92f9c33dc9f0d4dc270a1376a",
+      "agent_ctx": "883c320defcb7685fe0daf105cfc3e472988c54a",
+      "image": "eb320246d3b57f01a360297a70afa9511d42e252",
+      "response": "2532e1e417e43aa5305a83f17598de7682fa368c",
+      "log_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+      "state_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+      "session_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
+      "transcript_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
+      "checkpoint_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
+      "build_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "create_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "status_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "retry_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "execute_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "plan_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "tools_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "tool_registry_filename_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "agent_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "agent_loop_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "instructions_filename_complete": "9e38e13ccd281c0695977237c6c1b920c8f66182",
+      "git_context_top_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "parity_top_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3"
+    },
+    "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
+    "next_work": [
+      "VAX-accept GIT_CONTEXT core filename transition at 987dc31d.",
+      "Then migrate PARITY deeper core filename stack.",
+      "Then coordinated generic openai_*/OPENAI_* namespaces/headers/consumers.",
+      "Finish with survivor classification, <=31-character external-symbol audit, full VAX build/regressions, and close issue #31 only after final acceptance."
+    ]
+  },
+  "local_openvms_state": {
+    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
+    "local_branch_name": "m265-rms-record-restore-fix",
+    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use short verified GIT_RESTORE.COM batches; physically remove obsolete RMS files when required; @BUILD for acceptance"
+  }
+}
