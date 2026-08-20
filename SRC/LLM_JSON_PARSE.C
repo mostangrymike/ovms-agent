@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_json_parse.h"
+#include "LLM_JSON_PARSE.H"
 
 char *read_entire_file(const char *path, size_t *length_out)
 {
