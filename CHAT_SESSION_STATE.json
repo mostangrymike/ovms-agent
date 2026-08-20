@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T09:56:00-05:00",
+  "updated_at": "2026-08-20T10:17:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -19,8 +19,8 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
     "latest_vax_green_head": "eb320246d3b57f01a360297a70afa9511d42e252",
-    "current_github_head": "88e664525f9552c06b4d01d546cfd4b9972d4f4a",
-    "current_github_head_status": "IMAGE helper family is complete and VAX-green at eb320246. Canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001 and focused @BUILD_M259 passed all implemented M259 image-input regressions with M259_STATUS=%X00000001 after restoring the long file set in several shorter verified GIT_RESTORE.COM batches. The live branch is one documentation-only RULES.md commit ahead at 88e66452, recording the proven DCL command-element limit for oversized quoted restore lists; no production source changed in that rules-only commit.",
+    "current_github_head": "7fc689475cd5b0a4930da04d322e989cd8be3eea",
+    "current_github_head_status": "PROJECT_MAP phase 1 is complete on GitHub and pending VAX acceptance at 7fc68947. The exact old implementation blob was moved from lowercase SRC/openai_project_map.c to SRC/LLM_PROJECT_MAP_CORE.INC with zero content change; SRC/LLM_PROJECT_MAP.C and .H establish the neutral llm_project_* API and LLM_PROJECT_MAP.OBJ artifact. Thin temporary openai_project_* compatibility wrappers remain only to preserve the two large shared consumers (LLM_INTERNAL.H declarations and COMMAND_AGENT.C calls) without risky whole-file rewrites. M233 now includes LLM_PROJECT_MAP.H and calls llm_project_* directly. Canonical BUILD.COM explicitly compiles/runs M233 and links through LLM_MODULES.OPT. Compare from rules-only base 88e66452 is exactly six paths and contains no unrelated changes. VAX acceptance is still required.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -40,7 +40,6 @@
         "SRC/LLM_INTERNAL.H includes LLM_TRANSPORT.H directly.",
         "Temporary SRC/OPENAI_TRANSPORT.H shim was deleted on GitHub and physically removed on OpenVMS.",
         "perform_openai_request remains intentionally OpenAI-compatible protocol naming for the /responses wire operation.",
-        "GitHub compare from 883c320d to 973a0778 was exactly LLM_INTERNAL.H +1/-1 plus deletion of the seven-line shim.",
         "OpenVMS RMS-aware restore verified SRC/LLM_INTERNAL.H; canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001."
       ]
     },
@@ -50,10 +49,7 @@
       "details": [
         "Production source/header are SRC/LLM_AGENT_CTX.C and SRC/LLM_AGENT_CTX.H; build/link artifact is LLM_AGENT_CTX.OBJ.",
         "Exported APIs are llm_agent_ctx_reset, llm_agent_ctx_add_items, llm_agent_ctx_add_tool, llm_agent_ctx_write, and llm_agent_ctx_write_final; all are <=31 characters.",
-        "File-local macro, state, and helper names in the module were also neutralized so no generic OpenAI namespace remains inside AGENT_CTX.",
-        "SRC/OPENAI_REQUEST_AGENT.C is the sole branch-live production consumer and now includes LLM_AGENT_CTX.H and calls only llm_agent_ctx_* APIs for this family.",
         "Legacy SRC/OPENAI_AGENT_CTX.C and .H were deleted; no compatibility shim remains.",
-        "OpenVMS GIT_RESTORE.COM restored and verified all five live files in a quoted comma-separated batch; stale OPENAI_AGENT_CTX.C, OPENAI_AGENT_CTX.H, and OPENAI_AGENT_CTX.OBJ were physically removed.",
         "Canonical VAX @BUILD passed all regression tests with BUILD_STATUS=%X00000001."
       ]
     },
@@ -64,19 +60,29 @@
         "Generic helper source/header/artifact are SRC/LLM_IMAGE.C, SRC/LLM_IMAGE.H, and LLM_IMAGE.OBJ; legacy OPENAI_IMAGE.C/H are deleted with no shim.",
         "Helper namespace is llm_image_meta, llm_image_info, llm_image_write_data, llm_image_log, and LLM_IMAGE_PATH_MAX; external names are <=31 characters.",
         "OpenAI-compatible input_image/image_url JSON fields remain intentionally in request modules and were not renamed.",
-        "openai_agent_image* names remain explicitly deferred to the broader AGENT family rather than mixed into the image-helper slice.",
-        "BUILD_M259.COM uses LLM_IMAGE.OBJ, LLM_JSON_WRITE.OBJ, and LLM_MODULES.OPT so focused acceptance does not depend on stale OpenAI-named artifacts.",
-        "The first VAX restore attempt exceeded the DCL command-element limit and failed with %DCL-W-TKNOVF before any requested batch restore completed. The same file set was then split into four shorter GIT_RESTORE.COM batches; all files were restored and verified.",
-        "After the verified short-batch restores, canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001 and @BUILD_M259 passed all implemented M259 image-input regressions with M259_STATUS=%X00000001."
+        "BUILD_M259.COM uses LLM_IMAGE.OBJ, LLM_JSON_WRITE.OBJ, and LLM_MODULES.OPT.",
+        "Canonical @BUILD and focused @BUILD_M259 both passed with %X00000001 after verified short-batch restores."
+      ]
+    },
+    "project_map_family": {
+      "status": "phase 1 pending VAX acceptance",
+      "checkpoint": "7fc689475cd5b0a4930da04d322e989cd8be3eea",
+      "details": [
+        "Old lowercase production path SRC/openai_project_map.c was moved by exact Git tree operation to SRC/LLM_PROJECT_MAP_CORE.INC with zero content change and normalized non-executable mode.",
+        "SRC/LLM_PROJECT_MAP.C compiles the core under neutral llm_project_* public names and provides thin temporary openai_project_* wrappers for large legacy consumers.",
+        "SRC/LLM_PROJECT_MAP.H is self-contained via AGENT.H and <stddef.h>; all 11 neutral external names are <=31 characters.",
+        "BUILD_LLM_MODULES.COM compiles LLM_PROJECT_MAP.C to LLM_PROJECT_MAP.OBJ and LLM_MODULES.OPT links LLM_PROJECT_MAP.OBJ.",
+        "SRC/m233_project_test.c includes LLM_PROJECT_MAP.H and uses neutral llm_project_* APIs while intentionally leaving unrelated openai_parity_text unchanged.",
+        "COMMAND_AGENT.C and LLM_INTERNAL.H remain unchanged in phase 1 because the available GitHub connector has no patch-write primitive and whole-file reconstruction of those 39-41 KB shared files would violate surgical-edit hygiene.",
+        "Compare from 88e66452 to 7fc68947 is exactly six paths: two manifests, neutral C/H additions, zero-content rename of the old implementation blob to the neutral core include, and M233 API migration."
       ]
     },
     "next_work": [
-      "Treat eb320246 as the latest VAX-green production checkpoint; the current branch head 88e66452 is documentation-only and adds the DCL restore-batch length rule to RULES.md.",
-      "Inventory the next smallest coherent branch-live generic OpenAI naming family before editing.",
-      "For future long acceptance restore sets, split GIT_RESTORE.COM into several shorter quoted comma-separated batches before reaching DCL command-element limits; every batch must report restored and verified before stale-file deletion/build.",
+      "Obtain VAX canonical @BUILD acceptance for PROJECT_MAP phase-1 head 7fc68947; BUILD.COM itself compiles/runs the M233 repository-map regression, so no separate focused procedure is required.",
+      "If phase 1 is green, mark 7fc68947 VAX-green for the transition, then plan PROJECT_MAP phase 2 to migrate LLM_INTERNAL.H and COMMAND_AGENT.C and remove temporary openai_project_* wrappers.",
+      "For future long acceptance restore sets, split GIT_RESTORE.COM into several shorter quoted comma-separated batches before reaching DCL command-element limits.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
-      "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
-      "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
+      "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene."
     ]
   },
   "git_transport": {
@@ -92,9 +98,8 @@
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
     "Expected latest VAX-green production head is eb320246d3b57f01a360297a70afa9511d42e252 unless newer accepted work exists.",
-    "Current GitHub head may be 88e664525f9552c06b4d01d546cfd4b9972d4f4a due solely to the documentation-only RULES.md DCL restore-limit update.",
+    "Current unaccepted GitHub head is 7fc689475cd5b0a4930da04d322e989cd8be3eea for PROJECT_MAP phase 1.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
-    "Maximize useful work each turn and reduce unnecessary VAX round trips.",
-    "When multiple Git restores are required, GIT_RESTORE.COM accepts comma-separated paths and restores/verifies them as a batch, but long quoted path lists can exceed DCL command-element limits; split large sets into several shorter verified batches."
+    "When multiple Git restores are required, split large sets into several shorter verified GIT_RESTORE.COM batches."
   ]
 }
