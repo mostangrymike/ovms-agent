@@ -6,7 +6,7 @@
 #include "openai_request_agent.h"
 #include "LLM_TOOL_SCHEMA.H"
 #include "OPENAI_AGENT_CTX.H"
-#include "OPENAI_JSON_PARSE.H"
+#include "LLM_JSON_PARSE.H"
 
 #define OPENAI_AGENT_GOAL_MAX 8192U
 
