@@ -12,7 +12,7 @@ const char *llm_prompt_create(void);
  * made by that loop.
  */
 #if defined(OPENAI_INTERNAL_H) || defined(LLM_INTERNAL_H)
-#include "OPENAI_GOAL_GUARD.INC"
+#include "LLM_GOAL_GUARD.INC"
 
 static openai_replace_result llm_guard_rep_text(
     const char *goal_text,
