@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T09:17:00-05:00",
+  "updated_at": "2026-08-20T09:15:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,9 +18,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "64b9442a74e736e682238110ad450ca1bb78eb1e",
+    "latest_vax_green_head": "3aad02ac3b3f396db64ec392645ce8fe4251c7ed",
     "current_github_head": "3aad02ac3b3f396db64ec392645ce8fe4251c7ed",
-    "current_github_head_status": "TRANSPORT filename/artifact transition is pending VAX acceptance at 3aad02ac. Generic production implementation moved from SRC/OPENAI_TRANSPORT.C to SRC/LLM_TRANSPORT.C; build/link artifact moved from OPENAI_TRANSPORT.OBJ to LLM_TRANSPORT.OBJ; neutral SRC/LLM_TRANSPORT.H was added and OPENAI_REQUEST.C uses it directly. SRC/OPENAI_TRANSPORT.H is now a temporary compatibility shim because LLM_INTERNAL.H still includes the legacy header. Existing write_headers/remove_temporary_files names are generic already; perform_openai_request is intentionally retained for now as the OpenAI-compatible /responses wire-operation entry point. GitHub compare from VAX-green 64b9442a is clean and limited to six files. No VAX acceptance has yet been performed for this head.",
+    "current_github_head_status": "TRANSPORT filename/artifact transition is complete and VAX-green at 3aad02ac. SRC/OPENAI_TRANSPORT.C moved to SRC/LLM_TRANSPORT.C; build/link artifact moved to LLM_TRANSPORT.OBJ; SRC/LLM_TRANSPORT.H is the neutral header; OPENAI_REQUEST.C uses it directly. SRC/OPENAI_TRANSPORT.H remains temporarily as a compatibility include shim for LLM_INTERNAL.H. Canonical @BUILD passed all regressions and BUILD_STATUS=%X00000001.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -37,28 +37,24 @@
       "details": [
         "Production source is SRC/LLM_NETWORK.C and build/link artifact is LLM_NETWORK.OBJ.",
         "Generic external names are llm_net_allow_once, llm_net_check, llm_net_policy_text, and llm_test_net_reset; all are <=31 characters.",
-        "Focused M258_NET_POLICY_TEST.C and M258_MCP_NET_TEST.C consumers use the neutral names.",
-        "OPENAI_PARITY_M258.C uses llm_net_check while retaining unrelated OpenAI/MCP names for later classification.",
-        "BUILD_M258.COM uses LLM_MODULES.OPT for its focused integration links.",
-        "RMS-aware comma-separated batch restore verified all seven intended files in one invocation.",
-        "Full @BUILD and focused @BUILD_M258 both passed with %X00000001."
+        "Focused M258 network regressions and canonical @BUILD passed with %X00000001."
       ]
     },
     "transport_family": {
-      "status": "pending VAX acceptance; filename/artifact transition complete on GitHub, legacy include shim remains",
+      "status": "complete and VAX-green; legacy include shim remains intentionally temporary",
       "checkpoint": "3aad02ac3b3f396db64ec392645ce8fe4251c7ed",
       "details": [
         "SRC/OPENAI_TRANSPORT.C renamed to SRC/LLM_TRANSPORT.C; implementation behavior unchanged except self-include now names LLM_TRANSPORT.H.",
         "BUILD_LLM_MODULES.COM compiles LLM_TRANSPORT.C to LLM_TRANSPORT.OBJ and LLM_MODULES.OPT links LLM_TRANSPORT.OBJ.",
         "SRC/LLM_TRANSPORT.H is the neutral header; OPENAI_REQUEST.C includes it directly.",
         "SRC/OPENAI_TRANSPORT.H is a temporary compatibility shim that includes LLM_TRANSPORT.H because LLM_INTERNAL.H remains a legacy include consumer.",
-        "perform_openai_request remains intentionally named for the OpenAI-compatible /responses wire operation; generic write_headers/remove_temporary_files names are unchanged.",
-        "GitHub compare from 64b9442a to 3aad02ac shows exactly six changed paths and recognizes the implementation as a rename."
+        "perform_openai_request remains intentionally named for the OpenAI-compatible /responses wire operation.",
+        "OpenVMS VAX batch restore of six files succeeded; stale OPENAI_TRANSPORT.C and OPENAI_TRANSPORT.OBJ were removed; full @BUILD passed all regressions with BUILD_STATUS=%X00000001."
       ]
     },
     "next_work": [
-      "Obtain VAX full-build acceptance for TRANSPORT head 3aad02ac; do not advance latest_vax_green_head unless BUILD_STATUS=%X00000001.",
-      "After acceptance, continue the next smallest coherent production family; separately plan removal of the temporary OPENAI_TRANSPORT.H shim when LLM_INTERNAL.H include cleanup is practical.",
+      "Inventory the live AGENT_CTX pair and every exact branch-live consumer; if self-contained, migrate filename/header/artifact and generic openai_agent_ctx_* names to llm_agent_ctx_* in one bounded family.",
+      "Do not use top-level OPENAI.C/OPENAI.H as the next slice: they fan out across shared workflow/state and most of the legacy public namespace.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -76,8 +72,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is 64b9442a74e736e682238110ad450ca1bb78eb1e unless newer accepted work exists.",
-    "Current unaccepted GitHub head is 3aad02ac3b3f396db64ec392645ce8fe4251c7ed for the TRANSPORT transition.",
+    "Expected latest VAX-green head is 3aad02ac3b3f396db64ec392645ce8fe4251c7ed unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, GIT_RESTORE.COM accepts comma-separated paths and restores/verifies them as a batch; quote mixed-case Git paths so DCL does not uppercase them."
