@@ -1,5 +1,5 @@
 #include "llm_internal.h"
-#include "openai_prompts.h"
+#include "LLM_PROMPTS.H"
 #include "openai_execute.h"
 
 const char *openai_workflow_name(int workflow)
@@ -317,7 +317,7 @@ unsigned int openai_run_selftest(agent_state *state)
 
     openai_selftest_report(
         "truncated listing guidance present",
-        strstr(openai_prompt_read_only(),
+        strstr(llm_prompt_read_only(),
                "do not infer that an unlisted path is absent") != NULL,
         &passed_count,
         &failed_count
@@ -325,11 +325,11 @@ unsigned int openai_run_selftest(agent_state *state)
 
     openai_selftest_report(
         "live source preference guidance present",
-        strstr(openai_prompt_read_only(),
+        strstr(llm_prompt_read_only(),
                "prefer live source over backup") != NULL &&
-        strstr(openai_prompt_read_only(),
+        strstr(llm_prompt_read_only(),
                "user explicitly asks to inspect") != NULL &&
-        strstr(openai_prompt_read_only(),
+        strstr(llm_prompt_read_only(),
                "does not make it preferred evidence") != NULL,
         &passed_count,
         &failed_count
