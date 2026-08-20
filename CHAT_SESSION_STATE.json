@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T17:16:00-05:00",
+  "updated_at": "2026-08-19T21:04:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,42 +18,23 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
-    "current_github_head": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
-    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, generic build-artifact, and TOOL RESULT families are complete; RULES.md is present on the branch.",
-    "path_family": {
+    "latest_vax_green_head": "a146c196d7d5f867668aed9fd809f27263288001",
+    "current_github_head": "a146c196d7d5f867668aed9fd809f27263288001",
+    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, generic build-artifact, TOOL RESULT, and TOOL SCHEMA families are complete; RULES.md is present on the branch.",
+    "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
+    "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
+    "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
+    "tool_result_family": {"status": "complete and VAX-green", "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6"},
+    "tool_schema_family": {
       "status": "complete and VAX-green",
-      "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"
-    },
-    "cache_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"
-    },
-    "build_artifact_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432",
+      "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001",
       "completed": [
-        "Created BUILD_LLM_MODULES.COM and LLM_MODULES.OPT using uppercase repository naming.",
-        "Migrated BUILD.COM, SRC/OPENAI_PLAN.C, and TEST_M266_PLAN_SCOPE.COM to the neutral artifact names.",
-        "Committed the VAX-tested transition at c6730a4c57016f2f10f84a4b72c6f67978db275a.",
-        "Added RULES.md at 14aa31ee8a4872763d6f7f004dbe0746f6d99c7f.",
-        "Deleted BUILD_OPENAI_MODULES.COM and openai_modules.opt from GitHub.",
-        "Physically deleted stale OpenVMS versions of both old artifacts.",
-        "Full @BUILD passed all regressions with BUILD_STATUS=%X00000001.",
-        "@TEST_M266_PLAN_SCOPE passed with M266_STATUS=%X00000001."
-      ]
-    },
-    "tool_result_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
-      "completed": [
-        "Added uppercase SRC/LLM_TOOL_RESULT.C and switched BUILD_LLM_MODULES.COM / LLM_MODULES.OPT to LLM_TOOL_RESULT.",
-        "Neutralized OPENAI_RESULT_* macros and openai_result_* / openai_build_result APIs to LLM_RESULT_* and llm_* names.",
-        "Migrated LLM_INTERNAL.H, OPENAI_AGENT_LOOP.C, m237_result_test.c, and m238_build_result_test.c consumers.",
-        "Transition commit 2d205eccb78beb113e0a5adf64de00a2260bcf0b passed full VAX @BUILD before old-file deletion.",
-        "Deleted obsolete SRC/openai_tool_result.c in 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
-        "Physically deleted all OpenVMS versions of OPENAI_TOOL_RESULT.C and reran full @BUILD successfully with BUILD_STATUS=%X00000001.",
-        "All new externally visible llm_* result functions are under the DEC C/VAX 31-character external identifier limit."
+        "Added uppercase SRC/LLM_TOOL_SCHEMA.C and SRC/LLM_TOOL_SCHEMA.H while preserving provider-neutral write_agent_tools* APIs.",
+        "Migrated LLM_INTERNAL.H, OPENAI_REQUEST.C, OPENAI_REQUEST_AGENT.C, OPENAI_REQUEST_BUILD.C, OPENAI_REQ_IMAGE_M259.C, and m236_auto_patch_test.c includes.",
+        "Migrated BUILD_LLM_MODULES.COM and LLM_MODULES.OPT to LLM_TOOL_SCHEMA artifacts.",
+        "Transition commit 37209f44122cab02344d3c1dcf016a00c10b4c07 passed full VAX @BUILD before old-file deletion.",
+        "Deleted obsolete SRC/OPENAI_TOOL_SCHEMA.H and SRC/OPENAI_TOOL_SCHEMA.C in 002cdf6abb6871dca42e2ab71fce527c547ba3e2 and a146c196d7d5f867668aed9fd809f27263288001.",
+        "Physically deleted stale OpenVMS versions of both old schema files and reran full @BUILD successfully with BUILD_STATUS=%X00000001."
       ]
     },
     "next_work": [
@@ -75,7 +56,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6 unless newer accepted work exists.",
+    "Expected latest VAX-green head is a146c196d7d5f867668aed9fd809f27263288001 unless newer accepted work exists.",
     "Use GitHub as repository source of truth and OpenVMS as DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Continue with coherent bounded family slices and audit every new external identifier against the VAX 31-character limit."
   ]
