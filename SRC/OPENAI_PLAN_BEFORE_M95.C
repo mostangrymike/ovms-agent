@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#include "openai_plan.h"
+#include "LLM_PLAN.H"
 
 #define OPENAI_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
 #define OPENAI_PLAN_MAX_BYTES 65536U
