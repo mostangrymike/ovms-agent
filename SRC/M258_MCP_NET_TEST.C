@@ -4,8 +4,8 @@
 
 #include "llm_internal.h"
 
-int openai_net_allow_once(const char *domain);
-void openai_test_net_reset(void);
+int llm_net_allow_once(const char *domain);
+void llm_test_net_reset(void);
 
 int command_line_complete(const char *input, size_t length, int eof)
 {
@@ -81,7 +81,7 @@ int main(void)
 
     (void)putenv(allow_none);
     (void)putenv(deny_none);
-    openai_test_net_reset();
+    llm_test_net_reset();
     openai_test_reset_approval();
     if (!require_true(openai_set_approval("full"), "enable full approval"))
         return 1;
@@ -124,7 +124,7 @@ int main(void)
 
     (void)putenv(allow_none);
     (void)putenv(deny_none);
-    if (!require_true(openai_net_allow_once("stream.example.test"),
+    if (!require_true(llm_net_allow_once("stream.example.test"),
                       "create one-shot exception")) return 1;
     if (!require_true(
             openai_mcp_exec_all_text(config, "stream watch once",
@@ -149,7 +149,7 @@ int main(void)
             probe.stdio_calls == 1,
             "stdio unaffected by network policy")) return 1;
 
-    openai_test_net_reset();
+    llm_test_net_reset();
     openai_test_reset_approval();
     (void)putenv(allow_none);
     (void)putenv(deny_none);
