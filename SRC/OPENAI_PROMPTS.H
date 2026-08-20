@@ -1,10 +1,16 @@
 #ifndef OPENAI_PROMPTS_H
 #define OPENAI_PROMPTS_H
 
-const char *openai_prompt_read_only(void);
-const char *openai_prompt_plan(void);
-const char *openai_prompt_write(void);
-const char *openai_prompt_create(void);
+const char *llm_prompt_read_only(void);
+const char *llm_prompt_plan(void);
+const char *llm_prompt_write(void);
+const char *llm_prompt_create(void);
+
+/* Temporary M267 source-compatibility aliases. */
+#define openai_prompt_read_only llm_prompt_read_only
+#define openai_prompt_plan llm_prompt_plan
+#define openai_prompt_write llm_prompt_write
+#define openai_prompt_create llm_prompt_create
 
 /*
  * The agent loop includes the internal header before this header. Keep the
