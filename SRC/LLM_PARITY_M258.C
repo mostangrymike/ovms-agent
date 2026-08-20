@@ -21,7 +21,7 @@ int openai_mcp_run_result_base(const char *config,
 #define openai_mcp_bridge_executor openai_mcp_bridge_exec_base
 #define openai_mcp_http_bridge_executor openai_mcp_http_exec_base
 #define openai_mcp_sse_bridge_executor openai_mcp_sse_exec_base
-#include "openai_parity.c"
+#include "LLM_PARITY_CORE.INC"
 #undef openai_mcp_exec_all_text
 #undef openai_mcp_exec_transport_text
 #undef openai_mcp_run_result
