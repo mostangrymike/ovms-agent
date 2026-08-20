@@ -1,7 +1,2 @@
-        if (saw_new) {
-            (void)puts(
-                "Saved operation contains trailing fields after new_text."
-            );
-            (void)fclose(file);
-            return 0;
-        }
+/* M267 temporary EXECUTE filename shim. */
+#include "LLM_EXECUTE_AFTER_NEW_GUARD.INC"
