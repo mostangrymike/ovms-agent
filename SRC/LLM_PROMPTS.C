@@ -61,7 +61,7 @@ static const char prompt_plan[] =
         "tool output.";
 #endif
 
-#include "openai_prompt_plan_m90.inc"
+#include "LLM_PROMPT_PLAN_M90.INC"
 #include "openai_m150c_validate.inc"
 
 static const char prompt_write[] =
