@@ -8,7 +8,7 @@
 #define GIT_RMS_CMD_FILE "OVMS_AGENT_GIT_RESTORE.COM"
 #define GIT_RMS_HEAD_FILE "OVMS_AGENT_GIT_HEAD.TMP"
 #define GIT_RMS_SIZE_FILE "OVMS_AGENT_GIT_SIZE.TMP"
-#define GIT_RMS_MAX_TEXT 65536U
+#define GIT_RMS_MAX_TEXT 262144U
 
 static void git_rms_remove_all(const char *path)
 {
