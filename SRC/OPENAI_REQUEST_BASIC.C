@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "llm_internal.h"
-#include "openai_image.h"
+#include "LLM_IMAGE.H"
 #include "openai_request_basic.h"
 
 int write_request(const char *model,
@@ -67,13 +67,13 @@ int write_request_image(const char *model,
                         const char *image_path)
 {
     FILE *file;
-    openai_image_meta meta;
+    llm_image_meta meta;
     int success;
 
     if (model == NULL || *model == '\0' ||
         prompt == NULL || *prompt == '\0' ||
         image_path == NULL || *image_path == '\0' ||
-        !openai_image_info(image_path, &meta)) {
+        !llm_image_info(image_path, &meta)) {
         return 0;
     }
 
@@ -92,7 +92,7 @@ int write_request_image(const char *model,
               "{\"type\":\"input_text\",\"text\":\"", file) == EOF ||
         !json_write_escaped(file, prompt) ||
         fputs("\"},{\"type\":\"input_image\",\"image_url\":\"", file) == EOF ||
-        !openai_image_write_data(file, meta.path, NULL) ||
+        !llm_image_write_data(file, meta.path, NULL) ||
         fputs("\"}]}]", file) == EOF) {
         success = 0;
     }
