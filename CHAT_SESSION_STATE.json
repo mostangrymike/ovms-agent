@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T21:55:00-05:00",
+  "updated_at": "2026-08-19T22:07:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,37 +18,40 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "fd45be21cfe2515a2e9ac7c80fdf41944b3c9be0",
-    "current_github_head": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
-    "current_github_head_status": "PROMPTS compatibility-shim checkpoint fd45be2 is VAX-green with full @BUILD/all regressions. Current GitHub head a3cb3e4 completes the PROMPTS production consumer drain: live agent-loop/status/create callers use LLM_PROMPTS.H and llm_prompt_* directly, temporary aliases are removed from LLM_PROMPTS.H, and obsolete SRC/OPENAI_PROMPTS.H is deleted. Awaiting VAX acceptance.",
+    "latest_vax_green_head": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
+    "current_github_head": "dd8f2fc2b5250accd784695e43abe21fbc440d25",
+    "current_github_head_status": "PROMPTS production family is complete and VAX-green at a3cb3e44 with full @BUILD/all regressions. Current GitHub head dd8f2fc begins GOAL GUARD migration: adds SRC/LLM_GOAL_GUARD.INC, switches LLM_PROMPTS.H to it, and reduces SRC/OPENAI_GOAL_GUARD.INC to a temporary regression compatibility shim. Awaiting VAX acceptance.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
     "tool_result_family": {"status": "complete and VAX-green", "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6"},
     "tool_schema_family": {"status": "complete and VAX-green", "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001"},
     "prompts_family": {
-      "status": "production drain complete on GitHub; awaiting final VAX acceptance",
-      "namespace_checkpoint": "6837b8d849e9aa4035f60d7b369866636369285b",
-      "filename_artifact_checkpoint": "99dbb500cfee444f2a23a574423ce9e339ffc756",
-      "consumer_drain_checkpoint": "0f0f9454e61d016cd2fb7fff83763c018f0ae4ea",
-      "old_source_deletion_checkpoint": "efeac20521793aa1a27c32e32742c8572c0a8b2a",
-      "shim_checkpoint": "fd45be21cfe2515a2e9ac7c80fdf41944b3c9be0",
-      "shim_checkpoint_status": "VAX-green with full @BUILD, all regression tests passed, BUILD_STATUS=%X00000001 after RMS-safe restore of the compatibility header.",
-      "current_transition": [
-        "Neutral production artifacts SRC/LLM_PROMPTS.C, SRC/LLM_PROMPTS.H and LLM_PROMPTS.OBJ are active in build/link.",
-        "External prompt symbols are llm_prompt_read_only, llm_prompt_plan, llm_prompt_write, llm_prompt_create; all are within the DEC C/VAX 31-character limit.",
-        "SRC/OPENAI_AGENT_LOOP.C now includes LLM_PROMPTS.H and calls llm_prompt_plan/write/read_only directly.",
-        "SRC/OPENAI_STATUS_M261_CORE.C now includes LLM_PROMPTS.H and calls llm_prompt_read_only directly.",
-        "SRC/OPENAI_CREATE_M261_CORE.C now calls llm_prompt_create directly.",
-        "Temporary openai_prompt_* aliases have been removed from SRC/LLM_PROMPTS.H.",
-        "Obsolete SRC/OPENAI_PROMPTS.C is already deleted and VAX-green; obsolete SRC/OPENAI_PROMPTS.H is now deleted on GitHub at a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f and awaits VAX acceptance after physical RMS deletion.",
-        "Search index still returns M266-baseline candidates; historical SRC/OPENAI_PROMPTS_BEFORE_REPAIR.C and generated OVMS_AGENT_SYMBOLS.DAT remain to be classified in the final survivor audit, not treated as live production consumers.",
-        "Do not rename openai_prompt_plan_m90.inc, openai_m150c_validate.inc, or OPENAI_GOAL_GUARD.INC blindly; treat them as separate bounded subfamilies."
+      "status": "complete and VAX-green",
+      "checkpoint": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
+      "details": [
+        "Production uses SRC/LLM_PROMPTS.C, SRC/LLM_PROMPTS.H and LLM_PROMPTS.OBJ.",
+        "Production APIs are llm_prompt_read_only, llm_prompt_plan, llm_prompt_write, llm_prompt_create; all external identifiers are <=31 chars.",
+        "SRC/OPENAI_PROMPTS.C and SRC/OPENAI_PROMPTS.H are deleted on GitHub and physically absent on VAX.",
+        "Temporary openai_prompt_* aliases are removed; live agent-loop/status/create consumers call llm_prompt_* directly.",
+        "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
+      ]
+    },
+    "goal_guard_family": {
+      "status": "transition in progress",
+      "current_head": "dd8f2fc2b5250accd784695e43abe21fbc440d25",
+      "details": [
+        "Added uppercase neutral SRC/LLM_GOAL_GUARD.INC.",
+        "LLM_PROMPTS.H now includes LLM_GOAL_GUARD.INC directly.",
+        "Neutral test-control macro is LLM_GOAL_GUARD_TEXT_ONLY.",
+        "Old SRC/OPENAI_GOAL_GUARD.INC is a temporary compatibility shim solely for SRC/m251_repair_goal_test.c, mapping OPENAI_GOAL_GUARD_TEXT_ONLY to the neutral macro.",
+        "Guard helpers remain static/file-local; no new linker-visible identifiers were introduced.",
+        "Existing OPENAI_RANGE_OUTPUT_LIMIT is intentionally not renamed in this slice; it belongs to a separate namespace family."
       ]
     },
     "next_work": [
-      "VAX-accept current head a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f: sync branch, use GIT_RESTORE.COM for the four changed tracked files, physically delete all RMS versions of SRC/OPENAI_PROMPTS.H, and run full @BUILD.",
-      "If green, mark PROMPTS production family complete and continue with the next bounded generic OpenAI naming family.",
+      "VAX-accept dd8f2fc2b5250accd784695e43abe21fbc440d25 by RMS-restoring SRC/LLM_GOAL_GUARD.INC, SRC/LLM_PROMPTS.H, and SRC/OPENAI_GOAL_GUARD.INC with GIT_RESTORE.COM, then run full @BUILD.",
+      "If green, migrate SRC/m251_repair_goal_test.c to LLM_GOAL_GUARD_TEXT_ONLY and LLM_GOAL_GUARD.INC on GitHub, delete the old OPENAI_GOAL_GUARD.INC shim, physically delete stale RMS versions, and run full @BUILD again.",
       "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
     ]
@@ -65,8 +68,9 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is fd45be21cfe2515a2e9ac7c80fdf41944b3c9be0 unless newer accepted work exists.",
+    "Expected latest VAX-green head is a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
-    "Maximize useful work each turn and reduce unnecessary VAX round trips."
+    "Maximize useful work each turn and reduce unnecessary VAX round trips.",
+    "When multiple Git restores are required, use GIT_RESTORE.COM batch script."
   ]
 }
