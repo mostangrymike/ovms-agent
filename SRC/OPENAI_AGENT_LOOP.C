@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_prompts.h"
+#include "LLM_PROMPTS.H"
 
 
 static char *write_prompt_rules(const char *base)
@@ -108,16 +108,16 @@ void openai_agent_mode(agent_state *state,
 
     owned_instructions = NULL;
     if (workflow == OPENAI_WORKFLOW_PLAN) {
-        instructions = openai_prompt_plan();
+        instructions = llm_prompt_plan();
     } else if (allow_write) {
-        owned_instructions = write_prompt_rules(openai_prompt_write());
+        owned_instructions = write_prompt_rules(llm_prompt_write());
         if (owned_instructions == NULL) {
             (void)puts("Unable to prepare write-agent instructions.");
             return;
         }
         instructions = owned_instructions;
     } else {
-        instructions = openai_prompt_read_only();
+        instructions = llm_prompt_read_only();
     }
 
     previous_id = NULL;
