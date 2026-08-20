@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T10:45:00-05:00",
+  "updated_at": "2026-08-20T10:57:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,9 +17,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "75f4783deae03c76a7bb17fe4ea9f18016eafae8",
-    "current_github_head": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
-    "current_github_head_status": "CONTEXT phase 1 is VAX-green at 75f4783d. PATCH and AUTO phase-1 transitions are batched and pending VAX acceptance at 2f724a76. Both old lowercase implementations are exact zero-content moves to LLM_*_CORE.INC. LLM_PATCH.C/H and LLM_AUTO.C/H expose neutral APIs; focused M230/M235/M236 tests call neutral APIs. Two-line OPENAI_PATCH.C and OPENAI_AUTO.C build-only compatibility shims remain temporarily so the central build manifests do not need repeated whole-file rewrites. No production build-manifest change is included in the pending batch.",
+    "latest_vax_green_head": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
+    "current_github_head": "df86ecefe80def0b32e8d127edf0822fddb375a9",
+    "current_github_head_status": "PATCH and AUTO phase 1 are VAX-green at 2f724a76: all short-batch restores verified, canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001, exercising M230/M235/M236. REPAIR phase 1 is now pending at df86ecef: LLM_REPAIR.H/C expose llm_repair_plan with a temporary openai_repair_plan compatibility entry; exact original OPENAI_REPAIR.C blob e198c223... is preserved as LLM_REPAIR_CORE.INC; one-line OPENAI_REPAIR.C remains as a build shim pending centralized manifest cleanup.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -40,24 +40,29 @@
     },
     "context_family": {
       "status": "phase 1 VAX-green; temporary old-name API wrappers remain for broad consumers",
-      "checkpoint": "75f4783deae03c76a7bb17fe4ea9f18016eafae8",
-      "acceptance": "After correcting conflicting constant macro aliases, canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001."
+      "checkpoint": "75f4783deae03c76a7bb17fe4ea9f18016eafae8"
     },
     "patch_family": {
-      "status": "phase 1 pending VAX acceptance",
-      "head": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
+      "status": "phase 1 VAX-green",
+      "checkpoint": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
       "details": "SRC/openai_patch.c moved byte-identically to LLM_PATCH_CORE.INC; LLM_PATCH.C/H provide llm_patch_* API; M235/M236 use neutral API; temporary two-line OPENAI_PATCH.C build shim remains."
     },
     "auto_family": {
-      "status": "phase 1 pending VAX acceptance",
-      "head": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
+      "status": "phase 1 VAX-green",
+      "checkpoint": "2f724a76064dd5dcce13ecd2b7d9de50763f1f01",
       "details": "SRC/openai_auto.c moved byte-identically to LLM_AUTO_CORE.INC; LLM_AUTO.C/H neutralize public and file-local openai_auto_* names via compile-time mapping; M230/M236 use neutral API; temporary two-line OPENAI_AUTO.C build shim remains."
     },
+    "repair_family": {
+      "status": "phase 1 pending VAX acceptance",
+      "head": "df86ecefe80def0b32e8d127edf0822fddb375a9",
+      "details": "LLM_REPAIR.H/C expose llm_repair_plan; original implementation blob is preserved unchanged as LLM_REPAIR_CORE.INC; temporary old API and one-line OPENAI_REPAIR.C build shim remain for broad consumer/build compatibility."
+    },
     "next_work": [
-      "VAX-accept pending PATCH+AUTO batch at 2f724a76 with canonical @BUILD; BUILD.COM already runs M230, M235 and M236 regressions.",
-      "After green acceptance, continue automatically with the next bounded family; do not require another user 'proceed'.",
-      "Later perform one centralized build-manifest/artifact sweep to replace temporary OPENAI_* build shims with LLM_* objects, then delete the shims.",
-      "PROJECT_MAP/CONTEXT broad-consumer wrapper removal still requires surgical edits to large shared files or a technically safe VAX-side exception.",
+      "VAX-accept REPAIR phase 1 at df86ecef with canonical @BUILD.",
+      "Continue automatically after acceptance; no further 'proceed' prompt is required.",
+      "INSTRUCTIONS, SESSION, and TRANSCRIPT were inspected and deferred from the current batch because they are multi-layer wrappers with broader state/tool dependencies.",
+      "Later perform one centralized build-manifest/artifact sweep to replace temporary OPENAI_* build shims with LLM_* objects and delete shims.",
+      "Later migrate large shared consumers/prototypes and remove PROJECT_MAP/CONTEXT/PATCH/AUTO/REPAIR compatibility wrappers.",
       "Keep all new external identifiers <=31 characters and split long GIT_RESTORE lists into DCL-safe verified batches."
     ]
   },
