@@ -12,7 +12,7 @@
 #define openai_show_git_changed openai_show_git_changed_base
 #define openai_show_git_context openai_show_git_context_base
 #define openai_git_refresh_cmd openai_git_refresh_cmd_base
-#include "OPENAI_GIT_CONTEXT_M262_CORE.C"
+#include "LLM_GIT_CONTEXT_M262_CORE.C"
 #undef openai_git_refresh
 #undef openai_git_status_text
 #undef openai_git_diff_text
