@@ -2,7 +2,7 @@
 
 #include "llm_internal.h"
 #include "openai_image.h"
-#include "openai_tool_schema.h"
+#include "LLM_TOOL_SCHEMA.H"
 
 int write_agent_image_req(const char *model,
                           const char *instructions,

@@ -1,5 +1,5 @@
 #include "llm_internal.h"
-#include "openai_tool_schema.h"
+#include "LLM_TOOL_SCHEMA.H"
 #include "openai_transport.h"
 #include "openai_request_build.h"
 #include "openai_request_agent.h"

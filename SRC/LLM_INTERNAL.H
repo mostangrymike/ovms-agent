@@ -13,7 +13,7 @@
 #include "openai_log.h"
 #include "LLM_PATH.H"
 #include "LLM_CACHE.H"
-#include "openai_tool_schema.h"
+#include "LLM_TOOL_SCHEMA.H"
 #include "openai_tool_registry.h"
 #include "openai_response.h"
 #include "openai_json_parse.h"

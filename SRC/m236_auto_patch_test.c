@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llm_internal.h"
-#include "openai_tool_schema.h"
+#include "LLM_TOOL_SCHEMA.H"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
