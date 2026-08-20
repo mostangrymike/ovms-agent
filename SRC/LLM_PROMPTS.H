@@ -6,17 +6,10 @@ const char *llm_prompt_plan(void);
 const char *llm_prompt_write(void);
 const char *llm_prompt_create(void);
 
-/* Temporary M267 source-compatibility aliases. */
-#define openai_prompt_read_only llm_prompt_read_only
-#define openai_prompt_plan llm_prompt_plan
-#define openai_prompt_write llm_prompt_write
-#define openai_prompt_create llm_prompt_create
-
 /*
  * The agent loop includes the internal header before this header. Keep the
  * supervised-repair guard file-local and intercept only replacement calls
- * made by that loop. During M267, accept either the legacy compatibility
- * guard or the provider-neutral LLM internal guard.
+ * made by that loop.
  */
 #if defined(OPENAI_INTERNAL_H) || defined(LLM_INTERNAL_H)
 #include "OPENAI_GOAL_GUARD.INC"
