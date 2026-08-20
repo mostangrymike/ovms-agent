@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T08:10:00-05:00",
+  "updated_at": "2026-08-20T08:23:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,9 +18,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "a155a3678e25460427ce6bb1db576db1c590b266",
-    "current_github_head": "a155a3678e25460427ce6bb1db576db1c590b266",
-    "current_github_head_status": "GOAL GUARD family is complete and VAX-green at a155a367. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001 after restoring branch-live SRC/m251_repair_goal_test.c and LLM_PROMPTS.H and physically deleting stale SRC/OPENAI_GOAL_GUARD.INC versions.",
+    "latest_vax_green_head": "08c41186d3087271445c213e857d4f458e19501a",
+    "current_github_head": "08c41186d3087271445c213e857d4f458e19501a",
+    "current_github_head_status": "JSON wrapper filename/build-artifact slice is complete and VAX-green at 08c41186. SRC/OPENAI_JSON.C was renamed byte-for-byte to SRC/LLM_JSON.C; BUILD_LLM_MODULES.COM now compiles LLM_JSON.OBJ from LLM_JSON.C; LLM_MODULES.OPT links LLM_JSON.OBJ; stale VAX SRC/OPENAI_JSON.C and [.BUILD]OPENAI_JSON.OBJ were physically deleted. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -51,9 +51,22 @@
         "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
       ]
     },
+    "json_wrapper_family": {
+      "status": "complete and VAX-green",
+      "checkpoint": "08c41186d3087271445c213e857d4f458e19501a",
+      "details": [
+        "SRC/OPENAI_JSON.C was a placeholder-only module and is renamed byte-for-byte to SRC/LLM_JSON.C.",
+        "BUILD_LLM_MODULES.COM compiles [.BUILD]LLM_JSON.OBJ from [.SRC]LLM_JSON.C.",
+        "LLM_MODULES.OPT links [.BUILD]LLM_JSON.OBJ.",
+        "No C functions, globals, macros, or linker-visible identifiers changed in this slice.",
+        "Stale VAX SRC/OPENAI_JSON.C and [.BUILD]OPENAI_JSON.OBJ versions were physically deleted before acceptance.",
+        "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
+      ]
+    },
     "next_work": [
+      "Continue the bounded generic JSON naming cleanup by auditing branch-live OPENAI_JSON_WRITE.C/.H and OPENAI_JSON_PARSE.C/.H consumers, build artifacts, and C namespaces; migrate only a coherent family that can remain buildable.",
+      "Defer OPENAI_BUILD/OPENAI_TOOLS families when a narrow rename would require transitional churn across broad headers or large modules; prefer coherent filename+artifact+namespace slices.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
-      "Before selecting the next family, inventory branch-live remaining OpenAI filenames/namespaces and distinguish production from provider-specific compatibility, historical/archive, generated, and test-only surfaces.",
       "Maintain DEC C/VAX 31-character external identifier discipline and run full @BUILD after each compilation/link-affecting family.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
     ]
@@ -70,7 +83,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is a155a3678e25460427ce6bb1db576db1c590b266 unless newer accepted work exists.",
+    "Expected latest VAX-green head is 08c41186d3087271445c213e857d4f458e19501a unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, use GIT_RESTORE.COM batch script; quote mixed-case Git paths so DCL does not uppercase them."
