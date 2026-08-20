@@ -18,8 +18,8 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "latest_vax_green_head": "2532e1e417e43aa5305a83f17598de7682fa368c",
-    "current_github_head": "b84db936a50d26bfc498bb632fab10b7265ce004",
-    "current_github_head_status": "RESPONSE is VAX-green at 2532e1e4: BUILD_LLM_MODULES.COM/LLM_MODULES.OPT and LLM_RESPONSE.C/H plus OPENAI_RESPONSE.H restored/verified, physical OPENAI_RESPONSE.C and stale OPENAI_RESPONSE.OBJ deleted, canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001. LOG phase 1 is pending at b84db936: exact OPENAI_LOG.C blob moved byte-identically to LLM_LOG.C, LLM_LOG.H added, OPENAI_LOG.H reduced to compatibility shim, canonical build/link use LLM_LOG.C/OBJ. Compare from 2532e1e4 is exactly five expected paths; LOG source is zero-content rename, build +2/-2, linker +1/-1.",
+    "current_github_head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459",
+    "current_github_head_status": "RESPONSE is VAX-green at 2532e1e4. Combined LOG+STATE phase 1 is pending at a4cb2c9a: OPENAI_LOG.C and OPENAI_STATE.C were moved byte-identically to LLM_LOG.C and LLM_STATE.C; neutral LLM_LOG.H/LLM_STATE.H were added; old headers are compatibility shims; canonical build/link use LLM_LOG.OBJ and LLM_STATE.OBJ. Compare from 2532e1e4 is exactly eight expected paths: both sources are zero-content renames, BUILD_LLM_MODULES.COM is +4/-4, and LLM_MODULES.OPT is +2/-2 with no unrelated churn.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -42,9 +42,10 @@
     "repair_family": {"status": "phase 1 VAX-green; direct LLM build/header shim cleanup VAX-green", "checkpoint": "15c69401e955632ead3c2d529e6aae3f2486c4af"},
     "plan_sensitive_family": {"status": "neutral implementation filename VAX-green; old include shim remains for large consumers", "checkpoint": "15c69401e955632ead3c2d529e6aae3f2486c4af", "details": "Implementation is SRC/LLM_PLAN_SENSITIVE.INC; old SRC/openai_plan_sensitive.inc is a temporary shim. OPENAI_API_KEY marker intentionally remains provider/config-specific."},
     "response_family": {"status": "filename/build transition VAX-green", "checkpoint": "2532e1e417e43aa5305a83f17598de7682fa368c", "details": "LLM_RESPONSE.C/H own neutral response helpers; OPENAI_RESPONSE.H remains a temporary compatibility shim; canonical build/link use LLM_RESPONSE.OBJ; OPENAI_RESPONSE.C deleted. No API symbol renames."},
-    "log_family": {"status": "phase 1 filename/build transition pending VAX acceptance", "head": "b84db936a50d26bfc498bb632fab10b7265ce004", "details": "OPENAI_LOG.C moved byte-identically to LLM_LOG.C; LLM_LOG.H added with existing public declarations; OPENAI_LOG.H is a compatibility shim; canonical build/link use LLM_LOG.OBJ. Generic openai_* LOG namespace remains for later coordinated drain."},
+    "log_family": {"status": "phase 1 filename/build transition pending VAX acceptance", "head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459", "details": "OPENAI_LOG.C moved byte-identically to LLM_LOG.C; LLM_LOG.H added with existing public declarations; OPENAI_LOG.H is a compatibility shim; canonical build/link use LLM_LOG.OBJ. Generic openai_* LOG namespace remains for later coordinated drain."},
+    "state_family": {"status": "phase 1 filename/build transition pending VAX acceptance", "head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459", "details": "OPENAI_STATE.C moved byte-identically to LLM_STATE.C; LLM_STATE.H added with existing public declarations; OPENAI_STATE.H is a compatibility shim; canonical build/link use LLM_STATE.OBJ. Legacy openai_state_* namespace and state include filenames remain for later coordinated drain."},
     "next_work": [
-      "VAX-accept LOG phase 1 at b84db936 with canonical @BUILD after restoring BUILD_LLM_MODULES.COM, LLM_MODULES.OPT, LLM_LOG.C/H, OPENAI_LOG.H and physically deleting OPENAI_LOG.C plus stale OPENAI_LOG.OBJ.",
+      "VAX-accept combined LOG+STATE phase 1 at a4cb2c9a with canonical @BUILD after restoring manifests and neutral source/header files, then physically deleting OPENAI_LOG.C/OPENAI_STATE.C and stale OPENAI_LOG.OBJ/OPENAI_STATE.OBJ.",
       "Continue automatically after acceptance; no further user 'proceed' is required.",
       "Later perform broad-consumer cleanup to remove compatibility headers/includes and legacy API wrappers/namespaces.",
       "GIT_CONTEXT, INSTRUCTIONS, SESSION and TRANSCRIPT require deeper coordinated migrations because of nested wrapper/core structures.",
