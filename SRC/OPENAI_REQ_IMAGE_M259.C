@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "llm_internal.h"
-#include "openai_image.h"
+#include "LLM_IMAGE.H"
 #include "LLM_TOOL_SCHEMA.H"
 
 int write_agent_image_req(const char *model,
@@ -28,7 +28,7 @@ int write_agent_image_req(const char *model,
               "{\"type\":\"input_text\",\"text\":\"", file) == EOF ||
         !json_write_escaped(file, user_prompt) ||
         fputs("\"},{\"type\":\"input_image\",\"image_url\":\"", file) == EOF ||
-        !openai_image_write_data(file, image_path, NULL) ||
+        !llm_image_write_data(file, image_path, NULL) ||
         fputs("\"}]}],", file) == EOF) {
         success = 0;
     }
