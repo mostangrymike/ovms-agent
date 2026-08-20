@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_CONTEXT.H"
 
 #define TEST_SESS "M231_SESSIONS.DAT"
 #define TEST_CUR  "M231_SESSION.CUR"
@@ -72,7 +73,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_build(
+    if (!llm_context_build(
             "continue fixing parser", output, sizeof(output)) ||
         strstr(output, "Persistent OVMS Agent session context") == NULL ||
         strstr(output, "CURRENT REQUEST") == NULL ||
@@ -85,7 +86,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_current(output, sizeof(output)) ||
+    if (!llm_context_current(output, sizeof(output)) ||
         strstr(output, forked) == NULL ||
         strstr(output, "Recent transcript:") == NULL) {
         (void)puts("M231 failed: current context inspection.");
