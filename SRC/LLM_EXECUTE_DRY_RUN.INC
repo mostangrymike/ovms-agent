@@ -1,4 +1,4 @@
-void openai_plan_execute_dry(agent_state *state)
+void llm_plan_execute_dry(agent_state *state)
 {
     openai_saved_operation *operations;
     edit_txn *transaction;
