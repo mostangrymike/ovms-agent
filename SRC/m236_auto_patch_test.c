@@ -3,6 +3,7 @@
 #include <string.h>
 #include "llm_internal.h"
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_PATCH.H"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
@@ -53,7 +54,7 @@ int main(void)
     (void)putenv("OVMS_AGENT_WRITE_ENABLED=YES");
     (void)putenv("OVMS_AGENT_APPROVAL_POLICY=WORKSPACE");
 
-    if(!openai_patch_apply_json(
+    if(!llm_patch_apply_json(
         "{\"path\":\"M236_AUTO_TARGET.TMP\","
         "\"patch\":\"@@OLD\\none\\n@@NEW\\nONE\\n@@END\\n"
         "@@OLD\\nthree\\n@@NEW\\nTHREE\\n@@END\\n\"}",
@@ -65,7 +66,7 @@ int main(void)
     { free(text);puts("M236 failed: autonomous patch content.");return EXIT_FAILURE;}
     free(text);
 
-    if(openai_patch_apply_json(
+    if(llm_patch_apply_json(
         "{\"path\":\"M236_AUTO_TARGET.TMP\","
         "\"patch\":\"@@OLD\\nmissing\\n@@NEW\\nX\\n@@END\\n\"}",
         out,sizeof(out)) ||
