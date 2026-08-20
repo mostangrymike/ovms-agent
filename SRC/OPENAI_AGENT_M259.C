@@ -9,9 +9,9 @@ void openai_agent_image_clear(void);
 
 #include "OPENAI_AGENT.C"
 
-int openai_image_log(const char *image_path,
-                     const char *outcome,
-                     int status)
+int llm_image_log(const char *image_path,
+                  const char *outcome,
+                  int status)
 {
     llm_image_meta meta;
     char event[768];
@@ -43,7 +43,7 @@ void openai_agent_image(agent_state *state,
     }
 
     if (!llm_image_info(image_path, &meta)) {
-        (void)openai_image_log(image_path, "image_rejected", 2);
+        (void)llm_image_log(image_path, "image_rejected", 2);
         (void)puts("Image rejected: unsafe path, unsupported type, invalid signature, or size limit exceeded.");
         return;
     }
@@ -54,7 +54,7 @@ void openai_agent_image(agent_state *state,
         return;
     }
 
-    (void)openai_image_log(meta.path, "image_accepted", 1);
+    (void)llm_image_log(meta.path, "image_accepted", 1);
     openai_agent(state, goal);
     openai_agent_image_clear();
 }
