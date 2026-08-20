@@ -1,16 +1,7 @@
 #ifndef OPENAI_REPAIR_H
 #define OPENAI_REPAIR_H
 
-#include "agent.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void openai_repair_plan(agent_state *state);
-
-#ifdef __cplusplus
-}
-#endif
+/* Temporary M267 compatibility shim for legacy include consumers. */
+#include "LLM_REPAIR.H"
 
 #endif /* OPENAI_REPAIR_H */
