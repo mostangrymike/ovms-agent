@@ -11,7 +11,7 @@
  */
 #define openai_session_resume openai_sess_resume_base
 #define openai_session_resume_cmd openai_sess_resume_cmd_base
-#include "openai_session.c"
+#include "LLM_SESSION_CORE.INC"
 #undef openai_session_resume
 #undef openai_session_resume_cmd
 
