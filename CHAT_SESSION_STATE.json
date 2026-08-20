@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T09:36:00-05:00",
+  "updated_at": "2026-08-20T09:48:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -19,8 +19,8 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
     "latest_vax_green_head": "973a07783ebaf3e92f9c33dc9f0d4dc270a1376a",
-    "current_github_head": "973a07783ebaf3e92f9c33dc9f0d4dc270a1376a",
-    "current_github_head_status": "TRANSPORT family is complete and VAX-green at 973a0778. SRC/LLM_INTERNAL.H includes LLM_TRANSPORT.H directly and the temporary SRC/OPENAI_TRANSPORT.H compatibility shim is gone. RMS-aware restore verified the live header, the stale shim was physically deleted, and canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001. No C symbols or transport behavior changed.",
+    "current_github_head": "eb320246d3b57f01a360297a70afa9511d42e252",
+    "current_github_head_status": "IMAGE helper family is complete on GitHub and pending VAX acceptance at eb320246. Generic image ingest/data-URL helper moved from OPENAI_IMAGE.C/H/OBJ and openai_image_* namespace to LLM_IMAGE.C/H/OBJ and llm_image_* namespace. Production request/agent consumers and M259 regressions use LLM_IMAGE.H and llm_image_* helpers. OPENAI_IMAGE.C/H are deleted with no shim. M259 focused build was also aligned to already-accepted LLM_JSON_WRITE.OBJ and LLM_MODULES.OPT so acceptance cannot depend on stale OpenAI-named artifacts. GitHub compare from VAX-green 973a0778 is bounded to the IMAGE/test/build surface. VAX acceptance is still required.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -57,8 +57,21 @@
         "Canonical VAX @BUILD passed all regression tests with BUILD_STATUS=%X00000001."
       ]
     },
+    "image_family": {
+      "status": "complete on GitHub; pending VAX acceptance",
+      "checkpoint": "eb320246d3b57f01a360297a70afa9511d42e252",
+      "details": [
+        "Generic helper source/header/artifact are SRC/LLM_IMAGE.C, SRC/LLM_IMAGE.H, and LLM_IMAGE.OBJ; legacy OPENAI_IMAGE.C/H are deleted with no shim.",
+        "Helper namespace is llm_image_meta, llm_image_info, llm_image_write_data, llm_image_log, and LLM_IMAGE_PATH_MAX; external names are <=31 characters.",
+        "OpenAI-compatible input_image/image_url JSON fields remain intentionally in request modules and were not renamed.",
+        "openai_agent_image* names remain explicitly deferred to the broader AGENT family rather than mixed into the image-helper slice.",
+        "BUILD_M259.COM now uses LLM_IMAGE.OBJ, LLM_JSON_WRITE.OBJ, and LLM_MODULES.OPT so focused acceptance does not depend on stale OpenAI-named artifacts.",
+        "GitHub compare from 973a0778 to eb320246 is limited to IMAGE production consumers, M259 image regressions, and build/link manifests; trailing-newline noise in LLM_MODULES.OPT was corrected before handoff."
+      ]
+    },
     "next_work": [
-      "Continue exact branch-live audit of the IMAGE family as a likely next bounded production migration.",
+      "Obtain VAX canonical @BUILD and focused @BUILD_M259 acceptance for IMAGE head eb320246; do not advance latest_vax_green_head until both return %X00000001.",
+      "After acceptance, inventory the next smallest coherent branch-live generic OpenAI naming family.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -77,6 +90,7 @@
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
     "Expected latest VAX-green head is 973a07783ebaf3e92f9c33dc9f0d4dc270a1376a unless newer accepted work exists.",
+    "Current unaccepted GitHub head is eb320246d3b57f01a360297a70afa9511d42e252 for the IMAGE helper family.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, GIT_RESTORE.COM accepts comma-separated paths and restores/verifies them as a batch; quote mixed-case Git paths so DCL does not uppercase them."
