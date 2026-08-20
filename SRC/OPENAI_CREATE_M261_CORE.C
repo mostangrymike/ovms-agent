@@ -77,7 +77,7 @@ void openai_agent_create(agent_state *state, const char *goal)
         return;
     }
 
-    owned_instructions = create_prompt_rules(openai_prompt_create());
+    owned_instructions = create_prompt_rules(llm_prompt_create());
     if (owned_instructions == NULL) {
         (void)puts("Unable to prepare create-agent instructions.");
         return;
