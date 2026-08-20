@@ -1,6 +1,9 @@
 #ifndef LLM_PROJECT_MAP_H
 #define LLM_PROJECT_MAP_H
 
+#include <stddef.h>
+#include "AGENT.H"
+
 int llm_project_refresh(const agent_state *state);
 int llm_project_map_text(const agent_state *state,
                          char *output, size_t output_size);
