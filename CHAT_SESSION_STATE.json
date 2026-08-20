@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T11:23:00-05:00",
+  "updated_at": "2026-08-20T11:44:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,9 +17,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "2532e1e417e43aa5305a83f17598de7682fa368c",
-    "current_github_head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459",
-    "current_github_head_status": "RESPONSE is VAX-green at 2532e1e4. Combined LOG+STATE phase 1 is pending at a4cb2c9a: OPENAI_LOG.C and OPENAI_STATE.C were moved byte-identically to LLM_LOG.C and LLM_STATE.C; neutral LLM_LOG.H/LLM_STATE.H were added; old headers are compatibility shims; canonical build/link use LLM_LOG.OBJ and LLM_STATE.OBJ. Compare from 2532e1e4 is exactly eight expected paths: both sources are zero-content renames, BUILD_LLM_MODULES.COM is +4/-4, and LLM_MODULES.OPT is +2/-2 with no unrelated churn.",
+    "latest_vax_green_head": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+    "current_github_head": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+    "current_github_head_status": "Combined LOG+STATE phase 1 is VAX-green at dd365714. OPENAI_LOG.C and OPENAI_STATE.C are neutral LLM source filenames; LLM_LOG.H/LLM_STATE.H are present; canonical build/link use LLM_LOG.OBJ and LLM_STATE.OBJ. The acceptance exposed the prior 64 KiB GIT_RMS_RESTORE text ceiling because LLM_LOG.C is 114,534 bytes. dd365714 raises the existing bounded ceiling to 256 KiB. A one-time git cat-file bootstrap produced exact blob eb1e897414e191bd34f0804905dea0338b36fefb, bootstrap @BUILD passed, rebuilt GIT_RESTORE then restored and verified the full 114,534-byte LLM_LOG.C, and the final authoritative @BUILD passed with BUILD_STATUS=%X00000001.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -33,7 +33,9 @@
       "transport": "973a07783ebaf3e92f9c33dc9f0d4dc270a1376a",
       "agent_ctx": "883c320defcb7685fe0daf105cfc3e472988c54a",
       "image": "eb320246d3b57f01a360297a70afa9511d42e252",
-      "response": "2532e1e417e43aa5305a83f17598de7682fa368c"
+      "response": "2532e1e417e43aa5305a83f17598de7682fa368c",
+      "log_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+      "state_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720"
     },
     "project_map_family": {"status": "phase 1 VAX-green; temporary old-name API wrappers remain", "checkpoint": "7fc689475cd5b0a4930da04d322e989cd8be3eea"},
     "context_family": {"status": "phase 1 VAX-green; temporary old-name API wrappers remain", "checkpoint": "75f4783deae03c76a7bb17fe4ea9f18016eafae8"},
@@ -42,14 +44,14 @@
     "repair_family": {"status": "phase 1 VAX-green; direct LLM build/header shim cleanup VAX-green", "checkpoint": "15c69401e955632ead3c2d529e6aae3f2486c4af"},
     "plan_sensitive_family": {"status": "neutral implementation filename VAX-green; old include shim remains for large consumers", "checkpoint": "15c69401e955632ead3c2d529e6aae3f2486c4af", "details": "Implementation is SRC/LLM_PLAN_SENSITIVE.INC; old SRC/openai_plan_sensitive.inc is a temporary shim. OPENAI_API_KEY marker intentionally remains provider/config-specific."},
     "response_family": {"status": "filename/build transition VAX-green", "checkpoint": "2532e1e417e43aa5305a83f17598de7682fa368c", "details": "LLM_RESPONSE.C/H own neutral response helpers; OPENAI_RESPONSE.H remains a temporary compatibility shim; canonical build/link use LLM_RESPONSE.OBJ; OPENAI_RESPONSE.C deleted. No API symbol renames."},
-    "log_family": {"status": "phase 1 filename/build transition pending VAX acceptance", "head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459", "details": "OPENAI_LOG.C moved byte-identically to LLM_LOG.C; LLM_LOG.H added with existing public declarations; OPENAI_LOG.H is a compatibility shim; canonical build/link use LLM_LOG.OBJ. Generic openai_* LOG namespace remains for later coordinated drain."},
-    "state_family": {"status": "phase 1 filename/build transition pending VAX acceptance", "head": "a4cb2c9a183e44c4bae84f3452e7b34b6bd3f459", "details": "OPENAI_STATE.C moved byte-identically to LLM_STATE.C; LLM_STATE.H added with existing public declarations; OPENAI_STATE.H is a compatibility shim; canonical build/link use LLM_STATE.OBJ. Legacy openai_state_* namespace and state include filenames remain for later coordinated drain."},
+    "log_family": {"status": "phase 1 filename/build transition VAX-green; compatibility header and generic openai_* API namespace remain", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "LLM_LOG.C/H are accepted on VAX and canonical build/link use LLM_LOG.OBJ. OPENAI_LOG.H remains a compatibility shim and generic openai_* LOG symbols remain for later coordinated consumer migration. LLM_LOG.C is 114,534 bytes and was successfully restored through rebuilt GIT_RESTORE after the 256 KiB bounded capacity fix."},
+    "state_family": {"status": "phase 1 filename/build transition VAX-green; compatibility header and legacy openai_state_* namespace remain", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "LLM_STATE.C/H are accepted on VAX and canonical build/link use LLM_STATE.OBJ. OPENAI_STATE.H and legacy openai_state_* naming remain for later coordinated consumer migration."},
+    "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT raised from 65536U to bounded 262144U. Rebuilt GIT_RESTORE successfully restored and verified the 114,534-byte LLM_LOG.C; final canonical @BUILD passed."},
     "next_work": [
-      "VAX-accept combined LOG+STATE phase 1 at a4cb2c9a with canonical @BUILD after restoring manifests and neutral source/header files, then physically deleting OPENAI_LOG.C/OPENAI_STATE.C and stale OPENAI_LOG.OBJ/OPENAI_STATE.OBJ.",
-      "Continue automatically after acceptance; no further user 'proceed' is required.",
-      "Later perform broad-consumer cleanup to remove compatibility headers/includes and legacy API wrappers/namespaces.",
+      "Continue automatically with the next bounded M267 generic naming family; no further user 'proceed' is required.",
+      "Later perform broad-consumer cleanup to remove compatibility headers/includes and legacy API wrappers/namespaces, including LOG and STATE.",
       "GIT_CONTEXT, INSTRUCTIONS, SESSION and TRANSCRIPT require deeper coordinated migrations because of nested wrapper/core structures.",
-      "Keep all new external identifiers <=31 characters and split long GIT_RESTORE lists into DCL-safe verified batches."
+      "Keep all new external identifiers <=31 characters, keep RMS restore inputs below the bounded 256 KiB guard, and split long GIT_RESTORE lists into DCL-safe verified batches."
     ]
   },
   "local_openvms_state": {
