@@ -1,5 +1,2 @@
-        (void)puts(
-            "Saved operation contains an unexpected field or token."
-        );
-        (void)fclose(file);
-        return 0;
+/* M267 compatibility shim. */
+#include "LLM_EXECUTE_FALLBACK_M100.INC"
