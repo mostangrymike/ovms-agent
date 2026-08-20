@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_image.h"
+#include "LLM_IMAGE.H"
 #include "openai_request_agent.h"
 
 int write_agent_image_req(const char *model,
@@ -16,10 +16,10 @@ static char m259_agent_image[M259_AGENT_IMAGE_PATH];
 
 int openai_agent_image_set(const char *path)
 {
-    openai_image_meta meta;
+    llm_image_meta meta;
 
     m259_agent_image[0] = '\0';
-    if (!openai_image_info(path, &meta)) return 0;
+    if (!llm_image_info(path, &meta)) return 0;
     if (strlen(meta.path) >= sizeof(m259_agent_image)) return 0;
     (void)strcpy(m259_agent_image, meta.path);
     return 1;
