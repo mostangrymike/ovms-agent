@@ -1,7 +1,7 @@
 /* M258 Phase 7 network-policy/lifecycle wrapper around mature MCP support. */
 #include "llm_internal.h"
 
-int openai_net_check(const char *url, char *detail, size_t detail_size);
+int llm_net_check(const char *url, char *detail, size_t detail_size);
 int openai_mcp_run_result_base(const char *config,
                                const char *arguments,
                                openai_mcp_executor_fn stdio_executor,
@@ -315,8 +315,8 @@ static int m258_mcp_net_gate(const char *config,
         if (openai_equal_ci(servers[index].transport, "http") ||
             openai_equal_ci(servers[index].transport, "sse")) {
             if (!openai_mcp_http_target_valid(servers[index].target)) return 1;
-            return openai_net_check(servers[index].target,
-                                    detail, detail_size);
+            return llm_net_check(servers[index].target,
+                                 detail, detail_size);
         }
         return 1;
     }
