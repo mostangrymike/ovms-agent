@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_plan.h"
+#include "LLM_PLAN.H"
 
 #define M256_CKPT_FILE "OVMS_AGENT_CHECKPOINTS.DAT"
 #define M256_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
