@@ -4,6 +4,7 @@
 #include "llm_internal.h"
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_PATCH.H"
+#include "LLM_AUTO.H"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
@@ -73,12 +74,12 @@ int main(void)
        strstr(out,"not found")==NULL)
     { puts("M236 failed: stale autonomous hunk."); return EXIT_FAILURE; }
 
-    openai_auto_test_limits(12U,1U);
-    openai_auto_begin(OPENAI_WORKFLOW_WRITE);
-    if(!openai_auto_allow_write() || openai_auto_allow_write())
+    llm_auto_test_limits(12U,1U);
+    llm_auto_begin(OPENAI_WORKFLOW_WRITE);
+    if(!llm_auto_allow_write() || llm_auto_allow_write())
     { puts("M236 failed: one patch/write accounting."); return EXIT_FAILURE; }
-    openai_auto_finish("test");
-    openai_auto_test_limits(0U,0U);
+    llm_auto_finish("test");
+    llm_auto_test_limits(0U,0U);
 
     if(!openai_parity_text(out,sizeof(out)) ||
        strstr(out,"Autonomous multi-hunk:  available")==NULL)
