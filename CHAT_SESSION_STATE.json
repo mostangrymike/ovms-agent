@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T22:07:00-05:00",
+  "updated_at": "2026-08-20T08:10:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,9 +18,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
-    "current_github_head": "dd8f2fc2b5250accd784695e43abe21fbc440d25",
-    "current_github_head_status": "PROMPTS production family is complete and VAX-green at a3cb3e44 with full @BUILD/all regressions. Current GitHub head dd8f2fc begins GOAL GUARD migration: adds SRC/LLM_GOAL_GUARD.INC, switches LLM_PROMPTS.H to it, and reduces SRC/OPENAI_GOAL_GUARD.INC to a temporary regression compatibility shim. Awaiting VAX acceptance.",
+    "latest_vax_green_head": "a155a3678e25460427ce6bb1db576db1c590b266",
+    "current_github_head": "a155a3678e25460427ce6bb1db576db1c590b266",
+    "current_github_head_status": "GOAL GUARD family is complete and VAX-green at a155a367. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001 after restoring branch-live SRC/m251_repair_goal_test.c and LLM_PROMPTS.H and physically deleting stale SRC/OPENAI_GOAL_GUARD.INC versions.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -38,21 +38,23 @@
       ]
     },
     "goal_guard_family": {
-      "status": "transition in progress",
-      "current_head": "dd8f2fc2b5250accd784695e43abe21fbc440d25",
+      "status": "complete and VAX-green",
+      "checkpoint": "a155a3678e25460427ce6bb1db576db1c590b266",
       "details": [
-        "Added uppercase neutral SRC/LLM_GOAL_GUARD.INC.",
-        "LLM_PROMPTS.H now includes LLM_GOAL_GUARD.INC directly.",
+        "Production uses uppercase neutral SRC/LLM_GOAL_GUARD.INC.",
+        "LLM_PROMPTS.H includes LLM_GOAL_GUARD.INC directly.",
         "Neutral test-control macro is LLM_GOAL_GUARD_TEXT_ONLY.",
-        "Old SRC/OPENAI_GOAL_GUARD.INC is a temporary compatibility shim solely for SRC/m251_repair_goal_test.c, mapping OPENAI_GOAL_GUARD_TEXT_ONLY to the neutral macro.",
+        "SRC/m251_repair_goal_test.c now includes LLM_GOAL_GUARD.INC directly and uses LLM_GOAL_GUARD_TEXT_ONLY.",
+        "Temporary SRC/OPENAI_GOAL_GUARD.INC compatibility shim is deleted on GitHub and physically removed from the VAX acceptance tree.",
         "Guard helpers remain static/file-local; no new linker-visible identifiers were introduced.",
-        "Existing OPENAI_RANGE_OUTPUT_LIMIT is intentionally not renamed in this slice; it belongs to a separate namespace family."
+        "Existing OPENAI_RANGE_OUTPUT_LIMIT remains intentionally outside this family and belongs to a separate namespace slice.",
+        "Full VAX @BUILD passed with all regressions and BUILD_STATUS=%X00000001."
       ]
     },
     "next_work": [
-      "VAX-accept dd8f2fc2b5250accd784695e43abe21fbc440d25 by RMS-restoring SRC/LLM_GOAL_GUARD.INC, SRC/LLM_PROMPTS.H, and SRC/OPENAI_GOAL_GUARD.INC with GIT_RESTORE.COM, then run full @BUILD.",
-      "If green, migrate SRC/m251_repair_goal_test.c to LLM_GOAL_GUARD_TEXT_ONLY and LLM_GOAL_GUARD.INC on GitHub, delete the old OPENAI_GOAL_GUARD.INC shim, physically delete stale RMS versions, and run full @BUILD again.",
-      "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
+      "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
+      "Before selecting the next family, inventory branch-live remaining OpenAI filenames/namespaces and distinguish production from provider-specific compatibility, historical/archive, generated, and test-only surfaces.",
+      "Maintain DEC C/VAX 31-character external identifier discipline and run full @BUILD after each compilation/link-affecting family.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
     ]
   },
@@ -63,14 +65,14 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "local_branch_name": "m265-rms-record-restore-fix",
-    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use GIT_RESTORE.COM for multiple RMS-aware restores; physically delete removed files when required; @BUILD for acceptance."
+    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use GIT_RESTORE.COM for multiple RMS-aware restores; quote mixed-case Git paths when needed; physically delete removed files when required; @BUILD for acceptance."
   },
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f unless newer accepted work exists.",
+    "Expected latest VAX-green head is a155a3678e25460427ce6bb1db576db1c590b266 unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
-    "When multiple Git restores are required, use GIT_RESTORE.COM batch script."
+    "When multiple Git restores are required, use GIT_RESTORE.COM batch script; quote mixed-case Git paths so DCL does not uppercase them."
   ]
 }
