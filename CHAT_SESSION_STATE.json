@@ -19,8 +19,8 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
     "latest_vax_green_head": "96028781b3c5308fdbcdac46fa843abafc42e9b0",
-    "current_github_head": "d20482aa83b47473144129f6f17bcd4c616870b7",
-    "current_github_head_status": "JSON writer family is VAX-green at 96028781. JSON parser family is branch-complete and audit-clean at d20482aa but has not yet been accepted on VAX. Parser implementation is a byte-for-byte rename to SRC/LLM_JSON_PARSE.C; neutral SRC/LLM_JSON_PARSE.H was added; direct consumers use the neutral header; build/link artifacts use LLM_JSON_PARSE.OBJ; SRC/OPENAI_JSON_PARSE.H remains only as a temporary compatibility shim for LLM_INTERNAL.H.",
+    "current_github_head": "447cfa485d868a8a36de83bb84f05f8d6404fd9f",
+    "current_github_head_status": "JSON writer family is VAX-green at 96028781. JSON parser family is branch-complete and audit-clean at 447cfa48 but has not yet been accepted on VAX. SRC/OPENAI_JSON_PARSE.C was renamed to SRC/LLM_JSON_PARSE.C with only its self-include changed to LLM_JSON_PARSE.H; neutral SRC/LLM_JSON_PARSE.H was added; direct consumers use the neutral header; build/link artifacts use LLM_JSON_PARSE.OBJ; SRC/OPENAI_JSON_PARSE.H remains only as a temporary compatibility shim for LLM_INTERNAL.H.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -78,20 +78,20 @@
     },
     "json_parser_family": {
       "status": "branch-complete, pending VAX acceptance",
-      "checkpoint": "d20482aa83b47473144129f6f17bcd4c616870b7",
+      "checkpoint": "447cfa485d868a8a36de83bb84f05f8d6404fd9f",
       "details": [
-        "SRC/OPENAI_JSON_PARSE.C is renamed byte-for-byte to SRC/LLM_JSON_PARSE.C.",
+        "SRC/OPENAI_JSON_PARSE.C is renamed to SRC/LLM_JSON_PARSE.C; the only content change is its include from openai_json_parse.h to LLM_JSON_PARSE.H.",
         "Neutral header SRC/LLM_JSON_PARSE.H preserves the already provider-neutral parser APIs and uses LLM_JSON_PARSE_H guard.",
         "SRC/OPENAI_RESPONSE.C and SRC/OPENAI_REQUEST_AGENT.C include LLM_JSON_PARSE.H directly.",
         "BUILD_LLM_MODULES.COM compiles LLM_JSON_PARSE.OBJ from LLM_JSON_PARSE.C and LLM_MODULES.OPT links LLM_JSON_PARSE.OBJ.",
         "SRC/OPENAI_JSON_PARSE.H remains only as a documented compatibility shim for LLM_INTERNAL.H.",
-        "Commit comparison from 96028781 to d20482aa shows only the intended seven-file parser family delta; parser source rename has zero content changes.",
+        "Commit comparison from 96028781 to 447cfa48 shows only the intended seven-file parser family delta; parser source rename has exactly one include-line replacement.",
         "No external identifier changes were introduced; VAX acceptance still required."
       ]
     },
     "next_work": [
-      "VAX-accept JSON parser family at d20482aa: restore BUILD_LLM_MODULES.COM, LLM_MODULES.OPT, SRC/LLM_JSON_PARSE.C, SRC/LLM_JSON_PARSE.H, SRC/OPENAI_JSON_PARSE.H, SRC/OPENAI_RESPONSE.C, and SRC/OPENAI_REQUEST_AGENT.C; physically delete stale SRC/OPENAI_JSON_PARSE.C and [.BUILD]OPENAI_JSON_PARSE.OBJ; run full @BUILD and record BUILD_STATUS.",
-      "If parser acceptance is green, record d20482aa as latest VAX-green and then plan a bounded LLM_INTERNAL.H migration that can remove both JSON compatibility headers safely.",
+      "VAX-accept JSON parser family at 447cfa48: restore BUILD_LLM_MODULES.COM, LLM_MODULES.OPT, SRC/LLM_JSON_PARSE.C, SRC/LLM_JSON_PARSE.H, SRC/OPENAI_JSON_PARSE.H, SRC/OPENAI_RESPONSE.C, and SRC/OPENAI_REQUEST_AGENT.C; physically delete stale SRC/OPENAI_JSON_PARSE.C and [.BUILD]OPENAI_JSON_PARSE.OBJ; run full @BUILD and record BUILD_STATUS.",
+      "If parser acceptance is green, record 447cfa48 as latest VAX-green and then plan a bounded LLM_INTERNAL.H migration that can remove both JSON compatibility headers safely.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -110,7 +110,7 @@
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
     "Expected latest VAX-green head is 96028781b3c5308fdbcdac46fa843abafc42e9b0 unless newer accepted work exists.",
-    "Current branch head d20482aa83b47473144129f6f17bcd4c616870b7 contains the JSON parser family and is not VAX-green until accepted.",
+    "Current branch head 447cfa485d868a8a36de83bb84f05f8d6404fd9f contains the JSON parser family and is not VAX-green until accepted.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, use GIT_RESTORE.COM batch script; quote mixed-case Git paths so DCL does not uppercase them."
