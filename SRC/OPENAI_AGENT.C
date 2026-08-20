@@ -1,5 +1,5 @@
 #include "llm_internal.h"
-#include "openai_prompts.h"
+#include "LLM_PROMPTS.H"
 
 #ifndef OPENAI_PLAN_MAX_TURNS
 #define OPENAI_PLAN_MAX_TURNS 24
