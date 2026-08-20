@@ -69,7 +69,7 @@ static int m262_url_valid(const char *url)
     return 1;
 }
 
-int llm_write_headers(const char *api_key)
+int write_headers(const char *api_key)
 {
     FILE *file;
     int success;
@@ -104,13 +104,13 @@ int llm_write_headers(const char *api_key)
     return 1;
 }
 
-void llm_remove_temp_files(void)
+void remove_temporary_files(void)
 {
     (void)remove(OPENAI_REQUEST_FILE);
     (void)remove(OPENAI_HEADERS_FILE);
 }
 
-int llm_perform_request(void)
+int perform_openai_request(void)
 {
     static const char prefix[] =
         "curl --silent --show-error "
