@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_json_parse.h"
+#include "LLM_JSON_PARSE.H"
 #include "openai_response.h"
 
 int save_response_id(const char *json)
