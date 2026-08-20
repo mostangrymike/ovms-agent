@@ -26,9 +26,9 @@ int openai_test_agent_image_req(const char *model,
                                 const char *instructions,
                                 const char *goal,
                                 const char *image_path);
-int openai_image_log(const char *image_path,
-                     const char *outcome,
-                     int status);
+int llm_image_log(const char *image_path,
+                  const char *outcome,
+                  int status);
 void openai_test_set_log_path(const char *path);
 
 static void remove_all(const char *path)
@@ -128,7 +128,7 @@ int main(void)
     }
 
     openai_test_set_log_path(log_path);
-    if (!require_true(openai_image_log(image_path, "image_accepted", 1),
+    if (!require_true(llm_image_log(image_path, "image_accepted", 1),
                       "metadata log write") ||
         !read_text(log_path, log_text, sizeof(log_text)) ||
         !require_true(
