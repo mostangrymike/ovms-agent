@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T09:23:00-05:00",
+  "updated_at": "2026-08-20T09:27:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,9 +18,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "3aad02ac3b3f396db64ec392645ce8fe4251c7ed",
+    "latest_vax_green_head": "883c320defcb7685fe0daf105cfc3e472988c54a",
     "current_github_head": "883c320defcb7685fe0daf105cfc3e472988c54a",
-    "current_github_head_status": "AGENT_CTX family is complete on GitHub and pending VAX acceptance at 883c320d. SRC/OPENAI_AGENT_CTX.C/H were replaced by SRC/LLM_AGENT_CTX.C/H; OPENAI_AGENT_CTX.OBJ became LLM_AGENT_CTX.OBJ; the five exported generic openai_agent_ctx_* APIs became llm_agent_ctx_*; file-local AGENT_CTX macros/globals/helpers were neutralized; the sole production consumer OPENAI_REQUEST_AGENT.C uses LLM_AGENT_CTX.H and llm_agent_ctx_* calls. Compare from VAX-green 3aad02ac is scoped to seven expected paths; no compatibility shim remains. No VAX acceptance has yet been performed for this head.",
+    "current_github_head_status": "AGENT_CTX family is complete and VAX-green at 883c320d. SRC/OPENAI_AGENT_CTX.C/H were replaced by SRC/LLM_AGENT_CTX.C/H; OPENAI_AGENT_CTX.OBJ became LLM_AGENT_CTX.OBJ; the five exported generic openai_agent_ctx_* APIs became llm_agent_ctx_*; file-local AGENT_CTX macros/globals/helpers were neutralized; the sole production consumer OPENAI_REQUEST_AGENT.C uses LLM_AGENT_CTX.H and llm_agent_ctx_* calls. No compatibility shim remains. Canonical @BUILD passed all regressions and BUILD_STATUS=%X00000001 after RMS batch restore and physical deletion of stale OPENAI_AGENT_CTX source/header/object files.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
@@ -37,7 +37,7 @@
       "checkpoint": "3aad02ac3b3f396db64ec392645ce8fe4251c7ed"
     },
     "agent_ctx_family": {
-      "status": "complete on GitHub; pending VAX acceptance",
+      "status": "complete and VAX-green",
       "checkpoint": "883c320defcb7685fe0daf105cfc3e472988c54a",
       "details": [
         "Production source/header are SRC/LLM_AGENT_CTX.C and SRC/LLM_AGENT_CTX.H; build/link artifact is LLM_AGENT_CTX.OBJ.",
@@ -45,12 +45,13 @@
         "File-local macro, state, and helper names in the module were also neutralized so no generic OpenAI namespace remains inside AGENT_CTX.",
         "SRC/OPENAI_REQUEST_AGENT.C is the sole branch-live production consumer and now includes LLM_AGENT_CTX.H and calls only llm_agent_ctx_* APIs for this family.",
         "Legacy SRC/OPENAI_AGENT_CTX.C and .H were deleted; no compatibility shim remains.",
-        "GitHub compare from 3aad02ac to 883c320d is limited to seven expected paths; create/delete pairs are not reported as renames because the complete internal namespace cleanup lowered similarity."
+        "OpenVMS GIT_RESTORE.COM restored and verified all five live files in a quoted comma-separated batch; stale OPENAI_AGENT_CTX.C, OPENAI_AGENT_CTX.H, and OPENAI_AGENT_CTX.OBJ were physically removed.",
+        "Canonical VAX @BUILD passed all regression tests with BUILD_STATUS=%X00000001."
       ]
     },
     "next_work": [
-      "Obtain VAX full-build acceptance for AGENT_CTX head 883c320d; do not advance latest_vax_green_head unless BUILD_STATUS=%X00000001.",
-      "After acceptance, inventory the next smallest coherent production family and separately plan removal of the temporary OPENAI_TRANSPORT.H shim when LLM_INTERNAL.H include cleanup is practical.",
+      "Inventory the next smallest coherent branch-live generic OpenAI naming family before editing.",
+      "Separately plan removal of the temporary OPENAI_TRANSPORT.H shim when the LLM_INTERNAL.H include cleanup is practical.",
       "Continue remaining generic production filename and C namespace cleanup in bounded coherent families; do not use blind global rename.",
       "Maintain DEC C/VAX 31-character external identifier discipline and good GitHub hygiene: exact branch-live reads, scoped commits, compare audit, and no unintended formatting/mode changes.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
@@ -68,8 +69,7 @@
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is 3aad02ac3b3f396db64ec392645ce8fe4251c7ed unless newer accepted work exists.",
-    "Current unaccepted GitHub head is 883c320defcb7685fe0daf105cfc3e472988c54a for AGENT_CTX.",
+    "Expected latest VAX-green head is 883c320defcb7685fe0daf105cfc3e472988c54a unless newer accepted work exists.",
     "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
     "Maximize useful work each turn and reduce unnecessary VAX round trips.",
     "When multiple Git restores are required, GIT_RESTORE.COM accepts comma-separated paths and restores/verifies them as a batch; quote mixed-case Git paths so DCL does not uppercase them."
