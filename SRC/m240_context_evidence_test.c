@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llm_internal.h"
+#include "LLM_CONTEXT.H"
 
 int command_line_complete(const char *a,size_t b,int c)
 {(void)a;(void)b;(void)c;return 0;}
@@ -33,7 +34,7 @@ int main(void)
         "TOOL RESULT tool: run_build status: failure code: 2 "
         "effect: execute truncated: no output: M240-LAST-BUILD-FAILURE");
 
-    if (!openai_context_evidence_text(
+    if (!llm_context_evidence_text(
             "--------", output, sizeof(output)) ||
         strstr(output, "LATEST NORMALIZED RESULT") == NULL ||
         strstr(output, "RECENT NORMALIZED RESULTS") == NULL ||
