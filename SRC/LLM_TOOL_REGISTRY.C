@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_tool_registry.h"
+#include "LLM_TOOL_REGISTRY.H"
 
 static const openai_tool_descriptor tool_registry[] = {
     { "list_directory", OPENAI_TOOL_LIST_DIRECTORY, 1, 0, 0, 0 },
