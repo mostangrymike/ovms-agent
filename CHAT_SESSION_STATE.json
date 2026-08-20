@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-19T21:04:00-05:00",
+  "updated_at": "2026-08-19T21:27:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "purpose": "Durable cross-chat handoff state for ChatGPT-assisted OVMS Agent development. Read this file first in a new chat, then verify live GitHub branch/issue state before acting.",
@@ -18,29 +18,30 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely provider-specific OpenAI protocol/config semantics and Requesty compatibility.",
-    "latest_vax_green_head": "a146c196d7d5f867668aed9fd809f27263288001",
-    "current_github_head": "a146c196d7d5f867668aed9fd809f27263288001",
-    "current_github_head_status": "VAX-green authoritative checkpoint. PATH, CACHE, generic build-artifact, TOOL RESULT, and TOOL SCHEMA families are complete; RULES.md is present on the branch.",
+    "latest_vax_green_head": "6837b8d849e9aa4035f60d7b369866636369285b",
+    "current_github_head": "b28ee625f4edd33dd93066a63246ab51bda78feb",
+    "current_github_head_status": "PROMPTS namespace is VAX-green at 6837b8d. Subsequent RULES.md-only commits added stronger GitHub-first/max-work rules. PROMPTS filename migration is now in progress on GitHub: SRC/LLM_PROMPTS.H and SRC/LLM_PROMPTS.C exist at current head, but build/link entries and remaining consumers have not yet been switched, so current head is not yet an acceptance checkpoint.",
     "path_family": {"status": "complete and VAX-green", "checkpoint": "db8ab863e51929e1add63a68f3658e769aeeeee0"},
     "cache_family": {"status": "complete and VAX-green", "checkpoint": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc"},
     "build_artifact_family": {"status": "complete and VAX-green", "checkpoint": "9bd4dca88cf21f268273ff020a1bc54751f13432"},
     "tool_result_family": {"status": "complete and VAX-green", "checkpoint": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6"},
-    "tool_schema_family": {
-      "status": "complete and VAX-green",
-      "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001",
-      "completed": [
-        "Added uppercase SRC/LLM_TOOL_SCHEMA.C and SRC/LLM_TOOL_SCHEMA.H while preserving provider-neutral write_agent_tools* APIs.",
-        "Migrated LLM_INTERNAL.H, OPENAI_REQUEST.C, OPENAI_REQUEST_AGENT.C, OPENAI_REQUEST_BUILD.C, OPENAI_REQ_IMAGE_M259.C, and m236_auto_patch_test.c includes.",
-        "Migrated BUILD_LLM_MODULES.COM and LLM_MODULES.OPT to LLM_TOOL_SCHEMA artifacts.",
-        "Transition commit 37209f44122cab02344d3c1dcf016a00c10b4c07 passed full VAX @BUILD before old-file deletion.",
-        "Deleted obsolete SRC/OPENAI_TOOL_SCHEMA.H and SRC/OPENAI_TOOL_SCHEMA.C in 002cdf6abb6871dca42e2ab71fce527c547ba3e2 and a146c196d7d5f867668aed9fd809f27263288001.",
-        "Physically deleted stale OpenVMS versions of both old schema files and reran full @BUILD successfully with BUILD_STATUS=%X00000001."
+    "tool_schema_family": {"status": "complete and VAX-green", "checkpoint": "a146c196d7d5f867668aed9fd809f27263288001"},
+    "prompts_family": {
+      "status": "in progress",
+      "namespace_checkpoint": "6837b8d849e9aa4035f60d7b369866636369285b",
+      "namespace_checkpoint_status": "VAX-green with full @BUILD and BUILD_STATUS=%X00000001 after RMS-safe batch restore using GIT_RESTORE.COM.",
+      "current_transition": [
+        "Four external prompt symbols are neutral: llm_prompt_read_only, llm_prompt_plan, llm_prompt_write, llm_prompt_create.",
+        "Temporary source compatibility aliases remain for openai_prompt_* callers.",
+        "SRC/LLM_PROMPTS.H added at 701c250dcfdd73d57b6d6c32400e34e333621a12.",
+        "SRC/LLM_PROMPTS.C added at b28ee625f4edd33dd93066a63246ab51bda78feb.",
+        "Do not delete OPENAI_PROMPTS.C/H yet. Next switch BUILD_LLM_MODULES.COM and LLM_MODULES.OPT, migrate exact branch-live includes, VAX-build, then drain compatibility aliases/files."
       ]
     },
     "next_work": [
-      "Continue M267 with the next bounded generic OpenAI naming family using RULES.md and GitHub-first branch-live verification.",
+      "Continue PROMPTS filename migration entirely on GitHub: switch build/link artifacts to LLM_PROMPTS, migrate exact branch-live includes to LLM_PROMPTS.H, compare diffs, then ask for one VAX sync/@BUILD.",
+      "When multiple tracked files need RMS-safe materialization on VAX, use GIT_RESTORE.COM batch script.",
       "Continue remaining generic production filename and C namespace cleanup; do not use blind global rename.",
-      "LOG family remains a separate broad family unless it becomes the most efficient next target.",
       "Final survivor audit must classify every remaining OpenAI occurrence as provider-specific, compatibility-specific, archival/historical, generated/justified, or remaining naming debt."
     ]
   },
@@ -51,13 +52,13 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M261]",
     "local_branch_name": "m265-rms-record-restore-fix",
-    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use guarded RMS-aware restore for changed tracked files; physically delete removed files when required; @BUILD for acceptance."
+    "sync_pattern": "git fetch; git reset --mixed --no-refresh origin/m267-llm-naming; use GIT_RESTORE.COM for multiple RMS-aware restores; physically delete removed files when required; @BUILD for acceptance."
   },
   "resume_protocol": [
     "Read this file and RULES.md first in a new chat.",
     "Fetch issue #31 and verify live m267-llm-naming head before acting.",
-    "Expected latest VAX-green head is a146c196d7d5f867668aed9fd809f27263288001 unless newer accepted work exists.",
-    "Use GitHub as repository source of truth and OpenVMS as DEC C/VAX/RMS/DCL/runtime acceptance environment.",
-    "Continue with coherent bounded family slices and audit every new external identifier against the VAX 31-character limit."
+    "Expected latest VAX-green head is 6837b8d849e9aa4035f60d7b369866636369285b unless newer accepted work exists.",
+    "Always maximize GitHub use and make repository edits on GitHub; OpenVMS is the DEC C/VAX/RMS/DCL/runtime acceptance environment.",
+    "Maximize useful work each turn and reduce unnecessary VAX round trips."
   ]
 }
