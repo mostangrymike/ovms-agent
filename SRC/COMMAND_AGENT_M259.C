@@ -2,11 +2,20 @@
 
 #include "github_m262.h"
 #include "LLM_AUTO.H"
+#include "LLM_PATCH.H"
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
 #define openai_auto_reset llm_auto_reset
+#define openai_patch_apply_cmd llm_patch_apply_cmd
+#define openai_patch_dry_cmd llm_patch_dry_cmd
+#define openai_patch_validate_cmd llm_patch_validate_cmd
+#define openai_patch_last_cmd llm_patch_last_cmd
 #include "COMMAND_AGENT.C"
+#undef openai_patch_last_cmd
+#undef openai_patch_validate_cmd
+#undef openai_patch_dry_cmd
+#undef openai_patch_apply_cmd
 #undef openai_auto_reset
 #undef openai_show_github
 #undef command_register_agent
