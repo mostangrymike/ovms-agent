@@ -5,15 +5,15 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "openai_plan.h"
-#include "openai_execute.h"
+#include "LLM_PLAN.H"
+#include "LLM_EXECUTE.H"
 
 #define OPENAI_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
 #define OPENAI_PLAN_MAX_BYTES 65536U
 #define OPENAI_PLAN_MAX_FILES 32U
 #define OPENAI_PLAN_PATH_SIZE 256U
 
-#include "openai_plan_sensitive.inc"
+#include "LLM_PLAN_SENSITIVE.INC"
 static int plan_path_char(int ch)
 {
     return isalnum(ch) ||
@@ -817,24 +817,24 @@ int openai_plan_file_current(const char *plan_path, int verbose)
 
 #undef openai_plan_save
 #undef openai_plan_file_current
-#include "openai_plan_m138_integrity.inc"
-#include "openai_plan_m138_validate.inc"
+#include "LLM_PLAN_M138_INTEGRITY.INC"
+#include "LLM_PLAN_M138_VALIDATE.INC"
 #undef openai_plan_show
 #undef openai_plan_clear
-#include "openai_plan_m139_lifecycle.inc"
-#include "openai_plan_m139_validate.inc"
-#include "openai_plan_m140_approval.inc"
-#include "openai_plan_m140_validate.inc"
-#include "openai_plan_m141_validate.inc"
-#include "openai_plan_m142_validate.inc"
-#include "openai_plan_m143_validate.inc"
-#include "openai_plan_m144_validate.inc"
-#include "openai_plan_m145_validate.inc"
-#include "openai_plan_m146_validate.inc"
+#include "LLM_PLAN_M139_LIFECYCLE.INC"
+#include "LLM_PLAN_M139_VALIDATE.INC"
+#include "LLM_PLAN_M140_APPROVAL.INC"
+#include "LLM_PLAN_M140_VALIDATE.INC"
+#include "LLM_PLAN_M141_VALIDATE.INC"
+#include "LLM_PLAN_M142_VALIDATE.INC"
+#include "LLM_PLAN_M143_VALIDATE.INC"
+#include "LLM_PLAN_M144_VALIDATE.INC"
+#include "LLM_PLAN_M145_VALIDATE.INC"
+#include "LLM_PLAN_M146_VALIDATE.INC"
 #include "openai_m148_validate.inc"
 #include "openai_m149_validate.inc"
 #include "openai_m150_validate.inc"
-#include "openai_plan_current_wrapper.inc"
+#include "LLM_PLAN_CURRENT_WRAPPER.INC"
 void openai_plan_validate(void)
 {
     (void)openai_plan_is_current(1);
