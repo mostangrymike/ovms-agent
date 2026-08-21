@@ -68,5 +68,5 @@ int openai_test_agent_image_req(const char *model,
 }
 
 #define write_agent_request_mode m259_agent_request
-#include "OPENAI_AGENT_LOOP.C"
+#include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
