@@ -12,6 +12,7 @@ int write_agent_image_req(const char *model,
                           const char *user_prompt,
                           const char *image_path,
                           int allow_write);
+int llm_git_refresh(const agent_state *state);
 
 #define M259_AGENT_IMAGE_PATH 512U
 static char m259_agent_image[M259_AGENT_IMAGE_PATH];
