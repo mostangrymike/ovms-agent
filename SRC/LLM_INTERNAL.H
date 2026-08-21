@@ -94,6 +94,8 @@
 
 #include "LLM_INTERNAL_CORE.H"
 
+int llm_git_rms_copy(const char *path, const char *target);
+
 #ifdef LLM_INT_U_TEST_GIT_DATA
 #undef openai_test_git_data
 #undef LLM_INT_U_TEST_GIT_DATA
