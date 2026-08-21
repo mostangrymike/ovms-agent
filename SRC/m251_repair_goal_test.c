@@ -47,7 +47,7 @@ int openai_plan_save()
     return 0;
 }
 
-void openai_agent_plan()
+void llm_agent_plan()
 {
 }
 
