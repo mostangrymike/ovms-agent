@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T14:23:00-05:00",
+  "updated_at": "2026-08-21T14:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "bd658f6e14566d5a26dc5e4ee6acbefd8d21c841",
-    "current_github_head": "fc91208adfd900eecab146e6a10ae2941ca743fc",
-    "current_github_head_status": "Pending VAX acceptance. Latest proven VAX-green bd658f6 passed all regressions with BUILD_STATUS=%X00000001 and retired the entire temporary LLM_TOOL_REGISTRY.H compatibility block by localizing registry mappings in BUILD, CREATE, STATUS, and AGENT_LOOP wrappers. Current fc91208 is six commits ahead and localizes public AGENT/WRITE/CREATE/FIX/BUILD/STATUS/SELFTEST/VERIFY/AGENT_MODE compatibility mappings at their small definition/call boundaries, removing those nine aliases from OPENAI.H. openai_agent_retry and LOG/STATE aliases remain intentionally deferred.",
+    "latest_vax_green_head": "3a09220edb1897fc8c7976329a589b530790224d",
+    "current_github_head": "3a09220edb1897fc8c7976329a589b530790224d",
+    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. Recovery from 2d0106a added the missing llm_agent_mode prototype and removed three orphan neutral EXECUTE helpers, which also restored M233 project-map headroom below its fixed 192-file inventory boundary.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -35,21 +35,10 @@
       "agent_ctx": "883c320defcb7685fe0daf105cfc3e472988c54a",
       "image": "eb320246d3b57f01a360297a70afa9511d42e252",
       "response": "2532e1e417e43aa5305a83f17598de7682fa368c",
-      "log_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
-      "state_phase1": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
-      "session_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
-      "transcript_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
-      "checkpoint_phase1": "2e4775b7418511183605830bdf109e4181fa48a9",
-      "build_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
-      "create_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
-      "status_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
-      "retry_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
-      "execute_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
-      "plan_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
-      "tools_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
-      "tool_registry_filename_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
-      "agent_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
-      "agent_loop_entry_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
+      "log_state_public_namespace": "4631024fe26a1b4c30d067b1e33f826a924b37c5",
+      "session_transcript_checkpoint": "2e4775b7418511183605830bdf109e4181fa48a9",
+      "build_create_status_retry_execute_phase1": "1e03492a3e3ba95131abeb1561505581350277e6",
+      "plan_tools_agent_phase1": "b97d0f72493cba1c19c90ceaf0139fcde38126b3",
       "instructions_filename_complete": "9e38e13ccd281c0695977237c6c1b920c8f66182",
       "git_context_core_complete": "70ca554896c4bd9a9d61ae98d625c71f73627825",
       "parity_core_complete": "034c15cb46616a12d9357e025828a2b7decd7650",
@@ -64,21 +53,41 @@
       "tool_registry_namespace_and_agent_plan": "da03aa292986f343d2da6293ed8ca57356ab1ab3",
       "public_agent_namespace": "ca2ee1d63aee1719b55a217a6fc47409d261e65a",
       "plan_execute_agent_mode_namespace": "b633d46109fed69bfe4452cdbcd729ea70d80ca5",
-      "log_state_public_namespace": "4631024fe26a1b4c30d067b1e33f826a924b37c5",
       "llm_core_artifact": "2035a231f1868c8448cc8b1ee4121b9d2747dae8",
       "auto_context_patch_project_compat_retirement": "2f0e939c7255b48fde5ea96ec7a0ea8dd907a7d9",
-      "tool_registry_compat_retirement": "bd658f6e14566d5a26dc5e4ee6acbefd8d21c841"
+      "tool_registry_compat_retirement": "bd658f6e14566d5a26dc5e4ee6acbefd8d21c841",
+      "public_agent_alias_retirement": "fe21035ffef3fb991fd60d59f732e741c267d7fd",
+      "retry_parity_survivor_retirement_and_recovery": "3a09220edb1897fc8c7976329a589b530790224d"
+    },
+    "accepted_at_3a09220": {
+      "full_build_status": "%X00000001",
+      "regressions": "all passed",
+      "retired_generic_dependencies": [
+        "openai_agent_retry",
+        "openai_agent_mode",
+        "openai_auto_note_tool",
+        "openai_context_build"
+      ],
+      "recovery": [
+        "Declared llm_agent_mode in OPENAI.H so DEC C sees the prototype after global alias removal.",
+        "Deleted orphan LLM_EXECUTE_DUP_PATH_CHECK.INC.",
+        "Deleted orphan LLM_EXECUTE_PARSER_TAIL_M101.INC.",
+        "Deleted orphan LLM_EXECUTE_STAGE_VALIDATE_M88.INC.",
+        "Project-map inventory is now one file smaller than the prior VAX-green baseline, avoiding M233 truncation at OPENAI_MAP_MAX_FILES=192."
+      ]
     },
     "deferred": {
-      "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
-      "openai_auto_note_tool": "Temporary compatibility wrapper retained because current parity core still calls it.",
-      "openai_context_build": "Temporary compatibility wrapper retained because current parity core still calls it.",
-      "openai_agent_retry": "Definition remains in large LLM_RETRY.C and still depends on OPENAI.H alias; migrate with a dedicated source-clean pass."
+      "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph."
     },
-    "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
+    "rms_restore_capacity": {
+      "status": "VAX-green",
+      "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720",
+      "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
+    },
     "next_work": [
-      "VAX-test current fc91208 by restoring the six changed source/header files and running full @BUILD with BUILD_STATUS capture.",
-      "If green, record public agent alias retirement on issue #31 and continue with parity survivors plus PLAN/EXECUTE or LOG/STATE source-compatibility drain.",
+      "Continue accumulating a substantial M267 cleanup from 3a09220 before the next VAX gate.",
+      "Audit remaining generic OpenAI compatibility aliases and wrapper filenames in PLAN/EXECUTE/STATE plus generic callers in LLM_AGENT.C and LLM_AGENT_LOOP boundaries.",
+      "Keep openai_log_event deferred until a complete caller drain is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
