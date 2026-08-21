@@ -24,6 +24,7 @@ static char *m262_provider_env(const char *name)
 #define openai_status llm_status
 #define openai_selftest llm_selftest
 #define openai_verify llm_verify
+#define openai_load_state llm_load_state
 #define openai_tool_descriptor llm_tool_descriptor
 #define openai_tool_find llm_tool_find
 #define openai_tool_is_replace llm_tool_is_replace
@@ -37,6 +38,7 @@ static char *m262_provider_env(const char *name)
 #undef openai_tool_is_replace
 #undef openai_tool_find
 #undef openai_tool_descriptor
+#undef openai_load_state
 #undef openai_verify
 #undef openai_selftest
 #undef openai_status
