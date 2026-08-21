@@ -33,20 +33,4 @@ char *llm_tool_execute_read(
     const char *arguments,
     llm_file_cache_entry *cache);
 
-/* Temporary M267 source compatibility for remaining live consumers. */
-#define openai_tool_kind llm_tool_kind
-#define openai_tool_descriptor llm_tool_descriptor
-#define openai_tool_find llm_tool_find
-#define openai_tool_is_read llm_tool_is_read
-#define openai_tool_is_replace llm_tool_is_replace
-#define openai_tool_execute_read llm_tool_execute_read
-#define OPENAI_TOOL_LIST_DIRECTORY LLM_TOOL_LIST_DIRECTORY
-#define OPENAI_TOOL_READ_FILE LLM_TOOL_READ_FILE
-#define OPENAI_TOOL_READ_FILE_RANGE LLM_TOOL_READ_FILE_RANGE
-#define OPENAI_TOOL_SEARCH_FILE LLM_TOOL_SEARCH_FILE
-#define OPENAI_TOOL_REPLACE_TEXT LLM_TOOL_REPLACE_TEXT
-#define OPENAI_TOOL_REPLACE_LINES LLM_TOOL_REPLACE_LINES
-#define OPENAI_TOOL_CREATE_FILE LLM_TOOL_CREATE_FILE
-#define OPENAI_TOOL_RUN_BUILD LLM_TOOL_RUN_BUILD
-
 #endif /* LLM_TOOL_REGISTRY_H */
