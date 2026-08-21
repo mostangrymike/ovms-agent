@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T18:21:00-05:00",
+  "updated_at": "2026-08-21T18:39:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-    "current_github_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
-    "current_github_head_status": "Pending VAX gate. Exact branch-live repair-header drain completed in two audited commits: SRC/COMMAND_AGENT.C changed one include from openai_repair.h to LLM_REPAIR.H, then obsolete seven-line SRC/OPENAI_REPAIR.H forwarding shim was deleted. Combined delta from e6bb033 is only COMMAND_AGENT.C +1/-1 and OPENAI_REPAIR.H deletion; no executable logic or symbol namespace changes.",
+    "current_github_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
+    "current_github_head_status": "Pending VAX recovery gate. Initial repair-header retirement head 650e77e failed with %CC-F-NOINCLFILEF for openai_repair.h and BUILD_STATUS=%X10B91264 because exact branch-live SRC/LLM_REPAIR_CORE.INC still included the compatibility header. The shim was restored forward at c52dad85, LLM_REPAIR_CORE.INC was changed one line to include LLM_REPAIR.H at f749b4be, and the seven-line OPENAI_REPAIR.H shim was retired again at corrected head 6420958. Combined delta from latest VAX-green e6bb033 is exactly two +1/-1 include substitutions plus shim deletion; no executable logic or external identifier changes.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -145,14 +145,18 @@
       "net_repository_file_delta": 0,
       "issue_comment": 5376399657
     },
-    "pending_repair_header_gate": {
+    "repair_header_recovery_history": {
       "base": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
-      "consumer_commit": "ab4967f96fecaea1cc800593edcea56451cabb02",
-      "consumer_delta": "SRC/COMMAND_AGENT.C one include substitution: openai_repair.h -> LLM_REPAIR.H",
-      "shim_deleted": "SRC/OPENAI_REPAIR.H",
-      "combined_delta": "COMMAND_AGENT.C +1/-1 plus seven-line shim deletion",
-      "new_external_identifiers": 0
+      "failed_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
+      "failed_build_status": "%X10B91264",
+      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_repair.h",
+      "root_cause": "Missed exact branch-live include in SRC/LLM_REPAIR_CORE.INC",
+      "shim_restore_head": "c52dad85aaad6122038ae4425ceb41f44a84cc01",
+      "core_drain_head": "f749b4be83cbfa2af1de33fa98d32af92f4d7d3f",
+      "recovery_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
+      "corrected_delta": "COMMAND_AGENT.C +1/-1, LLM_REPAIR_CORE.INC +1/-1, OPENAI_REPAIR.H deleted",
+      "new_external_identifiers": 0,
+      "issue_comment": 5376501534
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -194,7 +198,7 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate 650e77e repair-header consumer drain and OPENAI_REPAIR.H shim deletion.",
+      "VAX-gate corrected repair-header retirement at 6420958eb256a4db3ecd76e19027ea461e486c38.",
       "After green, continue exact branch-live thin-header audit; PLAN/EXECUTE/STATE remain shared by mature consumers.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
