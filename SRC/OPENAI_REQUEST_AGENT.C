@@ -7,12 +7,11 @@
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_AGENT_CTX.H"
 #include "LLM_JSON_PARSE.H"
+#include "LLM_AUTO.H"
 
 #define OPENAI_AGENT_GOAL_MAX 8192U
 
 static char openai_agent_goal[OPENAI_AGENT_GOAL_MAX];
-
-int openai_auto_partial_limit(void);
 
 static int openai_update_local_ctx(const char *call_id,
                                    const char *tool_output)
@@ -222,7 +221,7 @@ int write_agent_final_request(
 
     (void)previous_id;
 
-    if (openai_auto_partial_limit()) {
+    if (llm_auto_partial_limit()) {
         (void)puts(
             "Incomplete guarded write reached its automatic limit; "
             "skipping final synthesis so rollback can run immediately."
