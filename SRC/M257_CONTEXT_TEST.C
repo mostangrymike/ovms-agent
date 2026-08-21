@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "llm_internal.h"
+
+int llm_instr_reload(const agent_state *state);
+void llm_test_instr_path(const char *path);
 
 #define openai_agent_mode m257_capture_mode
 #include "LLM_AGENT.C"
