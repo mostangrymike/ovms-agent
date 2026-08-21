@@ -8,9 +8,9 @@
 #undef openai_show_github
 #undef command_register_agent
 
-void openai_agent_image(agent_state *state,
-                        const char *image_path,
-                        const char *goal);
+void llm_agent_image(agent_state *state,
+                     const char *image_path,
+                     const char *goal);
 
 static void m259_command_image(agent_state *state,
                                const char *arguments)
@@ -35,7 +35,7 @@ static void m259_command_image(agent_state *state,
         return;
     }
 
-    openai_agent_image(state, image_path, cursor);
+    llm_agent_image(state, image_path, cursor);
 }
 
 static const command_entry m259_image_command[] = {
