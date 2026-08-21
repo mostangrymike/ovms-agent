@@ -14,6 +14,11 @@ void llm_agent_create(agent_state *state, const char *goal);
 void llm_agent_fix(agent_state *state, const char *goal);
 void llm_agent_retry(agent_state *state, const char *goal);
 void llm_agent_build(agent_state *state, const char *goal);
+void llm_agent_mode(agent_state *state,
+                    const char *goal,
+                    int allow_write,
+                    int build_after_write,
+                    int workflow);
 void llm_selftest(agent_state *state);
 void llm_status(const agent_state *state);
 void llm_verify(agent_state *state);
