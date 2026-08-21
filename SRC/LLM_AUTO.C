@@ -60,18 +60,5 @@
 #undef openai_auto_write_override
 #undef openai_auto_turn_override
 
-/* Temporary compatibility wrappers for broad legacy consumers. */
-void openai_auto_begin(int w) { llm_auto_begin(w); }
-unsigned int openai_auto_turn_limit(int w) { return llm_auto_turn_limit(w); }
-void openai_auto_note_turn(void) { llm_auto_note_turn(); }
+/* Temporary M267 compatibility for the remaining parity consumer. */
 void openai_auto_note_tool(void) { llm_auto_note_tool(); }
-int openai_auto_allow_write(void) { return llm_auto_allow_write(); }
-int openai_auto_partial_limit(void) { return llm_auto_partial_limit(); }
-void openai_auto_finish(const char *r) { llm_auto_finish(r); }
-int openai_auto_limits_text(char *o, size_t n) { return llm_auto_limits_text(o, n); }
-int openai_auto_status_text(char *o, size_t n) { return llm_auto_status_text(o, n); }
-void openai_show_auto_limits(void) { llm_show_auto_limits(); }
-void openai_show_auto_status(void) { llm_show_auto_status(); }
-void openai_auto_reset(void) { llm_auto_reset(); }
-void openai_auto_test_limits(unsigned int t, unsigned int w)
-{ llm_auto_test_limits(t, w); }
