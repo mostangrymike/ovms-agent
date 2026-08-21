@@ -4,6 +4,7 @@
 #include "llm_internal.h"
 #include "LLM_IMAGE.H"
 #include "LLM_AUTO.H"
+#include "LLM_PATCH.H"
 #include "openai_request_agent.h"
 
 int write_agent_image_req(const char *model,
@@ -81,9 +82,11 @@ int llm_test_agent_image_req(const char *model,
 #define openai_show_auto_status llm_show_auto_status
 #define openai_auto_reset llm_auto_reset
 #define openai_auto_test_limits llm_auto_test_limits
+#define openai_patch_apply_json llm_patch_apply_json
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
+#undef openai_patch_apply_json
 #undef openai_auto_test_limits
 #undef openai_auto_reset
 #undef openai_show_auto_status
