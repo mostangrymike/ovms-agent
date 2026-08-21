@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "b6201805519faf832e5396b540280982fbc2d0a6",
-    "current_github_head": "b6201805519faf832e5396b540280982fbc2d0a6",
-    "current_github_head_status": "Accepted VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. This checkpoint preserves the TOOLS/REPAIR cleanup from failed head c02cf739, adds an explicit llm_git_refresh prototype before the M259 remapped agent-loop body, and removes the unused byte-identical LLM_EXECUTE_FALLBACK.INC duplicate while retaining LLM_EXECUTE_FALLBACK_M100.INC as the live include.",
+    "current_github_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
+    "current_github_head_status": "Pending VAX. Internal INSTRUCTIONS/GIT_CONTEXT declaration cleanup: the mature 886-line LLM_INTERNAL.H body is preserved byte-for-byte as LLM_INTERNAL_CORE.H (original blob 606982cc...), LLM_INTERNAL.H is a guarded translation wrapper providing all 8 neutral instruction declarations and all 13 neutral Git-context declarations including llm_git_rms_copy, redundant local forwards were removed from production/test consumers, and unused OPENAI_TEST_DUP_PATH_M88.INC was deleted. Net repository file count is unchanged.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -125,12 +125,22 @@
       ],
       "recovery": "Added declaration-only llm_git_refresh prototype at the M259 wrapper boundary and removed the unused duplicate LLM_EXECUTE_FALLBACK.INC to restore bounded project-map pressure without reverting M267 cleanup."
     },
+    "pending_internal_declaration_cleanup": {
+      "base": "b6201805519faf832e5396b540280982fbc2d0a6",
+      "head": "50b391a97a7bc5d98905a4ad4985db420567431d",
+      "commits_ahead": 9,
+      "changed_paths": 10,
+      "neutral_instruction_declarations": 8,
+      "neutral_git_declarations": 13,
+      "core_blob": "606982ccf5fa0bc2199053ee455deeecfe3d582d",
+      "net_repository_file_delta": 0,
+      "status": "Pending full VAX @BUILD acceptance"
+    },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
       "openai_agent": "Additional mature consumers remain outside the command wrapper.",
-      "openai_agent_write": "Additional mature consumers remain outside the command wrapper.",
-      "llm_internal_legacy_declarations": "LLM_INTERNAL.H still declares old INSTRUCTIONS/GIT_CONTEXT spellings; direct exports and residual callers are now VAX-proven, so this is a bounded header-cleanup candidate."
+      "openai_agent_write": "Additional mature consumers remain outside the command wrapper."
     },
     "rms_restore_capacity": {
       "status": "VAX-green",
@@ -138,8 +148,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Audit and neutralize obsolete INSTRUCTIONS/GIT_CONTEXT declarations in LLM_INTERNAL.H now that direct exports and residual callers are VAX-proven.",
-      "Audit remaining thin OPENAI_* compatibility headers and retire only those whose exact live include graph can be switched directly to existing LLM headers; prefer another coherent net-negative batch.",
+      "VAX-gate the pending internal INSTRUCTIONS/GIT_CONTEXT declaration boundary at 50b391a.",
+      "After green, audit remaining thin OPENAI_* compatibility headers and PLAN/STATE validation filename survivors; prefer coherent net-negative families.",
       "Continue draining openai_state_save/openai_agent/openai_agent_write as coherent families; keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
