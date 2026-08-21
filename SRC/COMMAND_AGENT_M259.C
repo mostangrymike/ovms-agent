@@ -5,6 +5,8 @@
 #include "LLM_CONTEXT.H"
 #include "LLM_PATCH.H"
 #include "LLM_PROJECT_MAP.H"
+#include "LLM_INSTRUCTIONS.H"
+#include "LLM_GIT_CONTEXT.H"
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
@@ -35,7 +37,23 @@
 #define openai_show_project_map llm_show_project_map
 #define openai_show_project_ctx llm_show_project_ctx
 #define openai_project_refresh_cmd llm_project_refresh_cmd
+#define openai_show_instr_status llm_show_instr_status
+#define openai_show_instr llm_show_instr
+#define openai_instr_reload_cmd llm_instr_reload_cmd
+#define openai_show_git_status llm_show_git_status
+#define openai_show_git_diff llm_show_git_diff
+#define openai_show_git_changed llm_show_git_changed
+#define openai_show_git_context llm_show_git_context
+#define openai_git_refresh_cmd llm_git_refresh_cmd
 #include "COMMAND_AGENT.C"
+#undef openai_git_refresh_cmd
+#undef openai_show_git_context
+#undef openai_show_git_changed
+#undef openai_show_git_diff
+#undef openai_show_git_status
+#undef openai_instr_reload_cmd
+#undef openai_show_instr
+#undef openai_show_instr_status
 #undef openai_project_refresh_cmd
 #undef openai_show_project_ctx
 #undef openai_show_project_map

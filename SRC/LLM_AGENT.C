@@ -1,6 +1,8 @@
 #include "llm_internal.h"
 #include "LLM_PROMPTS.H"
 #include "LLM_PROJECT_MAP.H"
+#include "LLM_INSTRUCTIONS.H"
+#include "LLM_GIT_CONTEXT.H"
 
 #ifndef OPENAI_PLAN_MAX_TURNS
 #define OPENAI_PLAN_MAX_TURNS 24
@@ -17,7 +19,7 @@ static void llm_agent_instr(agent_state *state,
     char project_goal[24576];
     char model_goal[32768];
 
-    if (!openai_instr_compose(
+    if (!llm_instr_compose(
             state, goal, instr_goal, sizeof(instr_goal))) {
         (void)puts("Unable to compose project instructions.");
         return;
@@ -29,7 +31,7 @@ static void llm_agent_instr(agent_state *state,
         return;
     }
 
-    if (!openai_git_compose(
+    if (!llm_git_compose(
             state, project_goal, model_goal, sizeof(model_goal))) {
         (void)puts("Unable to compose Git context.");
         return;
