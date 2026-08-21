@@ -21,5 +21,5 @@ static char *m262_provider_env(const char *name)
 }
 
 #define getenv m262_provider_env
-#include "OPENAI_AGENT_LOOP_M259_CORE.C"
+#include "LLM_AGENT_LOOP_M259_CORE.C"
 #undef getenv
