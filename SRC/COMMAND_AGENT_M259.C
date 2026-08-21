@@ -8,6 +8,14 @@
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
+#define openai_agent llm_agent
+#define openai_agent_write llm_agent_write
+#define openai_agent_create llm_agent_create
+#define openai_agent_fix llm_agent_fix
+#define openai_agent_build llm_agent_build
+#define openai_selftest llm_selftest
+#define openai_status llm_status
+#define openai_verify llm_verify
 #define openai_show_auto_status llm_show_auto_status
 #define openai_show_auto_limits llm_show_auto_limits
 #define openai_auto_reset llm_auto_reset
@@ -31,6 +39,14 @@
 #undef openai_auto_reset
 #undef openai_show_auto_limits
 #undef openai_show_auto_status
+#undef openai_verify
+#undef openai_status
+#undef openai_selftest
+#undef openai_agent_build
+#undef openai_agent_fix
+#undef openai_agent_create
+#undef openai_agent_write
+#undef openai_agent
 #undef openai_show_github
 #undef command_register_agent
 
