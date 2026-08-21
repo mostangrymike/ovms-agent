@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-    "current_github_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-    "current_github_head_status": "VAX-green. Full @BUILD at corrected repair-header recovery head 6420958 passed all regression tests and returned BUILD_STATUS=%X00000001. The accepted delta from e6bb033 is exactly two +1/-1 include substitutions, in SRC/COMMAND_AGENT.C and SRC/LLM_REPAIR_CORE.INC, plus deletion of the seven-line SRC/OPENAI_REPAIR.H compatibility shim. The earlier 650e77e gate remains rejected and recorded because LLM_REPAIR_CORE.INC was a missed live consumer.",
+    "current_github_head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+    "current_github_head_status": "Pending VAX gate. REQUEST header ownership tranche adds canonical LLM_REQUEST_BUILD.H, LLM_REQUEST_AGENT.H, and LLM_REQUEST_BASIC.H with declarations matching the legacy headers exactly apart from include guards, then converts the corresponding OPENAI_REQUEST_* headers to forwarding shims. No C bodies, symbols, build lists, or consumer include paths changed. Two initially mis-transcribed neutral declaration files were corrected before any legacy header pointed at them, so the incorrect drafts were never on a live include path.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -175,6 +175,24 @@
       "shim_deleted": "SRC/OPENAI_REPAIR.H",
       "new_external_identifiers": 0
     },
+    "pending_request_header_gate": {
+      "base": "6420958eb256a4db3ecd76e19027ea461e486c38",
+      "head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+      "files": [
+        "SRC/LLM_REQUEST_BUILD.H",
+        "SRC/LLM_REQUEST_AGENT.H",
+        "SRC/LLM_REQUEST_BASIC.H",
+        "SRC/OPENAI_REQUEST_BUILD.H",
+        "SRC/OPENAI_REQUEST_AGENT.H",
+        "SRC/OPENAI_REQUEST_BASIC.H"
+      ],
+      "change": "Move generic request declarations into canonical LLM_REQUEST_* headers and retain OPENAI_REQUEST_* as compatibility forwarding shims.",
+      "consumer_changes": 0,
+      "c_body_changes": 0,
+      "symbol_changes": 0,
+      "build_list_changes": 0,
+      "issue_comment": 5376606729
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -215,8 +233,9 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Continue exact branch-live thin-header survivor audit from VAX-green 6420958; verify every live consumer before any further shim retirement.",
-      "PLAN/EXECUTE/STATE compatibility surfaces remain shared by mature consumers unless exact live inspection proves otherwise.",
+      "VAX-gate ac0acde request-header canonicalization with full @BUILD.",
+      "If green, promote ac0acde and then drain exact request-header consumers toward LLM_REQUEST_* before considering legacy shim deletion.",
+      "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
