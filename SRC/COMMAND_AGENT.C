@@ -2,7 +2,7 @@
 #include "openai.h"
 #include "openai_execute.h"
 #include "openai_plan.h"
-#include "openai_repair.h"
+#include "LLM_REPAIR.H"
 #include "openai_state.h"
 #include "llm_internal.h"
 
