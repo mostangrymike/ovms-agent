@@ -487,3 +487,114 @@ void openai_test_git_data(const char *status_text,
     openai_git_test_diff = diff_text;
     openai_git_loaded = 0;
 }
+
+/*
+ * M267 neutral forwarding exports.  This source is included by the
+ * RMS-aware M263 wrapper while its legacy base-entry remaps are active.
+ * Drop those remaps here so the llm_* API forwards to the final M263
+ * entry points defined later in the enclosing translation unit.
+ */
+#undef openai_git_refresh
+#undef openai_git_status_text
+#undef openai_git_diff_text
+#undef openai_git_changed_text
+#undef openai_git_context
+#undef openai_git_compose
+#undef openai_show_git_status
+#undef openai_show_git_diff
+#undef openai_show_git_changed
+#undef openai_show_git_context
+#undef openai_git_refresh_cmd
+
+int openai_git_refresh(const agent_state *state);
+int openai_git_status_text(const agent_state *state,
+                           char *output, size_t output_size);
+int openai_git_diff_text(const agent_state *state,
+                         char *output, size_t output_size);
+int openai_git_changed_text(const agent_state *state,
+                            char *output, size_t output_size);
+int openai_git_context(const agent_state *state,
+                       char *output, size_t output_size);
+int openai_git_compose(const agent_state *state,
+                       const char *goal,
+                       char *output, size_t output_size);
+void openai_show_git_status(const agent_state *state);
+void openai_show_git_diff(const agent_state *state);
+void openai_show_git_changed(const agent_state *state);
+void openai_show_git_context(const agent_state *state);
+void openai_git_refresh_cmd(const agent_state *state);
+int openai_git_rms_copy(const char *path, const char *target);
+void openai_test_git_data(const char *status_text,
+                          const char *diff_text);
+
+int llm_git_refresh(const agent_state *state)
+{
+    return openai_git_refresh(state);
+}
+
+int llm_git_status_text(const agent_state *state,
+                        char *output, size_t output_size)
+{
+    return openai_git_status_text(state, output, output_size);
+}
+
+int llm_git_diff_text(const agent_state *state,
+                      char *output, size_t output_size)
+{
+    return openai_git_diff_text(state, output, output_size);
+}
+
+int llm_git_changed_text(const agent_state *state,
+                         char *output, size_t output_size)
+{
+    return openai_git_changed_text(state, output, output_size);
+}
+
+int llm_git_context(const agent_state *state,
+                    char *output, size_t output_size)
+{
+    return openai_git_context(state, output, output_size);
+}
+
+int llm_git_compose(const agent_state *state,
+                    const char *goal,
+                    char *output, size_t output_size)
+{
+    return openai_git_compose(state, goal, output, output_size);
+}
+
+void llm_show_git_status(const agent_state *state)
+{
+    openai_show_git_status(state);
+}
+
+void llm_show_git_diff(const agent_state *state)
+{
+    openai_show_git_diff(state);
+}
+
+void llm_show_git_changed(const agent_state *state)
+{
+    openai_show_git_changed(state);
+}
+
+void llm_show_git_context(const agent_state *state)
+{
+    openai_show_git_context(state);
+}
+
+void llm_git_refresh_cmd(const agent_state *state)
+{
+    openai_git_refresh_cmd(state);
+}
+
+int llm_git_rms_copy(const char *path, const char *target)
+{
+    return openai_git_rms_copy(path, target);
+}
+
+void llm_test_git_data(const char *status_text,
+                       const char *diff_text)
+{
+    openai_test_git_data(status_text, diff_text);
+}
