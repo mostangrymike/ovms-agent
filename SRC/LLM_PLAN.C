@@ -831,9 +831,9 @@ int openai_plan_file_current(const char *plan_path, int verbose)
 #include "LLM_PLAN_M144_VALIDATE.INC"
 #include "LLM_PLAN_M145_VALIDATE.INC"
 #include "LLM_PLAN_M146_VALIDATE.INC"
-#include "openai_m148_validate.inc"
-#include "openai_m149_validate.inc"
-#include "openai_m150_validate.inc"
+#include "LLM_PLAN_M148_VALIDATE.INC"
+#include "LLM_PLAN_M149_VALIDATE.INC"
+#include "LLM_PLAN_M150_VALIDATE.INC"
 #include "LLM_PLAN_CURRENT_WRAPPER.INC"
 void openai_plan_validate(void)
 {
