@@ -2,7 +2,7 @@
 
 #define execute_replace_text_tool m263_rep_text
 #define execute_replace_lines_tool m263_rep_lines
-#include "OPENAI_TOOLS.C"
+#include "LLM_TOOLS_CORE.C"
 #undef execute_replace_text_tool
 #undef execute_replace_lines_tool
 
