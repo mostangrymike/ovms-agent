@@ -3,34 +3,50 @@
 
 #include "LLM_CACHE.H"
 
-typedef enum openai_tool_kind {
-    OPENAI_TOOL_LIST_DIRECTORY = 1,
-    OPENAI_TOOL_READ_FILE = 2,
-    OPENAI_TOOL_READ_FILE_RANGE = 3,
-    OPENAI_TOOL_SEARCH_FILE = 4,
-    OPENAI_TOOL_REPLACE_TEXT = 5,
-    OPENAI_TOOL_REPLACE_LINES = 6,
-    OPENAI_TOOL_CREATE_FILE = 7,
-    OPENAI_TOOL_RUN_BUILD = 8
-} openai_tool_kind;
+typedef enum llm_tool_kind {
+    LLM_TOOL_LIST_DIRECTORY = 1,
+    LLM_TOOL_READ_FILE = 2,
+    LLM_TOOL_READ_FILE_RANGE = 3,
+    LLM_TOOL_SEARCH_FILE = 4,
+    LLM_TOOL_REPLACE_TEXT = 5,
+    LLM_TOOL_REPLACE_LINES = 6,
+    LLM_TOOL_CREATE_FILE = 7,
+    LLM_TOOL_RUN_BUILD = 8
+} llm_tool_kind;
 
-typedef struct openai_tool_descriptor {
+typedef struct llm_tool_descriptor {
     const char *name;
-    openai_tool_kind kind;
+    llm_tool_kind kind;
     int allows_read;
     int allows_write;
     int requires_confirmation;
     int requires_build;
-} openai_tool_descriptor;
+} llm_tool_descriptor;
 
-const openai_tool_descriptor *openai_tool_find(const char *name);
+const llm_tool_descriptor *llm_tool_find(const char *name);
 
-int openai_tool_is_read(const openai_tool_descriptor *descriptor);
-int openai_tool_is_replace(const openai_tool_descriptor *descriptor);
+int llm_tool_is_read(const llm_tool_descriptor *descriptor);
+int llm_tool_is_replace(const llm_tool_descriptor *descriptor);
 
-char *openai_tool_execute_read(
-    const openai_tool_descriptor *descriptor,
+char *llm_tool_execute_read(
+    const llm_tool_descriptor *descriptor,
     const char *arguments,
     llm_file_cache_entry *cache);
+
+/* Temporary M267 source compatibility for remaining live consumers. */
+#define openai_tool_kind llm_tool_kind
+#define openai_tool_descriptor llm_tool_descriptor
+#define openai_tool_find llm_tool_find
+#define openai_tool_is_read llm_tool_is_read
+#define openai_tool_is_replace llm_tool_is_replace
+#define openai_tool_execute_read llm_tool_execute_read
+#define OPENAI_TOOL_LIST_DIRECTORY LLM_TOOL_LIST_DIRECTORY
+#define OPENAI_TOOL_READ_FILE LLM_TOOL_READ_FILE
+#define OPENAI_TOOL_READ_FILE_RANGE LLM_TOOL_READ_FILE_RANGE
+#define OPENAI_TOOL_SEARCH_FILE LLM_TOOL_SEARCH_FILE
+#define OPENAI_TOOL_REPLACE_TEXT LLM_TOOL_REPLACE_TEXT
+#define OPENAI_TOOL_REPLACE_LINES LLM_TOOL_REPLACE_LINES
+#define OPENAI_TOOL_CREATE_FILE LLM_TOOL_CREATE_FILE
+#define OPENAI_TOOL_RUN_BUILD LLM_TOOL_RUN_BUILD
 
 #endif /* LLM_TOOL_REGISTRY_H */
