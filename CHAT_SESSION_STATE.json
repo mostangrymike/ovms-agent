@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T17:27:00-05:00",
+  "updated_at": "2026-08-21T17:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "cec271a7738995fa691fbc3c915684ac8799b175",
-    "current_github_head": "cec271a7738995fa691fbc3c915684ac8799b175",
-    "current_github_head_status": "VAX-green accepted. Internal INSTRUCTIONS/GIT_CONTEXT declarations are neutralized through guarded LLM_INTERNAL.H over byte-for-byte LLM_INTERNAL_CORE.H, redundant local forwards are removed, OPENAI_TEST_DUP_PATH_M88.INC is deleted, and bounded PROJECT_MAP selection is priority-stable without increasing the 192-entry VAX memory budget.",
+    "latest_vax_green_head": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+    "current_github_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+    "current_github_head_status": "Pending VAX gate. Five remaining M148/M149/M150 generic validation filenames are zero-content moved to architecture-aligned LLM_PLAN_* and LLM_EXEC_* names. LLM_PLAN.C has exactly three include substitutions. LLM_EXECUTE.C has exactly three include substitutions: M150B, M150D, and direct openai_plan.h -> LLM_PLAN.H. No executable logic or symbol namespace changes.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -63,7 +63,8 @@
       "instructions_git_context_phase2": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
       "execute_filename_shim_retirement": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
       "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6",
-      "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175"
+      "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175",
+      "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -72,8 +73,7 @@
       "focused_m257_status": "%X00000001",
       "focused_m257_regressions": "all passed",
       "child_delta": "SRC/M257_CONTEXT_TEST.C only; forward declaration for m257_capture_mode before macro-remapped LLM_AGENT.C include",
-      "issue_comment": 5375234663,
-      "details": "INSTRUCTIONS/GIT_CONTEXT phase-1 caller drain is VAX-proven. The failed b0319ca map-capacity design was recovered without increasing repository cardinality."
+      "issue_comment": 5375234663
     },
     "accepted_at_c2023c9": {
       "full_build_status": "%X00000001",
@@ -83,8 +83,7 @@
       "retired_linker_exports": 21,
       "git_context_exports": 13,
       "instruction_exports": 8,
-      "issue_comment": 5375419893,
-      "details": "Phase-2 direct llm_* exports are VAX-proven. Failed head 1ae6acb exposed only OPENAI_GIT_REFRESH x2 in LLM_AGENT_LOOP_M259 and OPENAI_INSTR_SHOW_TEXT x1 in LLM_CONTEXT; recovery c2023c9 neutralized those three callers through existing wrapper boundaries without restoring compatibility exports."
+      "issue_comment": 5375419893
     },
     "accepted_at_80f69a1": {
       "full_build_status": "%X00000001",
@@ -93,16 +92,14 @@
       "include_filename_substitutions": 27,
       "removed_forwarding_shims": 26,
       "net_repository_file_delta": -26,
-      "issue_comment": 5375657964,
-      "details": "LLM_EXECUTE.C now includes existing LLM_EXECUTE/LLM_EXEC fragments directly. VAX physically removed obsolete OPENAI_EXECUTE_*.INC and OPENAI_EXEC_M13*.INC RMS files before the successful full build. No executable C logic or exported symbol spelling changed in this checkpoint."
+      "issue_comment": 5375657964
     },
     "accepted_at_b620180": {
       "full_build_status": "%X00000001",
       "full_regressions": "all passed",
       "failed_head": "c02cf7392390e4b7e5acffa84c25c58bb65bf537",
       "failed_build_status": "%X10000002",
-      "issue_comment": 5375868080,
-      "details": "Cumulative post-80f69a1 TOOLS/REPAIR cleanup is VAX-proven. OPENAI_TOOLS.C is now LLM_TOOLS_CORE.C with zero content change, OPENAI_ROLLBACK.C is removed, openai_repair_plan compatibility is retired, the M259 remapped agent-loop has an explicit llm_git_refresh prototype, and the unused byte-identical LLM_EXECUTE_FALLBACK.INC duplicate is removed while the live _M100 fragment remains."
+      "issue_comment": 5375868080
     },
     "accepted_at_cec271a": {
       "full_build_status": "%X00000001",
@@ -114,8 +111,19 @@
       "neutral_git_declarations": 13,
       "internal_core_blob": "606982ccf5fa0bc2199053ee455deeecfe3d582d",
       "project_map_core_blob": "8110b77e737b5e8dd217afd960b3026b02ddf606",
-      "project_map_capacity": 192,
-      "details": "The internal declaration boundary and its consumer drain are VAX-proven. Recovery cec271a keeps the mature PROJECT_MAP core and static 192-entry budget unchanged while a wrapper priority-refill pass makes SOURCE/HEADER/TEST/BUILD visibility stable after saturation instead of dependent on readdir() order."
+      "project_map_capacity": 192
+    },
+    "accepted_at_bbf55cd": {
+      "base": "cec271a7738995fa691fbc3c915684ac8799b175",
+      "failed_head": "9835b58f76ff4298deffa9590525c379858513f0",
+      "recovery_head": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "plan_include_substitutions": 16,
+      "zero_content_plan_renames": 13,
+      "net_repository_file_delta": -1,
+      "issue_comment": 5376219585,
+      "details": "The PLAN filename tranche is VAX-proven. Production LLM_PLAN.C uses neutral validation/lifecycle filenames and LLM_PLAN_SENSITIVE.INC. Recovery drained the missed m251_repair_goal_test.c sensitive include and changed four M144 runtime fixture paths to the renamed LLM_PLAN_M141..M144 files."
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -136,17 +144,30 @@
       "failure_signals": [
         "DEC C implicit declaration: llm_git_refresh",
         "M233 failed: project map"
-      ],
-      "recovery": "Added declaration-only llm_git_refresh prototype at the M259 wrapper boundary and removed the unused duplicate LLM_EXECUTE_FALLBACK.INC to restore bounded project-map pressure without reverting M267 cleanup."
+      ]
     },
     "internal_declaration_recovery_history": {
       "base": "b6201805519faf832e5396b540280982fbc2d0a6",
       "failed_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
       "recovery_head": "cec271a7738995fa691fbc3c915684ac8799b175",
       "failed_full_build_status": "%X10000002",
-      "failure_signal": "M233 failed: project map",
-      "root_cause": "A newly added LLM_* header entered the bounded map before M233 fixtures while a compensating OPENAI_* deletion occurred later in directory order; the old map stopped traversal at 192 entries, making visibility readdir()-order dependent.",
-      "recovery": "Keep the mature map core and fixed memory budget, but refill saturated maps by replacing OTHER entries with later source/header/test/build files."
+      "failure_signal": "M233 failed: project map"
+    },
+    "pending_m148_m150_filename_gate": {
+      "base": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+      "head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+      "zero_content_renames": 5,
+      "plan_source_delta": "+3/-3 include lines only",
+      "execute_source_delta": "+3/-3 include lines only",
+      "renames": [
+        "OPENAI_M148_VALIDATE.INC -> LLM_PLAN_M148_VALIDATE.INC",
+        "openai_m149_validate.inc -> LLM_PLAN_M149_VALIDATE.INC",
+        "OPENAI_M150_VALIDATE.INC -> LLM_PLAN_M150_VALIDATE.INC",
+        "OPENAI_M150B_VALIDATE.INC -> LLM_EXEC_M150B_VALIDATE.INC",
+        "OPENAI_M150D_VALIDATE.INC -> LLM_EXEC_M150D_VALIDATE.INC"
+      ],
+      "additional_drain": "LLM_EXECUTE.C now includes LLM_PLAN.H directly instead of OPENAI_PLAN.H.",
+      "net_repository_file_delta": 0
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
@@ -160,9 +181,10 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Classify remaining OPENAI_* production filenames into genuine OpenAI-compatible provider protocol files versus generic compatibility debt.",
-      "Audit and migrate the remaining thin generic forwarding headers through exact live include graphs; prefer one coherent net-negative header family.",
-      "Migrate PLAN/STATE validation filenames in bounded families after exact include-flow verification; do not retire openai_state_save until all mature consumers are drained.",
+      "VAX-gate e6bb033 M148/M149/M150 filename migration.",
+      "After green, retire thin generic forwarding headers through exact live include-graph drains; OPENAI_REPAIR.H is a strong first candidate, while PLAN/EXECUTE/STATE remain shared by mature consumers.",
+      "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
+      "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
