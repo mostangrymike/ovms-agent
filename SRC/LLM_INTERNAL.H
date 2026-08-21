@@ -14,7 +14,7 @@
 #include "LLM_PATH.H"
 #include "LLM_CACHE.H"
 #include "LLM_TOOL_SCHEMA.H"
-#include "openai_tool_registry.h"
+#include "LLM_TOOL_REGISTRY.H"
 #include "openai_response.h"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_JSON_WRITE.H"
