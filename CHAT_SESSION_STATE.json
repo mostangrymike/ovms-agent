@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T16:01:00-05:00",
+  "updated_at": "2026-08-21T16:06:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
+    "latest_vax_green_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
     "current_github_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
-    "current_github_head_status": "Recovery pending VAX acceptance. Phase-2 export retirement at 1ae6acb failed only at link time with OPENAI_GIT_REFRESH referenced twice from LLM_AGENT_LOOP_M259 and OPENAI_INSTR_SHOW_TEXT referenced once from LLM_CONTEXT. Recovery c2023c9 preserves all 21 retired INSTRUCTIONS/GIT_CONTEXT linker exports and neutralizes only those three proven consumers through existing macro translation boundaries. Recovery delta vs failed head is two modified files and four inserted macro/undef lines; no files added/deleted.",
+    "current_github_head_status": "Accepted VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001 and focused @BUILD_M257 passed all project-instruction regressions with M257_STATUS=%X00000001. This accepts the 21-export INSTRUCTIONS/GIT_CONTEXT phase-2 retirement plus the narrow three-caller recovery. No files were added/deleted by the accepted phase-2 tree; M233 project-map cardinality remains at the proven baseline.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -59,7 +59,8 @@
       "public_agent_alias_retirement": "fe21035ffef3fb991fd60d59f732e741c267d7fd",
       "retry_parity_survivor_retirement_and_recovery": "3a09220edb1897fc8c7976329a589b530790224d",
       "state_alias_retirement": "6598100fcc5b60a275def3c94a27811dd620ebab",
-      "instructions_git_context_phase1": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf"
+      "instructions_git_context_phase1": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
+      "instructions_git_context_phase2": "c2023c9f0dedd373d6e99313ff2c565b907f5be4"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -71,7 +72,18 @@
       "issue_comment": 5375234663,
       "details": "INSTRUCTIONS/GIT_CONTEXT phase-1 caller drain is VAX-proven. The failed b0319ca map-capacity design was recovered without increasing repository cardinality."
     },
-    "pending_instructions_git_context_phase2": {
+    "accepted_at_c2023c9": {
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "focused_m257_status": "%X00000001",
+      "focused_m257_regressions": "all passed",
+      "retired_linker_exports": 21,
+      "git_context_exports": 13,
+      "instruction_exports": 8,
+      "issue_comment": 5375419893,
+      "details": "Phase-2 direct llm_* exports are VAX-proven. Failed head 1ae6acb exposed only OPENAI_GIT_REFRESH x2 in LLM_AGENT_LOOP_M259 and OPENAI_INSTR_SHOW_TEXT x1 in LLM_CONTEXT; recovery c2023c9 neutralized those three callers through existing wrapper boundaries without restoring compatibility exports."
+    },
+    "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
       "recovery_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
@@ -80,21 +92,14 @@
       "failed_undefined_symbols": [
         "OPENAI_GIT_REFRESH (2 references, LLM_AGENT_LOOP_M259)",
         "OPENAI_INSTR_SHOW_TEXT (1 reference, LLM_CONTEXT)"
-      ],
-      "base_to_recovery_tree_delta": "6 modified files; 0 added; 0 deleted",
-      "recovery_delta_vs_failed": "2 modified files; +4 lines; 0 added/deleted files",
-      "retired_linker_exports": 21,
-      "git_context_exports": 13,
-      "instruction_exports": 8,
-      "issue_comment": 5375385450,
-      "details": "Recovery keeps direct llm_* definitions for GIT_CONTEXT and INSTRUCTIONS. LLM_AGENT_LOOP_M259_CORE.C adds local openai_git_refresh -> llm_git_refresh mapping around LLM_AGENT_LOOP.C. LLM_CONTEXT.C adds local openai_instr_show_text -> llm_instr_show_text mapping around LLM_CONTEXT_CORE.INC. These remaps are active before llm_internal.h is included, so the legacy declarations are also preprocessed into neutral prototypes for these translation units."
+      ]
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
       "openai_agent": "Additional mature consumers remain outside the command wrapper.",
       "openai_agent_write": "Additional mature consumers remain outside the command wrapper.",
-      "llm_internal_legacy_declarations": "LLM_INTERNAL.H still declares old INSTRUCTIONS/GIT_CONTEXT spellings. Remove or neutralize after the defining export drain is VAX-proven and residual caller failures are resolved."
+      "llm_internal_legacy_declarations": "LLM_INTERNAL.H still declares old INSTRUCTIONS/GIT_CONTEXT spellings; now safe to neutralize/remove as part of the next bounded namespace/header cleanup because direct exports and residual callers are VAX-proven."
     },
     "rms_restore_capacity": {
       "status": "VAX-green",
@@ -102,9 +107,9 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-test recovery c2023c9: fetch/reset, restore SRC/LLM_AGENT_LOOP_M259_CORE.C and SRC/LLM_CONTEXT.C only, then run full @BUILD and @BUILD_M257 with status capture.",
-      "If green, accept all 21 INSTRUCTIONS/GIT_CONTEXT export retirements, update issue #31 and durable state, then continue substantial namespace/file cleanup before another normal gate.",
-      "Keep openai_log_event deferred until a complete caller drain is prepared.",
+      "Audit and neutralize obsolete INSTRUCTIONS/GIT_CONTEXT declarations in LLM_INTERNAL.H now that direct exports and residual callers are VAX-proven.",
+      "Audit thin OPENAI_* compatibility headers and delete only those whose exact live include graph is fully drained; prefer a net-negative file-count batch to increase PROJECT_MAP headroom.",
+      "Continue draining openai_state_save/openai_agent/openai_agent_write as coherent families; keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
