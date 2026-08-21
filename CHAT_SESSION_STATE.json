@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T09:24:00-05:00",
+  "updated_at": "2026-08-21T10:04:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,9 +17,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "ea1c4d98da08318604bed08a48669fa511b48667",
-    "current_github_head": "af794aa9d54fe31a23b242e3b192553a9ffe1b00",
-    "current_github_head_status": "Pending VAX acceptance. Latest proven VAX-green head ea1c4d9 physically removed OPENAI_AGENT_LOOP.C and passed all regressions with BUILD_STATUS=%X00000001. Current af794aa renames the generic M259 agent-image helpers to llm_agent_image_set, llm_agent_image_clear, and llm_test_agent_image_req across exact live wrapper/core/test consumers; all new externals are <=31 characters.",
+    "latest_vax_green_head": "ca2ee1d63aee1719b55a217a6fc47409d261e65a",
+    "current_github_head": "b633d46109fed69bfe4452cdbcd729ea70d80ca5",
+    "current_github_head_status": "Pending VAX acceptance. Latest proven VAX-green head ca2ee1d passed all regressions with BUILD_STATUS=%X00000001 and moved the public generic AGENT ABI to llm_* names for agent, plan, write, create, fix, retry, build, image, selftest, status, and verify. Current b633d46 additionally migrates llm_plan_execute, llm_execute_count_ops, llm_plan_is_current, llm_plan_validate, and llm_agent_mode, with the M251 partial-link regression stubs updated coherently. All new externals are <=31 characters.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -58,13 +58,16 @@
       "tool_registry_guard": "3e59fd1b899eacfc66a6976768672b9393bfc882",
       "agent_filename_transition": "b569e7cf48a7d92637bb2740116db01c3cd53183",
       "tool_registry_filename_complete": "ca3deed756846182480dd6fe6e6bdd6d51539471",
-      "agent_loop_filename_complete": "ea1c4d98da08318604bed08a48669fa511b48667"
+      "agent_loop_filename_complete": "ea1c4d98da08318604bed08a48669fa511b48667",
+      "agent_image_namespace": "af794aa9d54fe31a23b242e3b192553a9ffe1b00",
+      "tool_registry_namespace_and_agent_plan": "da03aa292986f343d2da6293ed8ca57356ab1ab3",
+      "public_agent_namespace": "ca2ee1d63aee1719b55a217a6fc47409d261e65a"
     },
     "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
     "next_work": [
-      "VAX-test current af794aa by restoring LLM_AGENT_M259.C, LLM_AGENT_LOOP_M259_CORE.C, and M259_AGENT_IMAGE_TEST.C, then run full @BUILD and capture BUILD_STATUS.",
-      "If green, continue bounded AGENT namespace cleanup inside LLM_AGENT.C / LLM_AGENT_LOOP.C with exact branch-live consumer checks and <=31-character external-symbol audits.",
-      "Continue bounded EXECUTE namespace and compatibility-shim cleanup after AGENT slices, then finish survivor classification and final full VAX acceptance before closing issue #31."
+      "VAX-test current b633d46 by restoring OPENAI.H, LLM_EXECUTE.H, LLM_PLAN.H, and m251_repair_goal_test.c, then run full @BUILD and capture BUILD_STATUS.",
+      "If green, continue batching remaining PLAN save/show/clear legacy-layer cleanup, EXECUTE compatibility-shim removal, and agent-loop internal namespace migration with exact partial-link test audits.",
+      "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
   "local_openvms_state": {
