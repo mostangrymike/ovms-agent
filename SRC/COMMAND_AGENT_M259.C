@@ -23,6 +23,7 @@ void llm_git_refresh_cmd(const agent_state *state);
 #define openai_agent_fix llm_agent_fix
 #define openai_agent_retry llm_agent_retry
 #define openai_agent_build llm_agent_build
+#define openai_repair_plan llm_repair_plan
 #define openai_selftest llm_selftest
 #define openai_status llm_status
 #define openai_verify llm_verify
@@ -82,6 +83,7 @@ void llm_git_refresh_cmd(const agent_state *state);
 #undef openai_verify
 #undef openai_status
 #undef openai_selftest
+#undef openai_repair_plan
 #undef openai_agent_build
 #undef openai_agent_retry
 #undef openai_agent_fix
