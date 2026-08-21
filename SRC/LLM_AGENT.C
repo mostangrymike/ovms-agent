@@ -1,5 +1,6 @@
 #include "llm_internal.h"
 #include "LLM_PROMPTS.H"
+#include "LLM_PROJECT_MAP.H"
 
 #ifndef OPENAI_PLAN_MAX_TURNS
 #define OPENAI_PLAN_MAX_TURNS 24
@@ -22,7 +23,7 @@ static void llm_agent_instr(agent_state *state,
         return;
     }
 
-    if (!openai_project_compose(
+    if (!llm_project_compose(
             state, instr_goal, project_goal, sizeof(project_goal))) {
         (void)puts("Unable to compose repository map.");
         return;
