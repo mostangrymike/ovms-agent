@@ -21,19 +21,3 @@
 #undef openai_patch_dry
 #undef openai_patch_validate
 #undef openai_patch_apply_json
-
-/* Temporary compatibility wrappers for broad legacy consumers. */
-int openai_patch_apply_json(const char *a, char *o, size_t n)
-{ return llm_patch_apply_json(a, o, n); }
-int openai_patch_validate(const char *p, char *o, size_t n)
-{ return llm_patch_validate(p, o, n); }
-int openai_patch_dry(const char *p, char *o, size_t n)
-{ return llm_patch_dry(p, o, n); }
-int openai_patch_apply(const char *p, char *o, size_t n)
-{ return llm_patch_apply(p, o, n); }
-int openai_patch_last_text(char *o, size_t n)
-{ return llm_patch_last_text(o, n); }
-void openai_patch_validate_cmd(const char *a) { llm_patch_validate_cmd(a); }
-void openai_patch_dry_cmd(const char *a) { llm_patch_dry_cmd(a); }
-void openai_patch_apply_cmd(const char *a) { llm_patch_apply_cmd(a); }
-void openai_patch_last_cmd(void) { llm_patch_last_cmd(); }
