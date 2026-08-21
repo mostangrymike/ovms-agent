@@ -6,14 +6,14 @@
  * Scoped files are applied from broad to specific; later scopes override
  * conflicting earlier guidance.
  */
-#define openai_instr_reload openai_instr_reload_base
-#define openai_instr_compose openai_instr_compose_base
-#define openai_instr_status_text openai_instr_status_text_base
-#define openai_instr_show_text openai_instr_show_text_base
-#define openai_show_instr_status openai_show_instr_status_base
-#define openai_show_instr openai_show_instr_base
-#define openai_instr_reload_cmd openai_instr_reload_cmd_base
-#define openai_test_instr_path openai_test_instr_path_base
+#define openai_instr_reload llm_instr_reload_base
+#define openai_instr_compose llm_instr_compose_base
+#define openai_instr_status_text llm_instr_status_text_base
+#define openai_instr_show_text llm_instr_show_text_base
+#define openai_show_instr_status llm_show_instr_status_base
+#define openai_show_instr llm_show_instr_base
+#define openai_instr_reload_cmd llm_instr_reload_cmd_base
+#define openai_test_instr_path llm_test_instr_path_base
 #include "LLM_INSTRUCTIONS.C"
 #undef openai_instr_reload
 #undef openai_instr_compose
@@ -296,24 +296,24 @@ static int m257_load_scopes(const agent_state *state,
     return 1;
 }
 
-int openai_instr_reload(const agent_state *state)
+int llm_instr_reload(const agent_state *state)
 {
     m257_active_files[0] = '\0';
     m257_active_data[0] = '\0';
     m257_active_count = 0U;
     m257_active_truncated = 0;
-    return openai_instr_reload_base(state);
+    return llm_instr_reload_base(state);
 }
 
-int openai_instr_compose(const agent_state *state,
-                         const char *goal,
-                         char *output,
-                         size_t output_size)
+int llm_instr_compose(const agent_state *state,
+                      const char *goal,
+                      char *output,
+                      size_t output_size)
 {
     char base[OPENAI_INSTR_PROMPT];
     int written;
 
-    if (!openai_instr_compose_base(state, goal, base, sizeof(base)) ||
+    if (!llm_instr_compose_base(state, goal, base, sizeof(base)) ||
         !m257_load_scopes(state, goal)) return 0;
 
     if (m257_active_count == 0U) {
@@ -331,14 +331,14 @@ int openai_instr_compose(const agent_state *state,
     return written >= 0 && (size_t)written < output_size;
 }
 
-int openai_instr_status_text(const agent_state *state,
-                             char *output,
-                             size_t output_size)
+int llm_instr_status_text(const agent_state *state,
+                          char *output,
+                          size_t output_size)
 {
     char base[2048];
     int written;
 
-    if (!openai_instr_status_text_base(state, base, sizeof(base))) return 0;
+    if (!llm_instr_status_text_base(state, base, sizeof(base))) return 0;
     written = snprintf(output, output_size,
         "%sScoped active files: %u\n"
         "Scoped truncated:   %s\n%s",
@@ -348,53 +348,53 @@ int openai_instr_status_text(const agent_state *state,
     return written >= 0 && (size_t)written < output_size;
 }
 
-int openai_instr_show_text(const agent_state *state,
-                           char *output,
-                           size_t output_size)
+int llm_instr_show_text(const agent_state *state,
+                        char *output,
+                        size_t output_size)
 {
     char base[OPENAI_INSTR_MAX + 256U];
     int written;
 
-    if (!openai_instr_show_text_base(state, base, sizeof(base))) return 0;
+    if (!llm_instr_show_text_base(state, base, sizeof(base))) return 0;
     written = snprintf(output, output_size, "%s%s",
                        base, m257_active_data);
     return written >= 0 && (size_t)written < output_size;
 }
 
-void openai_show_instr_status(const agent_state *state)
+void llm_show_instr_status(const agent_state *state)
 {
     char output[4096];
-    if (!openai_instr_status_text(state, output, sizeof(output))) {
+    if (!llm_instr_status_text(state, output, sizeof(output))) {
         (void)puts("Unable to show project instruction status.");
         return;
     }
     (void)fputs(output, stdout);
 }
 
-void openai_show_instr(const agent_state *state)
+void llm_show_instr(const agent_state *state)
 {
     char output[OPENAI_INSTR_MAX + M257_SCOPE_DATA + 512U];
-    if (!openai_instr_show_text(state, output, sizeof(output))) {
+    if (!llm_instr_show_text(state, output, sizeof(output))) {
         (void)puts("Unable to show project instructions.");
         return;
     }
     (void)fputs(output, stdout);
 }
 
-void openai_instr_reload_cmd(const agent_state *state)
+void llm_instr_reload_cmd(const agent_state *state)
 {
-    if (!openai_instr_reload(state)) {
+    if (!llm_instr_reload(state)) {
         (void)puts("Project instruction reload failed.");
         return;
     }
-    openai_show_instr_status(state);
+    llm_show_instr_status(state);
 }
 
-void openai_test_instr_path(const char *path)
+void llm_test_instr_path(const char *path)
 {
     m257_active_files[0] = '\0';
     m257_active_data[0] = '\0';
     m257_active_count = 0U;
     m257_active_truncated = 0;
-    openai_test_instr_path_base(path);
+    llm_test_instr_path_base(path);
 }
