@@ -8,10 +8,10 @@ void openai_chat(agent_state *state, const char *prompt);
 void openai_chat_reset(void);
 int openai_chat_active(void);
 void openai_review_file(agent_state *state, const char *path);
-void openai_agent(agent_state *state, const char *goal);
-void openai_agent_write(agent_state *state, const char *goal);
+void llm_agent(agent_state *state, const char *goal);
+void llm_agent_write(agent_state *state, const char *goal);
 void openai_agent_create(agent_state *state, const char *goal);
-void openai_agent_fix(agent_state *state, const char *goal);
+void llm_agent_fix(agent_state *state, const char *goal);
 void openai_agent_retry(agent_state *state, const char *goal);
 void openai_agent_build(agent_state *state, const char *goal);
 void openai_selftest(agent_state *state);
@@ -23,5 +23,10 @@ void openai_clear_log(void);
 void openai_show_metrics(void);
 void openai_show_state(void);
 void openai_clear_state(void);
+
+/* Temporary M267 source compatibility for remaining live consumers. */
+#define openai_agent llm_agent
+#define openai_agent_write llm_agent_write
+#define openai_agent_fix llm_agent_fix
 
 #endif
