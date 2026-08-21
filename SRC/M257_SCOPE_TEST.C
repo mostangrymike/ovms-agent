@@ -3,7 +3,14 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "LLM_INSTRUCTIONS.H"
+
+int llm_instr_reload(const agent_state *state);
+int llm_instr_compose(const agent_state *state,
+                      const char *goal,
+                      char *output, size_t output_size);
+int llm_instr_status_text(const agent_state *state,
+                          char *output, size_t output_size);
+void llm_test_instr_path(const char *path);
 
 #define ROOT_FILE "M257_ROOT_INSTR.TXT"
 #define SCOPE_FILE "TEST/OVMS_AGENT_INSTRUCTIONS.TXT"
