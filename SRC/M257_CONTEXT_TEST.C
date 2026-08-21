@@ -5,6 +5,11 @@
 
 int llm_instr_reload(const agent_state *state);
 void llm_test_instr_path(const char *path);
+void m257_capture_mode(agent_state *state,
+                       const char *goal,
+                       int allow_write,
+                       int build_after_write,
+                       int workflow);
 
 #define openai_agent_mode m257_capture_mode
 #include "LLM_AGENT.C"
