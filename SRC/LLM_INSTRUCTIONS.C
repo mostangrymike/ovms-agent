@@ -1,4 +1,4 @@
-#include "LLM_INSTRUCTIONS.H"
+#include "llm_internal.h"
 
 /* M257 build entry: wrapper on first include, preserved M232 base on recursion. */
 #ifndef LLM_M257_INSTR_ENTRY
