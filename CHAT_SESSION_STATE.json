@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-20T18:20:00-05:00",
+  "updated_at": "2026-08-21T08:36:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,9 +17,9 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc",
-    "current_github_head": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc",
-    "current_github_head_status": "VAX-green. OpenVMS fetched/reset to 52a089f8, physically deleted obsolete duplicate LLM_EXECUTE_COUNT_HANDLER_M103.INC and LLM_EXECUTE_TOPLEVEL_GUARD_M100.INC RMS versions, and canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001.",
+    "latest_vax_green_head": "b569e7cf48a7d92637bb2740116db01c3cd53183",
+    "current_github_head": "b569e7cf48a7d92637bb2740116db01c3cd53183",
+    "current_github_head_status": "VAX-green. OpenVMS fetched/reset to b569e7c, RMS-restored and verified LLM_TOOL_REGISTRY.H, LLM_AGENT.C, and LLM_AGENT_M259.C, and canonical @BUILD passed all regressions with BUILD_STATUS=%X00000001.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -53,13 +53,16 @@
       "git_context_core_complete": "70ca554896c4bd9a9d61ae98d625c71f73627825",
       "parity_core_complete": "034c15cb46616a12d9357e025828a2b7decd7650",
       "parity_filename_complete": "e6fe804508fc7c4847024108c9089ed5c0d450fa",
-      "execute_duplicate_cleanup": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc"
+      "execute_duplicate_cleanup": "52a089f8f70aa62aad6a3b3b2963c03d4f672ccc",
+      "execute_dry_entry": "f44ef16ac88ab40cf237b90f4f078926b6c3ba38",
+      "tool_registry_guard": "3e59fd1b899eacfc66a6976768672b9393bfc882",
+      "agent_filename_transition": "b569e7cf48a7d92637bb2740116db01c3cd53183"
     },
     "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
     "next_work": [
-      "Run an exact branch-live survivor audit at 52a089f8, separating generic openai_*/OPENAI_* names from genuine OpenAI provider/protocol/config/compatibility semantics.",
-      "Migrate remaining generic namespaces/headers/consumers in bounded coherent slices, with GitHub as edit/source-of-truth plane and VAX as acceptance plane.",
-      "Finish with survivor classification, <=31-character external-symbol audit, full VAX build/regressions, and close issue #31 only after final acceptance."
+      "Remove obsolete OPENAI_AGENT.C compatibility source now that LLM_AGENT_M259.C directly includes LLM_AGENT.C and b569e7c is VAX-green; physically delete stale OpenVMS RMS versions after syncing deletion.",
+      "Continue bounded AGENT/EXECUTE generic namespace and compatibility-shim cleanup, with exact branch-live consumer checks and <=31-character external-symbol audit before each symbol slice.",
+      "Finish with survivor classification, full VAX build/regressions, and close issue #31 only after final acceptance."
     ]
   },
   "local_openvms_state": {
