@@ -6,7 +6,7 @@
 #include "llm_internal.h"
 #include "edit_txn.h"
 #include "LLM_EXECUTE.H"
-#include "openai_plan.h"
+#include "LLM_PLAN.H"
 #include "project.h"
 
 #define OPENAI_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
@@ -632,8 +632,8 @@ static int execute_save_ops_to(
 #include "LLM_EXEC_M136_VALIDATE.INC"
 #include "LLM_EXEC_M137_RECOVERY.INC"
 #include "LLM_EXEC_M137_VALIDATE.INC"
-#include "openai_m150b_validate.inc"
-#include "openai_m150d_validate.inc"
+#include "LLM_EXEC_M150B_VALIDATE.INC"
+#include "LLM_EXEC_M150D_VALIDATE.INC"
 void openai_plan_execute(agent_state *state)
 {
     openai_saved_operation *operations;
