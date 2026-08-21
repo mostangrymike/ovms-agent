@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T17:55:00-05:00",
+  "updated_at": "2026-08-21T18:21:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+    "latest_vax_green_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
     "current_github_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-    "current_github_head_status": "Pending VAX gate. Five remaining M148/M149/M150 generic validation filenames are zero-content moved to architecture-aligned LLM_PLAN_* and LLM_EXEC_* names. LLM_PLAN.C has exactly three include substitutions. LLM_EXECUTE.C has exactly three include substitutions: M150B, M150D, and direct openai_plan.h -> LLM_PLAN.H. No executable logic or symbol namespace changes.",
+    "current_github_head_status": "VAX-green. Five remaining M148/M149/M150 generic validation filenames were zero-content moved to architecture-aligned LLM_PLAN_* and LLM_EXEC_* names. LLM_PLAN.C has exactly three include substitutions. LLM_EXECUTE.C has exactly three include substitutions: M150B, M150D, and direct OPENAI_PLAN.H -> LLM_PLAN.H. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001 after RMS restore and physical deletion of obsolete OPENAI validation filenames.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -64,7 +64,8 @@
       "execute_filename_shim_retirement": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
       "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6",
       "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175",
-      "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84"
+      "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+      "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -125,6 +126,25 @@
       "issue_comment": 5376219585,
       "details": "The PLAN filename tranche is VAX-proven. Production LLM_PLAN.C uses neutral validation/lifecycle filenames and LLM_PLAN_SENSITIVE.INC. Recovery drained the missed m251_repair_goal_test.c sensitive include and changed four M144 runtime fixture paths to the renamed LLM_PLAN_M141..M144 files."
     },
+    "accepted_at_e6bb033": {
+      "base": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
+      "head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "zero_content_renames": 5,
+      "plan_source_delta": "+3/-3 include lines only",
+      "execute_source_delta": "+3/-3 include lines only",
+      "renames": [
+        "OPENAI_M148_VALIDATE.INC -> LLM_PLAN_M148_VALIDATE.INC",
+        "openai_m149_validate.inc -> LLM_PLAN_M149_VALIDATE.INC",
+        "OPENAI_M150_VALIDATE.INC -> LLM_PLAN_M150_VALIDATE.INC",
+        "OPENAI_M150B_VALIDATE.INC -> LLM_EXEC_M150B_VALIDATE.INC",
+        "OPENAI_M150D_VALIDATE.INC -> LLM_EXEC_M150D_VALIDATE.INC"
+      ],
+      "additional_drain": "LLM_EXECUTE.C now includes LLM_PLAN.H directly instead of OPENAI_PLAN.H.",
+      "net_repository_file_delta": 0,
+      "issue_comment": 5376399657
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -153,22 +173,6 @@
       "failed_full_build_status": "%X10000002",
       "failure_signal": "M233 failed: project map"
     },
-    "pending_m148_m150_filename_gate": {
-      "base": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
-      "head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "zero_content_renames": 5,
-      "plan_source_delta": "+3/-3 include lines only",
-      "execute_source_delta": "+3/-3 include lines only",
-      "renames": [
-        "OPENAI_M148_VALIDATE.INC -> LLM_PLAN_M148_VALIDATE.INC",
-        "openai_m149_validate.inc -> LLM_PLAN_M149_VALIDATE.INC",
-        "OPENAI_M150_VALIDATE.INC -> LLM_PLAN_M150_VALIDATE.INC",
-        "OPENAI_M150B_VALIDATE.INC -> LLM_EXEC_M150B_VALIDATE.INC",
-        "OPENAI_M150D_VALIDATE.INC -> LLM_EXEC_M150D_VALIDATE.INC"
-      ],
-      "additional_drain": "LLM_EXECUTE.C now includes LLM_PLAN.H directly instead of OPENAI_PLAN.H.",
-      "net_repository_file_delta": 0
-    },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
@@ -181,8 +185,7 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate e6bb033 M148/M149/M150 filename migration.",
-      "After green, retire thin generic forwarding headers through exact live include-graph drains; OPENAI_REPAIR.H is a strong first candidate, while PLAN/EXECUTE/STATE remain shared by mature consumers.",
+      "Retire thin generic forwarding headers through exact live include-graph drains; OPENAI_REPAIR.H is a strong first candidate, while PLAN/EXECUTE/STATE remain shared by mature consumers.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
