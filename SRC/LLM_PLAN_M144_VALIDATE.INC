@@ -64,10 +64,10 @@ int openai_m144_recovery_prod(
 int openai_m144_no_direct_globals(void)
 {
     const char *files[] = {
-        "[.SRC]OPENAI_PLAN_M141_VALIDATE.INC",
-        "[.SRC]OPENAI_PLAN_M142_VALIDATE.INC",
-        "[.SRC]OPENAI_PLAN_M143_VALIDATE.INC",
-        "[.SRC]OPENAI_PLAN_M144_VALIDATE.INC"
+        "[.SRC]LLM_PLAN_M141_VALIDATE.INC",
+        "[.SRC]LLM_PLAN_M142_VALIDATE.INC",
+        "[.SRC]LLM_PLAN_M143_VALIDATE.INC",
+        "[.SRC]LLM_PLAN_M144_VALIDATE.INC"
     };
     char approved_text[40];
     char hash_text[40];

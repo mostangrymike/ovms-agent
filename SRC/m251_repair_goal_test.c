@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_plan_sensitive.inc"
+#include "LLM_PLAN_SENSITIVE.INC"
 
 #define LLM_GOAL_GUARD_TEXT_ONLY 1
 #include "LLM_GOAL_GUARD.INC"
