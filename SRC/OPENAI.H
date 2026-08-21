@@ -36,4 +36,8 @@ void llm_show_state(void);
 void llm_show_memory(void);
 void llm_clear_state(void);
 
+/* Temporary M267 source compatibility for remaining live consumers. */
+#define openai_agent llm_agent
+#define openai_agent_write llm_agent_write
+
 #endif
