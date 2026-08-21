@@ -1,10 +1,13 @@
 #include <string.h>
 
 #include "github_m262.h"
+#include "LLM_AUTO.H"
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
+#define openai_auto_reset llm_auto_reset
 #include "COMMAND_AGENT.C"
+#undef openai_auto_reset
 #undef openai_show_github
 #undef command_register_agent
 
