@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T14:55:00-05:00",
+  "updated_at": "2026-08-21T15:18:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "3a09220edb1897fc8c7976329a589b530790224d",
-    "current_github_head": "3a09220edb1897fc8c7976329a589b530790224d",
-    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. Recovery from 2d0106a added the missing llm_agent_mode prototype and removed three orphan neutral EXECUTE helpers, which also restored M233 project-map headroom below its fixed 192-file inventory boundary.",
+    "current_github_head": "6ce7cbfd698602bfc9f5027461de87b3af15e264",
+    "current_github_head_status": "Pending VAX acceptance. Five commits ahead of 3a09220 implement a coherent STATE alias-retirement slice: LLM_STATE.C is now a small neutral translation boundary, the previous 356-line body is preserved exactly as LLM_STATE_CORE.C with identical blob SHA b0aa47132f675d405ea41686c010669a83a4c6a5, global STATE aliases are removed from LLM_STATE.H and OPENAI.H, the remaining OPENAI.H agent aliases are also removed, and LLM_STATUS.C localizes its single openai_load_state dependency.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -59,22 +59,18 @@
       "public_agent_alias_retirement": "fe21035ffef3fb991fd60d59f732e741c267d7fd",
       "retry_parity_survivor_retirement_and_recovery": "3a09220edb1897fc8c7976329a589b530790224d"
     },
-    "accepted_at_3a09220": {
-      "full_build_status": "%X00000001",
-      "regressions": "all passed",
-      "retired_generic_dependencies": [
-        "openai_agent_retry",
-        "openai_agent_mode",
-        "openai_auto_note_tool",
-        "openai_context_build"
+    "pending_state_alias_retirement": {
+      "head": "6ce7cbfd698602bfc9f5027461de87b3af15e264",
+      "base": "3a09220edb1897fc8c7976329a589b530790224d",
+      "commits": 5,
+      "paths": [
+        "SRC/LLM_STATE.C",
+        "SRC/LLM_STATE.H",
+        "SRC/LLM_STATE_CORE.C",
+        "SRC/LLM_STATUS.C",
+        "SRC/OPENAI.H"
       ],
-      "recovery": [
-        "Declared llm_agent_mode in OPENAI.H so DEC C sees the prototype after global alias removal.",
-        "Deleted orphan LLM_EXECUTE_DUP_PATH_CHECK.INC.",
-        "Deleted orphan LLM_EXECUTE_PARSER_TAIL_M101.INC.",
-        "Deleted orphan LLM_EXECUTE_STAGE_VALIDATE_M88.INC.",
-        "Project-map inventory is now one file smaller than the prior VAX-green baseline, avoiding M233 truncation at OPENAI_MAP_MAX_FILES=192."
-      ]
+      "details": "Retires six STATE aliases from LLM_STATE.H, three duplicate STATE aliases plus openai_agent/openai_agent_write from OPENAI.H, localizes state definition translation in LLM_STATE.C and status load translation in LLM_STATUS.C. No build-manifest change and no new linker-visible names beyond already-declared llm_* STATE APIs. New core file restores project-map file count to the previously proven baseline, not above it."
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph."
@@ -85,10 +81,9 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Continue accumulating a substantial M267 cleanup from 3a09220 before the next VAX gate.",
-      "Audit remaining generic OpenAI compatibility aliases and wrapper filenames in PLAN/EXECUTE/STATE plus generic callers in LLM_AGENT.C and LLM_AGENT_LOOP boundaries.",
-      "Keep openai_log_event deferred until a complete caller drain is prepared.",
-      "Finish survivor classification and final full VAX acceptance before closing issue #31."
+      "VAX-test 6ce7cbf by restoring LLM_STATE.C, LLM_STATE.H, LLM_STATE_CORE.C, LLM_STATUS.C, and OPENAI.H, then run full @BUILD with BUILD_STATUS capture.",
+      "If green, accept the STATE/global-alias retirement checkpoint, comment issue #31, update durable state, then continue with GIT_CONTEXT/INSTRUCTIONS or PLAN/EXECUTE filename compatibility shims.",
+      "Keep openai_log_event deferred until a complete caller drain is prepared."
     ]
   },
   "local_openvms_state": {
