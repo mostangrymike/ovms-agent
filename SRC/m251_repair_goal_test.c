@@ -70,7 +70,7 @@ void openai_plan_approve()
 {
 }
 
-void openai_plan_execute()
+void llm_plan_execute()
 {
 }
 
