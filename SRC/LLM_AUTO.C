@@ -59,6 +59,3 @@
 #undef openai_auto_cur_turns
 #undef openai_auto_write_override
 #undef openai_auto_turn_override
-
-/* Temporary M267 compatibility for the remaining parity consumer. */
-void openai_auto_note_tool(void) { llm_auto_note_tool(); }
