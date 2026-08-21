@@ -83,9 +83,21 @@ int llm_test_agent_image_req(const char *model,
 #define openai_auto_reset llm_auto_reset
 #define openai_auto_test_limits llm_auto_test_limits
 #define openai_patch_apply_json llm_patch_apply_json
+#define openai_tool_descriptor llm_tool_descriptor
+#define openai_tool_find llm_tool_find
+#define openai_tool_is_read llm_tool_is_read
+#define openai_tool_is_replace llm_tool_is_replace
+#define openai_tool_execute_read llm_tool_execute_read
+#define OPENAI_TOOL_REPLACE_LINES LLM_TOOL_REPLACE_LINES
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
+#undef OPENAI_TOOL_REPLACE_LINES
+#undef openai_tool_execute_read
+#undef openai_tool_is_replace
+#undef openai_tool_is_read
+#undef openai_tool_find
+#undef openai_tool_descriptor
 #undef openai_patch_apply_json
 #undef openai_auto_test_limits
 #undef openai_auto_reset
