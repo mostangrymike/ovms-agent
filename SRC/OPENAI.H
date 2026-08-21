@@ -34,5 +34,6 @@ void openai_clear_state(void);
 #define openai_selftest llm_selftest
 #define openai_status llm_status
 #define openai_verify llm_verify
+#define openai_agent_mode llm_agent_mode
 
 #endif
