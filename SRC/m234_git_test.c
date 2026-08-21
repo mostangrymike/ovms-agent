@@ -4,20 +4,6 @@
 
 #include "llm_internal.h"
 
-int llm_git_refresh(const agent_state *state);
-int llm_git_status_text(const agent_state *state,
-                        char *output, size_t output_size);
-int llm_git_diff_text(const agent_state *state,
-                      char *output, size_t output_size);
-int llm_git_changed_text(const agent_state *state,
-                         char *output, size_t output_size);
-int llm_git_compose(const agent_state *state,
-                    const char *goal,
-                    char *output, size_t output_size);
-int llm_git_rms_copy(const char *path, const char *target);
-void llm_test_git_data(const char *status_text,
-                       const char *diff_text);
-
 int command_line_complete(const char *input,
                           size_t input_size,
                           int reached_eof)
