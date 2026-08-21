@@ -8,8 +8,9 @@ int write_build_initial_request(
 
 int write_build_followup_request(
     const char *model,
-    const char *previous_id,
-    const char *tool_call_id,
+    const char *instructions,
+    const char *context_items,
+    const char *call_id,
     const char *tool_output);
 
 #endif /* LLM_REQUEST_BUILD_H */
