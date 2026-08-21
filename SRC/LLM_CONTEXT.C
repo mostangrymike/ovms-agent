@@ -15,11 +15,3 @@
 #undef openai_context_evidence_text
 #undef openai_context_tail
 #undef openai_context_append
-
-/* Temporary M267 compatibility bridge for the remaining parity-core call. */
-int openai_context_build(const char *goal,
-                         char *output,
-                         size_t output_size)
-{
-    return llm_context_build(goal, output, output_size);
-}
