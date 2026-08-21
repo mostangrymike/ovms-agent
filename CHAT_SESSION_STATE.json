@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T17:01:00-05:00",
+  "updated_at": "2026-08-21T17:27:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "b6201805519faf832e5396b540280982fbc2d0a6",
-    "current_github_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
-    "current_github_head_status": "Pending VAX. Internal INSTRUCTIONS/GIT_CONTEXT declaration cleanup: the mature 886-line LLM_INTERNAL.H body is preserved byte-for-byte as LLM_INTERNAL_CORE.H (original blob 606982cc...), LLM_INTERNAL.H is a guarded translation wrapper providing all 8 neutral instruction declarations and all 13 neutral Git-context declarations including llm_git_rms_copy, redundant local forwards were removed from production/test consumers, and unused OPENAI_TEST_DUP_PATH_M88.INC was deleted. Net repository file count is unchanged.",
+    "latest_vax_green_head": "cec271a7738995fa691fbc3c915684ac8799b175",
+    "current_github_head": "cec271a7738995fa691fbc3c915684ac8799b175",
+    "current_github_head_status": "VAX-green accepted. Internal INSTRUCTIONS/GIT_CONTEXT declarations are neutralized through guarded LLM_INTERNAL.H over byte-for-byte LLM_INTERNAL_CORE.H, redundant local forwards are removed, OPENAI_TEST_DUP_PATH_M88.INC is deleted, and bounded PROJECT_MAP selection is priority-stable without increasing the 192-entry VAX memory budget.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -62,7 +62,8 @@
       "instructions_git_context_phase1": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "instructions_git_context_phase2": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
       "execute_filename_shim_retirement": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
-      "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6"
+      "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6",
+      "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -103,6 +104,19 @@
       "issue_comment": 5375868080,
       "details": "Cumulative post-80f69a1 TOOLS/REPAIR cleanup is VAX-proven. OPENAI_TOOLS.C is now LLM_TOOLS_CORE.C with zero content change, OPENAI_ROLLBACK.C is removed, openai_repair_plan compatibility is retired, the M259 remapped agent-loop has an explicit llm_git_refresh prototype, and the unused byte-identical LLM_EXECUTE_FALLBACK.INC duplicate is removed while the live _M100 fragment remains."
     },
+    "accepted_at_cec271a": {
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "failed_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
+      "failed_build_status": "%X10000002",
+      "issue_comment": 5376052164,
+      "neutral_instruction_declarations": 8,
+      "neutral_git_declarations": 13,
+      "internal_core_blob": "606982ccf5fa0bc2199053ee455deeecfe3d582d",
+      "project_map_core_blob": "8110b77e737b5e8dd217afd960b3026b02ddf606",
+      "project_map_capacity": 192,
+      "details": "The internal declaration boundary and its consumer drain are VAX-proven. Recovery cec271a keeps the mature PROJECT_MAP core and static 192-entry budget unchanged while a wrapper priority-refill pass makes SOURCE/HEADER/TEST/BUILD visibility stable after saturation instead of dependent on readdir() order."
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -125,16 +139,14 @@
       ],
       "recovery": "Added declaration-only llm_git_refresh prototype at the M259 wrapper boundary and removed the unused duplicate LLM_EXECUTE_FALLBACK.INC to restore bounded project-map pressure without reverting M267 cleanup."
     },
-    "pending_internal_declaration_cleanup": {
+    "internal_declaration_recovery_history": {
       "base": "b6201805519faf832e5396b540280982fbc2d0a6",
-      "head": "50b391a97a7bc5d98905a4ad4985db420567431d",
-      "commits_ahead": 9,
-      "changed_paths": 10,
-      "neutral_instruction_declarations": 8,
-      "neutral_git_declarations": 13,
-      "core_blob": "606982ccf5fa0bc2199053ee455deeecfe3d582d",
-      "net_repository_file_delta": 0,
-      "status": "Pending full VAX @BUILD acceptance"
+      "failed_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
+      "recovery_head": "cec271a7738995fa691fbc3c915684ac8799b175",
+      "failed_full_build_status": "%X10000002",
+      "failure_signal": "M233 failed: project map",
+      "root_cause": "A newly added LLM_* header entered the bounded map before M233 fixtures while a compensating OPENAI_* deletion occurred later in directory order; the old map stopped traversal at 192 entries, making visibility readdir()-order dependent.",
+      "recovery": "Keep the mature map core and fixed memory budget, but refill saturated maps by replacing OTHER entries with later source/header/test/build files."
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
@@ -148,9 +160,10 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate the pending internal INSTRUCTIONS/GIT_CONTEXT declaration boundary at 50b391a.",
-      "After green, audit remaining thin OPENAI_* compatibility headers and PLAN/STATE validation filename survivors; prefer coherent net-negative families.",
-      "Continue draining openai_state_save/openai_agent/openai_agent_write as coherent families; keep openai_log_event deferred until its complete caller graph is prepared.",
+      "Classify remaining OPENAI_* production filenames into genuine OpenAI-compatible provider protocol files versus generic compatibility debt.",
+      "Audit and migrate the remaining thin generic forwarding headers through exact live include graphs; prefer one coherent net-negative header family.",
+      "Migrate PLAN/STATE validation filenames in bounded families after exact include-flow verification; do not retire openai_state_save until all mature consumers are drained.",
+      "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
