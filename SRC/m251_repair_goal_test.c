@@ -38,7 +38,7 @@ char *execute_run_build_tool()
     return NULL;
 }
 
-void openai_agent_mode()
+void llm_agent_mode()
 {
 }
 
