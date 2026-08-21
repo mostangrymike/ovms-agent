@@ -2,15 +2,6 @@
 #include "LLM_PROMPTS.H"
 #include "LLM_PROJECT_MAP.H"
 
-int llm_instr_compose(const agent_state *state,
-                      const char *goal,
-                      char *output,
-                      size_t output_size);
-int llm_git_compose(const agent_state *state,
-                    const char *goal,
-                    char *output,
-                    size_t output_size);
-
 #ifndef OPENAI_PLAN_MAX_TURNS
 #define OPENAI_PLAN_MAX_TURNS 24
 #endif
