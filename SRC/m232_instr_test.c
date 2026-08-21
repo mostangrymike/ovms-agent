@@ -4,16 +4,6 @@
 
 #include "llm_internal.h"
 
-int llm_instr_reload(const agent_state *state);
-int llm_instr_status_text(const agent_state *state,
-                          char *output, size_t output_size);
-int llm_instr_show_text(const agent_state *state,
-                        char *output, size_t output_size);
-int llm_instr_compose(const agent_state *state,
-                      const char *goal,
-                      char *output, size_t output_size);
-void llm_test_instr_path(const char *path);
-
 #define TEST_FILE "M232_INSTRUCTIONS.TXT"
 
 int command_line_complete(const char *input,
