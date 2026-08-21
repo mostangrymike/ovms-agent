@@ -6,9 +6,11 @@
 #define openai_context_build llm_context_build
 #define openai_context_current llm_context_current
 #define openai_show_context_current llm_show_context_current
+#define openai_instr_show_text llm_instr_show_text
 
 #include "LLM_CONTEXT_CORE.INC"
 
+#undef openai_instr_show_text
 #undef openai_show_context_current
 #undef openai_context_current
 #undef openai_context_build
