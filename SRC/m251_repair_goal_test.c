@@ -24,7 +24,7 @@ const char *openai_workflow_name()
     return "test";
 }
 
-void llm_log_event()
+void openai_log_event()
 {
 }
 
