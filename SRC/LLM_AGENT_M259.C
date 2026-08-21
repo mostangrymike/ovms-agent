@@ -31,9 +31,9 @@ int llm_image_log(const char *image_path,
     return 1;
 }
 
-void openai_agent_image(agent_state *state,
-                        const char *image_path,
-                        const char *goal)
+void llm_agent_image(agent_state *state,
+                     const char *image_path,
+                     const char *goal)
 {
     llm_image_meta meta;
 
@@ -55,6 +55,6 @@ void openai_agent_image(agent_state *state,
     }
 
     (void)llm_image_log(meta.path, "image_accepted", 1);
-    openai_agent(state, goal);
+    llm_agent(state, goal);
     llm_agent_image_clear();
 }
