@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#define openai_git_refresh openai_git_refresh_base
-#define openai_git_status_text openai_git_status_text_base
-#define openai_git_diff_text openai_git_diff_text_base
-#define openai_git_changed_text openai_git_changed_text_base
-#define openai_git_context openai_git_context_base
-#define openai_git_compose openai_git_compose_base
-#define openai_show_git_status openai_show_git_status_base
-#define openai_show_git_diff openai_show_git_diff_base
-#define openai_show_git_changed openai_show_git_changed_base
-#define openai_show_git_context openai_show_git_context_base
-#define openai_git_refresh_cmd openai_git_refresh_cmd_base
+#define openai_git_refresh llm_git_refresh_base
+#define openai_git_status_text llm_git_status_text_base
+#define openai_git_diff_text llm_git_diff_text_base
+#define openai_git_changed_text llm_git_changed_text_base
+#define openai_git_context llm_git_context_base
+#define openai_git_compose llm_git_compose_base
+#define openai_show_git_status llm_show_git_status_base
+#define openai_show_git_diff llm_show_git_diff_base
+#define openai_show_git_changed llm_show_git_changed_base
+#define openai_show_git_context llm_show_git_context_base
+#define openai_git_refresh_cmd llm_git_refresh_cmd_base
+#define openai_test_git_data llm_test_git_data
 #include "LLM_GIT_CONTEXT_M262_CORE.C"
+#undef openai_test_git_data
 #undef openai_git_refresh
 #undef openai_git_status_text
 #undef openai_git_diff_text
@@ -55,7 +57,7 @@ static int m263_git_path_ok(const char *path)
     return 1;
 }
 
-int openai_git_rms_copy(const char *path, const char *target)
+int llm_git_rms_copy(const char *path, const char *target)
 {
     FILE *input;
     FILE *output;
@@ -176,7 +178,7 @@ static int m263_git_one_diff(const char *path,
         if (!m263_git_empty_copy(M263_GIT_RMS_TMP)) {
             return 0;
         }
-    } else if (!openai_git_rms_copy(path, M263_GIT_RMS_TMP)) {
+    } else if (!llm_git_rms_copy(path, M263_GIT_RMS_TMP)) {
         return 0;
     }
 
@@ -331,12 +333,12 @@ static int m263_git_rms_diff(void)
     return found || openai_git_status[0] == '\0';
 }
 
-int openai_git_refresh(const agent_state *state)
+int llm_git_refresh(const agent_state *state)
 {
     (void)state;
 
     if (openai_git_test_status != NULL || openai_git_test_diff != NULL) {
-        return openai_git_refresh_base(state);
+        return llm_git_refresh_base(state);
     }
 
     openai_git_status[0] = '\0';
@@ -363,86 +365,86 @@ int openai_git_refresh(const agent_state *state)
 static int m263_git_prepare(const agent_state *state)
 {
     if (!openai_git_loaded) {
-        return openai_git_refresh(state);
+        return llm_git_refresh(state);
     }
     return 1;
 }
 
-int openai_git_status_text(const agent_state *state,
-                           char *output, size_t output_size)
+int llm_git_status_text(const agent_state *state,
+                        char *output, size_t output_size)
 {
     if (!m263_git_prepare(state)) return 0;
-    return openai_git_status_text_base(state, output, output_size);
+    return llm_git_status_text_base(state, output, output_size);
 }
 
-int openai_git_diff_text(const agent_state *state,
+int llm_git_diff_text(const agent_state *state,
+                      char *output, size_t output_size)
+{
+    if (!m263_git_prepare(state)) return 0;
+    return llm_git_diff_text_base(state, output, output_size);
+}
+
+int llm_git_changed_text(const agent_state *state,
                          char *output, size_t output_size)
 {
     if (!m263_git_prepare(state)) return 0;
-    return openai_git_diff_text_base(state, output, output_size);
+    return llm_git_changed_text_base(state, output, output_size);
 }
 
-int openai_git_changed_text(const agent_state *state,
-                            char *output, size_t output_size)
+int llm_git_context(const agent_state *state,
+                    char *output, size_t output_size)
 {
     if (!m263_git_prepare(state)) return 0;
-    return openai_git_changed_text_base(state, output, output_size);
+    return llm_git_context_base(state, output, output_size);
 }
 
-int openai_git_context(const agent_state *state,
-                       char *output, size_t output_size)
+int llm_git_compose(const agent_state *state,
+                    const char *goal,
+                    char *output, size_t output_size)
 {
     if (!m263_git_prepare(state)) return 0;
-    return openai_git_context_base(state, output, output_size);
+    return llm_git_compose_base(state, goal, output, output_size);
 }
 
-int openai_git_compose(const agent_state *state,
-                       const char *goal,
-                       char *output, size_t output_size)
-{
-    if (!m263_git_prepare(state)) return 0;
-    return openai_git_compose_base(state, goal, output, output_size);
-}
-
-void openai_show_git_status(const agent_state *state)
+void llm_show_git_status(const agent_state *state)
 {
     if (!m263_git_prepare(state)) {
         (void)puts("Unable to show Git status context.");
         return;
     }
-    openai_show_git_status_base(state);
+    llm_show_git_status_base(state);
 }
 
-void openai_show_git_diff(const agent_state *state)
+void llm_show_git_diff(const agent_state *state)
 {
     if (!m263_git_prepare(state)) {
         (void)puts("Unable to show Git diff context.");
         return;
     }
-    openai_show_git_diff_base(state);
+    llm_show_git_diff_base(state);
 }
 
-void openai_show_git_changed(const agent_state *state)
+void llm_show_git_changed(const agent_state *state)
 {
     if (!m263_git_prepare(state)) {
         (void)puts("Unable to show changed paths.");
         return;
     }
-    openai_show_git_changed_base(state);
+    llm_show_git_changed_base(state);
 }
 
-void openai_show_git_context(const agent_state *state)
+void llm_show_git_context(const agent_state *state)
 {
     if (!m263_git_prepare(state)) {
         (void)puts("Unable to show Git context.");
         return;
     }
-    openai_show_git_context_base(state);
+    llm_show_git_context_base(state);
 }
 
-void openai_git_refresh_cmd(const agent_state *state)
+void llm_git_refresh_cmd(const agent_state *state)
 {
-    if (!openai_git_refresh(state)) {
+    if (!llm_git_refresh(state)) {
         (void)puts("Git context refresh failed.");
         return;
     }
