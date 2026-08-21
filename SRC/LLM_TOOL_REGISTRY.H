@@ -1,5 +1,5 @@
-#ifndef OPENAI_TOOL_REGISTRY_H
-#define OPENAI_TOOL_REGISTRY_H
+#ifndef LLM_TOOL_REGISTRY_H
+#define LLM_TOOL_REGISTRY_H
 
 #include "LLM_CACHE.H"
 
@@ -33,4 +33,4 @@ char *openai_tool_execute_read(
     const char *arguments,
     llm_file_cache_entry *cache);
 
-#endif /* OPENAI_TOOL_REGISTRY_H */
+#endif /* LLM_TOOL_REGISTRY_H */
