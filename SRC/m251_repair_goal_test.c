@@ -51,7 +51,7 @@ void llm_agent_plan()
 {
 }
 
-int openai_plan_is_current()
+int llm_plan_is_current()
 {
     return 0;
 }
@@ -202,7 +202,7 @@ int main(void)
             reason,
             sizeof(reason))) {
         (void)puts(
-            "M251.10 failed: explicitly requested LIST removal was rejected."
+            "M251.10 failed: explicitly requested LIST removal was not rejected."
         );
         return EXIT_FAILURE;
     }
