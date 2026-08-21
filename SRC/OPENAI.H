@@ -35,16 +35,9 @@ void llm_clear_state(void);
 #define openai_agent llm_agent
 #define openai_agent_write llm_agent_write
 #define openai_agent_retry llm_agent_retry
-#define openai_show_log llm_show_log
-#define openai_show_old_log llm_show_old_log
-#define openai_clear_log llm_clear_log
-#define openai_show_metrics llm_show_metrics
 #define openai_save_state llm_save_state
 #define openai_state_save llm_state_save
 #define openai_load_state llm_load_state
-#define openai_show_state llm_show_state
-#define openai_show_memory llm_show_memory
-#define openai_clear_state llm_clear_state
 #define openai_agent_mode llm_agent_mode
 
 #endif
