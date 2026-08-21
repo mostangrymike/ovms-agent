@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T15:46:00-05:00",
+  "updated_at": "2026-08-21T16:01:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
-    "current_github_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
-    "current_github_head_status": "Pending VAX acceptance. Phase 2 retires 21 generic linker-visible INSTRUCTIONS/GIT_CONTEXT exports in place with no added/deleted files. GIT_CONTEXT now maps the mature M262 body to llm_*_base and exposes the final RMS-aware M263 layer directly as llm_*; the temporary neutral wrappers were removed from the M262 core. INSTRUCTIONS now maps the recursive M232 base body to llm_*_base and exposes the M257 scoped layer directly as llm_*. LLM_INTERNAL.H still contains legacy declarations and remains later namespace debt, but defining translation units no longer export the generic symbols.",
+    "current_github_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
+    "current_github_head_status": "Recovery pending VAX acceptance. Phase-2 export retirement at 1ae6acb failed only at link time with OPENAI_GIT_REFRESH referenced twice from LLM_AGENT_LOOP_M259 and OPENAI_INSTR_SHOW_TEXT referenced once from LLM_CONTEXT. Recovery c2023c9 preserves all 21 retired INSTRUCTIONS/GIT_CONTEXT linker exports and neutralizes only those three proven consumers through existing macro translation boundaries. Recovery delta vs failed head is two modified files and four inserted macro/undef lines; no files added/deleted.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -73,19 +73,28 @@
     },
     "pending_instructions_git_context_phase2": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
-      "head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
-      "tree_delta": "4 modified files; 0 added; 0 deleted",
+      "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
+      "recovery_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
+      "failed_full_build_status": "%X1789A0C0",
+      "failed_m257_status": "%X1789A0C0",
+      "failed_undefined_symbols": [
+        "OPENAI_GIT_REFRESH (2 references, LLM_AGENT_LOOP_M259)",
+        "OPENAI_INSTR_SHOW_TEXT (1 reference, LLM_CONTEXT)"
+      ],
+      "base_to_recovery_tree_delta": "6 modified files; 0 added; 0 deleted",
+      "recovery_delta_vs_failed": "2 modified files; +4 lines; 0 added/deleted files",
       "retired_linker_exports": 21,
       "git_context_exports": 13,
       "instruction_exports": 8,
-      "details": "GIT_CONTEXT: LLM_GIT_CONTEXT.C now maps old M262 public spellings to llm_*_base while final M263 RMS-aware definitions are llm_*; LLM_GIT_CONTEXT_M262_CORE.C is restored to its pre-forwarder blob 92cec91fefd13e09de8299279fb2d0392068cedd. INSTRUCTIONS: LLM_INSTRUCTIONS_M257.C maps M232 base definitions to llm_*_base and directly defines M257 public llm_* functions; LLM_INSTRUCTIONS.C no longer contains forwarding wrappers. Full @BUILD plus @BUILD_M257 required for acceptance."
+      "issue_comment": 5375385450,
+      "details": "Recovery keeps direct llm_* definitions for GIT_CONTEXT and INSTRUCTIONS. LLM_AGENT_LOOP_M259_CORE.C adds local openai_git_refresh -> llm_git_refresh mapping around LLM_AGENT_LOOP.C. LLM_CONTEXT.C adds local openai_instr_show_text -> llm_instr_show_text mapping around LLM_CONTEXT_CORE.INC. These remaps are active before llm_internal.h is included, so the legacy declarations are also preprocessed into neutral prototypes for these translation units."
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
       "openai_agent": "Additional mature consumers remain outside the command wrapper.",
       "openai_agent_write": "Additional mature consumers remain outside the command wrapper.",
-      "llm_internal_legacy_declarations": "LLM_INTERNAL.H still declares old INSTRUCTIONS/GIT_CONTEXT spellings. Remove or neutralize after the defining export drain is VAX-proven and residual caller failures, if any, are resolved."
+      "llm_internal_legacy_declarations": "LLM_INTERNAL.H still declares old INSTRUCTIONS/GIT_CONTEXT spellings. Remove or neutralize after the defining export drain is VAX-proven and residual caller failures are resolved."
     },
     "rms_restore_capacity": {
       "status": "VAX-green",
@@ -93,8 +102,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-test phase2 head 1ae6acb with full @BUILD and focused @BUILD_M257.",
-      "If green, accept the 21-export INSTRUCTIONS/GIT_CONTEXT retirement, update issue #31 and durable state, then neutralize LLM_INTERNAL.H declarations and continue net-negative legacy filename cleanup.",
+      "VAX-test recovery c2023c9: fetch/reset, restore SRC/LLM_AGENT_LOOP_M259_CORE.C and SRC/LLM_CONTEXT.C only, then run full @BUILD and @BUILD_M257 with status capture.",
+      "If green, accept all 21 INSTRUCTIONS/GIT_CONTEXT export retirements, update issue #31 and durable state, then continue substantial namespace/file cleanup before another normal gate.",
       "Keep openai_log_event deferred until a complete caller drain is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
