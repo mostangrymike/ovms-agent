@@ -89,11 +89,13 @@ int llm_test_agent_image_req(const char *model,
 #define openai_tool_is_read llm_tool_is_read
 #define openai_tool_is_replace llm_tool_is_replace
 #define openai_tool_execute_read llm_tool_execute_read
+#define openai_git_refresh llm_git_refresh
 #define OPENAI_TOOL_REPLACE_LINES LLM_TOOL_REPLACE_LINES
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
 #undef OPENAI_TOOL_REPLACE_LINES
+#undef openai_git_refresh
 #undef openai_tool_execute_read
 #undef openai_tool_is_replace
 #undef openai_tool_is_read
