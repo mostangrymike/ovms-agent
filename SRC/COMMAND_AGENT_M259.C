@@ -16,6 +16,13 @@
 #define openai_selftest llm_selftest
 #define openai_status llm_status
 #define openai_verify llm_verify
+#define openai_show_log llm_show_log
+#define openai_show_old_log llm_show_old_log
+#define openai_clear_log llm_clear_log
+#define openai_show_metrics llm_show_metrics
+#define openai_show_state llm_show_state
+#define openai_show_memory llm_show_memory
+#define openai_clear_state llm_clear_state
 #define openai_show_auto_status llm_show_auto_status
 #define openai_show_auto_limits llm_show_auto_limits
 #define openai_auto_reset llm_auto_reset
@@ -39,6 +46,13 @@
 #undef openai_auto_reset
 #undef openai_show_auto_limits
 #undef openai_show_auto_status
+#undef openai_clear_state
+#undef openai_show_memory
+#undef openai_show_state
+#undef openai_show_metrics
+#undef openai_clear_log
+#undef openai_show_old_log
+#undef openai_show_log
 #undef openai_verify
 #undef openai_status
 #undef openai_selftest
