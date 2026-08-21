@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T18:39:00-05:00",
+  "updated_at": "2026-08-21T18:48:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+    "latest_vax_green_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
     "current_github_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-    "current_github_head_status": "Pending VAX recovery gate. Initial repair-header retirement head 650e77e failed with %CC-F-NOINCLFILEF for openai_repair.h and BUILD_STATUS=%X10B91264 because exact branch-live SRC/LLM_REPAIR_CORE.INC still included the compatibility header. The shim was restored forward at c52dad85, LLM_REPAIR_CORE.INC was changed one line to include LLM_REPAIR.H at f749b4be, and the seven-line OPENAI_REPAIR.H shim was retired again at corrected head 6420958. Combined delta from latest VAX-green e6bb033 is exactly two +1/-1 include substitutions plus shim deletion; no executable logic or external identifier changes.",
+    "current_github_head_status": "VAX-green. Full @BUILD at corrected repair-header recovery head 6420958 passed all regression tests and returned BUILD_STATUS=%X00000001. The accepted delta from e6bb033 is exactly two +1/-1 include substitutions, in SRC/COMMAND_AGENT.C and SRC/LLM_REPAIR_CORE.INC, plus deletion of the seven-line SRC/OPENAI_REPAIR.H compatibility shim. The earlier 650e77e gate remains rejected and recorded because LLM_REPAIR_CORE.INC was a missed live consumer.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -65,7 +65,8 @@
       "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6",
       "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175",
       "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
-      "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8"
+      "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+      "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -158,6 +159,22 @@
       "new_external_identifiers": 0,
       "issue_comment": 5376501534
     },
+    "accepted_at_6420958": {
+      "base": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+      "failed_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
+      "failed_build_status": "%X10B91264",
+      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_repair.h",
+      "failure_root_cause": "SRC/LLM_REPAIR_CORE.INC still included the retired OPENAI_REPAIR.H shim.",
+      "recovery_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "consumer_deltas": [
+        "SRC/COMMAND_AGENT.C: openai_repair.h -> LLM_REPAIR.H",
+        "SRC/LLM_REPAIR_CORE.INC: openai_repair.h -> LLM_REPAIR.H"
+      ],
+      "shim_deleted": "SRC/OPENAI_REPAIR.H",
+      "new_external_identifiers": 0
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -198,8 +215,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate corrected repair-header retirement at 6420958eb256a4db3ecd76e19027ea461e486c38.",
-      "After green, continue exact branch-live thin-header audit; PLAN/EXECUTE/STATE remain shared by mature consumers.",
+      "Continue exact branch-live thin-header survivor audit from VAX-green 6420958; verify every live consumer before any further shim retirement.",
+      "PLAN/EXECUTE/STATE compatibility surfaces remain shared by mature consumers unless exact live inspection proves otherwise.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
