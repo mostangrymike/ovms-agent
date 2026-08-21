@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T15:09:00-05:00",
+  "updated_at": "2026-08-21T15:14:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "6598100fcc5b60a275def3c94a27811dd620ebab",
-    "current_github_head": "6598100fcc5b60a275def3c94a27811dd620ebab",
-    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. STATE implementation is split through a neutral LLM_STATE.C wrapper with the prior 356-line body preserved byte-for-byte in LLM_STATE_CORE.C. Five STATE compatibility aliases are retired globally; openai_state_save remains temporarily aliased for mature validation consumers. openai_agent and openai_agent_write remain temporary source-compatibility aliases for additional live consumers.",
+    "current_github_head": "b0319caa91e15bfcaa80a2362b09b775eae96aad",
+    "current_github_head_status": "Pending VAX acceptance. One coherent 12-path commit ahead of VAX-green 6598100 drains live INSTRUCTIONS and GIT_CONTEXT callers to neutral llm_* APIs. New LLM_INSTRUCTIONS.H and LLM_GIT_CONTEXT.H publish neutral interfaces; LLM_AGENT.C and COMMAND_AGENT_M259.C use them; M232, M234, and M257 focused regressions are migrated. The prior 453-line LLM_GIT_CONTEXT.C body is preserved byte-for-byte as LLM_GIT_CONTEXT_CORE.C with identical blob SHA ed9a92421c4ca0b8578ec1ba2cbd920a7cff60ce. Legacy openai_* implementation exports remain temporarily as phase-1 compatibility and are not yet retired.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -77,6 +77,14 @@
         "openai_agent_write"
       ]
     },
+    "pending_instructions_git_context_phase1": {
+      "base": "6598100fcc5b60a275def3c94a27811dd620ebab",
+      "head": "b0319caa91e15bfcaa80a2362b09b775eae96aad",
+      "commits": 1,
+      "paths": 12,
+      "git_context_core_blob_preserved": "ed9a92421c4ca0b8578ec1ba2cbd920a7cff60ce",
+      "details": "Adds neutral INSTRUCTIONS/GIT_CONTEXT headers and forwarders, drains LLM_AGENT and command-dispatch consumers, migrates M232/M234/M257 focused tests, and updates BUILD_M257 to LLM linker artifacts. No deletions; no external name exceeds the DEC C/VAX 31-character limit. Full @BUILD plus @BUILD_M257 required for acceptance."
+    },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
@@ -89,8 +97,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Continue accumulating substantial M267 cleanup from VAX-green 6598100 before the next gate.",
-      "Prioritize GIT_CONTEXT/INSTRUCTIONS public namespace cleanup and PLAN/EXECUTE compatibility filenames where complete live include graphs can be verified.",
+      "VAX-test b0319ca by restoring the 12 changed paths, running full @BUILD, then @BUILD_M257 with status capture.",
+      "If green, accept the phase-1 INSTRUCTIONS/GIT_CONTEXT caller drain, comment issue #31, update durable state, then continue with phase-2 compatibility-export retirement before another VAX gate.",
       "Keep openai_log_event deferred until a complete caller drain is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
