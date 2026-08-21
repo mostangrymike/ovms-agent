@@ -3,6 +3,7 @@
 
 #include "llm_internal.h"
 #include "LLM_IMAGE.H"
+#include "LLM_AUTO.H"
 #include "openai_request_agent.h"
 
 int write_agent_image_req(const char *model,
@@ -67,6 +68,32 @@ int llm_test_agent_image_req(const char *model,
     return result;
 }
 
+#define openai_auto_begin llm_auto_begin
+#define openai_auto_turn_limit llm_auto_turn_limit
+#define openai_auto_note_turn llm_auto_note_turn
+#define openai_auto_note_tool llm_auto_note_tool
+#define openai_auto_allow_write llm_auto_allow_write
+#define openai_auto_partial_limit llm_auto_partial_limit
+#define openai_auto_finish llm_auto_finish
+#define openai_auto_limits_text llm_auto_limits_text
+#define openai_auto_status_text llm_auto_status_text
+#define openai_show_auto_limits llm_show_auto_limits
+#define openai_show_auto_status llm_show_auto_status
+#define openai_auto_reset llm_auto_reset
+#define openai_auto_test_limits llm_auto_test_limits
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
+#undef openai_auto_test_limits
+#undef openai_auto_reset
+#undef openai_show_auto_status
+#undef openai_show_auto_limits
+#undef openai_auto_status_text
+#undef openai_auto_limits_text
+#undef openai_auto_finish
+#undef openai_auto_partial_limit
+#undef openai_auto_allow_write
+#undef openai_auto_note_tool
+#undef openai_auto_note_turn
+#undef openai_auto_turn_limit
+#undef openai_auto_begin
