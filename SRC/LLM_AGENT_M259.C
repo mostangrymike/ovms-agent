@@ -4,8 +4,8 @@
 #include "llm_internal.h"
 #include "LLM_IMAGE.H"
 
-int openai_agent_image_set(const char *path);
-void openai_agent_image_clear(void);
+int llm_agent_image_set(const char *path);
+void llm_agent_image_clear(void);
 
 #include "LLM_AGENT.C"
 
@@ -48,7 +48,7 @@ void openai_agent_image(agent_state *state,
         return;
     }
 
-    if (!openai_agent_image_set(meta.path)) {
+    if (!llm_agent_image_set(meta.path)) {
         openai_log_event("AGENT/IMAGE", "image_context_failed", 2);
         (void)puts("Unable to prepare image context.");
         return;
@@ -56,5 +56,5 @@ void openai_agent_image(agent_state *state,
 
     (void)llm_image_log(meta.path, "image_accepted", 1);
     openai_agent(state, goal);
-    openai_agent_image_clear();
+    llm_agent_image_clear();
 }

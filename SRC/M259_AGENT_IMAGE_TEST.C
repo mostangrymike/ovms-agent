@@ -22,10 +22,10 @@ int command_read_stream(FILE *stream, char *buffer, size_t buffer_size)
     return 0;
 }
 
-int openai_test_agent_image_req(const char *model,
-                                const char *instructions,
-                                const char *goal,
-                                const char *image_path);
+int llm_test_agent_image_req(const char *model,
+                             const char *instructions,
+                             const char *goal,
+                             const char *image_path);
 int llm_image_log(const char *image_path,
                   const char *outcome,
                   int status);
@@ -109,7 +109,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_test_agent_image_req(
+            llm_test_agent_image_req(
                 "m259-agent-model",
                 "Read-only agent instructions",
                 "Inspect the screenshot and identify the relevant source area.",

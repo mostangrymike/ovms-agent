@@ -14,7 +14,7 @@ int write_agent_image_req(const char *model,
 #define M259_AGENT_IMAGE_PATH 512U
 static char m259_agent_image[M259_AGENT_IMAGE_PATH];
 
-int openai_agent_image_set(const char *path)
+int llm_agent_image_set(const char *path)
 {
     llm_image_meta meta;
 
@@ -25,7 +25,7 @@ int openai_agent_image_set(const char *path)
     return 1;
 }
 
-void openai_agent_image_clear(void)
+void llm_agent_image_clear(void)
 {
     m259_agent_image[0] = '\0';
 }
@@ -44,7 +44,7 @@ static int m259_agent_request(const char *model,
         previous_id == NULL && call_id == NULL && tool_output == NULL) {
         result = write_agent_image_req(model, instructions, user_prompt,
                                        m259_agent_image, allow_write);
-        openai_agent_image_clear();
+        llm_agent_image_clear();
         return result;
     }
 
@@ -53,17 +53,17 @@ static int m259_agent_request(const char *model,
                                     allow_write);
 }
 
-int openai_test_agent_image_req(const char *model,
-                                const char *instructions,
-                                const char *goal,
-                                const char *image_path)
+int llm_test_agent_image_req(const char *model,
+                             const char *instructions,
+                             const char *goal,
+                             const char *image_path)
 {
     int result;
 
-    if (!openai_agent_image_set(image_path)) return 0;
+    if (!llm_agent_image_set(image_path)) return 0;
     result = m259_agent_request(model, instructions, goal,
                                 NULL, NULL, NULL, 0);
-    openai_agent_image_clear();
+    llm_agent_image_clear();
     return result;
 }
 
