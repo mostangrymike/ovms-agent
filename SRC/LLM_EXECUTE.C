@@ -5,7 +5,7 @@
 
 #include "llm_internal.h"
 #include "edit_txn.h"
-#include "openai_execute.h"
+#include "LLM_EXECUTE.H"
 #include "openai_plan.h"
 #include "project.h"
 
@@ -122,7 +122,7 @@ int openai_execute_count_ops(
     return 1;
 }
 
-#include "openai_execute_read_text_block.inc"
+#include "LLM_EXECUTE_READ_TEXT_BLOCK.INC"
 static int execute_copy_value(char *destination,
                               size_t destination_size,
                               const char *source)
@@ -193,7 +193,7 @@ static int execute_parse_operations(
     saw_old = 0;
     saw_new = 0;
     while (fgets(line, sizeof(line), file) != NULL) {
-        #include "openai_execute_count_handler.inc"
+        #include "LLM_EXECUTE_COUNT_HANDLER.INC"
 
         if (strcmp(line, "BEGIN_OPERATION\n") == 0 ||
             strcmp(line, "BEGIN_OPERATION\r\n") == 0) {
@@ -216,7 +216,7 @@ static int execute_parse_operations(
             continue;
         }
 
-        #include "openai_execute_toplevel_guard.inc"
+        #include "LLM_EXECUTE_TOPLEVEL_GUARD.INC"
 
         if (strcmp(line, "END_OPERATION\n") == 0 ||
             strcmp(line, "END_OPERATION\r\n") == 0) {
@@ -237,9 +237,9 @@ static int execute_parse_operations(
             continue;
         }
 
-        #include "openai_execute_after_new_guard.inc"
-        #include "openai_execute_type_handler.inc"
-        #include "openai_execute_path_precheck.inc"
+        #include "LLM_EXECUTE_AFTER_NEW_GUARD.INC"
+        #include "LLM_EXECUTE_TYPE_HANDLER.INC"
+        #include "LLM_EXECUTE_PATH_PRECHECK.INC"
 
         if (strncmp(line, "path=", 5U) == 0) {
             if (!execute_copy_value(
@@ -257,10 +257,10 @@ static int execute_parse_operations(
             continue;
         }
 
-        #include "openai_execute_block_misuse_guard.inc"
-        #include "openai_execute_block_handlers.inc"
-        #include "openai_execute_legacy_misuse_guard.inc"
-        #include "openai_execute_legacy_prechecks.inc"
+        #include "LLM_EXECUTE_BLOCK_MISUSE_GUARD.INC"
+        #include "LLM_EXECUTE_BLOCK_HANDLERS.INC"
+        #include "LLM_EXECUTE_LEGACY_MISUSE_GUARD.INC"
+        #include "LLM_EXECUTE_LEGACY_PRECHECKS.INC"
 
         if (!operation->is_block &&
             strncmp(line, "old_text=", 9U) == 0) {
@@ -296,7 +296,7 @@ static int execute_parse_operations(
             continue;
         }
 
-        #include "openai_execute_fallback_m100.inc"
+        #include "LLM_EXECUTE_FALLBACK_M100.INC"
         }
     
     (void)fclose(file);
@@ -332,7 +332,7 @@ static int execute_parse_operations(
     return 1;
 }
 
-#include "openai_execute_validate.inc"
+#include "LLM_EXECUTE_VALIDATE.INC"
 
 static char *execute_build_replacement(
     const openai_saved_operation *operation)
@@ -478,11 +478,11 @@ static int execute_stage_operations(
     return 1;
 }
 
-#include "openai_execute_chained_stage.inc"
-#include "openai_execute_stage_validate.inc"
-#include "openai_execute_dry_validate.inc"
-#include "openai_execute_stage_expect_failure.inc"
-#include "openai_execute_rollback_validate.inc"
+#include "LLM_EXECUTE_CHAINED_STAGE.INC"
+#include "LLM_EXECUTE_STAGE_VALIDATE.INC"
+#include "LLM_EXECUTE_DRY_VALIDATE.INC"
+#include "LLM_EXECUTE_STAGE_EXPECT_FAILURE.INC"
+#include "LLM_EXECUTE_ROLLBACK_VALIDATE.INC"
 static int execute_mark_consumed(void)
 {
     FILE *input;
@@ -547,8 +547,8 @@ static int execute_mark_consumed(void)
     return 1;
 }
 
-#include "openai_execute_write_text_block.inc"
-#include "openai_execute_m108_writers.inc"
+#include "LLM_EXECUTE_WRITE_TEXT_BLOCK.INC"
+#include "LLM_EXECUTE_M108_WRITERS.INC"
 static int execute_save_ops_to(
     const char *path,
     const openai_saved_operation *operations,
@@ -625,13 +625,13 @@ static int execute_save_ops_to(
     return success;
 }
 
-#include "openai_execute_m107_validate.inc"
-#include "openai_exec_m135_validate.inc"
-#include "openai_execute_dry_run.inc"
-#include "openai_exec_m136_consume.inc"
-#include "openai_exec_m136_validate.inc"
-#include "openai_exec_m137_recovery.inc"
-#include "openai_exec_m137_validate.inc"
+#include "LLM_EXECUTE_M107_VALIDATE.INC"
+#include "LLM_EXEC_M135_VALIDATE.INC"
+#include "LLM_EXECUTE_DRY_RUN.INC"
+#include "LLM_EXEC_M136_CONSUME.INC"
+#include "LLM_EXEC_M136_VALIDATE.INC"
+#include "LLM_EXEC_M137_RECOVERY.INC"
+#include "LLM_EXEC_M137_VALIDATE.INC"
 #include "openai_m150b_validate.inc"
 #include "openai_m150d_validate.inc"
 void openai_plan_execute(agent_state *state)
