@@ -14,9 +14,9 @@ void llm_agent_create(agent_state *state, const char *goal);
 void llm_agent_fix(agent_state *state, const char *goal);
 void llm_agent_retry(agent_state *state, const char *goal);
 void llm_agent_build(agent_state *state, const char *goal);
-void openai_selftest(agent_state *state);
-void openai_status(const agent_state *state);
-void openai_verify(agent_state *state);
+void llm_selftest(agent_state *state);
+void llm_status(const agent_state *state);
+void llm_verify(agent_state *state);
 void openai_show_log(void);
 void openai_show_old_log(void);
 void openai_clear_log(void);
@@ -31,5 +31,8 @@ void openai_clear_state(void);
 #define openai_agent_fix llm_agent_fix
 #define openai_agent_retry llm_agent_retry
 #define openai_agent_build llm_agent_build
+#define openai_selftest llm_selftest
+#define openai_status llm_status
+#define openai_verify llm_verify
 
 #endif
