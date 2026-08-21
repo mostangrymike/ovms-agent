@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-    "current_github_head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-    "current_github_head_status": "VAX-green. Five remaining M148/M149/M150 generic validation filenames were zero-content moved to architecture-aligned LLM_PLAN_* and LLM_EXEC_* names. LLM_PLAN.C has exactly three include substitutions. LLM_EXECUTE.C has exactly three include substitutions: M150B, M150D, and direct OPENAI_PLAN.H -> LLM_PLAN.H. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001 after RMS restore and physical deletion of obsolete OPENAI validation filenames.",
+    "current_github_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
+    "current_github_head_status": "Pending VAX gate. Exact branch-live repair-header drain completed in two audited commits: SRC/COMMAND_AGENT.C changed one include from openai_repair.h to LLM_REPAIR.H, then obsolete seven-line SRC/OPENAI_REPAIR.H forwarding shim was deleted. Combined delta from e6bb033 is only COMMAND_AGENT.C +1/-1 and OPENAI_REPAIR.H deletion; no executable logic or symbol namespace changes.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -145,6 +145,15 @@
       "net_repository_file_delta": 0,
       "issue_comment": 5376399657
     },
+    "pending_repair_header_gate": {
+      "base": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
+      "head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
+      "consumer_commit": "ab4967f96fecaea1cc800593edcea56451cabb02",
+      "consumer_delta": "SRC/COMMAND_AGENT.C one include substitution: openai_repair.h -> LLM_REPAIR.H",
+      "shim_deleted": "SRC/OPENAI_REPAIR.H",
+      "combined_delta": "COMMAND_AGENT.C +1/-1 plus seven-line shim deletion",
+      "new_external_identifiers": 0
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -185,7 +194,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Retire thin generic forwarding headers through exact live include-graph drains; OPENAI_REPAIR.H is a strong first candidate, while PLAN/EXECUTE/STATE remain shared by mature consumers.",
+      "VAX-gate 650e77e repair-header consumer drain and OPENAI_REPAIR.H shim deletion.",
+      "After green, continue exact branch-live thin-header audit; PLAN/EXECUTE/STATE remain shared by mature consumers.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
