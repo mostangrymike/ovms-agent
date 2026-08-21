@@ -50,7 +50,7 @@ void openai_agent(agent_state *state, const char *goal)
     );
 }
 
-void openai_agent_plan(agent_state *state, const char *goal)
+void llm_agent_plan(agent_state *state, const char *goal)
 {
     llm_agent_instr(
         state, goal, 0, 0, OPENAI_WORKFLOW_PLAN
