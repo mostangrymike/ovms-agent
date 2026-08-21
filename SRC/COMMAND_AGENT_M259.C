@@ -3,6 +3,7 @@
 #include "github_m262.h"
 #include "LLM_AUTO.H"
 #include "LLM_PATCH.H"
+#include "LLM_PROJECT_MAP.H"
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
@@ -11,7 +12,13 @@
 #define openai_patch_dry_cmd llm_patch_dry_cmd
 #define openai_patch_validate_cmd llm_patch_validate_cmd
 #define openai_patch_last_cmd llm_patch_last_cmd
+#define openai_show_project_map llm_show_project_map
+#define openai_show_project_ctx llm_show_project_ctx
+#define openai_project_refresh_cmd llm_project_refresh_cmd
 #include "COMMAND_AGENT.C"
+#undef openai_project_refresh_cmd
+#undef openai_show_project_ctx
+#undef openai_show_project_map
 #undef openai_patch_last_cmd
 #undef openai_patch_validate_cmd
 #undef openai_patch_dry_cmd
