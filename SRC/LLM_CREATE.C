@@ -21,5 +21,15 @@ static char *m262_provider_env(const char *name)
 }
 
 #define getenv m262_provider_env
+#define openai_tool_descriptor llm_tool_descriptor
+#define openai_tool_find llm_tool_find
+#define openai_tool_is_read llm_tool_is_read
+#define openai_tool_execute_read llm_tool_execute_read
+#define OPENAI_TOOL_CREATE_FILE LLM_TOOL_CREATE_FILE
 #include "LLM_CREATE_CORE.INC"
+#undef OPENAI_TOOL_CREATE_FILE
+#undef openai_tool_execute_read
+#undef openai_tool_is_read
+#undef openai_tool_find
+#undef openai_tool_descriptor
 #undef getenv
