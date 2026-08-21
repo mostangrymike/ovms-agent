@@ -6,15 +6,6 @@
 #include "LLM_PATCH.H"
 #include "LLM_PROJECT_MAP.H"
 
-void llm_show_instr_status(const agent_state *state);
-void llm_show_instr(const agent_state *state);
-void llm_instr_reload_cmd(const agent_state *state);
-void llm_show_git_status(const agent_state *state);
-void llm_show_git_diff(const agent_state *state);
-void llm_show_git_changed(const agent_state *state);
-void llm_show_git_context(const agent_state *state);
-void llm_git_refresh_cmd(const agent_state *state);
-
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
 #define openai_agent llm_agent
