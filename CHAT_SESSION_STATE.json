@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T16:34:00-05:00",
+  "updated_at": "2026-08-21T17:01:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
-    "current_github_head": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
-    "current_github_head_status": "Accepted VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. EXECUTE now includes the existing LLM header/fragments directly and 26 two-line OPENAI_EXECUTE*/OPENAI_EXEC_M13* forwarding shims were physically removed on VAX before the successful build. This is a net-negative repository-cardinality checkpoint and preserves PLAN, M150 validation, LOG/STATE, and provider/protocol compatibility code.",
+    "latest_vax_green_head": "b6201805519faf832e5396b540280982fbc2d0a6",
+    "current_github_head": "b6201805519faf832e5396b540280982fbc2d0a6",
+    "current_github_head_status": "Accepted VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. This checkpoint preserves the TOOLS/REPAIR cleanup from failed head c02cf739, adds an explicit llm_git_refresh prototype before the M259 remapped agent-loop body, and removes the unused byte-identical LLM_EXECUTE_FALLBACK.INC duplicate while retaining LLM_EXECUTE_FALLBACK_M100.INC as the live include.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -61,7 +61,8 @@
       "state_alias_retirement": "6598100fcc5b60a275def3c94a27811dd620ebab",
       "instructions_git_context_phase1": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "instructions_git_context_phase2": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
-      "execute_filename_shim_retirement": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99"
+      "execute_filename_shim_retirement": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
+      "tools_repair_cleanup_recovery": "b6201805519faf832e5396b540280982fbc2d0a6"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -94,6 +95,14 @@
       "issue_comment": 5375657964,
       "details": "LLM_EXECUTE.C now includes existing LLM_EXECUTE/LLM_EXEC fragments directly. VAX physically removed obsolete OPENAI_EXECUTE_*.INC and OPENAI_EXEC_M13*.INC RMS files before the successful full build. No executable C logic or exported symbol spelling changed in this checkpoint."
     },
+    "accepted_at_b620180": {
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "failed_head": "c02cf7392390e4b7e5acffa84c25c58bb65bf537",
+      "failed_build_status": "%X10000002",
+      "issue_comment": 5375868080,
+      "details": "Cumulative post-80f69a1 TOOLS/REPAIR cleanup is VAX-proven. OPENAI_TOOLS.C is now LLM_TOOLS_CORE.C with zero content change, OPENAI_ROLLBACK.C is removed, openai_repair_plan compatibility is retired, the M259 remapped agent-loop has an explicit llm_git_refresh prototype, and the unused byte-identical LLM_EXECUTE_FALLBACK.INC duplicate is removed while the live _M100 fragment remains."
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -104,6 +113,17 @@
         "OPENAI_GIT_REFRESH (2 references, LLM_AGENT_LOOP_M259)",
         "OPENAI_INSTR_SHOW_TEXT (1 reference, LLM_CONTEXT)"
       ]
+    },
+    "tools_repair_recovery_history": {
+      "base": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
+      "failed_head": "c02cf7392390e4b7e5acffa84c25c58bb65bf537",
+      "recovery_head": "b6201805519faf832e5396b540280982fbc2d0a6",
+      "failed_full_build_status": "%X10000002",
+      "failure_signals": [
+        "DEC C implicit declaration: llm_git_refresh",
+        "M233 failed: project map"
+      ],
+      "recovery": "Added declaration-only llm_git_refresh prototype at the M259 wrapper boundary and removed the unused duplicate LLM_EXECUTE_FALLBACK.INC to restore bounded project-map pressure without reverting M267 cleanup."
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
