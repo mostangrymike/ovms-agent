@@ -17,9 +17,9 @@ void llm_agent_build(agent_state *state, const char *goal);
 void llm_selftest(agent_state *state);
 void llm_status(const agent_state *state);
 void llm_verify(agent_state *state);
-void llm_log_event(const char *workflow,
-                   const char *event,
-                   int status);
+void openai_log_event(const char *workflow,
+                      const char *event,
+                      int status);
 void llm_show_log(void);
 void llm_show_old_log(void);
 void llm_clear_log(void);
@@ -41,7 +41,6 @@ void llm_clear_state(void);
 #define openai_selftest llm_selftest
 #define openai_status llm_status
 #define openai_verify llm_verify
-#define openai_log_event llm_log_event
 #define openai_show_log llm_show_log
 #define openai_show_old_log llm_show_old_log
 #define openai_clear_log llm_clear_log
