@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T14:08:00-05:00",
+  "updated_at": "2026-08-21T14:23:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "2f0e939c7255b48fde5ea96ec7a0ea8dd907a7d9",
-    "current_github_head": "2f0e939c7255b48fde5ea96ec7a0ea8dd907a7d9",
-    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001. This checkpoint retires 35 generic compatibility linker entries across AUTO, CONTEXT, PATCH, and PROJECT_MAP. openai_auto_note_tool remains only for the current parity core consumer; openai_context_build remains only for the current parity core consumer. The recovery after f881abf neutralized three missed command-display calls at the COMMAND_AGENT_M259.C wrapper boundary and restored only openai_context_build for parity.",
+    "latest_vax_green_head": "bd658f6e14566d5a26dc5e4ee6acbefd8d21c841",
+    "current_github_head": "fc91208adfd900eecab146e6a10ae2941ca743fc",
+    "current_github_head_status": "Pending VAX acceptance. Latest proven VAX-green bd658f6 passed all regressions with BUILD_STATUS=%X00000001 and retired the entire temporary LLM_TOOL_REGISTRY.H compatibility block by localizing registry mappings in BUILD, CREATE, STATUS, and AGENT_LOOP wrappers. Current fc91208 is six commits ahead and localizes public AGENT/WRITE/CREATE/FIX/BUILD/STATUS/SELFTEST/VERIFY/AGENT_MODE compatibility mappings at their small definition/call boundaries, removing those nine aliases from OPENAI.H. openai_agent_retry and LOG/STATE aliases remain intentionally deferred.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -66,17 +66,19 @@
       "plan_execute_agent_mode_namespace": "b633d46109fed69bfe4452cdbcd729ea70d80ca5",
       "log_state_public_namespace": "4631024fe26a1b4c30d067b1e33f826a924b37c5",
       "llm_core_artifact": "2035a231f1868c8448cc8b1ee4121b9d2747dae8",
-      "auto_context_patch_project_compat_retirement": "2f0e939c7255b48fde5ea96ec7a0ea8dd907a7d9"
+      "auto_context_patch_project_compat_retirement": "2f0e939c7255b48fde5ea96ec7a0ea8dd907a7d9",
+      "tool_registry_compat_retirement": "bd658f6e14566d5a26dc5e4ee6acbefd8d21c841"
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
       "openai_auto_note_tool": "Temporary compatibility wrapper retained because current parity core still calls it.",
-      "openai_context_build": "Temporary compatibility wrapper retained because current parity core still calls it."
+      "openai_context_build": "Temporary compatibility wrapper retained because current parity core still calls it.",
+      "openai_agent_retry": "Definition remains in large LLM_RETRY.C and still depends on OPENAI.H alias; migrate with a dedicated source-clean pass."
     },
     "rms_restore_capacity": {"status": "VAX-green", "checkpoint": "dd365714bc67c99a76d38b4cfa8f90bba2e09720", "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."},
     "next_work": [
-      "Drain the two parity-core compatibility survivors through the small LLM_PARITY_M258.C include boundary if safe, then remove their wrappers.",
-      "Accumulate another coherent compatibility family such as tool-registry aliases or PLAN/EXECUTE wrapper consumers before the next VAX gate.",
+      "VAX-test current fc91208 by restoring the six changed source/header files and running full @BUILD with BUILD_STATUS capture.",
+      "If green, record public agent alias retirement on issue #31 and continue with parity survivors plus PLAN/EXECUTE or LOG/STATE source-compatibility drain.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
