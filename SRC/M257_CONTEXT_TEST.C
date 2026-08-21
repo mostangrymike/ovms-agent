@@ -3,8 +3,6 @@
 #include <string.h>
 #include "llm_internal.h"
 
-int llm_instr_reload(const agent_state *state);
-void llm_test_instr_path(const char *path);
 void m257_capture_mode(agent_state *state,
                        const char *goal,
                        int allow_write,
