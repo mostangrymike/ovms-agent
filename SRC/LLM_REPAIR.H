@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 void llm_repair_plan(agent_state *state);
-void openai_repair_plan(agent_state *state);
 
 #ifdef __cplusplus
 }
