@@ -5,21 +5,21 @@
 #include "llm_internal.h"
 #include "LLM_TOOL_REGISTRY.H"
 
-static const openai_tool_descriptor tool_registry[] = {
-    { "list_directory", OPENAI_TOOL_LIST_DIRECTORY, 1, 0, 0, 0 },
-    { "read_file", OPENAI_TOOL_READ_FILE, 1, 0, 0, 0 },
-    { "read_file_range", OPENAI_TOOL_READ_FILE_RANGE, 1, 0, 0, 0 },
-    { "search_file", OPENAI_TOOL_SEARCH_FILE, 1, 0, 0, 0 },
-    { "replace_text", OPENAI_TOOL_REPLACE_TEXT, 0, 1, 1, 0 },
-    { "replace_lines", OPENAI_TOOL_REPLACE_LINES, 0, 1, 1, 0 },
-    { "create_file", OPENAI_TOOL_CREATE_FILE, 0, 1, 1, 0 },
-    { "run_build", OPENAI_TOOL_RUN_BUILD, 0, 0, 0, 1 },
+static const llm_tool_descriptor tool_registry[] = {
+    { "list_directory", LLM_TOOL_LIST_DIRECTORY, 1, 0, 0, 0 },
+    { "read_file", LLM_TOOL_READ_FILE, 1, 0, 0, 0 },
+    { "read_file_range", LLM_TOOL_READ_FILE_RANGE, 1, 0, 0, 0 },
+    { "search_file", LLM_TOOL_SEARCH_FILE, 1, 0, 0, 0 },
+    { "replace_text", LLM_TOOL_REPLACE_TEXT, 0, 1, 1, 0 },
+    { "replace_lines", LLM_TOOL_REPLACE_LINES, 0, 1, 1, 0 },
+    { "create_file", LLM_TOOL_CREATE_FILE, 0, 1, 1, 0 },
+    { "run_build", LLM_TOOL_RUN_BUILD, 0, 0, 0, 1 },
     { NULL, 0, 0, 0, 0, 0 }
 };
 
-const openai_tool_descriptor *openai_tool_find(const char *name)
+const llm_tool_descriptor *llm_tool_find(const char *name)
 {
-    const openai_tool_descriptor *descriptor;
+    const llm_tool_descriptor *descriptor;
 
     if (name == NULL) {
         return NULL;
@@ -36,20 +36,20 @@ const openai_tool_descriptor *openai_tool_find(const char *name)
     return NULL;
 }
 
-int openai_tool_is_read(const openai_tool_descriptor *descriptor)
+int llm_tool_is_read(const llm_tool_descriptor *descriptor)
 {
     return descriptor != NULL && descriptor->allows_read;
 }
 
-int openai_tool_is_replace(const openai_tool_descriptor *descriptor)
+int llm_tool_is_replace(const llm_tool_descriptor *descriptor)
 {
     return descriptor != NULL &&
-           (descriptor->kind == OPENAI_TOOL_REPLACE_TEXT ||
-            descriptor->kind == OPENAI_TOOL_REPLACE_LINES);
+           (descriptor->kind == LLM_TOOL_REPLACE_TEXT ||
+            descriptor->kind == LLM_TOOL_REPLACE_LINES);
 }
 
-char *openai_tool_execute_read(
-    const openai_tool_descriptor *descriptor,
+char *llm_tool_execute_read(
+    const llm_tool_descriptor *descriptor,
     const char *arguments,
     llm_file_cache_entry *cache)
 {
@@ -62,7 +62,7 @@ char *openai_tool_execute_read(
     tool_output = NULL;
 
     switch (descriptor->kind) {
-    case OPENAI_TOOL_LIST_DIRECTORY:
+    case LLM_TOOL_LIST_DIRECTORY:
     {
         char *display_path;
 
@@ -80,7 +80,7 @@ char *openai_tool_execute_read(
         break;
     }
 
-    case OPENAI_TOOL_READ_FILE:
+    case LLM_TOOL_READ_FILE:
     {
         int cache_hit;
         char *display_path;
@@ -103,7 +103,7 @@ char *openai_tool_execute_read(
         break;
     }
 
-    case OPENAI_TOOL_READ_FILE_RANGE:
+    case LLM_TOOL_READ_FILE_RANGE:
     {
         char *display_path;
         long display_start;
@@ -129,7 +129,7 @@ char *openai_tool_execute_read(
         break;
     }
 
-    case OPENAI_TOOL_SEARCH_FILE:
+    case LLM_TOOL_SEARCH_FILE:
     {
         char *display_path;
         char *display_pattern;
