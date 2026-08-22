@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T10:51:00-05:00",
+  "updated_at": "2026-08-22T11:06:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
     "latest_vax_green_head": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
-    "current_github_head": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
-    "current_github_head_status": "VAX-green. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001. Accepts 40 zero-content direct OPENAI_TEST_* -> LLM_TEST_* fixture renames, 40 LLM_STATUS_CORE.INC include substitutions, and M233 test-only stabilization for deterministic classification under the unchanged 192-file project-map limit. Issue #31 acceptance comment 5381262518.",
+    "current_github_head": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
+    "current_github_head_status": "Pending VAX gate. Candidate from green aec96b9a performs 47 zero-content milestone fixture renames to LLM_TEST_M107.INC through LLM_TEST_M150D.INC (including canonicalizing lowercase openai_test_m149.inc), with exactly +47/-47 include-name substitutions in LLM_STATUS_CORE.INC. Net repository file delta 0; exact blob audit found no nested include edges and no fixture/test-order changes. Issue #31 pending comment 5381325429.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -119,6 +119,24 @@
       "build_list_changes": 0,
       "issue_acceptance_comment": 5381262518
     },
+    "pending_milestone_fixture_filename_gate": {
+      "base": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
+      "head": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
+      "zero_content_fixture_renames": 47,
+      "status_core_include_substitutions": 47,
+      "net_repository_file_delta": 0,
+      "old_family": "OPENAI_TEST_M107.INC..OPENAI_TEST_M148.INC, lowercase openai_test_m149.inc, OPENAI_TEST_M150.INC/M150B/M150C/M150D",
+      "new_family": "LLM_TEST_M107.INC..LLM_TEST_M150D.INC",
+      "nested_include_edges": 0,
+      "fixture_body_changes": 0,
+      "selftest_order_changes": 0,
+      "production_body_changes": 0,
+      "declaration_changes": 0,
+      "external_symbol_changes": 0,
+      "build_list_changes": 0,
+      "issue_pending_comment": 5381325429,
+      "status": "pending full VAX @BUILD"
+    },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
       "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
@@ -135,10 +153,9 @@
       "OPENAI_STATE.H": "Known live consumers remain; do not retire yet."
     },
     "next_work": [
-      "Migrate the remaining M107-M150 milestone OPENAI_TEST_* fixture filenames to LLM_TEST_* as the final test-fixture filename tranche, preserving exact contents and self-test order and auditing nested include edges.",
-      "Keep M233 deterministic under the unchanged 192-file project-map ceiling when evaluating filename-order effects.",
+      "Run the full VAX @BUILD gate for milestone fixture candidate 9b7ab01b; if green, promote it as the final OPENAI_TEST_* fixture filename tranche.",
+      "Then audit remaining generic OPENAI filenames and compatibility headers, especially OPENAI.H, OPENAI_LOG.H, OPENAI_STATE.H, stale BUILD.COM/self-test strings, and survivor namespace families.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until broader live consumers are drained.",
-      "Audit OPENAI.H and stale BUILD.COM/self-test filename strings after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
