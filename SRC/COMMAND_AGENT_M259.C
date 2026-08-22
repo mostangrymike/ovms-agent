@@ -21,7 +21,6 @@
 #define openai_show_auto_status llm_show_auto_status
 #define openai_show_auto_limits llm_show_auto_limits
 #define openai_auto_reset llm_auto_reset
-#define openai_show_context_current llm_show_context_current
 #define openai_patch_apply_cmd llm_patch_apply_cmd
 #define openai_patch_dry_cmd llm_patch_dry_cmd
 #define openai_patch_validate_cmd llm_patch_validate_cmd
@@ -47,7 +46,6 @@
 #undef openai_patch_validate_cmd
 #undef openai_patch_dry_cmd
 #undef openai_patch_apply_cmd
-#undef openai_show_context_current
 #undef openai_auto_reset
 #undef openai_show_auto_limits
 #undef openai_show_auto_status
