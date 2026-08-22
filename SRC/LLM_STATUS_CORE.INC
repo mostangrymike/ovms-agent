@@ -760,7 +760,7 @@ void openai_verify(agent_state *state)
     }
 }
 
-void openai_review_file(agent_state *state, const char *path)
+void llm_review_file(agent_state *state, const char *path)
 {
     static const char introduction[] =
         "Review this OpenVMS C source file. Identify correctness bugs, "
@@ -823,23 +823,23 @@ void openai_review_file(agent_state *state, const char *path)
     free(source);
 }
 
-void openai_ask(agent_state *state, const char *prompt)
+void llm_ask(agent_state *state, const char *prompt)
 {
     openai_send(state, prompt, 0);
 }
 
-void openai_chat(agent_state *state, const char *prompt)
+void llm_chat(agent_state *state, const char *prompt)
 {
     openai_send(state, prompt, 1);
 }
 
-void openai_chat_reset(void)
+void llm_chat_reset(void)
 {
     previous_response_id[0] = '\0';
-    (void)puts("OpenAI conversation reset.");
+    (void)puts("LLM conversation reset.");
 }
 
-int openai_chat_active(void)
+int llm_chat_active(void)
 {
     return previous_response_id[0] != '\0';
 }

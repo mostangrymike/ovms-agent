@@ -1226,13 +1226,13 @@ void command_agent(agent_state *state,
 void command_chat(agent_state *state,
                   const char *arguments)
 {
-    openai_chat(state, arguments);
+    llm_chat(state, arguments);
 }
 
 void command_review(agent_state *state,
                     const char *arguments)
 {
-    openai_review_file(state, arguments);
+    llm_review_file(state, arguments);
 }
 
 void command_chat_reset(agent_state *state,
@@ -1240,13 +1240,13 @@ void command_chat_reset(agent_state *state,
 {
     (void)state;
     (void)arguments;
-    openai_chat_reset();
+    llm_chat_reset();
 }
 
 void command_ask(agent_state *state,
                  const char *arguments)
 {
-    openai_ask(state, arguments);
+    llm_ask(state, arguments);
 }
 
 #include "command_m147_validate.inc"

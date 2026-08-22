@@ -3,11 +3,11 @@
 
 #include "agent.h"
 
-void openai_ask(agent_state *state, const char *prompt);
-void openai_chat(agent_state *state, const char *prompt);
-void openai_chat_reset(void);
-int openai_chat_active(void);
-void openai_review_file(agent_state *state, const char *path);
+void llm_ask(agent_state *state, const char *prompt);
+void llm_chat(agent_state *state, const char *prompt);
+void llm_chat_reset(void);
+int llm_chat_active(void);
+void llm_review_file(agent_state *state, const char *path);
 void llm_agent(agent_state *state, const char *goal);
 void llm_agent_write(agent_state *state, const char *goal);
 void llm_agent_create(agent_state *state, const char *goal);
