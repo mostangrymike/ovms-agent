@@ -1675,7 +1675,7 @@ void openai_exec_context(agent_state *state,
         return;
     }
 
-    if (!openai_context_build(
+    if (!llm_context_build(
             goal, model_goal, sizeof(model_goal))) {
         (void)puts("Unable to rebuild persistent session context.");
         return;

@@ -8,7 +8,7 @@
 #define LLM_CONTEXT_RESULTS 1800U
 #define LLM_CONTEXT_PARENT_RES 1200U
 
-static int openai_context_append(char *output,
+static int llm_context_append(char *output,
                                  size_t output_size,
                                  size_t *used,
                                  const char *text)
@@ -37,7 +37,7 @@ static int openai_context_append(char *output,
     return 1;
 }
 
-static const char *openai_context_tail(const char *text,
+static const char *llm_context_tail(const char *text,
                                        size_t maximum)
 {
     size_t length;
@@ -66,7 +66,7 @@ static const char *openai_context_tail(const char *text,
     return start;
 }
 
-int openai_context_evidence_text(const char *session,
+int llm_context_evidence_text(const char *session,
                                  char *output,
                                  size_t output_size)
 {
@@ -85,30 +85,30 @@ int openai_context_evidence_text(const char *session,
 
     if (openai_session_result_last(
             session, last, sizeof(last))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "LATEST NORMALIZED RESULT\n");
-        tail = openai_context_tail(
+        tail = llm_context_tail(
             last, LLM_CONTEXT_PARENT_RES);
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, tail);
     }
 
     if (openai_session_results_text(
             session, recent, sizeof(recent))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "RECENT NORMALIZED RESULTS\n");
-        tail = openai_context_tail(
+        tail = llm_context_tail(
             recent, LLM_CONTEXT_RESULTS);
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, tail);
     }
 
     return output[0] != '\0';
 }
 
-int openai_context_build(const char *goal,
+int llm_context_build(const char *goal,
                          char *output,
                          size_t output_size)
 {
@@ -134,12 +134,12 @@ int openai_context_build(const char *goal,
     if (!openai_session_current_id(session)) {
         if (openai_lang_policy_text(
                 lang_policy, sizeof(lang_policy))) {
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used, lang_policy);
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used, "\nCURRENT REQUEST\n");
         }
-        return openai_context_append(
+        return llm_context_append(
             output, output_size, &used, goal
         );
     }
@@ -154,14 +154,14 @@ int openai_context_build(const char *goal,
         history[0] = '\0';
     }
 
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used,
         "Persistent OVMS Agent session context follows.\n"
         "Treat it as historical context for continuity. "
         "The CURRENT REQUEST at the end is authoritative.\n\n"
         "SESSION METADATA\n"
     );
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used, meta
     );
 
@@ -170,77 +170,77 @@ int openai_context_build(const char *goal,
         strlen(parent) == 8U &&
         openai_session_hist_text(
             parent, parent_history, sizeof(parent_history))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nPARENT SESSION RECENT TRANSCRIPT\n"
         );
-        tail = openai_context_tail(
+        tail = llm_context_tail(
             parent_history, LLM_CONTEXT_PARENT
         );
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, tail
         );
 
-        if (openai_context_evidence_text(
+        if (llm_context_evidence_text(
                 parent, parent_results, sizeof(parent_results))) {
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used,
                 "\nPARENT SESSION PRIORITIZED TOOL EVIDENCE\n"
             );
-            tail = openai_context_tail(
+            tail = llm_context_tail(
                 parent_results, LLM_CONTEXT_PARENT_RES
             );
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used, tail
             );
         }
     }
 
     if (history[0] != '\0') {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nCURRENT SESSION RECENT TRANSCRIPT\n"
         );
-        tail = openai_context_tail(
+        tail = llm_context_tail(
             history, LLM_CONTEXT_TAIL
         );
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, tail
         );
     }
 
-    if (openai_context_evidence_text(
+    if (llm_context_evidence_text(
             session, results, sizeof(results))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nCURRENT SESSION PRIORITIZED TOOL EVIDENCE\n"
         );
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, results
         );
     }
 
     if (openai_lang_policy_text(
             lang_policy, sizeof(lang_policy))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nMULTILINGUAL LANGUAGE POLICY\n");
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, lang_policy);
     }
 
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used,
         "\nCURRENT REQUEST\n"
     );
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used, goal
     );
 
     return 1;
 }
 
-int openai_context_current(char *output,
+int llm_context_current(char *output,
                            size_t output_size)
 {
     char session[9];
@@ -260,12 +260,12 @@ int openai_context_current(char *output,
     output[0] = '\0';
     used = 0U;
 
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used,
         "OVMS Agent current continuation context\n"
         "---------------------------------------\n"
     );
-    (void)openai_context_append(
+    (void)llm_context_append(
         output, output_size, &used, meta
     );
 
@@ -274,11 +274,11 @@ int openai_context_current(char *output,
 
         if (openai_instr_show_text(
                 NULL, instructions, sizeof(instructions))) {
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used,
                 "\nProject instructions:\n"
             );
-            (void)openai_context_append(
+            (void)llm_context_append(
                 output, output_size, &used,
                 instructions
             );
@@ -287,25 +287,25 @@ int openai_context_current(char *output,
 
     if (openai_session_hist_text(
             session, history, sizeof(history))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nRecent transcript:\n"
         );
-        tail = openai_context_tail(
+        tail = llm_context_tail(
             history, LLM_CONTEXT_TAIL
         );
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, tail
         );
     }
 
-    if (openai_context_evidence_text(
+    if (llm_context_evidence_text(
             session, results, sizeof(results))) {
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used,
             "\nPrioritized normalized tool evidence:\n"
         );
-        (void)openai_context_append(
+        (void)llm_context_append(
             output, output_size, &used, results
         );
     }
@@ -313,11 +313,11 @@ int openai_context_current(char *output,
     return 1;
 }
 
-void openai_show_context_current(void)
+void llm_show_context_current(void)
 {
     char output[LLM_CONTEXT_MAX];
 
-    if (!openai_context_current(
+    if (!llm_context_current(
             output, sizeof(output))) {
         (void)puts(
             "No current persistent session context."

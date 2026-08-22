@@ -774,7 +774,7 @@ void command_agent_context_show(agent_state *state, const char *arguments)
 {
     (void)state;
     (void)arguments;
-    openai_show_context_current();
+    llm_show_context_current();
 }
 
 void command_agent_instr_status(agent_state *state, const char *arguments)
