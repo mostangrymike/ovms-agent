@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M220_REPAIR_INFO.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic history-info test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,8 +32,8 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -70,10 +70,10 @@ int main(void)
     char information[2048];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
-    openai_test_set_history_limit(7U);
+    llm_test_set_log_path(TEST_LOG);
+    llm_test_set_history_limit(7U);
 
-    if (!openai_repair_info_text(
+    if (!llm_repair_info_text(
             information,
             sizeof(information)) ||
         strstr(information, "Activity log:        M220_REPAIR_INFO.LOG") == NULL ||
@@ -94,7 +94,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_info_text(
+    if (!llm_repair_info_text(
             information,
             sizeof(information)) ||
         strstr(information, "Activity log:        M220_REPAIR_INFO.LOG") == NULL ||

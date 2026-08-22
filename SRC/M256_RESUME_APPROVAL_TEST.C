@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_DATA "M256_SESSIONS.DAT"
 #define TEST_CUR  "M256_SESSION.CUR"
 #define TEST_TARGET "TEST/M256_PLAN_TARGET.TMP"
 
-extern int openai_plan_approved;
-extern unsigned long openai_approved_hash;
-extern int openai_approval_invalidated;
-void openai_test_ckpt_clear(void);
+extern int llm_plan_approved;
+extern unsigned long llm_approved_hash;
+extern int llm_approval_invalidated;
+void llm_test_ckpt_clear(void);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -40,9 +40,9 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_plan_session_reset();
-    openai_test_ckpt_clear();
+    llm_test_session_paths(NULL, NULL);
+    llm_plan_session_reset();
+    llm_test_ckpt_clear();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
     remove_all(TEST_TARGET);
@@ -69,28 +69,28 @@ int main(void)
     const char *plan_text;
 
     cleanup();
-    openai_test_session_paths(TEST_DATA, TEST_CUR);
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
 
-    if (!openai_session_new("m256 resume approval", id)) {
+    if (!llm_session_new("m256 resume approval", id)) {
         (void)puts("M256 failed: unable to create session fixture.");
         cleanup();
         return EXIT_FAILURE;
     }
 
     /* Simulate approval that existed before the user resumed the session. */
-    openai_plan_approved = 1;
-    openai_approved_hash = 0x12345678UL;
-    openai_approval_invalidated = 1;
+    llm_plan_approved = 1;
+    llm_approved_hash = 0x12345678UL;
+    llm_approval_invalidated = 1;
 
-    if (!openai_session_resume(id)) {
+    if (!llm_session_resume(id)) {
         (void)puts("M256 failed: session resume unexpectedly failed.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (openai_plan_approved != 0 ||
-        openai_approved_hash != 0UL ||
-        openai_approval_invalidated != 0) {
+    if (llm_plan_approved != 0 ||
+        llm_approved_hash != 0UL ||
+        llm_approval_invalidated != 0) {
         (void)puts("M256 failed: resumed session retained stale plan approval.");
         cleanup();
         return EXIT_FAILURE;
@@ -113,21 +113,21 @@ int main(void)
         "new_text=after\n"
         "END_OPERATION\n";
 
-    if (!openai_plan_save("m256 checkpoint goal", plan_text)) {
+    if (!llm_plan_save("m256 checkpoint goal", plan_text)) {
         (void)puts("M256 failed: unable to create checkpoint plan fixture.");
         cleanup();
         return EXIT_FAILURE;
     }
 
     /* First resume binds the active plan to the still-current session. */
-    if (!openai_session_resume(id)) {
+    if (!llm_session_resume(id)) {
         (void)puts("M256 failed: unable to bind checkpoint on resume.");
         cleanup();
         return EXIT_FAILURE;
     }
 
     /* A later resume with unchanged fingerprints must remain valid. */
-    if (!openai_session_resume(id)) {
+    if (!llm_session_resume(id)) {
         (void)puts("M256 failed: unchanged checkpoint did not resume.");
         cleanup();
         return EXIT_FAILURE;
@@ -140,7 +140,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_session_resume(id)) {
+    if (llm_session_resume(id)) {
         (void)puts("M256 failed: stale planned-file checkpoint resumed.");
         cleanup();
         return EXIT_FAILURE;

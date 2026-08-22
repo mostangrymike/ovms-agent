@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M217_REPAIR_WINDOW.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic window test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,8 +32,8 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -41,7 +41,7 @@ static void cleanup(void)
 
 static void add_success(unsigned long hash)
 {
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         hash,
         1,
@@ -57,15 +57,15 @@ int main(void)
     unsigned int index;
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
-    if (openai_test_history_limit(NULL) != 5U ||
-        openai_test_history_limit("") != 5U ||
-        openai_test_history_limit("0") != 5U ||
-        openai_test_history_limit("abc") != 5U ||
-        openai_test_history_limit("21") != 5U ||
-        openai_test_history_limit("2") != 2U ||
-        openai_test_history_limit("20") != 20U) {
+    if (llm_test_history_limit(NULL) != 5U ||
+        llm_test_history_limit("") != 5U ||
+        llm_test_history_limit("0") != 5U ||
+        llm_test_history_limit("abc") != 5U ||
+        llm_test_history_limit("21") != 5U ||
+        llm_test_history_limit("2") != 2U ||
+        llm_test_history_limit("20") != 20U) {
         (void)puts("M217 failed: history-limit validation is incorrect.");
         cleanup();
         return EXIT_FAILURE;
@@ -75,9 +75,9 @@ int main(void)
         add_success(0x71000000UL + (unsigned long)index);
     }
 
-    openai_test_set_history_limit(2U);
+    llm_test_set_history_limit(2U);
 
-    if (!openai_repair_history_text(
+    if (!llm_repair_history_text(
             history,
             sizeof(history)) ||
         strstr(history, "Recent runs: 2 (maximum 2)") == NULL ||
@@ -89,7 +89,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_stats_text(
+    if (!llm_repair_stats_text(
             statistics,
             sizeof(statistics)) ||
         strstr(statistics, "Runs analyzed:              2") == NULL) {
@@ -98,9 +98,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_test_set_history_limit(7U);
+    llm_test_set_history_limit(7U);
 
-    if (!openai_repair_history_text(
+    if (!llm_repair_history_text(
             history,
             sizeof(history)) ||
         strstr(history, "Recent runs: 7 (maximum 7)") == NULL ||
@@ -112,7 +112,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_stats_text(
+    if (!llm_repair_stats_text(
             statistics,
             sizeof(statistics)) ||
         strstr(statistics, "Runs analyzed:              7") == NULL) {
@@ -121,9 +121,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_test_set_history_limit(5U);
+    llm_test_set_history_limit(5U);
 
-    if (!openai_repair_history_text(
+    if (!llm_repair_history_text(
             history,
             sizeof(history)) ||
         strstr(history, "Recent runs: 5 (maximum 5)") == NULL ||

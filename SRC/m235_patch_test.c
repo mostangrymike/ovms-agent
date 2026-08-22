@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openai_internal.h"
+#include "llm_internal.h"
+#include "LLM_PATCH.H"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
@@ -40,7 +41,7 @@ int main(void)
           "@@OLD\nomega\n@@NEW\nOMEGA\n@@END\n"))
     { puts("M235 failed: setup."); return EXIT_FAILURE; }
 
-    if(!openai_patch_validate("M235_PATCH_SPEC.TMP",out,sizeof(out)) ||
+    if(!llm_patch_validate("M235_PATCH_SPEC.TMP",out,sizeof(out)) ||
        strstr(out,"2 hunks")==NULL)
     { puts("M235 failed: validate."); return EXIT_FAILURE; }
 
@@ -49,12 +50,12 @@ int main(void)
     { free(t);puts("M235 failed: validate modified file.");return EXIT_FAILURE;}
     free(t);
 
-    if(!openai_patch_dry("M235_PATCH_SPEC.TMP",out,sizeof(out)))
+    if(!llm_patch_dry("M235_PATCH_SPEC.TMP",out,sizeof(out)))
     { puts("M235 failed: dry."); return EXIT_FAILURE; }
 
     (void)putenv("OVMS_AGENT_WRITE_ENABLED=YES");
     (void)putenv("OVMS_AGENT_APPROVAL_POLICY=WORKSPACE");
-    if(!openai_patch_apply("M235_PATCH_SPEC.TMP",out,sizeof(out)))
+    if(!llm_patch_apply("M235_PATCH_SPEC.TMP",out,sizeof(out)))
     { puts("M235 failed: apply."); return EXIT_FAILURE; }
 
     t=rt("M235_PATCH_TARGET.TMP");
@@ -67,11 +68,11 @@ int main(void)
           "@@OLD\nmissing\n@@NEW\nx\n@@END\n"))
     { puts("M235 failed: bad spec setup."); return EXIT_FAILURE; }
 
-    if(openai_patch_validate("M235_BAD_PATCH.TMP",out,sizeof(out)) ||
+    if(llm_patch_validate("M235_BAD_PATCH.TMP",out,sizeof(out)) ||
        strstr(out,"not found")==NULL)
     { puts("M235 failed: stale rejection."); return EXIT_FAILURE; }
 
-    if(!openai_parity_text(out,sizeof(out)) ||
+    if(!llm_parity_text(out,sizeof(out)) ||
        strstr(out,"Multi-hunk patching:   available")==NULL ||
        strstr(out,"Patch prevalidation:   available")==NULL)
     { puts("M235 failed: parity."); return EXIT_FAILURE; }

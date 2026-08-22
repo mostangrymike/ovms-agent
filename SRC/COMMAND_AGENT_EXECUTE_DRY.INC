@@ -3,5 +3,5 @@ void command_agent_execute_dry(
     const char *arguments)
 {
     (void)arguments;
-    openai_plan_execute_dry(state);
+    llm_plan_execute_dry(state);
 }

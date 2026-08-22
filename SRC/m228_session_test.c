@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_DATA "M228_SESSIONS.DAT"
 #define TEST_CUR  "M228_SESSION.CUR"
@@ -29,8 +29,8 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_test_reset_approval();
+    llm_test_session_paths(NULL, NULL);
+    llm_test_reset_approval();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
 }
@@ -42,11 +42,11 @@ int main(void)
     char output[8192];
 
     cleanup();
-    openai_test_session_paths(TEST_DATA, TEST_CUR);
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
 
-    if (!openai_session_new("alpha session", first) ||
+    if (!llm_session_new("alpha session", first) ||
         strlen(first) != 8U ||
-        !openai_session_current_text(output, sizeof(output)) ||
+        !llm_session_current_text(output, sizeof(output)) ||
         strstr(output, first) == NULL ||
         strstr(output, "alpha session") == NULL) {
         (void)puts("M228 failed: session creation/current.");
@@ -54,9 +54,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_set_approval("workspace") ||
-        !openai_session_note_goal("fix parser and build") ||
-        !openai_session_show_text(first, output, sizeof(output)) ||
+    if (!llm_set_approval("workspace") ||
+        !llm_session_note_goal("fix parser and build") ||
+        !llm_session_show_text(first, output, sizeof(output)) ||
         strstr(output, "Original goal: fix parser and build") == NULL ||
         strstr(output, "Current goal:  fix parser and build") == NULL ||
         strstr(output, "Policy:        workspace") == NULL ||
@@ -71,9 +71,9 @@ int main(void)
 
         (void)snprintf(args, sizeof(args), "%s beta fork", first);
 
-        if (!openai_session_fork(args, forked) ||
+        if (!llm_session_fork(args, forked) ||
             strcmp(first, forked) == 0 ||
-            !openai_session_show_text(forked, output, sizeof(output)) ||
+            !llm_session_show_text(forked, output, sizeof(output)) ||
             strstr(output, "Name:          beta fork") == NULL ||
             strstr(output, first) == NULL ||
             strstr(output, "Executions:    1") == NULL) {
@@ -88,8 +88,8 @@ int main(void)
 
         (void)snprintf(args, sizeof(args), "%s renamed fork", forked);
 
-        if (!openai_session_rename(args) ||
-            !openai_session_show_text(forked, output, sizeof(output)) ||
+        if (!llm_session_rename(args) ||
+            !llm_session_show_text(forked, output, sizeof(output)) ||
             strstr(output, "Name:          renamed fork") == NULL) {
             (void)puts("M228 failed: session rename.");
             cleanup();
@@ -97,7 +97,7 @@ int main(void)
         }
     }
 
-    if (!openai_session_list_text(output, sizeof(output)) ||
+    if (!llm_session_list_text(output, sizeof(output)) ||
         strstr(output, "Sessions: 2") == NULL ||
         strstr(output, first) == NULL ||
         strstr(output, forked) == NULL) {
@@ -106,25 +106,25 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_session_archive(forked) ||
-        openai_session_resume(forked) ||
-        !openai_session_current_text(output, sizeof(output)) ||
+    if (!llm_session_archive(forked) ||
+        llm_session_resume(forked) ||
+        !llm_session_current_text(output, sizeof(output)) ||
         strstr(output, "Current session: none") == NULL ||
-        !openai_session_unarchive(forked) ||
-        !openai_session_resume(forked) ||
-        !openai_session_current_text(output, sizeof(output)) ||
+        !llm_session_unarchive(forked) ||
+        !llm_session_resume(forked) ||
+        !llm_session_current_text(output, sizeof(output)) ||
         strstr(output, forked) == NULL) {
         (void)puts("M228 failed: archive/resume lifecycle.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_session_resume(first) ||
-        !openai_session_delete(first) ||
-        !openai_session_current_text(output, sizeof(output)) ||
+    if (!llm_session_resume(first) ||
+        !llm_session_delete(first) ||
+        !llm_session_current_text(output, sizeof(output)) ||
         strstr(output, "Current session: none") == NULL ||
-        openai_session_show_text(first, output, sizeof(output)) ||
-        !openai_session_list_text(output, sizeof(output)) ||
+        llm_session_show_text(first, output, sizeof(output)) ||
+        !llm_session_list_text(output, sizeof(output)) ||
         strstr(output, "Sessions: 1") == NULL ||
         strstr(output, forked) == NULL) {
         (void)puts("M228 failed: session delete lifecycle.");
@@ -132,7 +132,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Persistent sessions:  available") == NULL ||
         strstr(output, "Session resume/fork:  available") == NULL ||
         strstr(output, "Archive lifecycle:    available") == NULL) {

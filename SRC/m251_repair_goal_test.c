@@ -3,32 +3,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_plan_sensitive.inc"
+#include "LLM_PLAN_SENSITIVE.INC"
 
-#define OPENAI_GOAL_GUARD_TEXT_ONLY 1
-#include "OPENAI_GOAL_GUARD.INC"
+#define LLM_GOAL_GUARD_TEXT_ONLY 1
+#include "LLM_GOAL_GUARD.INC"
 
 /*
- * Link-only stubs for unrelated OPENAI_RETRY.C entry points.
+ * Link-only stubs for unrelated LLM_RETRY.C entry points.
  * The regression executes only the prompt-builder functions below.
  */
-int openai_last_workflow = 0;
-int openai_last_rollback = 0;
-int openai_last_build_known = 0;
-int openai_last_build_status = 0;
-unsigned long openai_approved_hash = 0UL;
-int openai_plan_approved = 0;
+int llm_last_workflow = 0;
+int llm_last_rollback = 0;
+int llm_last_build_known = 0;
+int llm_last_build_status = 0;
+unsigned long llm_approved_hash = 0UL;
+int llm_plan_approved = 0;
 
-const char *openai_workflow_name()
+const char *llm_workflow_name()
 {
     return "test";
 }
 
-void openai_log_event()
+void llm_log_event()
 {
 }
 
-char *openai_duplicate_text()
+char *llm_duplicate_text()
 {
     return NULL;
 }
@@ -38,47 +38,47 @@ char *execute_run_build_tool()
     return NULL;
 }
 
-void openai_agent_mode()
+void llm_agent_mode()
 {
 }
 
-int openai_plan_save()
-{
-    return 0;
-}
-
-void openai_agent_plan()
-{
-}
-
-int openai_plan_is_current()
+int llm_plan_save()
 {
     return 0;
 }
 
-char *openai_read_text_file()
+void llm_agent_plan()
+{
+}
+
+int llm_plan_is_current()
+{
+    return 0;
+}
+
+char *llm_read_text_file()
 {
     return NULL;
 }
 
-int openai_plan_approve_file()
+int llm_plan_approve_file()
 {
     return 0;
 }
 
-void openai_plan_approve()
+void llm_plan_approve()
 {
 }
 
-void openai_plan_execute()
+void llm_plan_execute()
 {
 }
 
-void openai_log_repair_attempt()
+void llm_log_repair_attempt()
 {
 }
 
-void openai_plan_approval_clear()
+void llm_plan_approval_clear()
 {
 }
 
@@ -86,16 +86,16 @@ void project_git_diff()
 {
 }
 
-int openai_plan_clear_files()
+int llm_plan_clear_files()
 {
     return 1;
 }
 
-int openai_plan_is_noop_text(const char *text);
+int llm_plan_is_noop_text(const char *text);
 
-char *openai_build_goal_prompt(const char *goal,
+char *llm_build_goal_prompt(const char *goal,
                                const char *build_output);
-char *openai_build_repair_prompt(const char *goal,
+char *llm_build_repair_prompt(const char *goal,
                                  const char *build_output);
 
 int main(void)
@@ -107,7 +107,7 @@ int main(void)
         "    PERFORM CMD-LIST\n"
         "END-IF\n";
 
-    prompt = openai_build_goal_prompt(
+    prompt = llm_build_goal_prompt(
         "Repair the reported runtime behavior",
         "Building test project...\nBuild completed successfully.\n"
     );
@@ -125,7 +125,7 @@ int main(void)
 
     free(prompt);
 
-    prompt = openai_build_repair_prompt(
+    prompt = llm_build_repair_prompt(
         "Repair the compiler failure",
         "%CC-E-UNDECLARED, test identifier is undefined.\n"
     );
@@ -161,11 +161,11 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_plan_is_noop_text("operation_count=0\n") ||
-        !openai_plan_is_noop_text(
+    if (!llm_plan_is_noop_text("operation_count=0\n") ||
+        !llm_plan_is_noop_text(
             "header\noperation_count=0\r\nfooter\n") ||
-        openai_plan_is_noop_text("operation_count=10\n") ||
-        openai_plan_is_noop_text("prefix operation_count=0\n")) {
+        llm_plan_is_noop_text("operation_count=10\n") ||
+        llm_plan_is_noop_text("prefix operation_count=0\n")) {
         (void)puts("M251.9 failed: no-op repair detection is invalid.");
         return EXIT_FAILURE;
     }
@@ -202,7 +202,7 @@ int main(void)
             reason,
             sizeof(reason))) {
         (void)puts(
-            "M251.10 failed: explicitly requested LIST removal was rejected."
+            "M251.10 failed: explicitly requested LIST removal was not rejected."
         );
         return EXIT_FAILURE;
     }

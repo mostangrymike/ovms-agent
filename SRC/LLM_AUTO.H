@@ -1,0 +1,20 @@
+#ifndef LLM_AUTO_H
+#define LLM_AUTO_H
+
+#include <stddef.h>
+
+void llm_auto_begin(int workflow);
+unsigned int llm_auto_turn_limit(int workflow);
+void llm_auto_note_turn(void);
+void llm_auto_note_tool(void);
+int llm_auto_allow_write(void);
+int llm_auto_partial_limit(void);
+void llm_auto_finish(const char *reason);
+int llm_auto_limits_text(char *output, size_t output_size);
+int llm_auto_status_text(char *output, size_t output_size);
+void llm_show_auto_limits(void);
+void llm_show_auto_status(void);
+void llm_auto_reset(void);
+void llm_auto_test_limits(unsigned int turns, unsigned int writes);
+
+#endif /* LLM_AUTO_H */

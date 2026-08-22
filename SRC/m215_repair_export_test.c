@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M215_REPAIR_EXPORT.LOG"
 #define TEST_OUT "M215_REPAIR_EXPORT.TXT"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic export test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -33,7 +33,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -92,24 +92,24 @@ int main(void)
     char text[8192];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0x11112222UL,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         0x33334444UL,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 
-    if (!openai_repair_export_file(TEST_OUT, 0) ||
+    if (!llm_repair_export_file(TEST_OUT, 0) ||
         !read_file(TEST_OUT, text, sizeof(text)) ||
         strstr(text, "OVMS Agent repair history") == NULL ||
         strstr(text, "11112222") == NULL ||
@@ -120,9 +120,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_repair_export_file("../M215_ESCAPE.TXT", 0) ||
-        openai_repair_export_file("M215*.TXT", 0) ||
-        openai_repair_export_file("M215;1", 0)) {
+    if (llm_repair_export_file("../M215_ESCAPE.TXT", 0) ||
+        llm_repair_export_file("M215*.TXT", 0) ||
+        llm_repair_export_file("M215;1", 0)) {
         (void)puts("M215 failed: unsafe export filespec was accepted.");
         cleanup();
         return EXIT_FAILURE;
@@ -134,7 +134,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_repair_export_file(TEST_OUT, 0) ||
+    if (llm_repair_export_file(TEST_OUT, 0) ||
         !read_file(TEST_OUT, text, sizeof(text)) ||
         strcmp(text, "protected\n") != 0) {
         (void)puts("M215 failed: existing export was overwritten.");
@@ -142,7 +142,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_export_file(TEST_OUT, 1) ||
+    if (!llm_repair_export_file(TEST_OUT, 1) ||
         !read_file(TEST_OUT, text, sizeof(text)) ||
         strstr(text, "OVMS Agent repair history") == NULL) {
         (void)puts("M215 failed: approved overwrite did not succeed.");

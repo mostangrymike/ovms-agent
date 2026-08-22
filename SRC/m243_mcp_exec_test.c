@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *input, size_t length, int eof)
 {
@@ -65,9 +65,9 @@ int main(void)
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     if (!require_true(
-            openai_mcp_execute_text(
+            llm_mcp_execute_text(
                 config, "docs search RMS", fake_executor, &probe,
                 output, sizeof(output)) &&
             strstr(output, "FULL approval policy is required") != NULL &&
@@ -76,13 +76,13 @@ int main(void)
         return 1;
     }
 
-    if (!require_true(openai_set_approval("full"),
+    if (!require_true(llm_set_approval("full"),
                       "enable full approval")) {
         return 1;
     }
 
     if (!require_true(
-            openai_mcp_execute_text(
+            llm_mcp_execute_text(
                 config, "docs search {\\\"query\\\":\\\"RMS\\\"}",
                 fake_executor, &probe, output, sizeof(output)) &&
             probe.calls == 1 &&
@@ -96,7 +96,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_mcp_execute_text(
+            llm_mcp_execute_text(
                 config, "issues get 42", fake_executor, &probe,
                 output, sizeof(output)) &&
             strstr(output, "transport http is not enabled") != NULL &&
@@ -106,7 +106,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_mcp_execute_text(
+            llm_mcp_execute_text(
                 config, "bad search x", fake_executor, &probe,
                 output, sizeof(output)) &&
             strstr(output, "unsafe stdio bridge target") != NULL &&
@@ -117,7 +117,7 @@ int main(void)
 
     probe.succeed = 0;
     if (!require_true(
-            openai_mcp_execute_text(
+            llm_mcp_execute_text(
                 config, "docs search fail", fake_executor, &probe,
                 output, sizeof(output)) &&
             strstr(output, "execution failed") != NULL &&
@@ -126,7 +126,7 @@ int main(void)
         return 1;
     }
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     (void)puts("M243 MCP execution regression passed.");
     return 0;
 }

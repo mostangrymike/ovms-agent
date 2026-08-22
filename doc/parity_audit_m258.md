@@ -69,7 +69,7 @@ $STATUS == "%X00000001"
 
 ## M258.2 - default-deny network policy
 
-`SRC/OPENAI_NETWORK.C` adds:
+`SRC/LLM_NETWORK.C` adds:
 
 - default-deny outbound HTTP/SSE policy;
 - `OVMS_AGENT_NET_ALLOW` exact and `*.domain` rules;
@@ -91,7 +91,7 @@ $STATUS == "%X00000001"
 
 ## M258.3 - MCP transport integration
 
-`SRC/OPENAI_PARITY_M258.C` wraps the mature MCP implementation and applies network policy only after the established FULL-approval and endpoint-syntax checks.
+`SRC/LLM_PARITY_M258.C` wraps the mature MCP implementation and applies network policy only after the established FULL-approval and endpoint-syntax checks.
 
 The wrapper preserves stdio behavior and gates HTTP/SSE before executor dispatch.
 
@@ -179,7 +179,7 @@ OpenVMS V7.2 VAX / DEC C remains the target.
 New externally visible identifiers and base aliases introduced by M258 remain within the 31-character VAX linker limit. The longest new alias is:
 
 ```text
-openai_mcp_exec_transport_base
+llm_mcp_exec_transport_base
 ```
 
 at 30 characters. New M258 helpers are `static` where external linkage is unnecessary.

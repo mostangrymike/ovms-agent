@@ -1,7 +1,7 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Regression-test stubs for command-layer helpers pulled in indirectly
- * through the modular OpenAI/command link set.  M239 established this
+ * through the modular LLM/command link set.  M239 established this
  * pattern for standalone milestone test images. */
 int command_line_complete(const char *input, size_t length, int eof)
 {
@@ -39,7 +39,7 @@ int main(void)
         "bad entry";
 
     if (!require_true(
-            openai_mcp_catalog_text(config, output, sizeof(output)),
+            llm_mcp_catalog_text(config, output, sizeof(output)),
             "catalog text generation")) {
         return 1;
     }
@@ -68,7 +68,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_mcp_info_text(
+            llm_mcp_info_text(
                 config, "DOCS", output, sizeof(output)),
             "case-insensitive server lookup")) {
         return 1;
@@ -81,14 +81,14 @@ int main(void)
     }
 
     if (!require_true(
-            !openai_mcp_info_text(
+            !llm_mcp_info_text(
                 config, "missing", output, sizeof(output)),
             "unknown server rejection")) {
         return 1;
     }
 
     if (!require_true(
-            openai_mcp_catalog_text(NULL, output, sizeof(output)) &&
+            llm_mcp_catalog_text(NULL, output, sizeof(output)) &&
             strstr(output, "Configured servers: 0") != NULL &&
             strstr(output, "(none configured)") != NULL,
             "empty configuration")) {

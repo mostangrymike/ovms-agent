@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define ROOT_FILE "M257_ROOT_INSTR.TXT"
 #define SCOPE_FILE "TEST/OVMS_AGENT_INSTRUCTIONS.TXT"
@@ -49,7 +49,7 @@ static int write_text(const char *path, const char *text)
 
 static void cleanup(int scoped_created)
 {
-    openai_test_instr_path(NULL);
+    llm_test_instr_path(NULL);
     remove_all(ROOT_FILE);
     if (scoped_created) remove_all(SCOPE_FILE);
 }
@@ -86,10 +86,10 @@ int main(void)
 
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
-    openai_test_instr_path(ROOT_FILE);
+    llm_test_instr_path(ROOT_FILE);
 
-    if (!openai_instr_reload(&state) ||
-        !openai_instr_compose(
+    if (!llm_instr_reload(&state) ||
+        !llm_instr_compose(
             &state,
             "Plan a safe change to TEST/M257_TARGET.C",
             output,
@@ -112,7 +112,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_instr_status_text(
+    if (!llm_instr_status_text(
             &state, status, sizeof(status)) ||
         strstr(status, "Scoped active files: 1") == NULL ||
         strstr(status, SCOPE_FILE) == NULL ||
@@ -122,14 +122,14 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_instr_compose(
+    if (!llm_instr_compose(
             &state,
             "Describe the current project",
             output,
             sizeof(output)) ||
         strstr(output, "root_only=present") == NULL ||
         strstr(output, "scoped_only=present") != NULL ||
-        !openai_instr_status_text(
+        !llm_instr_status_text(
             &state, status, sizeof(status)) ||
         strstr(status, "Scoped active files: 0") == NULL) {
         (void)puts("M257 failed: root-only fallback for unscoped goal.");

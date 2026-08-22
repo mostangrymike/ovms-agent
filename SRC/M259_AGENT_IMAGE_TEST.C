@@ -2,10 +2,10 @@
 #include <string.h>
 
 #include "command_internal.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /* Standalone regression stubs for command-layer helpers pulled in through
-   OPENAI_PLAN.OBJ. The agent-image test does not exercise interactive input. */
+   LLM_PLAN.OBJ. The agent-image test does not exercise interactive input. */
 int command_line_complete(const char *input, size_t length, int eof)
 {
     (void)input;
@@ -22,14 +22,14 @@ int command_read_stream(FILE *stream, char *buffer, size_t buffer_size)
     return 0;
 }
 
-int openai_test_agent_image_req(const char *model,
-                                const char *instructions,
-                                const char *goal,
-                                const char *image_path);
-int openai_image_log(const char *image_path,
-                     const char *outcome,
-                     int status);
-void openai_test_set_log_path(const char *path);
+int llm_test_agent_image_req(const char *model,
+                             const char *instructions,
+                             const char *goal,
+                             const char *image_path);
+int llm_image_log(const char *image_path,
+                  const char *outcome,
+                  int status);
+void llm_test_set_log_path(const char *path);
 
 static void remove_all(const char *path)
 {
@@ -93,7 +93,7 @@ int main(void)
 
     remove_all(image_path);
     remove_all(log_path);
-    remove_all(OPENAI_REQUEST_FILE);
+    remove_all(LLM_REQUEST_FILE);
 
     if (!write_png(image_path)) {
         (void)puts("M259 agent-image regression failed: fixture setup.");
@@ -109,13 +109,13 @@ int main(void)
     }
 
     if (!require_true(
-            openai_test_agent_image_req(
+            llm_test_agent_image_req(
                 "m259-agent-model",
                 "Read-only agent instructions",
                 "Inspect the screenshot and identify the relevant source area.",
                 image_path),
             "agent image request serialization") ||
-        !read_text(OPENAI_REQUEST_FILE, request, sizeof(request)) ||
+        !read_text(LLM_REQUEST_FILE, request, sizeof(request)) ||
         !require_true(
             strstr(request, "\"type\":\"input_image\"") != NULL &&
             strstr(request, "data:image/png;base64,") != NULL &&
@@ -123,12 +123,12 @@ int main(void)
             strstr(request, "read_file") != NULL,
             "image request retains read-only agent tools")) {
         remove_all(image_path);
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         return 2;
     }
 
-    openai_test_set_log_path(log_path);
-    if (!require_true(openai_image_log(image_path, "image_accepted", 1),
+    llm_test_set_log_path(log_path);
+    if (!require_true(llm_image_log(image_path, "image_accepted", 1),
                       "metadata log write") ||
         !read_text(log_path, log_text, sizeof(log_text)) ||
         !require_true(
@@ -140,17 +140,17 @@ int main(void)
             strstr(log_text, "base64") == NULL &&
             strstr(log_text, "data:image") == NULL,
             "metadata-only activity logging")) {
-        openai_test_set_log_path(NULL);
+        llm_test_set_log_path(NULL);
         remove_all(image_path);
         remove_all(log_path);
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         return 2;
     }
 
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
     remove_all(image_path);
     remove_all(log_path);
-    remove_all(OPENAI_REQUEST_FILE);
+    remove_all(LLM_REQUEST_FILE);
     (void)puts("M259 agent image command/logging regression passed.");
     return 1;
 }

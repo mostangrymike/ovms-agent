@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_EMPTY "M251_EMPTY.TMP"
 #define TEST_FENCE "M251_FENCE.TMP"
@@ -51,7 +51,7 @@ static int test_empty(void)
     static const char args[] =
         "{\"path\":\"M251_EMPTY.TMP\",\"content\":\"\"}";
     char *display_path;
-    openai_create_result result;
+    llm_create_result result;
     int ok;
 
     remove_all(TEST_EMPTY);
@@ -60,7 +60,7 @@ static int test_empty(void)
     result = execute_create_file_tool(args, &display_path);
 
     ok =
-        result == OPENAI_CREATE_ERROR &&
+        result == LLM_CREATE_ERROR &&
         display_path != NULL &&
         !file_exists(TEST_EMPTY);
 
@@ -74,7 +74,7 @@ static int test_fence(void)
     static const char args[] =
         "{\"path\":\"M251_FENCE.TMP\",\"content\":\"```\"}";
     char *display_path;
-    openai_create_result result;
+    llm_create_result result;
     int ok;
 
     remove_all(TEST_FENCE);
@@ -83,7 +83,7 @@ static int test_fence(void)
     result = execute_create_file_tool(args, &display_path);
 
     ok =
-        result == OPENAI_CREATE_ERROR &&
+        result == LLM_CREATE_ERROR &&
         display_path != NULL &&
         !file_exists(TEST_FENCE);
 

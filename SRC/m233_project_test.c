@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
+#include "LLM_PROJECT_MAP.H"
 
-#define M233_COB "SRC/M233_SAMPLE.COB"
-#define M233_CBL "SRC/M233_SAMPLE.CBL"
-#define M233_CPY "SRC/M233_SAMPLE.CPY"
+#define M233_COB "SRC/000_M233_SAMPLE.COB"
+#define M233_CBL "SRC/000_M233_SAMPLE.CBL"
+#define M233_CPY "SRC/000_M233_SAMPLE.CPY"
+#define M233_TST "SRC/000_M233_PROJECT_TEST_SAMPLE.C"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -29,6 +31,8 @@ static void m233_cleanup(void)
     while (remove(M233_CBL) == 0) {
     }
     while (remove(M233_CPY) == 0) {
+    }
+    while (remove(M233_TST) == 0) {
     }
 }
 
@@ -60,8 +64,10 @@ int main(void)
         !m233_write_sample(
             M233_CBL, "       IDENTIFICATION DIVISION.\n") ||
         !m233_write_sample(
-            M233_CPY, "       01  M233-SAMPLE PIC X.\n")) {
-        (void)puts("M233 failed: unable to create COBOL samples.");
+            M233_CPY, "       01  M233-SAMPLE PIC X.\n") ||
+        !m233_write_sample(
+            M233_TST, "int m233_test_sample(void) { return 1; }\n")) {
+        (void)puts("M233 failed: unable to create map samples.");
         m233_cleanup();
         return EXIT_FAILURE;
     }
@@ -69,13 +75,13 @@ int main(void)
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
 
-    if (!openai_project_refresh(&state)) {
+    if (!llm_project_refresh(&state)) {
         (void)puts("M233 failed: project refresh.");
         m233_cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_map_text(
+    if (!llm_project_map_text(
             &state, output, sizeof(output)) ||
         strstr(output, "OVMS Agent project map") == NULL ||
         strstr(output, "Sources:") == NULL ||
@@ -89,12 +95,10 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_src_text(
+    if (!llm_project_src_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "LLM_") == NULL &&
-         strstr(output, "llm_") == NULL &&
-         strstr(output, "OPENAI_") == NULL &&
-         strstr(output, "openai_") == NULL) ||
+         strstr(output, "llm_") == NULL) ||
         (strstr(output, "M233_SAMPLE.COB") == NULL &&
          strstr(output, "m233_sample.cob") == NULL) ||
         (strstr(output, "M233_SAMPLE.CBL") == NULL &&
@@ -119,16 +123,16 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_tests_text(
+    if (!llm_project_tests_text(
             &state, output, sizeof(output)) ||
-        (strstr(output, "M233_PROJECT_TEST.C") == NULL &&
-         strstr(output, "m233_project_test.c") == NULL)) {
+        (strstr(output, "M233_PROJECT_TEST_SAMPLE.C") == NULL &&
+         strstr(output, "m233_project_test_sample.c") == NULL)) {
         (void)puts("M233 failed: test classification.");
         m233_cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_build_text(
+    if (!llm_project_build_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "BUILD.COM") == NULL &&
          strstr(output, "build.com") == NULL)) {
@@ -137,7 +141,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_project_compose(
+    if (!llm_project_compose(
             &state, "Inspect parser.", output, sizeof(output)) ||
         strstr(output, "REPOSITORY MAP") == NULL ||
         strstr(output, "MODEL TASK CONTEXT") == NULL ||
@@ -147,7 +151,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Repository map:       available") == NULL ||
         strstr(output, "Context preloading:   available") == NULL) {
         (void)puts("M233 failed: parity status.");

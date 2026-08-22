@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M226_REPAIR_SELECT.LOG"
 
@@ -34,8 +34,8 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
     remove_all(TEST_LOG);
 }
 
@@ -76,8 +76,8 @@ int main(void)
     char output[32768];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
-    openai_test_set_history_limit(5U);
+    llm_test_set_log_path(TEST_LOG);
+    llm_test_set_history_limit(5U);
 
     if (!seed_history()) {
         (void)puts("M226 failed: unable to seed history.");
@@ -85,7 +85,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_first_text(
+    if (!llm_first_text(
             "2",
             output,
             sizeof(output)) ||
@@ -99,7 +99,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_last_text(
+    if (!llm_last_text(
             "2",
             output,
             sizeof(output)) ||
@@ -112,7 +112,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_range_text(
+    if (!llm_range_text(
             "2 2",
             output,
             sizeof(output)) ||
@@ -128,7 +128,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_index_text(
+    if (!llm_index_text(
             "3",
             output,
             sizeof(output)) ||
@@ -141,27 +141,27 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_first_text(
+    if (llm_first_text(
             "0",
             output,
             sizeof(output)) ||
-        openai_last_text(
+        llm_last_text(
             "6",
             output,
             sizeof(output)) ||
-        openai_range_text(
+        llm_range_text(
             "5 2",
             output,
             sizeof(output)) ||
-        openai_range_text(
+        llm_range_text(
             "2",
             output,
             sizeof(output)) ||
-        openai_index_text(
+        llm_index_text(
             "6",
             output,
             sizeof(output)) ||
-        openai_index_text(
+        llm_index_text(
             "abc",
             output,
             sizeof(output))) {

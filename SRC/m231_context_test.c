@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
+#include "LLM_CONTEXT.H"
 
 #define TEST_SESS "M231_SESSIONS.DAT"
 #define TEST_CUR  "M231_SESSION.CUR"
@@ -30,9 +31,9 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_test_tx_path(NULL);
-    openai_test_reset_approval();
+    llm_test_session_paths(NULL, NULL);
+    llm_test_tx_path(NULL);
+    llm_test_reset_approval();
     remove_all(TEST_SESS);
     remove_all(TEST_CUR);
     remove_all(TEST_TX);
@@ -47,18 +48,18 @@ int main(void)
 
     cleanup();
 
-    openai_test_session_paths(TEST_SESS, TEST_CUR);
-    openai_test_tx_path(TEST_TX);
+    llm_test_session_paths(TEST_SESS, TEST_CUR);
+    llm_test_tx_path(TEST_TX);
 
-    if (!openai_session_new("parent session", parent) ||
-        !openai_session_note_goal("original parser goal")) {
+    if (!llm_session_new("parent session", parent) ||
+        !llm_session_note_goal("original parser goal")) {
         (void)puts("M231 failed: parent session setup.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    openai_tx_model_call("read_file", "SRC/PARSER.C");
-    openai_tx_model_result(
+    llm_tx_model_call("read_file", "SRC/PARSER.C");
+    llm_tx_model_result(
         "read_file", "ok", "parser uses legacy token scan"
     );
 
@@ -66,13 +67,13 @@ int main(void)
         args, sizeof(args), "%s child session", parent
     );
 
-    if (!openai_session_fork(args, forked)) {
+    if (!llm_session_fork(args, forked)) {
         (void)puts("M231 failed: fork setup.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_build(
+    if (!llm_context_build(
             "continue fixing parser", output, sizeof(output)) ||
         strstr(output, "Persistent OVMS Agent session context") == NULL ||
         strstr(output, "CURRENT REQUEST") == NULL ||
@@ -85,7 +86,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_current(output, sizeof(output)) ||
+    if (!llm_context_current(output, sizeof(output)) ||
         strstr(output, forked) == NULL ||
         strstr(output, "Recent transcript:") == NULL) {
         (void)puts("M231 failed: current context inspection.");
@@ -93,7 +94,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Context restoration:  available") == NULL ||
         strstr(output, "Fork ancestry context: available") == NULL) {
         (void)puts("M231 failed: parity status.");

@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
-
-int openai_git_rms_copy(const char *path, const char *target);
+#include "llm_internal.h"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -76,42 +74,42 @@ int main(void)
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
 
-    openai_test_git_data(
-        " M SRC/OPENAI_AGENT.C\n"
-        "?? SRC/OPENAI_GIT_CONTEXT.C",
-        "diff --git a/SRC/OPENAI_AGENT.C b/SRC/OPENAI_AGENT.C\n"
+    llm_test_git_data(
+        " M SRC/LLM_AGENT.C\n"
+        "?? SRC/LLM_GIT_CONTEXT.C",
+        "diff --git a/SRC/LLM_AGENT.C b/SRC/LLM_AGENT.C\n"
         "+    git context enabled"
     );
 
-    if (!openai_git_refresh(&state)) {
+    if (!llm_git_refresh(&state)) {
         (void)puts("M234 failed: Git refresh.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_git_status_text(
+    if (!llm_git_status_text(
             &state, output, sizeof(output)) ||
         strstr(output, "Changed paths: 2") == NULL ||
-        strstr(output, "OPENAI_AGENT.C") == NULL ||
-        strstr(output, "OPENAI_GIT_CONTEXT.C") == NULL) {
+        strstr(output, "LLM_AGENT.C") == NULL ||
+        strstr(output, "LLM_GIT_CONTEXT.C") == NULL) {
         (void)puts("M234 failed: Git status context.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_git_diff_text(
+    if (!llm_git_diff_text(
             &state, output, sizeof(output)) ||
         strstr(output, "git context enabled") == NULL) {
         (void)puts("M234 failed: Git diff context.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_git_changed_text(
+    if (!llm_git_changed_text(
             &state, output, sizeof(output)) ||
         strstr(output, "Count: 2") == NULL) {
         (void)puts("M234 failed: changed path view.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_git_compose(
+    if (!llm_git_compose(
             &state,
             "Review the current edits.",
             output,
@@ -123,14 +121,14 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Git state context:     available") == NULL ||
         strstr(output, "Git diff awareness:    available") == NULL) {
         (void)puts("M234 failed: parity status.");
         return EXIT_FAILURE;
     }
 
-    openai_test_git_data(NULL, NULL);
+    llm_test_git_data(NULL, NULL);
 
     rms_path = "M263_RMS_GIT.TMP";
     copy_path = "M263_RMS_COPY.TMP";
@@ -145,7 +143,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_git_rms_copy(rms_path, copy_path) ||
+    if (!llm_git_rms_copy(rms_path, copy_path) ||
         !m263_expect_text(copy_path, "newest version three")) {
         (void)puts("M263 failed: RMS Git view did not copy newest version.");
         m263_remove_versions(rms_path);

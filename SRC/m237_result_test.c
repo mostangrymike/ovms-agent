@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *a,size_t b,int c)
 {(void)a;(void)b;(void)c;return 0;}
@@ -15,9 +15,9 @@ int main(void)
     char large[7000];
     size_t i;
 
-    result=openai_result_make(
+    result=llm_result_make(
         "read_file","ok","read",1,
-        "{\"path\":\"SRC/OPENAI.C\"}","sample output");
+        "{\"path\":\"SRC/LLM.C\"}","sample output");
     if(result==NULL ||
        strstr(result,"tool: read_file")==NULL ||
        strstr(result,"status: ok")==NULL ||
@@ -31,7 +31,7 @@ int main(void)
     for(i=0U;i+1U<sizeof(large);++i)large[i]='X';
     large[sizeof(large)-1U]='\0';
 
-    result=openai_result_make(
+    result=llm_result_make(
         "run_build","failure","execute",2,"{}",large);
     if(result==NULL ||
        strstr(result,"truncated: yes")==NULL ||
@@ -39,12 +39,12 @@ int main(void)
     {free(result);puts("M237 failed: bounded result.");return EXIT_FAILURE;}
     free(result);
 
-    if(!openai_result_last_text(last,sizeof(last)) ||
+    if(!llm_result_last_text(last,sizeof(last)) ||
        strstr(last,"tool: run_build")==NULL ||
        strstr(last,"status: failure")==NULL)
     {puts("M237 failed: last result.");return EXIT_FAILURE;}
 
-    if(!openai_parity_text(last,sizeof(last)) ||
+    if(!llm_parity_text(last,sizeof(last)) ||
        strstr(last,"Normalized results:     available")==NULL ||
        strstr(last,"Result persistence:     available")==NULL)
     {puts("M237 failed: parity.");return EXIT_FAILURE;}

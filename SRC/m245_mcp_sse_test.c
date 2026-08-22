@@ -1,4 +1,4 @@
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *input, size_t length, int eof)
 {
@@ -86,20 +86,20 @@ int main(void)
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "stream watch alpha", fake_stdio, fake_http, fake_sse,
                 &probe, output, sizeof(output)) &&
             strstr(output, "FULL approval policy is required") != NULL &&
             probe.sse_calls == 0,
             "approval refusal")) return 1;
 
-    if (!require_true(openai_set_approval("full"), "enable full approval"))
+    if (!require_true(llm_set_approval("full"), "enable full approval"))
         return 1;
 
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "stream watch {\\\"topic\\\":\\\"build\\\"}",
                 fake_stdio, fake_http, fake_sse, &probe,
                 output, sizeof(output)) &&
@@ -113,21 +113,21 @@ int main(void)
             "approved SSE execution")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "issues get 42", fake_stdio, fake_http, fake_sse,
                 &probe, output, sizeof(output)) &&
             probe.http_calls == 1 && strstr(output, "Transport:  http") != NULL,
             "HTTP compatibility")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "docs search RMS", fake_stdio, fake_http, fake_sse,
                 &probe, output, sizeof(output)) &&
             probe.stdio_calls == 1 && strstr(output, "Transport:  stdio") != NULL,
             "stdio compatibility")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "badsse watch x", fake_stdio, fake_http, fake_sse,
                 &probe, output, sizeof(output)) &&
             strstr(output, "unsafe SSE endpoint") != NULL,
@@ -135,13 +135,13 @@ int main(void)
 
     probe.succeed = 0;
     if (!require_true(
-            openai_mcp_exec_all_text(
+            llm_mcp_exec_all_text(
                 config, "stream watch fail", fake_stdio, fake_http, fake_sse,
                 &probe, output, sizeof(output)) &&
             strstr(output, "MCP sse execution failed") != NULL,
             "SSE failure normalization")) return 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     (void)puts("M245 MCP SSE regression passed.");
     return 0;
 }

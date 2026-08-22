@@ -135,7 +135,7 @@ static int symbol_line_is_definition(const char *line,
                  * the symbol on the same source line. Calls at the beginning
                  * of a continuation line, such as:
                  *
-                 *     openai_tool_find("name") == NULL,
+                 *     llm_tool_find("name") == NULL,
                  *
                  * are not definitions.
                  */
@@ -16986,4 +16986,3 @@ void symbol_decl_fix_diagnose(
         "Diagnostic preview only. No files were modified."
     );
 }
-

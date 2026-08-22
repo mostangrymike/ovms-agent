@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
-#include "openai_request_agent.h"
+#include "llm_internal.h"
+#include "LLM_REQUEST_AGENT.H"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -38,7 +38,7 @@ static char *read_request(void)
     char *text;
     size_t read_count;
 
-    file = fopen(OPENAI_REQUEST_FILE, "rb");
+    file = fopen(LLM_REQUEST_FILE, "rb");
 
     if (file == NULL) {
         return NULL;
@@ -79,7 +79,7 @@ static int write_response_fixture(void)
 {
     FILE *file;
 
-    file = fopen(OPENAI_RESPONSE_FILE, "w");
+    file = fopen(LLM_RESPONSE_FILE, "w");
     if (file == NULL) {
         return 0;
     }
@@ -128,8 +128,8 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    remove_all(OPENAI_REQUEST_FILE);
-    remove_all(OPENAI_RESPONSE_FILE);
+    remove_all(LLM_REQUEST_FILE);
+    remove_all(LLM_RESPONSE_FILE);
 
     if (!write_agent_request_mode(
             "m251-test-model",
@@ -140,14 +140,14 @@ int main(void)
             NULL,
             0)) {
         (void)puts("M251 failed: initial local-context request failed.");
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         return EXIT_FAILURE;
     }
 
     if (!write_response_fixture()) {
         (void)puts("M251 failed: unable to write response fixture.");
-        remove_all(OPENAI_REQUEST_FILE);
-        remove_all(OPENAI_RESPONSE_FILE);
+        remove_all(LLM_REQUEST_FILE);
+        remove_all(LLM_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
 
@@ -157,8 +157,8 @@ int main(void)
             "call_m251_last",
             "last tool result")) {
         (void)puts("M251 failed: final request writer returned failure.");
-        remove_all(OPENAI_REQUEST_FILE);
-        remove_all(OPENAI_RESPONSE_FILE);
+        remove_all(LLM_REQUEST_FILE);
+        remove_all(LLM_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
 
@@ -166,8 +166,8 @@ int main(void)
 
     if (request == NULL) {
         (void)puts("M251 failed: unable to read final request.");
-        remove_all(OPENAI_REQUEST_FILE);
-        remove_all(OPENAI_RESPONSE_FILE);
+        remove_all(LLM_REQUEST_FILE);
+        remove_all(LLM_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
 
@@ -187,8 +187,8 @@ int main(void)
         strstr(request, "\"tool_choice\"") == NULL;
 
     free(request);
-    remove_all(OPENAI_REQUEST_FILE);
-    remove_all(OPENAI_RESPONSE_FILE);
+    remove_all(LLM_REQUEST_FILE);
+    remove_all(LLM_RESPONSE_FILE);
 
     if (!ok) {
         (void)puts(

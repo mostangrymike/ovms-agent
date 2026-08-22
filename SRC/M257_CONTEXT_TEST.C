@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "llm_internal.h"
 
-#define openai_agent_mode m257_capture_mode
-#include "OPENAI_AGENT.C"
-#undef openai_agent_mode
+void m257_capture_mode(agent_state *state,
+                       const char *goal,
+                       int allow_write,
+                       int build_after_write,
+                       int workflow);
+
+#define llm_agent_mode m257_capture_mode
+#include "LLM_AGENT.C"
+#undef llm_agent_mode
 
 #define ROOT_FILE "M257_CTX_ROOT.TXT"
 #define SCOPE_FILE "TEST/OVMS_AGENT_INSTRUCTIONS.TXT"
@@ -44,19 +51,19 @@ static int copy_context(const char *input,
     return written >= 0 && (size_t)written < output_size;
 }
 
-int openai_project_compose(const agent_state *state,
-                           const char *goal,
-                           char *output,
-                           size_t output_size)
+int llm_project_compose(const agent_state *state,
+                        const char *goal,
+                        char *output,
+                        size_t output_size)
 {
     (void)state;
     return copy_context(goal, output, output_size);
 }
 
-int openai_git_compose(const agent_state *state,
-                       const char *goal,
-                       char *output,
-                       size_t output_size)
+int llm_git_compose(const agent_state *state,
+                    const char *goal,
+                    char *output,
+                    size_t output_size)
 {
     (void)state;
     return copy_context(goal, output, output_size);
@@ -93,7 +100,7 @@ static int context_ok(const char *request)
 
 static void cleanup(void)
 {
-    openai_test_instr_path(NULL);
+    llm_test_instr_path(NULL);
     remove_all(ROOT_FILE);
     remove_all(SCOPE_FILE);
 }
@@ -106,11 +113,11 @@ int main(void)
     cleanup();
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
-    openai_test_instr_path(ROOT_FILE);
+    llm_test_instr_path(ROOT_FILE);
 
     if (!write_text(ROOT_FILE, "ROOT RULE: preserve root policy\n") ||
         !write_text(SCOPE_FILE, "SCOPED RULE: TEST policy wins\n") ||
-        !openai_instr_reload(&state)) {
+        !llm_instr_reload(&state)) {
         (void)puts("M257 context failed: instruction fixture setup.");
         cleanup();
         return EXIT_FAILURE;
@@ -119,12 +126,12 @@ int main(void)
     request = "Update TEST/M257_CTX_TARGET.C safely.";
     m257_calls = 0;
     m257_goal[0] = '\0';
-    openai_agent_plan(&state, request);
+    llm_agent_plan(&state, request);
 
     if (m257_calls != 1 ||
         m257_allow_write != 0 ||
         m257_build_after != 0 ||
-        m257_workflow != OPENAI_WORKFLOW_PLAN ||
+        m257_workflow != LLM_WORKFLOW_PLAN ||
         !context_ok(request)) {
         (void)puts("M257 context failed: PLAN did not receive scoped instructions.");
         cleanup();
@@ -133,12 +140,12 @@ int main(void)
 
     m257_calls = 0;
     m257_goal[0] = '\0';
-    openai_agent_write(&state, request);
+    llm_agent_write(&state, request);
 
     if (m257_calls != 1 ||
         m257_allow_write != 1 ||
         m257_build_after != 0 ||
-        m257_workflow != OPENAI_WORKFLOW_WRITE ||
+        m257_workflow != LLM_WORKFLOW_WRITE ||
         !context_ok(request)) {
         (void)puts("M257 context failed: WRITE did not receive scoped instructions.");
         cleanup();

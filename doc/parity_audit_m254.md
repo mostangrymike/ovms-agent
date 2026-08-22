@@ -27,12 +27,12 @@ The authoritative Phase 3 requirements are:
 
 ## M254.1 - Policy evidence reconciliation - VALIDATED
 
-`SRC/openai_parity.c` implements three explicit approval modes:
+`SRC/llm_parity.c` implements three explicit approval modes:
 - `read-only`,
 - `workspace`,
 - `full`.
 
-Policy may come from the default, `OVMS_AGENT_APPROVAL_POLICY`, or a session override. `SRC/openai_transcript.c` independently classifies direct tools by minimum policy and applies the write/DCL gates.
+Policy may come from the default, `OVMS_AGENT_APPROVAL_POLICY`, or a session override. `SRC/llm_transcript.c` independently classifies direct tools by minimum policy and applies the write/DCL gates.
 
 M254 strengthened `SRC/m229_tool_test.c` to prove:
 - read-only refuses `EDIT`,

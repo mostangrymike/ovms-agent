@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic configuration test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -43,7 +43,7 @@ int main(void)
 {
     char configuration[1024];
 
-    if (!openai_test_repair_config_text(
+    if (!llm_test_repair_config_text(
             NULL,
             configuration,
             sizeof(configuration)) ||
@@ -56,7 +56,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_test_repair_config_text(
+    if (!llm_test_repair_config_text(
             "12",
             configuration,
             sizeof(configuration)) ||
@@ -69,7 +69,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_test_repair_config_text(
+    if (!llm_test_repair_config_text(
             "abc",
             configuration,
             sizeof(configuration)) ||
@@ -79,7 +79,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_test_repair_config_text(
+    if (!llm_test_repair_config_text(
             "21",
             configuration,
             sizeof(configuration)) ||

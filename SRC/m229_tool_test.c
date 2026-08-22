@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 #include "command_internal.h"
 
 #define TEST_SESS "M229_SESSIONS.DAT"
@@ -33,10 +33,10 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_test_tx_path(NULL);
-    openai_test_set_log_path(NULL);
-    openai_test_reset_approval();
+    llm_test_session_paths(NULL, NULL);
+    llm_test_tx_path(NULL);
+    llm_test_set_log_path(NULL);
+    llm_test_reset_approval();
     remove_all(TEST_SESS);
     remove_all(TEST_CUR);
     remove_all(TEST_TX);
@@ -60,18 +60,18 @@ int main(void)
     state.write_enabled = 0;
     state.dcl_enabled = 0;
 
-    openai_test_session_paths(TEST_SESS, TEST_CUR);
-    openai_test_tx_path(TEST_TX);
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_session_paths(TEST_SESS, TEST_CUR);
+    llm_test_tx_path(TEST_TX);
+    llm_test_set_log_path(TEST_LOG);
 
-    if (!openai_session_new("m229 session", session_id)) {
+    if (!llm_session_new("m229 session", session_id)) {
         (void)puts("M229 failed: create session.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_tool_run(&state, "READ NO_SUCH_M229_FILE.TXT") ||
-        !openai_tool_last_text(output, sizeof(output)) ||
+    if (!llm_tool_run(&state, "READ NO_SUCH_M229_FILE.TXT") ||
+        !llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     READ") == NULL ||
         strstr(output, "Status:   dispatched") == NULL ||
         strstr(output, session_id) == NULL) {
@@ -80,8 +80,8 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_tool_run(&state, "EDIT FOO.TXT 1 x") ||
-        !openai_tool_last_text(output, sizeof(output)) ||
+    if (llm_tool_run(&state, "EDIT FOO.TXT 1 x") ||
+        !llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     EDIT") == NULL ||
         strstr(output, "Status:   denied") == NULL) {
         (void)puts("M229 failed: approval denial transcript.");
@@ -89,14 +89,14 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_set_approval("workspace")) {
+    if (!llm_set_approval("workspace")) {
         (void)puts("M229 failed: set workspace approval.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (openai_tool_run(&state, "BUILD") ||
-        !openai_tool_last_text(output, sizeof(output)) ||
+    if (llm_tool_run(&state, "BUILD") ||
+        !llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     BUILD") == NULL ||
         strstr(output, "Status:   write-gate") == NULL) {
         (void)puts("M229 failed: write gate transcript.");
@@ -104,8 +104,8 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_tool_run(&state, "RUN \"SHOW TIME\"") ||
-        !openai_tool_last_text(output, sizeof(output)) ||
+    if (llm_tool_run(&state, "RUN \"SHOW TIME\"") ||
+        !llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     RUN") == NULL ||
         strstr(output, "Policy:   workspace") == NULL ||
         strstr(output, "Status:   denied") == NULL) {
@@ -122,7 +122,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_set_approval("full")) {
+    if (!llm_set_approval("full")) {
         (void)puts("M254 failed: set full approval.");
         cleanup();
         return EXIT_FAILURE;
@@ -131,8 +131,8 @@ int main(void)
     state.write_enabled = 1;
     state.dcl_enabled = 0;
 
-    if (openai_tool_run(&state, "RUN \"SHOW TIME\"") ||
-        !openai_tool_last_text(output, sizeof(output)) ||
+    if (llm_tool_run(&state, "RUN \"SHOW TIME\"") ||
+        !llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     RUN") == NULL ||
         strstr(output, "Policy:   full") == NULL ||
         strstr(output, "Status:   dcl-gate") == NULL) {
@@ -155,7 +155,7 @@ int main(void)
                           output, sizeof(output), &dcl_status) ||
         (dcl_status & 1UL) == 0UL ||
         output[0] == '\0' ||
-        !openai_tool_last_text(args, sizeof(args)) ||
+        !llm_tool_last_text(args, sizeof(args)) ||
         strstr(args, "Tool:     DCL") == NULL ||
         strstr(args, "Policy:   full") == NULL ||
         strstr(args, "Status:   success") == NULL) {
@@ -171,7 +171,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_tool_hist_text(output, sizeof(output)) ||
+    if (!llm_tool_hist_text(output, sizeof(output)) ||
         strstr(output, "READ") == NULL ||
         strstr(output, "EDIT") == NULL ||
         strstr(output, "BUILD") == NULL ||
@@ -182,7 +182,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_session_hist_text(session_id, output, sizeof(output)) ||
+    if (!llm_session_hist_text(session_id, output, sizeof(output)) ||
         strstr(output, "kind=tool") == NULL ||
         strstr(output, "name=READ") == NULL ||
         strstr(output, "name=EDIT") == NULL ||
@@ -198,19 +198,19 @@ int main(void)
         "%s %s", session_id, TEST_OUT
     );
 
-    if (!openai_session_export(args)) {
+    if (!llm_session_export(args)) {
         (void)puts("M229 failed: session export.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (openai_session_export(args)) {
+    if (llm_session_export(args)) {
         (void)puts("M229 failed: export overwrite protection.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Session transcripts:   available") == NULL ||
         strstr(output, "Direct tool runner:    available") == NULL ||
         strstr(output, "Resume/fork execution: available") == NULL) {
@@ -219,9 +219,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_tool_clear("NO") ||
-        !openai_tool_clear("CLEAR TOOL HISTORY") ||
-        !openai_tool_hist_text(output, sizeof(output)) ||
+    if (llm_tool_clear("NO") ||
+        !llm_tool_clear("CLEAR TOOL HISTORY") ||
+        !llm_tool_hist_text(output, sizeof(output)) ||
         strstr(output, "Entries shown: 0") == NULL) {
         (void)puts("M229 failed: transcript clear.");
         cleanup();

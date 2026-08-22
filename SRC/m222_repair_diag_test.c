@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M222_REPAIR_DIAG.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic diagnostics-bundle test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -74,7 +74,7 @@ int main(void)
     char report[8192];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
     if (!seed_history()) {
         (void)puts("M222 failed: unable to seed history.");
@@ -82,7 +82,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_diag_text(
+    if (!llm_repair_diag_text(
             report,
             sizeof(report)) ||
         strstr(report, "OVMS Agent repair history diagnostics") == NULL ||
@@ -95,7 +95,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_count_text(
+    if (!llm_repair_count_text(
             report,
             sizeof(report)) ||
         strstr(report, "Repair records: 5") == NULL ||
@@ -105,7 +105,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_latest_text(
+    if (!llm_repair_latest_text(
             report,
             sizeof(report)) ||
         strstr(report, "OVMS Agent latest repair run") == NULL ||
@@ -118,7 +118,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_oldest_text(
+    if (!llm_repair_oldest_text(
             report,
             sizeof(report)) ||
         strstr(report, "OVMS Agent oldest repair run") == NULL ||

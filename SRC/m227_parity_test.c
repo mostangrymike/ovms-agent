@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 int command_line_complete(const char *input, size_t input_size, int reached_eof)
 {
@@ -25,9 +25,9 @@ int main(void)
     state.write_enabled = 1;
     state.dcl_enabled = 0;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
 
-    if (!openai_tools_text(output, sizeof(output)) ||
+    if (!llm_tools_text(output, sizeof(output)) ||
         strstr(output, "Registered parity tools: 9") == NULL ||
         strstr(output, "read_file") == NULL ||
         strstr(output, "run_build") == NULL ||
@@ -36,29 +36,29 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_tool_info_text("replace_text", output, sizeof(output)) ||
+    if (!llm_tool_info_text("replace_text", output, sizeof(output)) ||
         strstr(output, "Effect:      write") == NULL ||
         strstr(output, "Approval:    workspace") == NULL ||
-        !openai_tool_info_text("structured_patch", output, sizeof(output)) ||
+        !llm_tool_info_text("structured_patch", output, sizeof(output)) ||
         strstr(output, "Effect:      write") == NULL ||
         strstr(output, "Approval:    workspace") == NULL ||
-        openai_tool_info_text("unknown_tool", output, sizeof(output))) {
+        llm_tool_info_text("unknown_tool", output, sizeof(output))) {
         (void)puts("M227 failed: tool metadata.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_approval_text(output, sizeof(output)) ||
+    if (!llm_approval_text(output, sizeof(output)) ||
         strstr(output, "Policy: read-only") == NULL ||
-        !openai_set_approval("workspace") ||
-        !openai_approval_text(output, sizeof(output)) ||
+        !llm_set_approval("workspace") ||
+        !llm_approval_text(output, sizeof(output)) ||
         strstr(output, "Policy: workspace") == NULL ||
         strstr(output, "Source: session override") == NULL ||
-        openai_set_approval("dangerous")) {
+        llm_set_approval("dangerous")) {
         (void)puts("M227 failed: approval policy.");
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_text(&state, output, sizeof(output)) ||
+    if (!llm_context_text(&state, output, sizeof(output)) ||
         strstr(output, "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]") == NULL ||
         strstr(output, "Write gate:        enabled") == NULL ||
         strstr(output, "DCL gate:          disabled") == NULL ||
@@ -68,7 +68,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Unified EXEC entry:   available") == NULL ||
         strstr(output, "Dry-run planning:     available") == NULL ||
         strstr(output, "MCP/tool servers:     not yet implemented") == NULL) {
@@ -76,9 +76,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
 
-    if (!openai_approval_text(output, sizeof(output)) ||
+    if (!llm_approval_text(output, sizeof(output)) ||
         strstr(output, "Policy: read-only") == NULL) {
         (void)puts("M227 failed: approval reset.");
         return EXIT_FAILURE;

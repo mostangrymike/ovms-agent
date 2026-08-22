@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "OPENAI_IMAGE.C"
+#include "LLM_IMAGE.C"
 
 static void remove_all(const char *path)
 {
@@ -72,7 +72,7 @@ int main(void)
     static const unsigned char webp[] = {
         'R','I','F','F',0U,0U,0U,0U,'W','E','B','P'
     };
-    openai_image_meta meta;
+    llm_image_meta meta;
     FILE *output;
     char encoded[256];
 
@@ -93,32 +93,32 @@ int main(void)
         return 2;
     }
 
-    if (!openai_image_info("M259_TINY.PNG", &meta) ||
+    if (!llm_image_info("M259_TINY.PNG", &meta) ||
         strcmp(meta.media_type, "image/png") != 0 || meta.size != sizeof(png)) {
         (void)puts("M259 image ingest failed: PNG validation.");
         return 2;
     }
-    if (!openai_image_info("M259_TINY.JPG", &meta) ||
+    if (!llm_image_info("M259_TINY.JPG", &meta) ||
         strcmp(meta.media_type, "image/jpeg") != 0 ||
-        !openai_image_info("M259_TINY.GIF", &meta) ||
+        !llm_image_info("M259_TINY.GIF", &meta) ||
         strcmp(meta.media_type, "image/gif") != 0 ||
-        !openai_image_info("M259_TINY.WEBP", &meta) ||
+        !llm_image_info("M259_TINY.WEBP", &meta) ||
         strcmp(meta.media_type, "image/webp") != 0) {
         (void)puts("M259 image ingest failed: supported formats.");
         return 2;
     }
 
-    if (openai_image_info("M259_BAD.PNG", &meta) ||
-        openai_image_info("../M259_TINY.PNG", &meta) ||
-        openai_image_info("SYS$SYSDEVICE:M259_TINY.PNG", &meta) ||
-        openai_image_info("/M259_TINY.PNG", &meta)) {
+    if (llm_image_info("M259_BAD.PNG", &meta) ||
+        llm_image_info("../M259_TINY.PNG", &meta) ||
+        llm_image_info("SYS$SYSDEVICE:M259_TINY.PNG", &meta) ||
+        llm_image_info("/M259_TINY.PNG", &meta)) {
         (void)puts("M259 image ingest failed: safety/signature refusal.");
         return 2;
     }
 
     output = fopen("M259_DATA.TXT", "w");
     if (output == NULL ||
-        !openai_image_write_data(output, "M259_TINY.PNG", &meta) ||
+        !llm_image_write_data(output, "M259_TINY.PNG", &meta) ||
         fclose(output) != 0 ||
         !read_text("M259_DATA.TXT", encoded, sizeof(encoded)) ||
         strcmp(encoded, "data:image/png;base64,iVBORw0KGgo=") != 0) {
@@ -127,7 +127,7 @@ int main(void)
     }
 
     if (!make_oversize("M259_BIG.PNG") ||
-        openai_image_info("M259_BIG.PNG", &meta)) {
+        llm_image_info("M259_BIG.PNG", &meta)) {
         (void)puts("M259 image ingest failed: size limit.");
         return 2;
     }

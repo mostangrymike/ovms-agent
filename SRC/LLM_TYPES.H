@@ -1,0 +1,25 @@
+#ifndef LLM_TYPES_H
+#define LLM_TYPES_H
+
+#define LLM_WORKFLOW_NONE       0
+#define LLM_WORKFLOW_ASK        1
+#define LLM_WORKFLOW_CHAT       2
+#define LLM_WORKFLOW_REVIEW     3
+#define LLM_WORKFLOW_AGENT      4
+#define LLM_WORKFLOW_WRITE      5
+#define LLM_WORKFLOW_FIX        6
+#define LLM_WORKFLOW_BUILD      7
+#define LLM_WORKFLOW_RETRY      8
+#define LLM_WORKFLOW_SELFTEST   9
+#define LLM_WORKFLOW_VERIFY    10
+#define LLM_WORKFLOW_CREATE    11
+#define LLM_WORKFLOW_PLAN      12
+#define LLM_WORKFLOW_EXECUTE   13
+
+#define LLM_ROLLBACK_NONE        0
+#define LLM_ROLLBACK_NOT_NEEDED  1
+#define LLM_ROLLBACK_SUCCEEDED   2
+#define LLM_ROLLBACK_FAILED      3
+#define LLM_ROLLBACK_DECLINED    4
+
+#endif /* LLM_TYPES_H */

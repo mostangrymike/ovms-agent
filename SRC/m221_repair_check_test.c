@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M221_REPAIR_CHECK.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic integrity test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -60,7 +60,7 @@ int main(void)
     char report[2048];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
     if (!write_text(
             "2026-08-07T10:00:00 workflow=AGENT event=start status=1\n"
@@ -75,7 +75,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_check_text(
+    if (!llm_repair_check_text(
             report,
             sizeof(report)) ||
         strstr(report, "Records scanned:     3") == NULL ||
@@ -108,7 +108,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_repair_check_text(
+    if (!llm_repair_check_text(
             report,
             sizeof(report)) ||
         strstr(report, "Records scanned:     6") == NULL ||

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M223_REPAIR_QUERY.LOG"
 
@@ -28,8 +28,8 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -78,8 +78,8 @@ int main(void)
     char report[32768];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
-    openai_test_set_history_limit(5U);
+    llm_test_set_log_path(TEST_LOG);
+    llm_test_set_history_limit(5U);
 
     if (!seed_history()) {
         (void)puts("M223 failed: unable to seed repair history.");
@@ -87,7 +87,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_query_outcome_text(
+    if (!llm_query_outcome_text(
             "committed",
             report,
             sizeof(report)) ||
@@ -100,7 +100,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_query_attempts_text(
+    if (!llm_query_attempts_text(
             "2",
             report,
             sizeof(report)) ||
@@ -113,7 +113,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_query_plan_text(
+    if (!llm_query_plan_text(
             "abcd",
             report,
             sizeof(report)) ||
@@ -125,7 +125,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_query_since_text(
+    if (!llm_query_since_text(
             "2026-08-07T13:",
             report,
             sizeof(report)) ||
@@ -138,19 +138,19 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_query_outcome_text(
+    if (llm_query_outcome_text(
             "bogus",
             report,
             sizeof(report)) ||
-        openai_query_attempts_text(
+        llm_query_attempts_text(
             "3",
             report,
             sizeof(report)) ||
-        openai_query_plan_text(
+        llm_query_plan_text(
             "XYZ",
             report,
             sizeof(report)) ||
-        openai_query_since_text(
+        llm_query_since_text(
             "yesterday",
             report,
             sizeof(report))) {

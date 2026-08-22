@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "openai_internal.h"
-#include "openai_request_basic.h"
+#include "llm_internal.h"
+#include "LLM_REQUEST_BASIC.H"
 
 static void remove_all(const char *path)
 {
@@ -30,7 +30,7 @@ static int read_request(char *output, size_t output_size)
     size_t used;
     int ch;
 
-    file = fopen(OPENAI_REQUEST_FILE, "r");
+    file = fopen(LLM_REQUEST_FILE, "r");
     if (file == NULL || output == NULL || output_size == 0U) return 0;
     used = 0U;
     while ((ch = fgetc(file)) != EOF) {
@@ -53,7 +53,7 @@ int main(void)
     char request[8192];
 
     remove_all("M259_REQ.PNG");
-    remove_all(OPENAI_REQUEST_FILE);
+    remove_all(LLM_REQUEST_FILE);
     if (!write_binary("M259_REQ.PNG", png, sizeof(png))) return 2;
 
     if (!write_request_image("m259-test-model",
@@ -62,7 +62,7 @@ int main(void)
                              "M259_REQ.PNG") ||
         !read_request(request, sizeof(request))) {
         remove_all("M259_REQ.PNG");
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         (void)puts("M259 image request failed: serialization.");
         return 2;
     }
@@ -76,25 +76,25 @@ int main(void)
         strstr(request, "\"previous_response_id\":\"resp_previous\"") == NULL ||
         strstr(request, "\"parallel_tool_calls\":false") == NULL) {
         remove_all("M259_REQ.PNG");
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         (void)puts("M259 image request failed: unexpected JSON shape.");
         return 2;
     }
 
-    remove_all(OPENAI_REQUEST_FILE);
+    remove_all(LLM_REQUEST_FILE);
     if (write_request_image("m259-test-model",
                             "Explain this image",
                             NULL,
                             "../M259_REQ.PNG") ||
-        fopen(OPENAI_REQUEST_FILE, "r") != NULL) {
+        fopen(LLM_REQUEST_FILE, "r") != NULL) {
         remove_all("M259_REQ.PNG");
-        remove_all(OPENAI_REQUEST_FILE);
+        remove_all(LLM_REQUEST_FILE);
         (void)puts("M259 image request failed: unsafe path handling.");
         return 2;
     }
 
     remove_all("M259_REQ.PNG");
-    remove_all(OPENAI_REQUEST_FILE);
+    remove_all(LLM_REQUEST_FILE);
     (void)puts("M259 multimodal request serialization regression passed.");
     return 1;
 }

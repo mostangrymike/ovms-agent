@@ -1,16 +1,20 @@
 #include <string.h>
 
 #include "github_m262.h"
+#include "LLM_AUTO.H"
+#include "LLM_CONTEXT.H"
+#include "LLM_PATCH.H"
+#include "LLM_PROJECT_MAP.H"
 
 #define command_register_agent command_register_agent_base
-#define openai_show_github m262_show_github
+#define llm_show_github m262_show_github
 #include "COMMAND_AGENT.C"
-#undef openai_show_github
+#undef llm_show_github
 #undef command_register_agent
 
-void openai_agent_image(agent_state *state,
-                        const char *image_path,
-                        const char *goal);
+void llm_agent_image(agent_state *state,
+                     const char *image_path,
+                     const char *goal);
 
 static void m259_command_image(agent_state *state,
                                const char *arguments)
@@ -35,7 +39,7 @@ static void m259_command_image(agent_state *state,
         return;
     }
 
-    openai_agent_image(state, image_path, cursor);
+    llm_agent_image(state, image_path, cursor);
 }
 
 static const command_entry m259_image_command[] = {

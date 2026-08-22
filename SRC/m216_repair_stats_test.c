@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M216_REPAIR_STATS.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic statistics test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -40,11 +40,11 @@ static void cleanup(void)
 
 static void add_one_attempt_success(unsigned long hash)
 {
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         hash,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 }
@@ -52,18 +52,18 @@ static void add_one_attempt_success(unsigned long hash)
 static void add_two_attempt_success(unsigned long first_hash,
                                     unsigned long second_hash)
 {
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         first_hash,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         second_hash,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 }
@@ -71,18 +71,18 @@ static void add_two_attempt_success(unsigned long first_hash,
 static void add_two_attempt_failure(unsigned long first_hash,
                                     unsigned long second_hash)
 {
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         first_hash,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         second_hash,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
 }
@@ -92,7 +92,7 @@ int main(void)
     char statistics[2048];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
     /*
      * Seven chronological runs.  Only runs 3 through 7 belong to the
@@ -117,7 +117,7 @@ int main(void)
     add_two_attempt_success(0x60000001UL, 0x60000002UL);
     add_two_attempt_failure(0x70000001UL, 0x70000002UL);
 
-    if (!openai_repair_stats_text(
+    if (!llm_repair_stats_text(
             statistics,
             sizeof(statistics))) {
         (void)puts("M216 failed: repair statistics unavailable.");

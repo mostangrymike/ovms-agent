@@ -4,7 +4,7 @@
 
 #include "edit_txn.h"
 
-int openai_m252_rename_exec(const char *path, int commit_change);
+int llm_m252_rename_exec(const char *path, int commit_change);
 
 int command_line_complete(
     const char *input,
@@ -154,7 +154,7 @@ static int m252_re_rollback(void)
     }
 
     result =
-        openai_m252_rename_exec(plan, 0) &&
+        llm_m252_rename_exec(plan, 0) &&
         m252_re_read(src_ver, text) &&
         m252_re_absent(dst_ver);
 
@@ -186,7 +186,7 @@ static int m252_re_commit(void)
     }
 
     result =
-        openai_m252_rename_exec(plan, 1) &&
+        llm_m252_rename_exec(plan, 1) &&
         m252_re_absent(src_ver) &&
         m252_re_read(dst_ver, text);
 

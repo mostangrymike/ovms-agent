@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_LOG "M212_REPAIR_HISTORY.LOG"
 
-/* Link-only stubs required by OPENAI_PLAN.OBJ. */
+/* Link-only stubs required by LLM_PLAN.OBJ. */
 int command_line_complete(const char *input,
                           size_t input_size,
                           int reached_eof)
@@ -29,7 +29,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
     while (remove(TEST_LOG) == 0) {
     }
 }
@@ -51,26 +51,26 @@ int main(void)
     char history[8192];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
-    openai_log_repair_attempt(1U, 0x10101010UL, 1,
-                              OPENAI_ROLLBACK_NONE, "committed");
-    openai_log_repair_attempt(1U, 0x20202020UL, 2,
-                              OPENAI_ROLLBACK_SUCCEEDED, "rolled_back");
-    openai_log_repair_attempt(1U, 0x30303030UL, 1,
-                              OPENAI_ROLLBACK_NONE, "committed");
-    openai_log_repair_attempt(1U, 0x40404040UL, 2,
-                              OPENAI_ROLLBACK_SUCCEEDED, "rolled_back");
-    openai_log_repair_attempt(1U, 0x50505050UL, 1,
-                              OPENAI_ROLLBACK_NONE, "committed");
-    openai_log_repair_attempt(1U, 0x60606060UL, 2,
-                              OPENAI_ROLLBACK_SUCCEEDED, "rolled_back");
-    openai_log_repair_attempt(2U, 0x61616161UL, 1,
-                              OPENAI_ROLLBACK_NONE, "committed");
-    openai_log_repair_attempt(1U, 0x70707070UL, 1,
-                              OPENAI_ROLLBACK_NONE, "committed");
+    llm_log_repair_attempt(1U, 0x10101010UL, 1,
+                              LLM_ROLLBACK_NONE, "committed");
+    llm_log_repair_attempt(1U, 0x20202020UL, 2,
+                              LLM_ROLLBACK_SUCCEEDED, "rolled_back");
+    llm_log_repair_attempt(1U, 0x30303030UL, 1,
+                              LLM_ROLLBACK_NONE, "committed");
+    llm_log_repair_attempt(1U, 0x40404040UL, 2,
+                              LLM_ROLLBACK_SUCCEEDED, "rolled_back");
+    llm_log_repair_attempt(1U, 0x50505050UL, 1,
+                              LLM_ROLLBACK_NONE, "committed");
+    llm_log_repair_attempt(1U, 0x60606060UL, 2,
+                              LLM_ROLLBACK_SUCCEEDED, "rolled_back");
+    llm_log_repair_attempt(2U, 0x61616161UL, 1,
+                              LLM_ROLLBACK_NONE, "committed");
+    llm_log_repair_attempt(1U, 0x70707070UL, 1,
+                              LLM_ROLLBACK_NONE, "committed");
 
-    if (!openai_repair_history_text(history, sizeof(history))) {
+    if (!llm_repair_history_text(history, sizeof(history))) {
         (void)puts("M212 failed: repair history unavailable.");
         cleanup();
         return EXIT_FAILURE;

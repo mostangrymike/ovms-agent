@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "agent.h"
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TARGET_A "TEST/M207_TARGET_A.TMP"
 #define TARGET_B "TEST/M207_TARGET_B.TMP"
@@ -116,7 +116,7 @@ static char *read_text(const char *path)
 }
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ. The M207 test never uses
+ * Link-only stubs required by LLM_PLAN.OBJ. The M207 test never uses
  * interactive command-stream input.
  */
 int command_line_complete(const char *input,
@@ -192,9 +192,9 @@ static int verify_contains(const char *path, const char *expected)
 
 static void cleanup(void)
 {
-    openai_test_set_repair_plan(NULL, 0);
-    openai_test_set_build_hook(NULL);
-    openai_plan_approval_clear();
+    llm_test_set_repair_plan(NULL, 0);
+    llm_test_set_build_hook(NULL);
+    llm_plan_approval_clear();
     remove_all_versions(TARGET_A);
     remove_all_versions(TARGET_B);
     remove_all_versions("OVMS_AGENT_PLAN.TXT");
@@ -219,10 +219,10 @@ static int run_scenario(int rebuild_succeeds)
     build_call_count = 0;
     post_build_succeeds = rebuild_succeeds;
 
-    openai_test_set_build_hook(m207_build_hook);
-    openai_test_set_repair_plan(repair_plan, 1);
+    llm_test_set_build_hook(m207_build_hook);
+    llm_test_set_repair_plan(repair_plan, 1);
 
-    openai_agent_repair(
+    llm_agent_repair(
         &state,
         "Repair the deterministic M207 failed build"
     );

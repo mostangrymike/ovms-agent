@@ -17,10 +17,10 @@ M150B verifies commit, rollback, existing-target rejection, mixed replace/create
 rollback, and same-path rejection.
 
 Evidence:
-- `SRC/OPENAI_M150_VALIDATE.INC`
-- `SRC/OPENAI_M150B_VALIDATE.INC`
-- `SRC/OPENAI_M150C_VALIDATE.INC`
-- `SRC/OPENAI_M150D_VALIDATE.INC`
+- `SRC/LLM_M150_VALIDATE.INC`
+- `SRC/LLM_M150B_VALIDATE.INC`
+- `SRC/LLM_M150C_VALIDATE.INC`
+- `SRC/LLM_M150D_VALIDATE.INC`
 
 ### Configurable approval policy: VERIFIED for implemented policy surface
 
@@ -29,7 +29,7 @@ an environment-selected policy plus a session override, and reports the active
 policy and source.
 
 Evidence:
-- `SRC/openai_parity.c`
+- `SRC/llm_parity.c`
 - `OVMS_AGENT_APPROVAL_POLICY`
 - `AGENT/APPROVAL/SET`
 
@@ -41,7 +41,7 @@ agent requests, reports instruction status, supports reload, and handles absent 
 truncated instruction files.
 
 Evidence:
-- `SRC/openai_instructions.c`
+- `SRC/llm_instructions.c`
 
 This audit does not claim directory-specific instruction inheritance; the current
 implementation is project-root scoped.
@@ -53,7 +53,7 @@ integration added by later milestones. This supersedes the M160 claim that no
 external-tool extension protocol exists.
 
 Evidence:
-- `SRC/openai_parity.c`
+- `SRC/llm_parity.c`
 - M247 MCP tool registration
 - M250 GitHub tool registration
 
@@ -138,6 +138,6 @@ Remaining M252.3 release step:
 Every newly introduced externally visible DEC C identifier must be 31 characters
 or fewer. M252 production additions include `edit_txn_add_delete`,
 `edit_txn_add_rename`, and `edit_txn_add_move`; execution regression hooks
-`openai_m252_delete_exec`, `openai_m252_rename_exec`, and
-`openai_m252_move_exec` are also within the limit. Static helper names should
+`llm_m252_delete_exec`, `llm_m252_rename_exec`, and
+`llm_m252_move_exec` are also within the limit. Static helper names should
 remain compact where practical.

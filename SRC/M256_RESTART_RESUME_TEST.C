@@ -2,16 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_DATA "M256_RST_SESSIONS.DAT"
 #define TEST_CUR  "M256_RST_SESSION.CUR"
 #define TEST_ID   "M256_RST_SESSION.ID"
 #define TARGET    "TEST/M256_RESTART_TARGET.TMP"
 
-extern int openai_plan_approved;
-extern unsigned long openai_approved_hash;
-extern int openai_approval_invalidated;
+extern int llm_plan_approved;
+extern unsigned long llm_approved_hash;
+extern int llm_approval_invalidated;
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -29,7 +29,7 @@ int command_read_stream(FILE *stream,
     return 0;
 }
 
-void openai_test_ckpt_clear(void);
+void llm_test_ckpt_clear(void);
 
 static void remove_all(const char *path)
 {
@@ -38,9 +38,9 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_plan_session_reset();
-    openai_test_ckpt_clear();
+    llm_test_session_paths(NULL, NULL);
+    llm_plan_session_reset();
+    llm_test_ckpt_clear();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
     remove_all(TEST_ID);
@@ -56,7 +56,7 @@ int main(void)
     char *end;
     char output[4096];
 
-    openai_test_session_paths(TEST_DATA, TEST_CUR);
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
 
     file = fopen(TEST_ID, "r");
     if (file == NULL || fgets(id, sizeof(id), file) == NULL) {
@@ -72,8 +72,8 @@ int main(void)
     end = strchr(id, '\r');
     if (end != NULL) *end = '\0';
 
-    if (!openai_session_resume(id) ||
-        !openai_session_show_text(id, output, sizeof(output)) ||
+    if (!llm_session_resume(id) ||
+        !llm_session_show_text(id, output, sizeof(output)) ||
         strstr(output, "Original goal: resume parser repair after restart") == NULL ||
         strstr(output, "Current goal:  resume parser repair after restart") == NULL) {
         (void)puts("M256 restart resume failed: session objective/checkpoint restore.");
@@ -81,9 +81,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_plan_approved != 0 ||
-        openai_approved_hash != 0UL ||
-        openai_approval_invalidated != 0) {
+    if (llm_plan_approved != 0 ||
+        llm_approved_hash != 0UL ||
+        llm_approval_invalidated != 0) {
         (void)puts("M256 restart resume failed: approval state was reused.");
         cleanup();
         return EXIT_FAILURE;

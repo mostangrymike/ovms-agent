@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "openai_internal.h"
+#include "llm_internal.h"
 
 #define TEST_FILE "M232_INSTRUCTIONS.TXT"
 
@@ -28,7 +28,7 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_instr_path(NULL);
+    llm_test_instr_path(NULL);
     remove_all(TEST_FILE);
 }
 
@@ -42,10 +42,10 @@ int main(void)
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
 
-    openai_test_instr_path(TEST_FILE);
+    llm_test_instr_path(TEST_FILE);
 
-    if (!openai_instr_reload(&state) ||
-        !openai_instr_status_text(
+    if (!llm_instr_reload(&state) ||
+        !llm_instr_status_text(
             &state, output, sizeof(output)) ||
         strstr(output, "Status:    not found") == NULL) {
         (void)puts("M232 failed: missing instruction state.");
@@ -68,8 +68,8 @@ int main(void)
     );
     (void)fclose(file);
 
-    if (!openai_instr_reload(&state) ||
-        !openai_instr_status_text(
+    if (!llm_instr_reload(&state) ||
+        !llm_instr_status_text(
             &state, output, sizeof(output)) ||
         strstr(output, "Status:    loaded") == NULL ||
         strstr(output, "Truncated: no") == NULL) {
@@ -78,7 +78,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_instr_show_text(
+    if (!llm_instr_show_text(
             &state, output, sizeof(output)) ||
         strstr(
             output,
@@ -93,7 +93,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_instr_compose(
+    if (!llm_instr_compose(
             &state,
             "Fix the parser.",
             output,
@@ -110,7 +110,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Project instructions:  available") == NULL ||
         strstr(output, "Instruction reload:    available") == NULL) {
         (void)puts("M232 failed: parity status.");

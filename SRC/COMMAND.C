@@ -10,7 +10,7 @@
 
 
 
-void openai_agent_repair(agent_state *state,
+void llm_agent_repair(agent_state *state,
                          const char *goal);
 
 static edit_txn command_changeset_transaction;
@@ -509,7 +509,7 @@ void command_prompt(void)
 void command_agent_repair(agent_state *state,
                           const char *arguments)
 {
-    openai_agent_repair(state, arguments);
+    llm_agent_repair(state, arguments);
 }
 
 
