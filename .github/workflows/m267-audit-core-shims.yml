@@ -1,0 +1,50 @@
+name: M267 exact core shim audit
+
+on:
+  pull_request:
+    branches:
+      - m267-llm-naming
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.event.pull_request.head.ref == 'm267-audit-core-shims-ce4'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: m267-audit-core-shims-ce4
+          fetch-depth: 0
+      - name: Enumerate exact legacy context instruction project-map names
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import collections, re, subprocess
+
+          paths = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+                   if p and not p.startswith('.github/')]
+          rx = re.compile(
+              r'\b(?:'
+              r'openai_(?:context|instr|project|map)_[A-Za-z0-9_]+|'
+              r'openai_show_(?:context|instr|project)[A-Za-z0-9_]*|'
+              r'openai_test_instr_path|'
+              r'OPENAI_(?:CONTEXT|INSTR|MAP)_[A-Z0-9_]+'
+              r')\b'
+          )
+          hits = collections.defaultdict(lambda: collections.Counter())
+          for path in paths:
+              try:
+                  data = Path(path).read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for token in rx.findall(data):
+                  hits[token][path] += 1
+          for token in sorted(hits):
+              total = sum(hits[token].values())
+              detail = ', '.join(f'{p}:{n}' for p,n in sorted(hits[token].items()))
+              print(f'AUDIT|{token}|{total}|{detail}')
+          print(f'AUDIT_TOTAL_NAMES|{len(hits)}')
+          PY
