@@ -1,0 +1,46 @@
+name: M267 exact instructions survivor audit
+
+on:
+  pull_request:
+    branches: [m267-llm-naming]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Enumerate exact instruction namespace survivors
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import collections, pathlib, re, subprocess
+          token_re = re.compile(r'\b(?:openai_instr_[A-Za-z0-9_]*|openai_show_instr[A-Za-z0-9_]*|openai_test_instr[A-Za-z0-9_]*|OPENAI_INSTR[A-Za-z0-9_]*)\b')
+          files = subprocess.check_output(['git','ls-files'], text=True).splitlines()
+          counts = collections.Counter()
+          paths = collections.defaultdict(collections.Counter)
+          for name in files:
+              if not (name.startswith('SRC/') or name.startswith('src/')):
+                  continue
+              p = pathlib.Path(name)
+              try:
+                  text = p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for token in token_re.findall(text):
+                  counts[token] += 1
+                  paths[token][name] += 1
+          print('M267_INSTRUCTIONS_SURVIVORS_BEGIN')
+          total = 0
+          for token in sorted(counts):
+              total += counts[token]
+              detail = ','.join(f'{p}:{n}' for p,n in sorted(paths[token].items()))
+              print(f'{token}|{counts[token]}|{detail}')
+          print(f'TOTAL|{total}|TOKENS|{len(counts)}')
+          print('M267_INSTRUCTIONS_SURVIVORS_END')
+          PY
