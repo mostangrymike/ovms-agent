@@ -5,7 +5,7 @@
 #include "LLM_IMAGE.H"
 #include "LLM_AUTO.H"
 #include "LLM_PATCH.H"
-#include "openai_request_agent.h"
+#include "LLM_REQUEST_AGENT.H"
 
 int write_agent_image_req(const char *model,
                           const char *instructions,
