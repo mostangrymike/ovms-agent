@@ -1,0 +1,54 @@
+name: M267 exact survivor audit cb0164b1
+
+on:
+  pull_request:
+    branches: [m267-llm-naming]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Enumerate exact remaining generic OpenAI namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import collections, pathlib, re, subprocess
+          token_re = re.compile(r'\b(?:openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)\b')
+          files = subprocess.check_output(['git','ls-files'], text=True).splitlines()
+          counts = collections.Counter()
+          paths = collections.defaultdict(collections.Counter)
+          filename_hits = []
+          for name in files:
+              if not (name.startswith('SRC/') or name.startswith('src/')):
+                  continue
+              if 'openai' in name.lower():
+                  filename_hits.append(name)
+              p = pathlib.Path(name)
+              try:
+                  text = p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for token in token_re.findall(text):
+                  counts[token] += 1
+                  paths[token][name] += 1
+          print('M267_SURVIVORS_BEGIN')
+          total = 0
+          for token in sorted(counts, key=lambda s:(s.lower(),s)):
+              total += counts[token]
+              detail = ','.join(f'{p}:{n}' for p,n in sorted(paths[token].items()))
+              print(f'{token}|{counts[token]}|{detail}')
+          print(f'TOTAL|{total}|TOKENS|{len(counts)}')
+          print('FILENAMES_BEGIN')
+          for name in filename_hits:
+              print(name)
+          print(f'FILENAMES_TOTAL|{len(filename_hits)}')
+          print('FILENAMES_END')
+          print('M267_SURVIVORS_END')
+          PY
