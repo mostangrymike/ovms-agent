@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T15:33:00-05:00",
+  "updated_at": "2026-08-22T15:49:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "a07e9829410ae96a7dff372d8592e05fd832fac8",
-    "current_github_head": "a07e9829410ae96a7dff372d8592e05fd832fac8",
-    "current_github_head_status": "VAX-green. Full @BUILD passed and BUILD_STATUS=%X00000001. Native physical SEARCH found no openai_agent_repair or openai_repair_plan survivors after restoring case-collapsed tracked src/command_grep_test.c.",
+    "latest_vax_green_head": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
+    "current_github_head": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
+    "current_github_head_status": "VAX-green. Full @BUILD passed and BUILD_STATUS=%X00000001. Native physical SEARCH found no openai_ask/openai_chat/openai_chat_reset/openai_chat_active/openai_review_file survivors and no generic OpenAI conversation reset wording.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -65,7 +65,8 @@
       "log_state_header_shim_retirement": "4a582e4754016623d91acd9a6d6bc5777d657a13",
       "public_umbrella_filename_and_wording": "043f26bdb24c546ef2b9b23ed4d6805f2628ad96",
       "basic_agent_namespace_compat_retirement": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
-      "repair_entrypoint_namespace": "a07e9829410ae96a7dff372d8592e05fd832fac8"
+      "repair_entrypoint_namespace": "a07e9829410ae96a7dff372d8592e05fd832fac8",
+      "public_service_entrypoints": "2daba3cec95f92e17ff22e94d8764ff28b3c4054"
     },
     "accepted_at_877fb69": {
       "old_paths_retired": 15,
@@ -97,6 +98,15 @@
       "scope": "Retired repair entrypoint openai_agent_repair and repair-plan openai_repair_plan graph. Corrective a07e9829 additionally renamed the link-only stub in tracked lowercase src/command_grep_test.c.",
       "issue_acceptance_comment": 5382470377
     },
+    "accepted_at_2daba3ce": {
+      "base": "a07e9829410ae96a7dff372d8592e05fd832fac8",
+      "head": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "physical_retired_search": "no matches for openai_ask, openai_chat, openai_chat_reset, openai_chat_active, or openai_review_file; no OpenAI conversation reset wording",
+      "scope": "Renamed the five provider-neutral public ASK/CHAT/CHAT RESET/CHAT ACTIVE/REVIEW service entrypoints to llm_* and changed only the generic conversation-reset message; underlying transport/provider compatibility remained unchanged.",
+      "issue_acceptance_comment": 5382532247
+    },
     "important_recovery_history": {
       "repair_header": "A prior deletion failed because LLM_REPAIR_CORE.INC still included the old repair header; recovered before acceptance.",
       "request_headers": "A prior deletion missed a renamed current consumer; recovered before acceptance.",
@@ -107,15 +117,14 @@
       "lesson": "Never retire compatibility or namespace names from stale search alone; use exact branch-live GitHub fetch/tree inspection plus physical VAX SEARCH/build acceptance."
     },
     "deferred": {
-      "legacy_public_symbols": "SRC/LLM.H still exposes legacy openai_ask/openai_chat/openai_chat_reset/openai_chat_active/openai_review_file/openai_log_event. Classify each graph; preserve genuine OpenAI-compatible provider semantics.",
       "openai_log_event": "High-fanout generic legacy ABI; migrate only with complete caller/declaration/test graph.",
       "openai_state_save_and_state_core": "Remaining generic state namespace requires a coherent complete graph.",
       "openai_log_core": "LLM_LOG.C still contains extensive generic openai_* repair/history/query/report/test namespace families; migrate in bounded complete graphs.",
       "OPENAI_API_KEY": "Preserve when it represents OpenAI-compatible provider configuration compatibility."
     },
     "next_work": [
-      "Audit exact a07e9829 Git tree across both SRC and lowercase src for remaining generic openai_/OPENAI_ production names.",
-      "Select the next bounded complete namespace graph with minimal fanout and no genuine provider-specific semantics.",
+      "Use the exact survivor inventory from the 2daba3ce tree to select the next bounded complete generic namespace graph with minimal fanout.",
+      "Preserve genuine OpenAI-compatible provider/config/protocol names such as OPENAI_API_KEY where semantically intentional.",
       "Publish an asserted candidate on m267-llm-naming and stop only at the next required VAX compile/build gate.",
       "Run final full VAX acceptance before closing issue #31."
     ]
