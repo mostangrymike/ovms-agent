@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_request_basic.h"
+#include "LLM_REQUEST_BASIC.H"
 
 static int m259_read_request(char *output, size_t output_size)
 {
