@@ -6,7 +6,7 @@
 
 #define OPENAI_MAP_MAX_FILES 192U
 #define OPENAI_MAP_PATH 256U
-#define OPENAI_MAP_TEXT 12288U
+#define LLM_MAP_TEXT 12288U
 #define OPENAI_MAP_DEPTH 4U
 
 #define OPENAI_MAP_SOURCE 1
@@ -15,12 +15,12 @@
 #define OPENAI_MAP_BUILD 4
 #define OPENAI_MAP_OTHER 5
 
-typedef struct openai_map_entry {
+typedef struct llm_map_entry {
     char path[OPENAI_MAP_PATH];
     int kind;
-} openai_map_entry;
+} llm_map_entry;
 
-static openai_map_entry openai_map_files[OPENAI_MAP_MAX_FILES];
+static llm_map_entry openai_map_files[OPENAI_MAP_MAX_FILES];
 static unsigned int openai_map_count = 0U;
 static unsigned int openai_map_sources = 0U;
 static unsigned int openai_map_headers = 0U;
@@ -125,7 +125,7 @@ static int openai_map_ci_contains(const char *text,
     return 0;
 }
 
-static int openai_map_old_version(const char *name)
+static int llm_map_old_version(const char *name)
 {
     const char *semi;
     const char *pos;
@@ -350,7 +350,7 @@ static void openai_map_add(const char *path)
     }
 }
 
-static void openai_map_walk(const char *path,
+static void llm_map_walk(const char *path,
                             unsigned int depth)
 {
     DIR *directory;
@@ -388,7 +388,7 @@ static void openai_map_walk(const char *path,
             (void)closedir(candidate);
 
             if (!openai_map_ci_contains(child, "BUILD")) {
-                openai_map_walk(child, depth + 1U);
+                llm_map_walk(child, depth + 1U);
             }
         } else {
             openai_map_add(child);
@@ -403,7 +403,7 @@ static void openai_map_walk(const char *path,
     (void)closedir(directory);
 }
 
-static void openai_map_build_root(const char *path)
+static void llm_map_build_root(const char *path)
 {
     DIR *directory;
     struct dirent *entry;
@@ -464,7 +464,7 @@ int openai_project_refresh(const agent_state *state)
      * source/test areas. The final root walk fills remaining capacity.
      * Duplicate logical filespecs are collapsed by openai_map_add().
      */
-    openai_map_build_root(".");
+    llm_map_build_root(".");
 
     {
         DIR *probe;
@@ -472,24 +472,24 @@ int openai_project_refresh(const agent_state *state)
         probe = opendir("src");
         if (probe != NULL) {
             (void)closedir(probe);
-            openai_map_walk("src", 0U);
+            llm_map_walk("src", 0U);
         }
 
         probe = opendir("test");
         if (probe != NULL) {
             (void)closedir(probe);
-            openai_map_walk("test", 0U);
+            llm_map_walk("test", 0U);
         }
     }
 
-    openai_map_walk(".", 0U);
+    llm_map_walk(".", 0U);
 
     openai_map_loaded = 1;
 
     return 1;
 }
 
-static int openai_map_ensure(const agent_state *state)
+static int llm_map_ensure(const agent_state *state)
 {
     if (!openai_map_loaded) {
         return openai_project_refresh(state);
@@ -498,7 +498,7 @@ static int openai_map_ensure(const agent_state *state)
     return 1;
 }
 
-static int openai_map_append(char *output,
+static int llm_map_append(char *output,
                              size_t output_size,
                              size_t *used,
                              const char *text)
@@ -527,7 +527,7 @@ static int openai_map_append(char *output,
     return 1;
 }
 
-static int openai_map_render(const agent_state *state,
+static int llm_map_render(const agent_state *state,
                              int filter,
                              char *output,
                              size_t output_size)
@@ -538,7 +538,7 @@ static int openai_map_render(const agent_state *state,
     int written;
 
     if (output == NULL || output_size == 0U ||
-        !openai_map_ensure(state)) {
+        !llm_map_ensure(state)) {
         return 0;
     }
 
@@ -585,7 +585,7 @@ static int openai_map_render(const agent_state *state,
             return 0;
         }
 
-        if (!openai_map_append(
+        if (!llm_map_append(
                 output, output_size, &used, line)) {
             return 0;
         }
@@ -600,7 +600,7 @@ static int openai_map_render(const agent_state *state,
             tail, sizeof(tail),
             "\nEntries shown: %u\n", shown
         );
-        (void)openai_map_append(
+        (void)llm_map_append(
             output, output_size, &used, tail
         );
     }
@@ -612,7 +612,7 @@ int openai_project_map_text(const agent_state *state,
                             char *output,
                             size_t output_size)
 {
-    return openai_map_render(
+    return llm_map_render(
         state, 0, output, output_size
     );
 }
@@ -621,7 +621,7 @@ int openai_project_files_text(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
-    return openai_map_render(
+    return llm_map_render(
         state, 0, output, output_size
     );
 }
@@ -630,7 +630,7 @@ int openai_project_src_text(const agent_state *state,
                             char *output,
                             size_t output_size)
 {
-    return openai_map_render(
+    return llm_map_render(
         state, OPENAI_MAP_SOURCE, output, output_size
     );
 }
@@ -639,7 +639,7 @@ int openai_project_tests_text(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
-    return openai_map_render(
+    return llm_map_render(
         state, OPENAI_MAP_TEST, output, output_size
     );
 }
@@ -648,7 +648,7 @@ int openai_project_build_text(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
-    return openai_map_render(
+    return llm_map_render(
         state, OPENAI_MAP_BUILD, output, output_size
     );
 }
@@ -657,7 +657,7 @@ int openai_project_context(const agent_state *state,
                            char *output,
                            size_t output_size)
 {
-    char map[OPENAI_MAP_TEXT];
+    char map[LLM_MAP_TEXT];
     int written;
 
     if (output == NULL || output_size == 0U ||
@@ -682,7 +682,7 @@ int openai_project_compose(const agent_state *state,
                            char *output,
                            size_t output_size)
 {
-    char map[OPENAI_MAP_TEXT];
+    char map[LLM_MAP_TEXT];
     int written;
 
     if (goal == NULL || *goal == '\0' ||
@@ -714,7 +714,7 @@ int openai_project_compose(const agent_state *state,
 void openai_show_project_map(const agent_state *state,
                              int filter)
 {
-    char output[OPENAI_MAP_TEXT];
+    char output[LLM_MAP_TEXT];
     int ok;
 
     if (filter == OPENAI_MAP_SOURCE) {
@@ -741,7 +741,7 @@ void openai_show_project_map(const agent_state *state,
 
 void openai_show_project_ctx(const agent_state *state)
 {
-    char output[OPENAI_MAP_TEXT + 256U];
+    char output[LLM_MAP_TEXT + 256U];
 
     if (!openai_project_context(
             state, output, sizeof(output))) {
