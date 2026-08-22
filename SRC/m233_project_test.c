@@ -5,9 +5,9 @@
 #include "llm_internal.h"
 #include "LLM_PROJECT_MAP.H"
 
-#define M233_COB "SRC/M233_SAMPLE.COB"
-#define M233_CBL "SRC/M233_SAMPLE.CBL"
-#define M233_CPY "SRC/M233_SAMPLE.CPY"
+#define M233_COB "SRC/000_M233_SAMPLE.COB"
+#define M233_CBL "SRC/000_M233_SAMPLE.CBL"
+#define M233_CPY "SRC/000_M233_SAMPLE.CPY"
 
 int command_line_complete(const char *input,
                           size_t input_size,
