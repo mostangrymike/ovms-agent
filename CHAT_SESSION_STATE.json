@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T09:19:00-05:00",
+  "updated_at": "2026-08-22T09:30:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-    "current_github_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-    "current_github_head_status": "VAX-green. Five generic request implementation C filenames are zero-content renamed to LLM_REQUEST*.C and all five associated build object artifacts are LLM_REQUEST*.OBJ. Full @BUILD passed with BUILD_STATUS=%X00000001 and focused @BUILD_M259 passed with M259_STATUS=%X00000001. Survivor audit is active from this green base. Exact current content shows LLM_INTERNAL_CORE.H still includes OPENAI_LOG/RESPONSE/PLAN/EXECUTE/STATE compatibility headers; COMMAND_AGENT.C still includes OPENAI_EXECUTE/PLAN/STATE; LLM_LOG.C still includes OPENAI_LOG/STATE; LLM_STATUS_CORE.INC still includes OPENAI_EXECUTE.H and the legacy OPENAI_TEST_* fixture family. Five OPENAI_TEST_* files are confirmed pure forwarding shims to existing LLM_TEST_* counterparts and are candidates for the next bounded retirement tranche after complete live-consumer verification.",
+    "current_github_head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
+    "current_github_head_status": "Pending VAX gate from green ccbabd50. Coherent STATE validation filename migration: 27 zero-content renames from OPENAI_STATE_M*.INC to LLM_STATE_M*.INC and exactly 26 include-path substitutions in SRC/LLM_STATE_CORE.C. Patch-level inspection confirms no C-body, declaration, runtime-symbol, validation-logic, build-list, or API-behavior changes. Standalone M107_VALIDATE had no current filename consumer and was preserved by rename. Net repository file delta 0. Issue #31 pending comment 5380908884. Do not promote above ccbabd50 until full @BUILD is green.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -295,6 +295,21 @@
       "pending_issue_comment": 5380847497,
       "acceptance_issue_comment": 5380871689
     },
+    "pending_state_filename_gate": {
+      "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+      "head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
+      "state_core": "SRC/LLM_STATE_CORE.C",
+      "state_core_include_substitutions": 26,
+      "zero_content_renames": 27,
+      "rename_scope": "OPENAI_STATE_M107_VALIDATE.INC, OPENAI_STATE_M107_M109_VALIDATE.INC, OPENAI_STATE_M109_PATH_HELPERS.INC, and OPENAI_STATE_M111_VALIDATE.INC through OPENAI_STATE_M134_VALIDATE.INC -> matching LLM_STATE_* filenames",
+      "net_repository_file_delta": 0,
+      "c_body_changes": 0,
+      "declaration_changes": 0,
+      "symbol_changes": 0,
+      "build_list_changes": 0,
+      "issue_comment": 5380908884,
+      "status": "pending full VAX @BUILD"
+    },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
       "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
@@ -335,11 +350,12 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "Continue exact survivor classification from VAX-green ccbabd50. Current live consumers: LLM_INTERNAL_CORE.H uses OPENAI_LOG/RESPONSE/PLAN/EXECUTE/STATE headers; COMMAND_AGENT.C uses OPENAI_EXECUTE/PLAN/STATE; LLM_LOG.C uses OPENAI_LOG/STATE; LLM_STATUS_CORE.INC uses OPENAI_EXECUTE.H and the OPENAI_TEST_* fixture family.",
-      "Five OPENAI_TEST compatibility fixtures are confirmed pure shims to existing LLM_TEST counterparts: BAD_TYPE, BLANK_BETWEEN_OPS, BLOCK_BEFORE_PATH, BLOCK_BEFORE_TYPE, BLOCK_EMPTY_NEW. Verify no second current consumers, then prefer a bounded include-drain plus five-file retirement if it remains isolated.",
+      "VAX-gate pending head d1ac52cd33fac76fffecb19c99651b94fc4466a6 from green ccbabd50: restore SRC/LLM_STATE_CORE.C and all 27 new LLM_STATE_M*.INC paths in short GIT_RESTORE batches, physically remove all SRC/OPENAI_STATE_M*.INC RMS versions, run full @BUILD, and print BUILD_STATUS.",
+      "If green, promote d1ac52cd as STATE validation filename migration complete, add issue #31 acceptance evidence, then continue survivor audit from the new green base.",
+      "Five OPENAI_TEST compatibility fixtures remain confirmed pure shims to existing LLM_TEST counterparts: BAD_TYPE, BLANK_BETWEEN_OPS, BLOCK_BEFORE_PATH, BLOCK_BEFORE_TYPE, BLOCK_EMPTY_NEW; likely next bounded retirement after this gate.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H retirement deferred until LLM_INTERNAL_CORE.H, COMMAND_AGENT.C, LLM_LOG.C and any additional exact consumers are drained.",
       "OPENAI_PLAN.H, OPENAI_EXECUTE.H, and OPENAI_RESPONSE.H may be retired separately once all exact consumers are neutral; stale GitHub code-search results are not sufficient evidence.",
-      "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
+      "Do not retire openai_state_save yet; this tranche changes filenames only, not the deferred STATE runtime namespace.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
