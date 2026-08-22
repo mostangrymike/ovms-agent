@@ -1,6 +1,0 @@
-#ifndef OPENAI_RESPONSE_H
-#define OPENAI_RESPONSE_H
-
-#include "LLM_RESPONSE.H"
-
-#endif /* OPENAI_RESPONSE_H */
