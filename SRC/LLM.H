@@ -1,5 +1,5 @@
-#ifndef OVMS_AGENT_OPENAI_H
-#define OVMS_AGENT_OPENAI_H
+#ifndef OVMS_AGENT_LLM_H
+#define OVMS_AGENT_LLM_H
 
 #include "agent.h"
 

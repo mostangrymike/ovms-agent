@@ -1,5 +1,5 @@
 #include "command_internal.h"
-#include "openai.h"
+#include "LLM.H"
 #include "LLM_EXECUTE.H"
 #include "LLM_PLAN.H"
 #include "LLM_REPAIR.H"
@@ -289,9 +289,9 @@ void command_agent_patch_last(
     agent_state *state, const char *arguments);
 
 static const command_entry agent_commands[] = {
-    { "CHAT", "Continue an OpenAI conversation: CHAT prompt", command_chat },
-    { "CHAT/RESET", "Reset the OpenAI conversation", command_chat_reset },
-    { "REVIEW", "Review source with OpenAI: REVIEW file", command_review },
+    { "CHAT", "Continue an LLM conversation: CHAT prompt", command_chat },
+    { "CHAT/RESET", "Reset the LLM conversation", command_chat_reset },
+    { "REVIEW", "Review source with the configured LLM: REVIEW file", command_review },
     { "AGENT", "Run read-only AI agent: AGENT goal", command_agent },
     { "AGENT/WRITE", "Run guarded write agent: AGENT/WRITE goal", command_agent_write },
     { "AGENT/BUILD", "Run controlled project build analysis: AGENT/BUILD goal", command_agent_build },
@@ -421,7 +421,7 @@ static const command_entry agent_commands[] = {
     { "AGENT/PATCH/DRY", "Validate a structured patch without writing", command_agent_patch_dry },
     { "AGENT/PATCH/VALIDATE", "Validate every structured patch hunk without writing", command_agent_patch_validate2 },
     { "AGENT/PATCH/LAST", "Show the most recent structured patch result", command_agent_patch_last },
-    { "ASK", "Send a prompt to OpenAI: ASK prompt", command_ask }
+    { "ASK", "Send a prompt to the configured LLM: ASK prompt", command_ask }
 };
 
 void command_register_agent(void)

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "openai.h"
+#include "LLM.H"
 #include "LLM_LOG.H"
 #include "LLM_PATH.H"
 #include "LLM_CACHE.H"
