@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T10:24:00-05:00",
+  "updated_at": "2026-08-22T10:36:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
     "latest_vax_green_head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-    "current_github_head": "dbba7837fc852e4b80da142d9533de01876f1377",
-    "current_github_head_status": "Pending VAX gate. From green 877fb69, candidate performs 40 zero-content OPENAI_TEST_* to LLM_TEST_* direct fixture renames plus 40 include substitutions in LLM_STATUS_CORE.INC; only other textual delta is one trailing EOF blank line deletion. Issue #31 pending comment 5381149529.",
+    "current_github_head": "1437f71e881db1299585eaeffa85aa8e5a4d8141",
+    "current_github_head_status": "Forward recovery pending VAX. dbba7837 failed only in regression M233_PROJECT_TEST.EXE with `M233 failed: project map.` Exact cause is the bounded 192-file SRC walk: 40 OPENAI_* -> LLM_* fixture renames sort ahead of M233_SAMPLE.* on VAX and can truncate the temporary classification samples from the map. Recovery 1437f71 changes only three M233 fixture path literals to SRC/000_M233_SAMPLE.{COB,CBL,CPY}; production map capacity and behavior are unchanged. Issue #31 failure/recovery comment 5381209853.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -103,22 +103,27 @@
     },
     "pending_direct_fixture_filename_gate": {
       "base": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-      "head": "dbba7837fc852e4b80da142d9533de01876f1377",
+      "failed_head": "dbba7837fc852e4b80da142d9533de01876f1377",
+      "recovery_head": "1437f71e881db1299585eaeffa85aa8e5a4d8141",
       "zero_content_fixture_renames": 40,
       "status_core_include_substitutions": 40,
       "net_repository_file_delta": 0,
-      "non_include_text_delta": "one trailing blank line at EOF removed",
+      "failed_vax_gate": "M233_PROJECT_TEST.EXE: M233 failed: project map",
+      "root_cause": "The project map intentionally caps at 192 files and walks SRC first. On VAX the OPENAI_* to LLM_* rename shifts 40 fixture names ahead of M233_SAMPLE.*, allowing the temporary M233 COB/CBL/CPY fixtures to fall beyond the bounded map even though repository file count is unchanged.",
+      "recovery_change": "m233_project_test.c changes only M233_COB/M233_CBL/M233_CPY to SRC/000_M233_SAMPLE.{COB,CBL,CPY}; +3/-3, no production logic change.",
       "runtime_body_changes": 0,
       "declaration_changes": 0,
       "external_symbol_changes": 0,
-      "test_logic_changes": 0,
       "build_list_changes": 0,
-      "issue_pending_comment": 5381149529
+      "issue_initial_pending_comment": 5381149529,
+      "issue_failure_recovery_comment": 5381209853,
+      "status": "pending full VAX @BUILD at recovery head 1437f71e"
     },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
       "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
-      "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches and patch inspection."
+      "m233_bounded_map": "dbba7837 failed because 40 LLM fixture renames reordered bounded SRC traversal and M233_SAMPLE.* fell beyond the 192-file project-map ceiling; forward recovery 1437f71 prefixes only the three M233 sample paths with 000_ so classification remains tested without changing production capacity.",
+      "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches and patch inspection. Filename-only migrations can also change bounded filesystem traversal order on OpenVMS even at zero net file count."
     },
     "deferred": {
       "openai_log_event": "High-fanout legacy ABI; migrate only with complete caller graph.",
@@ -129,8 +134,8 @@
       "OPENAI_STATE.H": "Known live consumers remain; do not retire yet."
     },
     "next_work": [
-      "Run the VAX gate for dbba7837; if green, promote it and migrate M107-M150 milestone fixture filenames as the final test-filename tranche.",
-      "Audit milestone fixture M107-M150 internal include graphs while preserving self-test order.",
+      "Run the full VAX @BUILD gate for recovery head 1437f71e; if green, promote the 40 direct fixture filename migration plus M233 test-order stabilization.",
+      "Then migrate M107-M150 milestone fixture filenames as the final test-filename tranche, auditing internal include graphs and preserving self-test order.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until broader live consumers are drained.",
       "Audit OPENAI.H and stale BUILD.COM/self-test filename strings after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
