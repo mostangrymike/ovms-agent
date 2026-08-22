@@ -1,0 +1,138 @@
+name: M267 asserted context completion
+
+on:
+  pull_request:
+    branches:
+      - m267-llm-naming
+
+permissions:
+  contents: write
+
+jobs:
+  transform:
+    if: github.event.pull_request.head.ref == 'm267-candidate-context-complete'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: m267-candidate-context-complete
+          fetch-depth: 0
+      - name: Apply exact asserted context namespace completion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+
+          expected = {
+              'openai_context_append': {
+                  'new': 'llm_context_append',
+                  'hits': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 30}},
+              'openai_context_build': {
+                  'new': 'llm_context_build',
+                  'hits': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 1,
+                           'SRC/LLM_INTERNAL_CORE.H': 1, 'SRC/LLM_PARITY_CORE.INC': 1,
+                           'SRC/LLM_PARITY_M258.C': 2}},
+              'openai_context_current': {
+                  'new': 'llm_context_current',
+                  'hits': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 2,
+                           'SRC/LLM_INTERNAL_CORE.H': 1}},
+              'openai_context_evidence_text': {
+                  'new': 'llm_context_evidence_text',
+                  'hits': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 4,
+                           'SRC/LLM_INTERNAL_CORE.H': 1}},
+              'openai_context_tail': {
+                  'new': 'llm_context_tail',
+                  'hits': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 7}},
+              'openai_show_context_current': {
+                  'new': 'llm_show_context_current',
+                  'hits': {'SRC/COMMAND_AGENT.C': 1, 'SRC/COMMAND_AGENT_M259.C': 2,
+                           'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 1,
+                           'SRC/LLM_INTERNAL_CORE.H': 1}},
+          }
+
+          tracked = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+                     if p and not p.startswith('.github/')]
+          cache = {}
+          def text(path):
+              if path not in cache:
+                  try:
+                      cache[path] = Path(path).read_text(encoding='utf-8')
+                  except (UnicodeDecodeError, OSError):
+                      cache[path] = None
+              return cache[path]
+
+          total = 0
+          for old, spec in expected.items():
+              rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(old) + r'(?![A-Za-z0-9_])')
+              hits = {}
+              for path in tracked:
+                  data = text(path)
+                  if data is None: continue
+                  n = len(rx.findall(data))
+                  if n: hits[path] = n
+              assert hits == spec['hits'], (old, hits, spec['hits'])
+              total += sum(hits.values())
+
+          assert total == 67, total
+
+          targets = sorted({p for spec in expected.values() for p in spec['hits']})
+          for path in targets:
+              data = text(path)
+              for old, spec in expected.items():
+                  if path not in spec['hits']: continue
+                  rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(old) + r'(?![A-Za-z0-9_])')
+                  data, n = rx.subn(spec['new'], data)
+                  assert n == spec['hits'][path], (path, old, n, spec['hits'][path])
+              Path(path).write_text(data, encoding='utf-8')
+              cache[path] = data
+
+          removals = {
+              'SRC/LLM_CONTEXT.C': [
+                  'llm_context_append','llm_context_tail','llm_context_evidence_text',
+                  'llm_context_build','llm_context_current','llm_show_context_current'],
+              'SRC/COMMAND_AGENT_M259.C': ['llm_show_context_current'],
+              'SRC/LLM_PARITY_M258.C': ['llm_context_build'],
+          }
+          for path, names in removals.items():
+              data = Path(path).read_text(encoding='utf-8')
+              for name in names:
+                  d = f'#define {name} {name}\n'
+                  u = f'#undef {name}\n'
+                  assert data.count(d) == 1, (path, d, data.count(d))
+                  assert data.count(u) == 1, (path, u, data.count(u))
+                  data = data.replace(d, '').replace(u, '')
+              Path(path).write_text(data, encoding='utf-8')
+              cache[path] = data
+
+          for old in expected:
+              rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(old) + r'(?![A-Za-z0-9_])')
+              survivors = []
+              for path in tracked:
+                  data = Path(path).read_text(encoding='utf-8', errors='ignore')
+                  n = len(rx.findall(data))
+                  if n: survivors.append((path,n))
+              assert not survivors, (old, survivors)
+
+          changed = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          assert changed == [
+              'SRC/COMMAND_AGENT.C',
+              'SRC/COMMAND_AGENT_M259.C',
+              'SRC/LLM_CONTEXT.C',
+              'SRC/LLM_CONTEXT_CORE.INC',
+              'SRC/LLM_INTERNAL_CORE.H',
+              'SRC/LLM_PARITY_CORE.INC',
+              'SRC/LLM_PARITY_M258.C',
+          ], changed
+          subprocess.check_call(['git','diff','--check'])
+          PY
+      - name: Remove helper workflow and publish candidate tree
+        shell: bash
+        run: |
+          rm .github/workflows/m267-transform-context-complete.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add SRC/COMMAND_AGENT.C SRC/COMMAND_AGENT_M259.C SRC/LLM_CONTEXT.C SRC/LLM_CONTEXT_CORE.INC SRC/LLM_INTERNAL_CORE.H SRC/LLM_PARITY_CORE.INC SRC/LLM_PARITY_M258.C .github/workflows/m267-transform-context-complete.yml
+          git diff --cached --check
+          git commit -m 'M267: complete context namespace migration'
+          git push origin HEAD:m267-candidate-context-complete
