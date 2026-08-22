@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T09:09:00-05:00",
+  "updated_at": "2026-08-22T09:19:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+    "latest_vax_green_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
     "current_github_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-    "current_github_head_status": "Pending VAX gate based on green 25949acc. Five generic request implementation C filenames are zero-content renamed to LLM_REQUEST*.C and all five associated build object artifacts are renamed to LLM_REQUEST*.OBJ. BUILD_LLM_MODULES.COM has exactly five source-name and five object-name substitutions; LLM_MODULES.OPT has five object-name substitutions; BUILD_M259.COM has three OPENAI_REQUEST_BASIC.OBJ to LLM_REQUEST_BASIC.OBJ substitutions. Git compare detects all five C files as 100% renames with zero content changes. Net repository file delta 0; no C bodies, declarations, runtime symbols, or API behavior changed. Full @BUILD plus focused @BUILD_M259 required for acceptance.",
+    "current_github_head_status": "VAX-green. Five generic request implementation C filenames are zero-content renamed to LLM_REQUEST*.C and all five associated build object artifacts are LLM_REQUEST*.OBJ. Full @BUILD passed with BUILD_STATUS=%X00000001 and focused @BUILD_M259 passed with M259_STATUS=%X00000001. Survivor audit is active from this green base. Exact current content shows LLM_INTERNAL_CORE.H still includes OPENAI_LOG/RESPONSE/PLAN/EXECUTE/STATE compatibility headers; COMMAND_AGENT.C still includes OPENAI_EXECUTE/PLAN/STATE; LLM_LOG.C still includes OPENAI_LOG/STATE; LLM_STATUS_CORE.INC still includes OPENAI_EXECUTE.H and the legacy OPENAI_TEST_* fixture family. Five OPENAI_TEST_* files are confirmed pure forwarding shims to existing LLM_TEST_* counterparts and are candidates for the next bounded retirement tranche after complete live-consumer verification.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -69,7 +69,8 @@
       "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38",
       "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
       "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229"
+      "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -269,9 +270,13 @@
       "build_list_changes": 0,
       "issue_comment": 5380837189
     },
-    "pending_request_implementation_filename_gate": {
+    "accepted_at_ccbabd50": {
       "base": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
       "head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "focused_m259_status": "%X00000001",
+      "focused_m259_regressions": "all implemented image-input regressions passed",
       "renames": [
         "SRC/OPENAI_REQUEST.C -> SRC/LLM_REQUEST.C",
         "SRC/OPENAI_REQUEST_BASIC.C -> SRC/LLM_REQUEST_BASIC.C",
@@ -287,7 +292,8 @@
       "c_body_changes": 0,
       "declaration_changes": 0,
       "symbol_changes": 0,
-      "issue_comment": 5380847497
+      "pending_issue_comment": 5380847497,
+      "acceptance_issue_comment": 5380871689
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -329,9 +335,10 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate ccbabd50e4ca714a0f662af10bb6186181e88a3c from green 25949acc: restore BUILD_LLM_MODULES.COM, LLM_MODULES.OPT, BUILD_M259.COM and the five new LLM_REQUEST*.C paths; physically delete all RMS versions of the five retired OPENAI request implementation C paths; run full @BUILD and print BUILD_STATUS; then run focused @BUILD_M259 and print M259_STATUS.",
-      "If green, promote ccbabd50 as request implementation filename/object-artifact migration complete and continue exact survivor classification.",
-      "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
+      "Continue exact survivor classification from VAX-green ccbabd50. Current live consumers: LLM_INTERNAL_CORE.H uses OPENAI_LOG/RESPONSE/PLAN/EXECUTE/STATE headers; COMMAND_AGENT.C uses OPENAI_EXECUTE/PLAN/STATE; LLM_LOG.C uses OPENAI_LOG/STATE; LLM_STATUS_CORE.INC uses OPENAI_EXECUTE.H and the OPENAI_TEST_* fixture family.",
+      "Five OPENAI_TEST compatibility fixtures are confirmed pure shims to existing LLM_TEST counterparts: BAD_TYPE, BLANK_BETWEEN_OPS, BLOCK_BEFORE_PATH, BLOCK_BEFORE_TYPE, BLOCK_EMPTY_NEW. Verify no second current consumers, then prefer a bounded include-drain plus five-file retirement if it remains isolated.",
+      "Keep OPENAI_LOG.H and OPENAI_STATE.H retirement deferred until LLM_INTERNAL_CORE.H, COMMAND_AGENT.C, LLM_LOG.C and any additional exact consumers are drained.",
+      "OPENAI_PLAN.H, OPENAI_EXECUTE.H, and OPENAI_RESPONSE.H may be retired separately once all exact consumers are neutral; stale GitHub code-search results are not sufficient evidence.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
