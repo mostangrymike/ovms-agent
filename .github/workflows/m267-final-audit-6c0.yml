@@ -33,172 +33,156 @@ jobs:
                   return 'LLM_' + tok[7:]
               return tok
 
-          # Retire exact old->new compatibility shims, but preserve old->*_base
-          # wrapper structure (which will itself be neutralized below).
           define_re = re.compile(r'^(\s*#\s*define\s+)((?:openai_|OPENAI_)[A-Za-z0-9_]+)(\s+)((?:llm_|LLM_)[A-Za-z0-9_]+)\s*$')
           undef_re = re.compile(r'^\s*#\s*undef\s+((?:openai_|OPENAI_)[A-Za-z0-9_]+)\s*$')
+
+          # Retire only exact old->new shims. old->*_base wrapper mappings are
+          # intentionally retained and become llm_*->llm_*_base below.
           for name in files:
               if name == workflow or pathlib.Path(name).suffix.lower() not in {'.c','.h','.inc'}:
                   continue
               p = pathlib.Path(name)
-              try:
-                  lines = p.read_text(encoding='utf-8').splitlines(True)
-              except (UnicodeDecodeError, OSError):
-                  continue
-              remove = set()
-              simple = []
+              try: lines = p.read_text(encoding='utf-8').splitlines(True)
+              except (UnicodeDecodeError, OSError): continue
+              remove=set(); simple=[]
               for i,line in enumerate(lines):
-                  m = define_re.match(line.rstrip('\r\n'))
+                  m=define_re.match(line.rstrip('\r\n'))
                   if m and m.group(4) == naive_target(m.group(2)):
-                      remove.add(i)
-                      simple.append((i,m.group(2)))
+                      remove.add(i); simple.append((i,m.group(2)))
               for i,old in simple:
-                  for j in range(i+1, len(lines)):
-                      dm = define_re.match(lines[j].rstrip('\r\n'))
-                      um = undef_re.match(lines[j].rstrip('\r\n'))
-                      if dm and dm.group(2) == old:
-                          break
+                  for j in range(i+1,len(lines)):
+                      dm=define_re.match(lines[j].rstrip('\r\n'))
+                      um=undef_re.match(lines[j].rstrip('\r\n'))
+                      if dm and dm.group(2) == old: break
                       if um and um.group(1) == old:
-                          remove.add(j)
-                          break
+                          remove.add(j); break
               if remove:
                   p.write_text(''.join(line for i,line in enumerate(lines) if i not in remove), encoding='utf-8')
 
-          # LLM_TYPES.H is the canonical workflow/rollback constant home.
-          types = pathlib.Path('SRC/LLM_TYPES.H')
-          text = types.read_text(encoding='utf-8')
+          # Canonical workflow/rollback constants live in LLM_TYPES.H.
+          types=pathlib.Path('SRC/LLM_TYPES.H')
+          text=types.read_text(encoding='utf-8')
           if 'LLM_WORKFLOW_EXECUTE' not in text:
-              marker = '#define LLM_WORKFLOW_PLAN      12\n'
-              if marker not in text:
-                  raise SystemExit('LLM_TYPES.H PLAN marker drifted')
-              text = text.replace(marker, marker + '#define LLM_WORKFLOW_EXECUTE   13\n', 1)
-              types.write_text(text, encoding='utf-8')
+              marker='#define LLM_WORKFLOW_PLAN      12\n'
+              if marker not in text: raise SystemExit('LLM_TYPES.H PLAN marker drifted')
+              text=text.replace(marker,marker+'#define LLM_WORKFLOW_EXECUTE   13\n',1)
+              types.write_text(text,encoding='utf-8')
 
-          internal = pathlib.Path('SRC/LLM_INTERNAL_CORE.H')
-          lines = internal.read_text(encoding='utf-8').splitlines(True)
-          lines = [line for line in lines if not re.match(r'^\s*#\s*define\s+OPENAI_(?:WORKFLOW|ROLLBACK)_[A-Za-z0-9_]+\b', line)]
-          text = ''.join(lines)
+          internal=pathlib.Path('SRC/LLM_INTERNAL_CORE.H')
+          lines=internal.read_text(encoding='utf-8').splitlines(True)
+          lines=[line for line in lines if not re.match(r'^\s*#\s*define\s+OPENAI_(?:WORKFLOW|ROLLBACK)_[A-Za-z0-9_]+\b',line)]
+          text=''.join(lines)
           if '#include "LLM_TYPES.H"' not in text:
-              marker = '#include "LLM_STATE.H"\n'
-              if marker not in text:
-                  raise SystemExit('LLM_INTERNAL_CORE.H include marker drifted')
-              text = text.replace(marker, marker + '#include "LLM_TYPES.H"\n', 1)
-          internal.write_text(text, encoding='utf-8')
+              marker='#include "LLM_STATE.H"\n'
+              if marker not in text: raise SystemExit('LLM_INTERNAL_CORE.H include marker drifted')
+              text=text.replace(marker,marker+'#include "LLM_TYPES.H"\n',1)
+          internal.write_text(text,encoding='utf-8')
 
-          # The pre-M267 stale-file tripwire has served its purpose and would
-          # itself be an unjustified generic OpenAI filename survivor.
-          build = pathlib.Path('BUILD.COM')
-          text = build.read_text(encoding='utf-8')
-          stale = '''$ IF F$SEARCH("[.SRC]OPENAI_TOOL_WRITE.C;*") .NES. ""\n$ THEN\n$     WRITE SYS$OUTPUT -\n          "Stale SRC/OPENAI_TOOL_WRITE.C must not be present."\n$     WRITE SYS$OUTPUT -\n          "Live write tools are provided by OPENAI_TOOLS.C."\n$     FINAL_STATUS = %X10000002\n$     GOTO FINISH\n$ ENDIF\n$\n'''
-          if stale not in text:
-              raise SystemExit('BUILD.COM stale OpenAI tripwire drifted')
-          build.write_text(text.replace(stale, '', 1), encoding='utf-8')
+          # Remove obsolete pre-M267 filename tripwire; keeping it would itself
+          # violate final generic-name inventory.
+          build=pathlib.Path('BUILD.COM')
+          text=build.read_text(encoding='utf-8')
+          stale='''$ IF F$SEARCH("[.SRC]OPENAI_TOOL_WRITE.C;*") .NES. ""\n$ THEN\n$     WRITE SYS$OUTPUT -\n          "Stale SRC/OPENAI_TOOL_WRITE.C must not be present."\n$     WRITE SYS$OUTPUT -\n          "Live write tools are provided by OPENAI_TOOLS.C."\n$     FINAL_STATUS = %X10000002\n$     GOTO FINISH\n$ ENDIF\n$\n'''
+          if stale not in text: raise SystemExit('BUILD.COM stale OpenAI tripwire drifted')
+          build.write_text(text.replace(stale,'',1),encoding='utf-8')
 
-          # Protect genuine compatibility/artifact literals from the generic
-          # identifier rewrite. These are intentionally documented survivors.
-          protected = {
-              'OPENAI_API_KEY': '__M267_KEEP_API_KEY__',
-              'OPENAIKEY': '__M267_KEEP_OPENAIKEY__',
-              'OPENAI_TEST_HEADERS': '__M267_KEEP_TEST_HEADERS__',
-              'OPENAI_MODELS.JSON': '__M267_KEEP_MODELS_JSON__',
+          # Exact compatibility/artifact literals that intentionally survive.
+          protected={
+              'OPENAI_API_KEY':'__M267_KEEP_API_KEY__',
+              'OPENAIKEY':'__M267_KEEP_OPENAIKEY__',
+              'OPENAI_TEST_HEADERS':'__M267_KEEP_TEST_HEADERS__',
+              'OPENAI_MODELS.JSON':'__M267_KEEP_MODELS_JSON__',
           }
-          reverse = {v:k for k,v in protected.items()}
-          token_re = re.compile(r'\b(?:openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)\b')
+          reverse={v:k for k,v in protected.items()}
+          token_re=re.compile(r'\b(?:openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)\b')
 
           for name in files:
-              if name in {workflow, generated}:
-                  continue
-              p = pathlib.Path(name)
-              try:
-                  text = p.read_text(encoding='utf-8')
-              except (UnicodeDecodeError, OSError):
-                  continue
-              for old,hold in protected.items():
-                  text = text.replace(old, hold)
-              # One old guard was incorrectly generic and would collide with
-              # the real LLM_INTERNAL_H guard after a mechanical rewrite.
-              text = re.sub(r'\bOPENAI_INTERNAL_H\b', 'LLM_PROMPTS_H', text)
-              text = token_re.sub(lambda m: naive_target(m.group(0)), text)
-              # Canonical artifact spelling in historical build/docs text.
-              text = re.sub(r'(?i)openai_modules\.opt', 'LLM_MODULES.OPT', text)
-              # Neutralize only clearly generic prose; preserve OpenAI provider
-              # and OpenAI-compatible protocol/config wording.
+              if name in {workflow,generated}: continue
+              p=pathlib.Path(name)
+              try: text=p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError,OSError): continue
+              for old,hold in protected.items(): text=text.replace(old,hold)
+              text=re.sub(r'\bOPENAI_INTERNAL_H\b','LLM_PROMPTS_H',text)
+              text=token_re.sub(lambda m: naive_target(m.group(0)),text)
+              text=re.sub(r'(?i)openai_modules\.opt','LLM_MODULES.OPT',text)
               for old,new in (
-                  ('OpenAI request', 'LLM request'),
-                  ('OpenAI response', 'LLM response'),
-                  ('OpenAI conversation', 'LLM conversation'),
-                  ('OpenAI workflow', 'LLM workflow'),
-                  ('OpenAI repair', 'LLM repair'),
-                  ('OpenAI plan', 'LLM plan'),
-                  ('OpenAI state', 'LLM state'),
-                  ('OpenAI tools', 'LLM tools'),
-                  ('OpenAI tool', 'LLM tool'),
-                  ('OpenAI agent', 'LLM agent'),
-                  ('OpenAI build', 'LLM build'),
-                  ('OpenAI log', 'LLM log'),
-              ):
-                  text = text.replace(old, new)
-              for hold,old in reverse.items():
-                  text = text.replace(hold, old)
-              p.write_text(text, encoding='utf-8')
+                  ('OpenAI request','LLM request'),
+                  ('OpenAI response','LLM response'),
+                  ('OpenAI conversation','LLM conversation'),
+                  ('OpenAI workflow','LLM workflow'),
+                  ('OpenAI repair','LLM repair'),
+                  ('OpenAI plan','LLM plan'),
+                  ('OpenAI state','LLM state'),
+                  ('OpenAI tools','LLM tools'),
+                  ('OpenAI tool','LLM tool'),
+                  ('OpenAI agent','LLM agent'),
+                  ('OpenAI build','LLM build'),
+                  ('OpenAI log','LLM log'),
+                  ('OPENAI_API_KEY is not defined.','Provider API key is not defined.'),
+                  ('OpenAI API key defined:','Provider API key defined:'),
+                  ('OpenAI model:','LLM model:'),
+                  ('SRC/OPENAI.C','SRC/LLM.C'),
+                  ('modular OpenAI/command link set','modular LLM/command link set'),
+                  ('production OpenAI module set','production LLM module set'),
+              ): text=text.replace(old,new)
+              # M233 no longer accepts obsolete OpenAI-prefixed production names.
+              if name == 'SRC/m233_project_test.c':
+                  text=text.replace('''        (strstr(output, "LLM_") == NULL &&\n         strstr(output, "llm_") == NULL &&\n         strstr(output, "OPENAI_") == NULL &&\n         strstr(output, "openai_") == NULL) ||\n''','''        (strstr(output, "LLM_") == NULL &&\n         strstr(output, "llm_") == NULL) ||\n''')
+              for hold,old in reverse.items(): text=text.replace(hold,old)
+              p.write_text(text,encoding='utf-8')
 
-          # Generated symbol index must never be versioned: missing/stale index
-          # already falls back to a live source scan and REINDEX regenerates it.
-          gi = pathlib.Path('.GITIGNORE')
-          text = gi.read_text(encoding='utf-8')
+          # Generated symbol index is runtime-rebuildable; absence/staleness
+          # already falls back to a live source scan.
+          gi=pathlib.Path('.GITIGNORE')
+          text=gi.read_text(encoding='utf-8')
           if 'OVMS_AGENT_SYMBOLS.DAT' not in text.splitlines():
-              if not text.endswith('\n'):
-                  text += '\n'
-              text += 'OVMS_AGENT_SYMBOLS.DAT\n'
-              gi.write_text(text, encoding='utf-8')
+              if not text.endswith('\n'): text+='\n'
+              text+='OVMS_AGENT_SYMBOLS.DAT\n'
+              gi.write_text(text,encoding='utf-8')
 
-          # Validate current working tree before committing.
-          remaining = []
-          allowed = {'OPENAI_API_KEY','OPENAI_TEST_HEADERS','OPENAI_MODELS'}
-          plain = []
-          for name in subprocess.check_output(['git','ls-files'], text=True).splitlines():
-              if name in {workflow, generated}:
-                  continue
-              p = pathlib.Path(name)
-              try:
-                  text = p.read_text(encoding='utf-8')
-              except (UnicodeDecodeError, OSError):
-                  continue
+          # Alias removal can leave wrapper-only files with an extra EOF blank.
+          for name in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+              p=pathlib.Path(name)
+              if not p.is_file(): continue
+              try: text=p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError,OSError): continue
+              if text.endswith('\n\n'):
+                  p.write_text(text.rstrip('\n')+'\n',encoding='utf-8')
+
+          # Hard final namespace/path assertions.
+          remaining=[]; allowed={'OPENAI_API_KEY','OPENAI_TEST_HEADERS','OPENAI_MODELS'}; plain=[]
+          paths=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          for name in paths:
+              if name in {workflow,generated}: continue
+              p=pathlib.Path(name)
+              try: text=p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError,OSError): continue
               for n,line in enumerate(text.splitlines(),1):
                   for tok in token_re.findall(line):
-                      if tok not in allowed:
-                          remaining.append((name,n,tok,line.strip()))
-                  if re.search(r'(?i)openai', line):
-                      plain.append((name,n,line.strip()))
+                      if tok not in allowed: remaining.append((name,n,tok,line.strip()))
+                  if re.search(r'(?i)openai',line): plain.append((name,n,line.strip()))
           if remaining:
-              for row in remaining[:100]: print('UNEXPECTED_PREFIX', row)
+              for row in remaining[:100]: print('UNEXPECTED_PREFIX',row)
               raise SystemExit(f'{len(remaining)} unjustified prefix survivors remain')
+          bad_paths=[p for p in paths if 'openai' in p.lower()]
+          if bad_paths: raise SystemExit(f'OpenAI-named tracked paths remain: {bad_paths}')
 
-          paths = subprocess.check_output(['git','ls-files'], text=True).splitlines()
-          bad_paths = [p for p in paths if 'openai' in p.lower()]
-          if bad_paths:
-              raise SystemExit(f'OpenAI-named tracked paths remain: {bad_paths}')
-
-          # No exact legacy->neutral source shims may survive.
           shim_left=[]
           for name in paths:
-              if pathlib.Path(name).suffix.lower() not in {'.c','.h','.inc'}:
-                  continue
+              if pathlib.Path(name).suffix.lower() not in {'.c','.h','.inc'}: continue
               try: lines=pathlib.Path(name).read_text(encoding='utf-8').splitlines()
               except (UnicodeDecodeError,OSError): continue
               for n,line in enumerate(lines,1):
                   m=define_re.match(line)
-                  if m and m.group(4) == naive_target(m.group(2)):
-                      shim_left.append((name,n,line))
-          if shim_left:
-              raise SystemExit(f'exact legacy shims remain: {shim_left[:20]}')
+                  if m and m.group(4)==naive_target(m.group(2)): shim_left.append((name,n,line))
+          if shim_left: raise SystemExit(f'exact legacy shims remain: {shim_left[:20]}')
 
           print('M267_FINAL_TRANSFORM_OK')
           print('RESIDUAL_OPENAI_LINES_BEGIN')
           for row in plain[:1000]: print(f'{row[0]}:{row[1]}:{row[2]}')
           print('RESIDUAL_OPENAI_LINES_END')
           print('CHANGED_BEGIN')
-          print(subprocess.check_output(['git','diff','--name-only'], text=True), end='')
+          print(subprocess.check_output(['git','diff','--name-only'],text=True),end='')
           print('CHANGED_END')
           PY
           git diff --check
