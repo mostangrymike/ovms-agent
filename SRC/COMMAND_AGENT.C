@@ -490,7 +490,7 @@ void command_agent_repair_plan(agent_state *state,
                                const char *arguments)
 {
     (void)arguments;
-    openai_repair_plan(state);
+    llm_repair_plan(state);
 }
 
 void command_agent_tools(agent_state *state, const char *arguments)

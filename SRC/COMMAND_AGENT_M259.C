@@ -8,7 +8,6 @@
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
-#define openai_repair_plan llm_repair_plan
 #define openai_selftest llm_selftest
 #define openai_status llm_status
 #define openai_verify llm_verify
@@ -68,7 +67,6 @@
 #undef openai_verify
 #undef openai_status
 #undef openai_selftest
-#undef openai_repair_plan
 #undef openai_show_github
 #undef command_register_agent
 

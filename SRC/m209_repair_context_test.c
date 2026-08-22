@@ -258,7 +258,7 @@ static int run_scenario(int second_succeeds)
         1
     );
 
-    openai_agent_repair(
+    llm_agent_repair(
         &state,
         "Repair the deterministic M209 failed build"
     );

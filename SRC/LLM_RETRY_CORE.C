@@ -479,7 +479,7 @@ void llm_agent_retry(agent_state *state, const char *goal)
     free(build_output);
 }
 
-void openai_agent_repair(agent_state *state, const char *goal)
+void llm_agent_repair(agent_state *state, const char *goal)
 {
     char *build_output;
     char *combined_goal;

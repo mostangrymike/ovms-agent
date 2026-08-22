@@ -10,7 +10,7 @@ static void lowercase(char *s)
     for (; *s; ++s) *s = (char)tolower((unsigned char)*s);
 }
 
-void openai_repair_plan(agent_state *state)
+void llm_repair_plan(agent_state *state)
 {
     (void)state; /* ignored as requested */
 

@@ -417,7 +417,7 @@ void llm_agent_fix(agent_state *state, const char *goal);
 void llm_agent_create(agent_state *state, const char *goal);
 void llm_agent_build(agent_state *state, const char *goal);
 void llm_agent_retry(agent_state *state, const char *goal);
-void openai_agent_repair(agent_state *state, const char *goal);
+void llm_agent_repair(agent_state *state, const char *goal);
 void openai_test_set_repair_plan(const char *plan_text,
                                  int auto_approve);
 void openai_test_set_repair_plans(const char *plan_text1,

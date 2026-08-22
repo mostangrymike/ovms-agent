@@ -222,7 +222,7 @@ static int run_scenario(int rebuild_succeeds)
     openai_test_set_build_hook(m207_build_hook);
     openai_test_set_repair_plan(repair_plan, 1);
 
-    openai_agent_repair(
+    llm_agent_repair(
         &state,
         "Repair the deterministic M207 failed build"
     );
