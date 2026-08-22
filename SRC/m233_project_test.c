@@ -8,6 +8,7 @@
 #define M233_COB "SRC/000_M233_SAMPLE.COB"
 #define M233_CBL "SRC/000_M233_SAMPLE.CBL"
 #define M233_CPY "SRC/000_M233_SAMPLE.CPY"
+#define M233_TST "SRC/000_M233_PROJECT_TEST_SAMPLE.C"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -30,6 +31,8 @@ static void m233_cleanup(void)
     while (remove(M233_CBL) == 0) {
     }
     while (remove(M233_CPY) == 0) {
+    }
+    while (remove(M233_TST) == 0) {
     }
 }
 
@@ -61,8 +64,10 @@ int main(void)
         !m233_write_sample(
             M233_CBL, "       IDENTIFICATION DIVISION.\n") ||
         !m233_write_sample(
-            M233_CPY, "       01  M233-SAMPLE PIC X.\n")) {
-        (void)puts("M233 failed: unable to create COBOL samples.");
+            M233_CPY, "       01  M233-SAMPLE PIC X.\n") ||
+        !m233_write_sample(
+            M233_TST, "int m233_test_sample(void) { return 1; }\n")) {
+        (void)puts("M233 failed: unable to create map samples.");
         m233_cleanup();
         return EXIT_FAILURE;
     }
@@ -122,8 +127,8 @@ int main(void)
 
     if (!llm_project_tests_text(
             &state, output, sizeof(output)) ||
-        (strstr(output, "M233_PROJECT_TEST.C") == NULL &&
-         strstr(output, "m233_project_test.c") == NULL)) {
+        (strstr(output, "M233_PROJECT_TEST_SAMPLE.C") == NULL &&
+         strstr(output, "m233_project_test_sample.c") == NULL)) {
         (void)puts("M233 failed: test classification.");
         m233_cleanup();
         return EXIT_FAILURE;
