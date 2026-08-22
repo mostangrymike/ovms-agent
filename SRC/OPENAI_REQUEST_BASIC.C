@@ -2,7 +2,7 @@
 
 #include "llm_internal.h"
 #include "LLM_IMAGE.H"
-#include "openai_request_basic.h"
+#include "LLM_REQUEST_BASIC.H"
 
 int write_request(const char *model,
                   const char *prompt,
