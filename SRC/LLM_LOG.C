@@ -4,8 +4,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "openai_log.h"
-#include "openai_state.h"
+#include "LLM_LOG.H"
+#include "LLM_STATE.H"
 
 const char *openai_rollback_name(int rollback_state);
 

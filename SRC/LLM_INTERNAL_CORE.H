@@ -10,7 +10,7 @@
 #include <time.h>
 
 #include "openai.h"
-#include "openai_log.h"
+#include "LLM_LOG.H"
 #include "LLM_PATH.H"
 #include "LLM_CACHE.H"
 #include "LLM_TOOL_SCHEMA.H"
@@ -24,7 +24,7 @@
 #include "LLM_REQUEST_BASIC.H"
 #include "LLM_PLAN.H"
 #include "LLM_EXECUTE.H"
-#include "openai_state.h"
+#include "LLM_STATE.H"
 #include "project.h"
 
 typedef char *(*openai_test_build_hook_fn)(int *build_status);

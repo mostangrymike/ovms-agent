@@ -3,7 +3,7 @@
 #include "LLM_EXECUTE.H"
 #include "LLM_PLAN.H"
 #include "LLM_REPAIR.H"
-#include "openai_state.h"
+#include "LLM_STATE.H"
 #include "llm_internal.h"
 
 #include "command_agent_execute_dry.inc"
