@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T19:07:00-05:00",
+  "updated_at": "2026-08-21T19:19:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
-    "current_github_head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-    "current_github_head_status": "Pending VAX gate. Based on VAX-green ac0acde, seven small/medium production and regression consumers now include canonical LLM_REQUEST_* headers directly. The audited delta is exactly +9/-9 include-line substitutions across SRC/OPENAI_REQUEST.C, SRC/OPENAI_REQUEST_BUILD.C, SRC/OPENAI_REQUEST_AGENT.C, SRC/OPENAI_REQUEST_BASIC.C, SRC/m251_synth_test.c, SRC/M259_REQUEST_BASE_TEST.C, and SRC/M259_REQUEST_IMAGE_TEST.C. No function bodies, declarations, symbols, build lists, or runtime logic changed. SRC/LLM_INTERNAL_CORE.H remains the known live choke-point still including the three OPENAI_REQUEST_* shims, which remain present for this gate.",
+    "latest_vax_green_head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+    "current_github_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
+    "current_github_head_status": "Pending VAX gate. Final REQUEST header retirement based on VAX-green 82c309a: SRC/LLM_INTERNAL_CORE.H has exactly +3/-3 include-name substitutions from the three OPENAI_REQUEST_* compatibility headers to canonical LLM_REQUEST_* headers, then SRC/OPENAI_REQUEST_BUILD.H, SRC/OPENAI_REQUEST_AGENT.H, and SRC/OPENAI_REQUEST_BASIC.H are deleted. Net repository file delta -3. No C bodies, declarations, symbols, build lists, or runtime logic changed. Exact-branch survivor audit found no remaining live consumer outside the already-drained set; stale OPENAI_INTERNAL.H and OPENAI_AGENT_LOOP_M259_CORE.C search candidates do not exist on the branch.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -67,7 +67,8 @@
       "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
       "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
       "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38",
-      "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6"
+      "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+      "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -196,9 +197,11 @@
       "build_list_changes": 0,
       "issue_comment": 5376657452
     },
-    "pending_request_consumer_gate": {
+    "accepted_at_82c309a": {
       "base": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
       "head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "files": [
         "SRC/OPENAI_REQUEST.C",
         "SRC/OPENAI_REQUEST_BUILD.C",
@@ -208,13 +211,29 @@
         "SRC/M259_REQUEST_BASE_TEST.C",
         "SRC/M259_REQUEST_IMAGE_TEST.C"
       ],
-      "change": "Drain direct production and request-focused regression includes from OPENAI_REQUEST_* compatibility headers to canonical LLM_REQUEST_* headers.",
       "include_substitutions": 9,
       "c_body_changes": 0,
       "symbol_changes": 0,
       "build_list_changes": 0,
-      "remaining_known_shim_consumer": "SRC/LLM_INTERNAL_CORE.H",
-      "issue_comment": 5376677756
+      "issue_comment": 5376725469
+    },
+    "pending_request_header_retirement_gate": {
+      "base": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+      "head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
+      "core_file": "SRC/LLM_INTERNAL_CORE.H",
+      "core_delta": "+3/-3 include substitutions only",
+      "deleted_shims": [
+        "SRC/OPENAI_REQUEST_BUILD.H",
+        "SRC/OPENAI_REQUEST_AGENT.H",
+        "SRC/OPENAI_REQUEST_BASIC.H"
+      ],
+      "net_repository_file_delta": -3,
+      "c_body_changes": 0,
+      "declaration_changes": 0,
+      "symbol_changes": 0,
+      "build_list_changes": 0,
+      "survivor_audit": "No remaining exact branch-live request-header consumers found; stale OPENAI_INTERNAL.H and OPENAI_AGENT_LOOP_M259_CORE.C search candidates are absent.",
+      "issue_comment": 5376737899
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -256,8 +275,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate 82c309adae6ea077d16dc188e6dd2f819e25888c with full @BUILD after restoring the seven changed consumer files.",
-      "If green, promote 82c309a and then change the three request includes in SRC/LLM_INTERNAL_CORE.H using an exact whole-file audit before retiring OPENAI_REQUEST_* shims.",
+      "VAX-gate b035ae5a4ea12952ca4de4701d9aee335af9f965: restore SRC/LLM_INTERNAL_CORE.H, physically delete all RMS versions of the three retired OPENAI_REQUEST_* headers, run full @BUILD, and print BUILD_STATUS.",
+      "If green, promote b035ae5 as REQUEST header retirement complete and continue survivor classification for remaining generic OpenAI filenames/namespaces.",
       "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
