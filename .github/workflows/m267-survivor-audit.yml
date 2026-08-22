@@ -1,0 +1,62 @@
+name: M267 exact survivor audit
+
+on:
+  push:
+    branches:
+      - m267-audit-survivors-a07
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Enumerate exact OpenAI namespace survivors
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, subprocess, collections
+
+          files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          files = [p for p in files if p and not p.startswith('.github/')]
+          token_re = re.compile(r'(?<![A-Za-z0-9_])(openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)(?![A-Za-z0-9_])')
+          counts = collections.Counter()
+          token_files = collections.defaultdict(set)
+          occurrences = []
+          filename_hits = []
+
+          for path in files:
+              if 'openai' in path.lower():
+                  filename_hits.append(path)
+              try:
+                  text = pathlib.Path(path).read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for lineno, line in enumerate(text.splitlines(), 1):
+                  matches = token_re.findall(line)
+                  for token in matches:
+                      counts[token] += 1
+                      token_files[token].add(path)
+                      if path.startswith('SRC/') or path.startswith('src/'):
+                          occurrences.append((token, path, lineno, line.strip()))
+
+          print('M267_FILENAME_SURVIVORS_BEGIN')
+          for path in sorted(filename_hits, key=str.lower):
+              print(path)
+          print('M267_FILENAME_SURVIVORS_END')
+
+          print('M267_TOKEN_SUMMARY_BEGIN')
+          for token in sorted(counts, key=lambda s:(s.lower(), s)):
+              paths = ','.join(sorted(token_files[token], key=str.lower))
+              print(f'{token}\tcount={counts[token]}\tfiles={len(token_files[token])}\t{paths}')
+          print('M267_TOKEN_SUMMARY_END')
+
+          print('M267_SOURCE_OCCURRENCES_BEGIN')
+          for token, path, lineno, line in sorted(occurrences, key=lambda x:(x[0].lower(), x[0], x[1].lower(), x[2])):
+              print(f'{token}\t{path}:{lineno}\t{line}')
+          print('M267_SOURCE_OCCURRENCES_END')
+          PY
