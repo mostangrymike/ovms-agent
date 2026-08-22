@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T09:44:00-05:00",
+  "updated_at": "2026-08-22T09:47:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,14 +18,14 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
+    "latest_vax_green_head": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
     "current_github_head": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
-    "current_github_head_status": "Pending VAX full-build acceptance from green d1ac52cd. Exact aggregate compare is 11 commits: LLM_STATUS_CORE.INC +6/-6 include substitutions, LLM_INTERNAL_CORE.H +3/-3 include substitutions, COMMAND_AGENT.C +2/-2 include substitutions, plus eight obsolete forwarding-file deletions. No C-body, runtime-symbol, declaration, build-list, or behavior changes. Whole-file rewrites were patch-inspected. OPENAI_LOG.H and OPENAI_STATE.H remain intentionally deferred. Issue #31 pending comment 5380977039.",
+    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001 after restoring the three modified consumers and physically deleting all RMS versions of the eight retired compatibility paths. Issue #31 acceptance comment 5380990487.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
       "build_artifact": "9bd4dca88cf21f268273ff020a1bc54751f13432",
-      "tool_result": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
+      "tool_result": "3cb9c95efa7c28952ca4de4701d9aee335af9f965",
       "tool_schema": "a146c196d7d5f867668aed9fd809f27263288001",
       "prompts": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
       "goal_guard": "a155a3678e25460427ce6bb1db576db1c590b266",
@@ -57,7 +57,8 @@
       "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c",
       "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
       "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-      "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6"
+      "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
+      "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273"
     },
     "accepted_at_d1ac52cd": {
       "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
@@ -66,35 +67,22 @@
       "full_regressions": "all passed",
       "zero_content_state_renames": 27,
       "state_core_include_substitutions": 26,
-      "net_repository_file_delta": 0,
       "issue_acceptance_comment": 5380935749
     },
-    "pending_shim_retirement_gate": {
+    "accepted_at_cf0a3244": {
       "base": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
       "head": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
-      "consumer_files": {
-        "SRC/LLM_STATUS_CORE.INC": "+6/-6: EXECUTE header drain plus five test-shim include drains",
-        "SRC/LLM_INTERNAL_CORE.H": "+3/-3: RESPONSE, PLAN, EXECUTE header drains",
-        "SRC/COMMAND_AGENT.C": "+2/-2: EXECUTE and PLAN header drains"
-      },
-      "removed_files": [
-        "SRC/OPENAI_PLAN.H",
-        "SRC/OPENAI_EXECUTE.H",
-        "SRC/OPENAI_RESPONSE.H",
-        "SRC/OPENAI_TEST_BAD_TYPE.INC",
-        "SRC/OPENAI_TEST_BLANK_BETWEEN_OPS.INC",
-        "SRC/OPENAI_TEST_BLOCK_BEFORE_PATH.INC",
-        "SRC/OPENAI_TEST_BLOCK_BEFORE_TYPE.INC",
-        "SRC/OPENAI_TEST_BLOCK_EMPTY_NEW.INC"
-      ],
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "include_substitutions": 11,
+      "modified_consumers": ["SRC/LLM_STATUS_CORE.INC", "SRC/LLM_INTERNAL_CORE.H", "SRC/COMMAND_AGENT.C"],
+      "removed_files": ["SRC/OPENAI_PLAN.H", "SRC/OPENAI_EXECUTE.H", "SRC/OPENAI_RESPONSE.H", "SRC/OPENAI_TEST_BAD_TYPE.INC", "SRC/OPENAI_TEST_BLANK_BETWEEN_OPS.INC", "SRC/OPENAI_TEST_BLOCK_BEFORE_PATH.INC", "SRC/OPENAI_TEST_BLOCK_BEFORE_TYPE.INC", "SRC/OPENAI_TEST_BLOCK_EMPTY_NEW.INC"],
       "net_repository_file_delta": -8,
       "c_body_changes": 0,
       "declaration_changes": 0,
       "runtime_symbol_changes": 0,
       "build_list_changes": 0,
-      "issue_comment": 5380977039,
-      "status": "pending full VAX @BUILD with physical RMS deletion of all eight retired paths"
+      "issue_acceptance_comment": 5380990487
     },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
@@ -110,10 +98,10 @@
       "OPENAI_STATE.H": "Known live consumers remain; do not retire yet."
     },
     "next_work": [
-      "VAX-gate cf0a324489ca558e8b7f0829bd45a0f723fee273: fetch/reset; restore SRC/LLM_STATUS_CORE.INC, SRC/LLM_INTERNAL_CORE.H, SRC/COMMAND_AGENT.C; physically delete all RMS versions of the eight retired files; run full @BUILD and print BUILD_STATUS.",
-      "If green, promote cf0a3244 and continue exact audit of OPENAI_SELFTEST_FILE_EXISTS.INC and the remaining OPENAI_TEST_* fixture family.",
+      "Audit exact current OPENAI_SELFTEST_FILE_EXISTS.INC and remaining OPENAI_TEST_* fixture files against current LLM counterparts; migrate only verified generic filename artifacts.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until broader live consumers are drained.",
-      "Do not rename genuine OpenAI protocol/config compatibility artifacts blindly, including OPENAI.H and OPENAI_API_KEY semantics.",
+      "Audit stale BUILD.COM/self-test filename strings such as OPENAI_TOOLS.C after functional filename migrations.",
+      "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
