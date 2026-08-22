@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T09:30:00-05:00",
+  "updated_at": "2026-08-22T09:34:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -17,10 +17,10 @@
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+    "workflow_preference": "Maximize work per VAX gate: accumulate coherent audited families, keep each gate buildable and bounded, and use narrow gates for recovery only when necessary.",
+    "latest_vax_green_head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
     "current_github_head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
-    "current_github_head_status": "Pending VAX gate from green ccbabd50. Coherent STATE validation filename migration: 27 zero-content renames from OPENAI_STATE_M*.INC to LLM_STATE_M*.INC and exactly 26 include-path substitutions in SRC/LLM_STATE_CORE.C. Patch-level inspection confirms no C-body, declaration, runtime-symbol, validation-logic, build-list, or API-behavior changes. Standalone M107_VALIDATE had no current filename consumer and was preserved by rename. Net repository file delta 0. Issue #31 pending comment 5380908884. Do not promote above ccbabd50 until full @BUILD is green.",
+    "current_github_head_status": "VAX-green. STATE validation/helper filename migration accepted: 27 zero-content OPENAI_STATE_M*.INC -> LLM_STATE_M*.INC renames plus exactly 26 include-path substitutions in SRC/LLM_STATE_CORE.C. User physically deleted all RMS OPENAI_STATE_M*.INC versions before acceptance build. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001. No C-body, declaration, runtime-symbol, validation-logic, build-list, or API-behavior changes. Issue #31 acceptance comment 5380935749.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -70,279 +70,37 @@
       "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
       "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c",
       "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
-      "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c"
+      "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+      "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6"
     },
-    "accepted_at_b20edf3": {
-      "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "focused_m257_status": "%X00000001",
-      "focused_m257_regressions": "all passed",
-      "child_delta": "SRC/M257_CONTEXT_TEST.C only; forward declaration for m257_capture_mode before macro-remapped LLM_AGENT.C include",
-      "issue_comment": 5375234663
-    },
-    "accepted_at_c2023c9": {
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "focused_m257_status": "%X00000001",
-      "focused_m257_regressions": "all passed",
-      "retired_linker_exports": 21,
-      "git_context_exports": 13,
-      "instruction_exports": 8,
-      "issue_comment": 5375419893
-    },
-    "accepted_at_80f69a1": {
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "modified_source_files": 1,
-      "include_filename_substitutions": 27,
-      "removed_forwarding_shims": 26,
-      "net_repository_file_delta": -26,
-      "issue_comment": 5375657964
-    },
-    "accepted_at_b620180": {
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "failed_head": "c02cf7392390e4b7e5acffa84c25c58bb65bf537",
-      "failed_build_status": "%X10000002",
-      "issue_comment": 5375868080
-    },
-    "accepted_at_cec271a": {
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "failed_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
-      "failed_build_status": "%X10000002",
-      "issue_comment": 5376052164,
-      "neutral_instruction_declarations": 8,
-      "neutral_git_declarations": 13,
-      "internal_core_blob": "606982ccf5fa0bc2199053ee455deeecfe3d582d",
-      "project_map_core_blob": "8110b77e737b5e8dd217afd960b3026b02ddf606",
-      "project_map_capacity": 192
-    },
-    "accepted_at_bbf55cd": {
-      "base": "cec271a7738995fa691fbc3c915684ac8799b175",
-      "failed_head": "9835b58f76ff4298deffa9590525c379858513f0",
-      "recovery_head": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "plan_include_substitutions": 16,
-      "zero_content_plan_renames": 13,
-      "net_repository_file_delta": -1,
-      "issue_comment": 5376219585,
-      "details": "The PLAN filename tranche is VAX-proven. Production LLM_PLAN.C uses neutral validation/lifecycle filenames and LLM_PLAN_SENSITIVE.INC. Recovery drained the missed m251_repair_goal_test.c sensitive include and changed four M144 runtime fixture paths to the renamed LLM_PLAN_M141..M144 files."
-    },
-    "accepted_at_e6bb033": {
-      "base": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
-      "head": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "zero_content_renames": 5,
-      "plan_source_delta": "+3/-3 include lines only",
-      "execute_source_delta": "+3/-3 include lines only",
-      "renames": [
-        "OPENAI_M148_VALIDATE.INC -> LLM_PLAN_M148_VALIDATE.INC",
-        "openai_m149_validate.inc -> LLM_PLAN_M149_VALIDATE.INC",
-        "OPENAI_M150_VALIDATE.INC -> LLM_PLAN_M150_VALIDATE.INC",
-        "OPENAI_M150B_VALIDATE.INC -> LLM_EXEC_M150B_VALIDATE.INC",
-        "OPENAI_M150D_VALIDATE.INC -> LLM_EXEC_M150D_VALIDATE.INC"
-      ],
-      "additional_drain": "LLM_EXECUTE.C now includes LLM_PLAN.H directly instead of OPENAI_PLAN.H.",
-      "net_repository_file_delta": 0,
-      "issue_comment": 5376399657
-    },
-    "repair_header_recovery_history": {
-      "base": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "failed_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
-      "failed_build_status": "%X10B91264",
-      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_repair.h",
-      "root_cause": "Missed exact branch-live include in SRC/LLM_REPAIR_CORE.INC",
-      "shim_restore_head": "c52dad85aaad6122038ae4425ceb41f44a84cc01",
-      "core_drain_head": "f749b4be83cbfa2af1de33fa98d32af92f4d7d3f",
-      "recovery_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-      "corrected_delta": "COMMAND_AGENT.C +1/-1, LLM_REPAIR_CORE.INC +1/-1, OPENAI_REPAIR.H deleted",
-      "new_external_identifiers": 0,
-      "issue_comment": 5376501534
-    },
-    "accepted_at_6420958": {
-      "base": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "failed_head": "650e77eae7b4e0e3173eed537ed2865bbc8d2e18",
-      "failed_build_status": "%X10B91264",
-      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_repair.h",
-      "failure_root_cause": "SRC/LLM_REPAIR_CORE.INC still included the retired OPENAI_REPAIR.H shim.",
-      "recovery_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "consumer_deltas": [
-        "SRC/COMMAND_AGENT.C: openai_repair.h -> LLM_REPAIR.H",
-        "SRC/LLM_REPAIR_CORE.INC: openai_repair.h -> LLM_REPAIR.H"
-      ],
-      "shim_deleted": "SRC/OPENAI_REPAIR.H",
-      "new_external_identifiers": 0
-    },
-    "accepted_at_ac0acde": {
-      "base": "6420958eb256a4db3ecd76e19027ea461e486c38",
-      "head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "files": [
-        "SRC/LLM_REQUEST_BUILD.H",
-        "SRC/LLM_REQUEST_AGENT.H",
-        "SRC/LLM_REQUEST_BASIC.H",
-        "SRC/OPENAI_REQUEST_BUILD.H",
-        "SRC/OPENAI_REQUEST_AGENT.H",
-        "SRC/OPENAI_REQUEST_BASIC.H"
-      ],
-      "change": "Move generic request declarations into canonical LLM_REQUEST_* headers and retain OPENAI_REQUEST_* as compatibility forwarding shims.",
-      "consumer_changes": 0,
-      "c_body_changes": 0,
-      "symbol_changes": 0,
-      "build_list_changes": 0,
-      "issue_comment": 5376657452
-    },
-    "accepted_at_82c309a": {
-      "base": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
-      "head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "files": [
-        "SRC/OPENAI_REQUEST.C",
-        "SRC/OPENAI_REQUEST_BUILD.C",
-        "SRC/OPENAI_REQUEST_AGENT.C",
-        "SRC/OPENAI_REQUEST_BASIC.C",
-        "SRC/m251_synth_test.c",
-        "SRC/M259_REQUEST_BASE_TEST.C",
-        "SRC/M259_REQUEST_IMAGE_TEST.C"
-      ],
-      "include_substitutions": 9,
-      "c_body_changes": 0,
-      "symbol_changes": 0,
-      "build_list_changes": 0,
-      "issue_comment": 5376725469
-    },
-    "request_header_retirement_recovery": {
-      "base": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "failed_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
-      "failed_build_status": "%X10B91264",
-      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_request_agent.h",
-      "failure_root_cause": "SRC/LLM_AGENT_LOOP_M259_CORE.C still included the retired OPENAI_REQUEST_AGENT.H compatibility header; stale code-search results did not expose the current renamed M259 core path.",
-      "corrected_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
-      "accepted": true,
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "acceptance_issue_comment": 5380837189,
-      "corrected_files": [
-        "SRC/LLM_INTERNAL_CORE.H",
-        "SRC/LLM_AGENT_LOOP_M259_CORE.C",
-        "SRC/OPENAI_REQUEST_BUILD.H (deleted)",
-        "SRC/OPENAI_REQUEST_AGENT.H (deleted)",
-        "SRC/OPENAI_REQUEST_BASIC.H (deleted)"
-      ],
-      "include_substitutions": 4,
-      "net_repository_file_delta": -3,
-      "c_body_changes": 0,
-      "declaration_changes": 0,
-      "symbol_changes": 0,
-      "build_list_changes": 0,
-      "expanded_audit": "Current recursive branch tree plus exact fetches checked LLM_AGENT_LOOP_M259.C, COMMAND_AGENT_M259.C, OPENAI_REQ_IMAGE_M259.C, M259_AGENT_IMAGE_TEST.C, M259_IMAGE_INGEST_TEST.C, M259_LIVE_FIXTURE.C, LLM_AGENT_M259.C, LLM_AGENT.C, LLM_BUILD.C/CORE, LLM_CREATE_CORE.INC, LLM_RETRY_CORE.C, and LLM_INTERNAL.H/CORE. No additional direct retired request-header includes found.",
-      "issue_comment": 5380797153
-    },
-    "accepted_at_25949acc": {
-      "base": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "failed_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
-      "failed_build_status": "%X10B91264",
-      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_request_agent.h",
-      "head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "include_only_deltas": [
-        "SRC/LLM_INTERNAL_CORE.H: three OPENAI_REQUEST_* includes -> LLM_REQUEST_*",
-        "SRC/LLM_AGENT_LOOP_M259_CORE.C: openai_request_agent.h -> LLM_REQUEST_AGENT.H"
-      ],
-      "deleted_shims": [
-        "SRC/OPENAI_REQUEST_BUILD.H",
-        "SRC/OPENAI_REQUEST_AGENT.H",
-        "SRC/OPENAI_REQUEST_BASIC.H"
-      ],
-      "net_repository_file_delta": -3,
-      "c_body_changes": 0,
-      "declaration_changes": 0,
-      "symbol_changes": 0,
-      "build_list_changes": 0,
-      "issue_comment": 5380837189
-    },
-    "accepted_at_ccbabd50": {
-      "base": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
-      "head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "focused_m259_status": "%X00000001",
-      "focused_m259_regressions": "all implemented image-input regressions passed",
-      "renames": [
-        "SRC/OPENAI_REQUEST.C -> SRC/LLM_REQUEST.C",
-        "SRC/OPENAI_REQUEST_BASIC.C -> SRC/LLM_REQUEST_BASIC.C",
-        "SRC/OPENAI_REQUEST_AGENT.C -> SRC/LLM_REQUEST_AGENT.C",
-        "SRC/OPENAI_REQUEST_BUILD.C -> SRC/LLM_REQUEST_BUILD.C",
-        "SRC/OPENAI_REQ_IMAGE_M259.C -> SRC/LLM_REQUEST_IMAGE_M259.C"
-      ],
-      "source_content_changes": 0,
-      "build_llm_module_substitutions": 10,
-      "llm_modules_opt_substitutions": 5,
-      "build_m259_substitutions": 3,
-      "net_repository_file_delta": 0,
-      "c_body_changes": 0,
-      "declaration_changes": 0,
-      "symbol_changes": 0,
-      "pending_issue_comment": 5380847497,
-      "acceptance_issue_comment": 5380871689
-    },
-    "pending_state_filename_gate": {
+    "accepted_at_d1ac52cd": {
       "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
       "head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
-      "state_core": "SRC/LLM_STATE_CORE.C",
-      "state_core_include_substitutions": 26,
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "zero_content_renames": 27,
-      "rename_scope": "OPENAI_STATE_M107_VALIDATE.INC, OPENAI_STATE_M107_M109_VALIDATE.INC, OPENAI_STATE_M109_PATH_HELPERS.INC, and OPENAI_STATE_M111_VALIDATE.INC through OPENAI_STATE_M134_VALIDATE.INC -> matching LLM_STATE_* filenames",
+      "state_core_include_substitutions": 26,
       "net_repository_file_delta": 0,
       "c_body_changes": 0,
       "declaration_changes": 0,
-      "symbol_changes": 0,
+      "runtime_symbol_changes": 0,
       "build_list_changes": 0,
-      "issue_comment": 5380908884,
-      "status": "pending full VAX @BUILD"
+      "rms_cleanup": "all [.SRC]OPENAI_STATE_M*.INC;* versions physically deleted before @BUILD",
+      "issue_pending_comment": 5380908884,
+      "issue_acceptance_comment": 5380935749
     },
-    "phase2_recovery_history": {
-      "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
-      "failed_head": "1ae6acbdd77dfc0996543070d63a6a755423243d",
-      "recovery_head": "c2023c9f0dedd373d6e99313ff2c565b907f5be4",
-      "failed_full_build_status": "%X1789A0C0",
-      "failed_m257_status": "%X1789A0C0",
-      "failed_undefined_symbols": [
-        "OPENAI_GIT_REFRESH (2 references, LLM_AGENT_LOOP_M259)",
-        "OPENAI_INSTR_SHOW_TEXT (1 reference, LLM_CONTEXT)"
-      ]
-    },
-    "tools_repair_recovery_history": {
-      "base": "80f69a1e3d2f0e8309da7fe0c7a2e841eb369a99",
-      "failed_head": "c02cf7392390e4b7e5acffa84c25c58bb65bf537",
-      "recovery_head": "b6201805519faf832e5396b540280982fbc2d0a6",
-      "failed_full_build_status": "%X10000002",
-      "failure_signals": [
-        "DEC C implicit declaration: llm_git_refresh",
-        "M233 failed: project map"
-      ]
-    },
-    "internal_declaration_recovery_history": {
-      "base": "b6201805519faf832e5396b540280982fbc2d0a6",
-      "failed_head": "50b391a97a7bc5d98905a4ad4985db420567431d",
-      "recovery_head": "cec271a7738995fa691fbc3c915684ac8799b175",
-      "failed_full_build_status": "%X10000002",
-      "failure_signal": "M233 failed: project map"
+    "important_recovery_history": {
+      "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
+      "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
+      "lesson": "Do not retire a shim from stale search alone. Use exact branch-live tree/fetches and inspect full current consumers before deletion."
     },
     "deferred": {
-      "openai_log_event": "High-fanout legacy ABI. Repeated narrow alias attempts caused link mismatches; migrate only with its complete caller graph.",
-      "openai_state_save": "Mature STATE validation consumers still use this spelling; drain as a coherent validation family.",
+      "openai_log_event": "High-fanout legacy ABI; migrate only with complete caller graph.",
+      "openai_state_save": "Runtime namespace remains mature and is intentionally unchanged by the STATE filename migration.",
       "openai_agent": "Additional mature consumers remain outside the command wrapper.",
-      "openai_agent_write": "Additional mature consumers remain outside the command wrapper."
+      "openai_agent_write": "Additional mature consumers remain outside the command wrapper.",
+      "OPENAI_LOG.H": "Known consumers include LLM_INTERNAL_CORE.H and LLM_LOG.C; do not retire yet.",
+      "OPENAI_STATE.H": "Known consumers include LLM_INTERNAL_CORE.H, COMMAND_AGENT.C and LLM_LOG.C; do not retire yet."
     },
     "rms_restore_capacity": {
       "status": "VAX-green",
@@ -350,14 +108,11 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate pending head d1ac52cd33fac76fffecb19c99651b94fc4466a6 from green ccbabd50: restore SRC/LLM_STATE_CORE.C and all 27 new LLM_STATE_M*.INC paths in short GIT_RESTORE batches, physically remove all SRC/OPENAI_STATE_M*.INC RMS versions, run full @BUILD, and print BUILD_STATUS.",
-      "If green, promote d1ac52cd as STATE validation filename migration complete, add issue #31 acceptance evidence, then continue survivor audit from the new green base.",
-      "Five OPENAI_TEST compatibility fixtures remain confirmed pure shims to existing LLM_TEST counterparts: BAD_TYPE, BLANK_BETWEEN_OPS, BLOCK_BEFORE_PATH, BLOCK_BEFORE_TYPE, BLOCK_EMPTY_NEW; likely next bounded retirement after this gate.",
-      "Keep OPENAI_LOG.H and OPENAI_STATE.H retirement deferred until LLM_INTERNAL_CORE.H, COMMAND_AGENT.C, LLM_LOG.C and any additional exact consumers are drained.",
-      "OPENAI_PLAN.H, OPENAI_EXECUTE.H, and OPENAI_RESPONSE.H may be retired separately once all exact consumers are neutral; stale GitHub code-search results are not sufficient evidence.",
-      "Do not retire openai_state_save yet; this tranche changes filenames only, not the deferred STATE runtime namespace.",
-      "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
-      "Keep openai_log_event deferred until its complete caller graph is prepared.",
+      "From VAX-green d1ac52cd, exact-audit OPENAI_PLAN.H, OPENAI_EXECUTE.H and OPENAI_RESPONSE.H consumers. Likely consumers include LLM_INTERNAL_CORE.H; COMMAND_AGENT.C for PLAN/EXECUTE; LLM_STATUS_CORE.INC for EXECUTE. Retire only after all exact consumers are drained to LLM headers.",
+      "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until their broader exact consumers are drained.",
+      "OPENAI_SELFTEST_FILE_EXISTS.INC and the large OPENAI_TEST_* fixture family remain generic filename survivors. Five OPENAI_TEST forwarding shims already have canonical LLM_TEST counterparts; broader fixture migration requires exact include/path-string audit.",
+      "Do not rename genuine OpenAI protocol/config compatibility artifacts blindly, including OPENAI.H or OPENAI_API_KEY semantics.",
+      "Audit stale build/self-test filename strings after functional filename migrations.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
   },
