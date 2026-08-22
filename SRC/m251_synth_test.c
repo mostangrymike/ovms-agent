@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_request_agent.h"
+#include "LLM_REQUEST_AGENT.H"
 
 int command_line_complete(const char *input,
                           size_t input_size,
