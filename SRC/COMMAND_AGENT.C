@@ -798,43 +798,43 @@ void command_agent_instr_reload(agent_state *state, const char *arguments)
 void command_agent_project_map(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_map(state, 0);
+    llm_show_project_map(state, 0);
 }
 
 void command_agent_project_files(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_map(state, 0);
+    llm_show_project_map(state, 0);
 }
 
 void command_agent_project_src(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_map(state, 1);
+    llm_show_project_map(state, 1);
 }
 
 void command_agent_project_tests(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_map(state, 3);
+    llm_show_project_map(state, 3);
 }
 
 void command_agent_project_build(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_map(state, 4);
+    llm_show_project_map(state, 4);
 }
 
 void command_agent_project_ctx(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_project_ctx(state);
+    llm_show_project_ctx(state);
 }
 
 void command_agent_project_refresh(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_project_refresh_cmd(state);
+    llm_project_refresh_cmd(state);
 }
 
 void command_agent_git_status2(agent_state *state, const char *arguments)

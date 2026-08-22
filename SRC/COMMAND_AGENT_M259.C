@@ -26,9 +26,6 @@
 #define openai_patch_dry_cmd llm_patch_dry_cmd
 #define openai_patch_validate_cmd llm_patch_validate_cmd
 #define openai_patch_last_cmd llm_patch_last_cmd
-#define openai_show_project_map llm_show_project_map
-#define openai_show_project_ctx llm_show_project_ctx
-#define openai_project_refresh_cmd llm_project_refresh_cmd
 #define openai_show_instr_status llm_show_instr_status
 #define openai_show_instr llm_show_instr
 #define openai_instr_reload_cmd llm_instr_reload_cmd
@@ -46,9 +43,6 @@
 #undef openai_instr_reload_cmd
 #undef openai_show_instr
 #undef openai_show_instr_status
-#undef openai_project_refresh_cmd
-#undef openai_show_project_ctx
-#undef openai_show_project_map
 #undef openai_patch_last_cmd
 #undef openai_patch_validate_cmd
 #undef openai_patch_dry_cmd

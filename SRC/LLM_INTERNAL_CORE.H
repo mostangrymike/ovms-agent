@@ -809,26 +809,26 @@ void openai_show_instr(const agent_state *state);
 void openai_instr_reload_cmd(const agent_state *state);
 void openai_test_instr_path(const char *path);
 
-int openai_project_refresh(const agent_state *state);
-int openai_project_map_text(const agent_state *state,
+int llm_project_refresh(const agent_state *state);
+int llm_project_map_text(const agent_state *state,
                             char *output, size_t output_size);
-int openai_project_files_text(const agent_state *state,
+int llm_project_files_text(const agent_state *state,
                               char *output, size_t output_size);
-int openai_project_src_text(const agent_state *state,
+int llm_project_src_text(const agent_state *state,
                             char *output, size_t output_size);
-int openai_project_tests_text(const agent_state *state,
+int llm_project_tests_text(const agent_state *state,
                               char *output, size_t output_size);
-int openai_project_build_text(const agent_state *state,
+int llm_project_build_text(const agent_state *state,
                               char *output, size_t output_size);
-int openai_project_context(const agent_state *state,
+int llm_project_context(const agent_state *state,
                            char *output, size_t output_size);
-int openai_project_compose(const agent_state *state,
+int llm_project_compose(const agent_state *state,
                            const char *goal,
                            char *output, size_t output_size);
-void openai_show_project_map(const agent_state *state,
+void llm_show_project_map(const agent_state *state,
                              int filter);
-void openai_show_project_ctx(const agent_state *state);
-void openai_project_refresh_cmd(const agent_state *state);
+void llm_show_project_ctx(const agent_state *state);
+void llm_project_refresh_cmd(const agent_state *state);
 
 int openai_git_refresh(const agent_state *state);
 int openai_git_status_text(const agent_state *state,

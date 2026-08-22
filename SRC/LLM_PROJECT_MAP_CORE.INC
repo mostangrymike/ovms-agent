@@ -4,33 +4,33 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define OPENAI_MAP_MAX_FILES 192U
-#define OPENAI_MAP_PATH 256U
+#define LLM_MAP_MAX_FILES 192U
+#define LLM_MAP_PATH 256U
 #define LLM_MAP_TEXT 12288U
-#define OPENAI_MAP_DEPTH 4U
+#define LLM_MAP_DEPTH 4U
 
-#define OPENAI_MAP_SOURCE 1
-#define OPENAI_MAP_HEADER 2
-#define OPENAI_MAP_TEST 3
-#define OPENAI_MAP_BUILD 4
-#define OPENAI_MAP_OTHER 5
+#define LLM_MAP_SOURCE 1
+#define LLM_MAP_HEADER 2
+#define LLM_MAP_TEST 3
+#define LLM_MAP_BUILD 4
+#define LLM_MAP_OTHER 5
 
 typedef struct llm_map_entry {
-    char path[OPENAI_MAP_PATH];
+    char path[LLM_MAP_PATH];
     int kind;
 } llm_map_entry;
 
-static llm_map_entry openai_map_files[OPENAI_MAP_MAX_FILES];
-static unsigned int openai_map_count = 0U;
-static unsigned int openai_map_sources = 0U;
-static unsigned int openai_map_headers = 0U;
-static unsigned int openai_map_tests = 0U;
-static unsigned int openai_map_builds = 0U;
-static unsigned int openai_map_others = 0U;
-static int openai_map_loaded = 0;
-static int openai_map_truncated = 0;
+static llm_map_entry llm_map_files[LLM_MAP_MAX_FILES];
+static unsigned int llm_map_count = 0U;
+static unsigned int llm_map_sources = 0U;
+static unsigned int llm_map_headers = 0U;
+static unsigned int llm_map_tests = 0U;
+static unsigned int llm_map_builds = 0U;
+static unsigned int llm_map_others = 0U;
+static int llm_map_loaded = 0;
+static int llm_map_truncated = 0;
 
-static int openai_map_ci_equal(const char *left,
+static int llm_map_ci_equal(const char *left,
                                const char *right)
 {
     unsigned char a;
@@ -68,7 +68,7 @@ static int openai_map_ci_equal(const char *left,
     return *left == '\0' && *right == '\0';
 }
 
-static int openai_map_ci_contains(const char *text,
+static int llm_map_ci_contains(const char *text,
                                   const char *needle)
 {
     const char *start;
@@ -148,7 +148,7 @@ static int llm_map_old_version(const char *name)
     return strcmp(semi, ";1") != 0;
 }
 
-static int openai_map_hide(const char *name)
+static int llm_map_hide(const char *name)
 {
     if (name == NULL ||
         strcmp(name, ".") == 0 ||
@@ -164,7 +164,7 @@ static int openai_map_hide(const char *name)
     return 0;
 }
 
-static void openai_map_base_path(const char *path,
+static void llm_map_base_path(const char *path,
                                  char *output,
                                  size_t output_size)
 {
@@ -214,24 +214,24 @@ static void openai_map_base_path(const char *path,
     output[output_size - 1U] = '\0';
 }
 
-static int openai_map_kind(const char *path)
+static int llm_map_kind(const char *path)
 {
     const char *dot;
 
     if (path == NULL) {
-        return OPENAI_MAP_OTHER;
+        return LLM_MAP_OTHER;
     }
 
-    if (openai_map_ci_contains(path, "TEST") ||
-        openai_map_ci_contains(path, "_TEST.")) {
-        return OPENAI_MAP_TEST;
+    if (llm_map_ci_contains(path, "TEST") ||
+        llm_map_ci_contains(path, "_TEST.")) {
+        return LLM_MAP_TEST;
     }
 
-    if (openai_map_ci_contains(path, "BUILD.COM") ||
-        openai_map_ci_contains(path, ".OPT") ||
-        openai_map_ci_contains(path, "DESCRIP.MMS") ||
-        openai_map_ci_contains(path, "MAKEFILE")) {
-        return OPENAI_MAP_BUILD;
+    if (llm_map_ci_contains(path, "BUILD.COM") ||
+        llm_map_ci_contains(path, ".OPT") ||
+        llm_map_ci_contains(path, "DESCRIP.MMS") ||
+        llm_map_ci_contains(path, "MAKEFILE")) {
+        return LLM_MAP_BUILD;
     }
 
     dot = strrchr(path, '.');
@@ -253,24 +253,24 @@ static int openai_map_kind(const char *path)
             (void)memcpy(extension, dot, length);
             extension[length] = '\0';
 
-            if (openai_map_ci_equal(extension, ".C") ||
-                openai_map_ci_equal(extension, ".COB") ||
-                openai_map_ci_equal(extension, ".COBOL") ||
-                openai_map_ci_equal(extension, ".CBL")) {
-                return OPENAI_MAP_SOURCE;
+            if (llm_map_ci_equal(extension, ".C") ||
+                llm_map_ci_equal(extension, ".COB") ||
+                llm_map_ci_equal(extension, ".COBOL") ||
+                llm_map_ci_equal(extension, ".CBL")) {
+                return LLM_MAP_SOURCE;
             }
 
-            if (openai_map_ci_equal(extension, ".H") ||
-                openai_map_ci_equal(extension, ".CPY")) {
-                return OPENAI_MAP_HEADER;
+            if (llm_map_ci_equal(extension, ".H") ||
+                llm_map_ci_equal(extension, ".CPY")) {
+                return LLM_MAP_HEADER;
             }
         }
     }
 
-    return OPENAI_MAP_OTHER;
+    return LLM_MAP_OTHER;
 }
 
-static int openai_map_join(const char *parent,
+static int llm_map_join(const char *parent,
                            const char *child,
                            char *output,
                            size_t output_size)
@@ -297,13 +297,13 @@ static int openai_map_join(const char *parent,
            (size_t)written < output_size;
 }
 
-static void openai_map_add(const char *path)
+static void llm_map_add(const char *path)
 {
-    char logical_path[OPENAI_MAP_PATH];
+    char logical_path[LLM_MAP_PATH];
     unsigned int index;
     int kind;
 
-    openai_map_base_path(
+    llm_map_base_path(
         path, logical_path, sizeof(logical_path)
     );
 
@@ -311,42 +311,42 @@ static void openai_map_add(const char *path)
         return;
     }
 
-    for (index = 0U; index < openai_map_count; ++index) {
-        if (openai_map_ci_equal(
-                openai_map_files[index].path,
+    for (index = 0U; index < llm_map_count; ++index) {
+        if (llm_map_ci_equal(
+                llm_map_files[index].path,
                 logical_path)) {
             return;
         }
     }
 
-    if (openai_map_count >= OPENAI_MAP_MAX_FILES) {
-        openai_map_truncated = 1;
+    if (llm_map_count >= LLM_MAP_MAX_FILES) {
+        llm_map_truncated = 1;
         return;
     }
 
-    kind = openai_map_kind(logical_path);
+    kind = llm_map_kind(logical_path);
 
     (void)strncpy(
-        openai_map_files[openai_map_count].path,
+        llm_map_files[llm_map_count].path,
         logical_path,
-        sizeof(openai_map_files[openai_map_count].path) - 1U
+        sizeof(llm_map_files[llm_map_count].path) - 1U
     );
-    openai_map_files[openai_map_count].path[
-        sizeof(openai_map_files[openai_map_count].path) - 1U
+    llm_map_files[llm_map_count].path[
+        sizeof(llm_map_files[llm_map_count].path) - 1U
     ] = '\0';
-    openai_map_files[openai_map_count].kind = kind;
-    ++openai_map_count;
+    llm_map_files[llm_map_count].kind = kind;
+    ++llm_map_count;
 
-    if (kind == OPENAI_MAP_SOURCE) {
-        ++openai_map_sources;
-    } else if (kind == OPENAI_MAP_HEADER) {
-        ++openai_map_headers;
-    } else if (kind == OPENAI_MAP_TEST) {
-        ++openai_map_tests;
-    } else if (kind == OPENAI_MAP_BUILD) {
-        ++openai_map_builds;
+    if (kind == LLM_MAP_SOURCE) {
+        ++llm_map_sources;
+    } else if (kind == LLM_MAP_HEADER) {
+        ++llm_map_headers;
+    } else if (kind == LLM_MAP_TEST) {
+        ++llm_map_tests;
+    } else if (kind == LLM_MAP_BUILD) {
+        ++llm_map_builds;
     } else {
-        ++openai_map_others;
+        ++llm_map_others;
     }
 }
 
@@ -356,8 +356,8 @@ static void llm_map_walk(const char *path,
     DIR *directory;
     struct dirent *entry;
 
-    if (depth > OPENAI_MAP_DEPTH ||
-        openai_map_count >= OPENAI_MAP_MAX_FILES) {
+    if (depth > LLM_MAP_DEPTH ||
+        llm_map_count >= LLM_MAP_MAX_FILES) {
         return;
     }
 
@@ -368,17 +368,17 @@ static void llm_map_walk(const char *path,
     }
 
     while ((entry = readdir(directory)) != NULL) {
-        char child[OPENAI_MAP_PATH];
+        char child[LLM_MAP_PATH];
         DIR *candidate;
 
-        if (openai_map_hide(entry->d_name)) {
+        if (llm_map_hide(entry->d_name)) {
             continue;
         }
 
-        if (!openai_map_join(
+        if (!llm_map_join(
                 path, entry->d_name,
                 child, sizeof(child))) {
-            openai_map_truncated = 1;
+            llm_map_truncated = 1;
             continue;
         }
 
@@ -387,15 +387,15 @@ static void llm_map_walk(const char *path,
         if (candidate != NULL) {
             (void)closedir(candidate);
 
-            if (!openai_map_ci_contains(child, "BUILD")) {
+            if (!llm_map_ci_contains(child, "BUILD")) {
                 llm_map_walk(child, depth + 1U);
             }
         } else {
-            openai_map_add(child);
+            llm_map_add(child);
         }
 
-        if (openai_map_count >= OPENAI_MAP_MAX_FILES) {
-            openai_map_truncated = 1;
+        if (llm_map_count >= LLM_MAP_MAX_FILES) {
+            llm_map_truncated = 1;
             break;
         }
     }
@@ -414,17 +414,17 @@ static void llm_map_build_root(const char *path)
     }
 
     while ((entry = readdir(directory)) != NULL) {
-        char child[OPENAI_MAP_PATH];
+        char child[LLM_MAP_PATH];
         DIR *candidate;
 
-        if (openai_map_hide(entry->d_name)) {
+        if (llm_map_hide(entry->d_name)) {
             continue;
         }
 
-        if (!openai_map_join(
+        if (!llm_map_join(
                 path, entry->d_name,
                 child, sizeof(child))) {
-            openai_map_truncated = 1;
+            llm_map_truncated = 1;
             continue;
         }
 
@@ -434,15 +434,15 @@ static void llm_map_build_root(const char *path)
             continue;
         }
 
-        if (openai_map_kind(child) == OPENAI_MAP_BUILD) {
-            openai_map_add(child);
+        if (llm_map_kind(child) == LLM_MAP_BUILD) {
+            llm_map_add(child);
         }
     }
 
     (void)closedir(directory);
 }
 
-int openai_project_refresh(const agent_state *state)
+int llm_project_refresh_base(const agent_state *state)
 {
     if (state == NULL ||
         state->project_root == NULL ||
@@ -450,19 +450,19 @@ int openai_project_refresh(const agent_state *state)
         return 0;
     }
 
-    openai_map_count = 0U;
-    openai_map_sources = 0U;
-    openai_map_headers = 0U;
-    openai_map_tests = 0U;
-    openai_map_builds = 0U;
-    openai_map_others = 0U;
-    openai_map_truncated = 0;
+    llm_map_count = 0U;
+    llm_map_sources = 0U;
+    llm_map_headers = 0U;
+    llm_map_tests = 0U;
+    llm_map_builds = 0U;
+    llm_map_others = 0U;
+    llm_map_truncated = 0;
 
     /*
      * Seed authoritative root build definitions before bounded
      * repository traversal, then prioritize the conventional live
      * source/test areas. The final root walk fills remaining capacity.
-     * Duplicate logical filespecs are collapsed by openai_map_add().
+     * Duplicate logical filespecs are collapsed by llm_map_add().
      */
     llm_map_build_root(".");
 
@@ -484,15 +484,15 @@ int openai_project_refresh(const agent_state *state)
 
     llm_map_walk(".", 0U);
 
-    openai_map_loaded = 1;
+    llm_map_loaded = 1;
 
     return 1;
 }
 
 static int llm_map_ensure(const agent_state *state)
 {
-    if (!openai_map_loaded) {
-        return openai_project_refresh(state);
+    if (!llm_map_loaded) {
+        return llm_project_refresh_base(state);
     }
 
     return 1;
@@ -552,13 +552,13 @@ static int llm_map_render(const agent_state *state,
         "Tests:   %u\n"
         "Build:   %u\n"
         "Other:   %u\n\n",
-        openai_map_count,
-        openai_map_truncated ? "+" : "",
-        openai_map_sources,
-        openai_map_headers,
-        openai_map_tests,
-        openai_map_builds,
-        openai_map_others
+        llm_map_count,
+        llm_map_truncated ? "+" : "",
+        llm_map_sources,
+        llm_map_headers,
+        llm_map_tests,
+        llm_map_builds,
+        llm_map_others
     );
 
     if (written < 0 || (size_t)written >= output_size) {
@@ -568,17 +568,17 @@ static int llm_map_render(const agent_state *state,
     used = (size_t)written;
     shown = 0U;
 
-    for (index = 0U; index < openai_map_count; ++index) {
-        char line[OPENAI_MAP_PATH + 32U];
+    for (index = 0U; index < llm_map_count; ++index) {
+        char line[LLM_MAP_PATH + 32U];
 
         if (filter != 0 &&
-            openai_map_files[index].kind != filter) {
+            llm_map_files[index].kind != filter) {
             continue;
         }
 
         written = snprintf(
             line, sizeof(line), "%s\n",
-            openai_map_files[index].path
+            llm_map_files[index].path
         );
 
         if (written < 0) {
@@ -608,7 +608,7 @@ static int llm_map_render(const agent_state *state,
     return 1;
 }
 
-int openai_project_map_text(const agent_state *state,
+int llm_project_map_text_base(const agent_state *state,
                             char *output,
                             size_t output_size)
 {
@@ -617,7 +617,7 @@ int openai_project_map_text(const agent_state *state,
     );
 }
 
-int openai_project_files_text(const agent_state *state,
+int llm_project_files_text_base(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
@@ -626,34 +626,34 @@ int openai_project_files_text(const agent_state *state,
     );
 }
 
-int openai_project_src_text(const agent_state *state,
+int llm_project_src_text_base(const agent_state *state,
                             char *output,
                             size_t output_size)
 {
     return llm_map_render(
-        state, OPENAI_MAP_SOURCE, output, output_size
+        state, LLM_MAP_SOURCE, output, output_size
     );
 }
 
-int openai_project_tests_text(const agent_state *state,
+int llm_project_tests_text_base(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
     return llm_map_render(
-        state, OPENAI_MAP_TEST, output, output_size
+        state, LLM_MAP_TEST, output, output_size
     );
 }
 
-int openai_project_build_text(const agent_state *state,
+int llm_project_build_text_base(const agent_state *state,
                               char *output,
                               size_t output_size)
 {
     return llm_map_render(
-        state, OPENAI_MAP_BUILD, output, output_size
+        state, LLM_MAP_BUILD, output, output_size
     );
 }
 
-int openai_project_context(const agent_state *state,
+int llm_project_context_base(const agent_state *state,
                            char *output,
                            size_t output_size)
 {
@@ -661,7 +661,7 @@ int openai_project_context(const agent_state *state,
     int written;
 
     if (output == NULL || output_size == 0U ||
-        !openai_project_map_text(
+        !llm_project_map_text_base(
             state, map, sizeof(map))) {
         return 0;
     }
@@ -677,7 +677,7 @@ int openai_project_context(const agent_state *state,
            (size_t)written < output_size;
 }
 
-int openai_project_compose(const agent_state *state,
+int llm_project_compose_base(const agent_state *state,
                            const char *goal,
                            char *output,
                            size_t output_size)
@@ -690,7 +690,7 @@ int openai_project_compose(const agent_state *state,
         return 0;
     }
 
-    if (!openai_project_map_text(
+    if (!llm_project_map_text_base(
             state, map, sizeof(map))) {
         return 0;
     }
@@ -711,23 +711,23 @@ int openai_project_compose(const agent_state *state,
            (size_t)written < output_size;
 }
 
-void openai_show_project_map(const agent_state *state,
+void llm_show_project_map_base(const agent_state *state,
                              int filter)
 {
     char output[LLM_MAP_TEXT];
     int ok;
 
-    if (filter == OPENAI_MAP_SOURCE) {
-        ok = openai_project_src_text(
+    if (filter == LLM_MAP_SOURCE) {
+        ok = llm_project_src_text_base(
             state, output, sizeof(output));
-    } else if (filter == OPENAI_MAP_TEST) {
-        ok = openai_project_tests_text(
+    } else if (filter == LLM_MAP_TEST) {
+        ok = llm_project_tests_text_base(
             state, output, sizeof(output));
-    } else if (filter == OPENAI_MAP_BUILD) {
-        ok = openai_project_build_text(
+    } else if (filter == LLM_MAP_BUILD) {
+        ok = llm_project_build_text_base(
             state, output, sizeof(output));
     } else {
-        ok = openai_project_map_text(
+        ok = llm_project_map_text_base(
             state, output, sizeof(output));
     }
 
@@ -739,11 +739,11 @@ void openai_show_project_map(const agent_state *state,
     (void)fputs(output, stdout);
 }
 
-void openai_show_project_ctx(const agent_state *state)
+void llm_show_project_ctx_base(const agent_state *state)
 {
     char output[LLM_MAP_TEXT + 256U];
 
-    if (!openai_project_context(
+    if (!llm_project_context_base(
             state, output, sizeof(output))) {
         (void)puts("Unable to show repository context.");
         return;
@@ -752,16 +752,16 @@ void openai_show_project_ctx(const agent_state *state)
     (void)fputs(output, stdout);
 }
 
-void openai_project_refresh_cmd(const agent_state *state)
+void llm_project_refresh_cmd_base(const agent_state *state)
 {
-    if (!openai_project_refresh(state)) {
+    if (!llm_project_refresh_base(state)) {
         (void)puts("Project map refresh failed.");
         return;
     }
 
     (void)printf(
         "Project map refreshed: %u files%s.\n",
-        openai_map_count,
-        openai_map_truncated ? " (truncated)" : ""
+        llm_map_count,
+        llm_map_truncated ? " (truncated)" : ""
     );
 }
