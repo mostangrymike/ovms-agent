@@ -695,9 +695,9 @@ void openai_show_approval(void);
 int openai_set_approval(const char *arguments);
 void openai_set_approval_cmd(const char *arguments);
 void openai_reset_approval(void);
-int openai_context_text(const agent_state *state,
+int llm_context_text(const agent_state *state,
                         char *output, size_t output_size);
-void openai_show_context(const agent_state *state);
+void llm_show_context(const agent_state *state);
 int openai_parity_text(char *output, size_t output_size);
 void openai_show_parity(void);
 int openai_final_parity_text(char *output, size_t output_size);
