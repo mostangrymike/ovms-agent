@@ -53,7 +53,7 @@ jobs:
               'openai_map_render': ('SRC/LLM_PROJECT_MAP_CORE.INC', 6, 'llm_map_render'),
           }
 
-          tracked = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p]
+          tracked = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p and not p.startswith('.github/')]
           cache = {}
           def text(path):
               if path not in cache:
