@@ -1,54 +1,94 @@
-name: M267 exact survivor audit cb0164b1
+name: M267 asserted broader context migration
 
 on:
   pull_request:
     branches: [m267-llm-naming]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  audit:
+  transform:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: m267-audit-survivors-cb016
           fetch-depth: 0
-      - name: Enumerate exact remaining generic OpenAI namespace
+      - name: Apply exact broader context rename
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import collections, pathlib, re, subprocess
-          token_re = re.compile(r'\b(?:openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)\b')
-          files = subprocess.check_output(['git','ls-files'], text=True).splitlines()
-          counts = collections.Counter()
-          paths = collections.defaultdict(collections.Counter)
-          filename_hits = []
-          for name in files:
+          expected = {
+              'openai_context_text': {
+                  'SRC/LLM_INTERNAL_CORE.H': 1,
+                  'SRC/LLM_PARITY_CORE.INC': 2,
+                  'SRC/m227_parity_test.c': 1,
+              },
+              'openai_show_context': {
+                  'SRC/COMMAND_AGENT.C': 1,
+                  'SRC/LLM_INTERNAL_CORE.H': 1,
+                  'SRC/LLM_PARITY_CORE.INC': 1,
+              },
+          }
+          token_re = re.compile(r'\b(?:openai_context_text|openai_show_context)\b')
+          found = collections.defaultdict(collections.Counter)
+          for name in subprocess.check_output(['git','ls-files'], text=True).splitlines():
               if not (name.startswith('SRC/') or name.startswith('src/')):
                   continue
-              if 'openai' in name.lower():
-                  filename_hits.append(name)
-              p = pathlib.Path(name)
               try:
-                  text = p.read_text(encoding='utf-8')
+                  text = pathlib.Path(name).read_text(encoding='utf-8')
               except (UnicodeDecodeError, OSError):
                   continue
               for token in token_re.findall(text):
-                  counts[token] += 1
-                  paths[token][name] += 1
-          print('M267_SURVIVORS_BEGIN')
-          total = 0
-          for token in sorted(counts, key=lambda s:(s.lower(),s)):
-              total += counts[token]
-              detail = ','.join(f'{p}:{n}' for p,n in sorted(paths[token].items()))
-              print(f'{token}|{counts[token]}|{detail}')
-          print(f'TOTAL|{total}|TOKENS|{len(counts)}')
-          print('FILENAMES_BEGIN')
-          for name in filename_hits:
-              print(name)
-          print(f'FILENAMES_TOTAL|{len(filename_hits)}')
-          print('FILENAMES_END')
-          print('M267_SURVIVORS_END')
+                  found[token][name] += 1
+          found = {k: dict(v) for k,v in found.items()}
+          if found != expected:
+              raise SystemExit(f'broader context graph drifted\nEXPECTED={expected}\nFOUND={found}')
+
+          mapping = {
+              'openai_context_text': 'llm_context_text',
+              'openai_show_context': 'llm_show_context',
+          }
+          paths = {
+              'SRC/COMMAND_AGENT.C',
+              'SRC/LLM_INTERNAL_CORE.H',
+              'SRC/LLM_PARITY_CORE.INC',
+              'SRC/m227_parity_test.c',
+          }
+          for name in paths:
+              p = pathlib.Path(name)
+              text = p.read_text(encoding='utf-8')
+              for old,new in mapping.items():
+                  text = re.sub(r'\b' + re.escape(old) + r'\b', new, text)
+              p.write_text(text, encoding='utf-8')
+
+          remain = collections.Counter()
+          for name in subprocess.check_output(['git','ls-files'], text=True).splitlines():
+              if not (name.startswith('SRC/') or name.startswith('src/')):
+                  continue
+              try:
+                  text = pathlib.Path(name).read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              remain.update(token_re.findall(text))
+          if remain:
+              raise SystemExit(f'broader context survivors remain: {dict(remain)}')
+          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
+          if changed != paths:
+              raise SystemExit(f'unexpected source delta: {sorted(changed)}')
+          print('M267_BROADER_CONTEXT_TRANSFORM_OK')
+          print('FILES=4 TOKENS=2 OLD_OCCURRENCES=7')
           PY
+      - name: Remove helper workflow and publish candidate tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/m267-audit-survivors-cb016.yml
+          git add SRC/COMMAND_AGENT.C SRC/LLM_INTERNAL_CORE.H SRC/LLM_PARITY_CORE.INC SRC/m227_parity_test.c
+          git commit -m 'M267: complete broader context entrypoint namespace'
+          git push origin HEAD:m267-audit-survivors-cb016
