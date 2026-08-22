@@ -74,11 +74,11 @@ int write_headers(const char *api_key)
     FILE *file;
     int success;
 
-    file = fopen(OPENAI_HEADERS_FILE, "w");
+    file = fopen(LLM_HEADERS_FILE, "w");
 
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_HEADERS_FILE,
+                     LLM_HEADERS_FILE,
                      strerror(errno));
         return 0;
     }
@@ -106,17 +106,17 @@ int write_headers(const char *api_key)
 
 void remove_temporary_files(void)
 {
-    (void)remove(OPENAI_REQUEST_FILE);
-    (void)remove(OPENAI_HEADERS_FILE);
+    (void)remove(LLM_REQUEST_FILE);
+    (void)remove(LLM_HEADERS_FILE);
 }
 
 int perform_openai_request(void)
 {
     static const char prefix[] =
         "curl --silent --show-error "
-        "--output " OPENAI_RESPONSE_FILE " "
-        "--header @" OPENAI_HEADERS_FILE " "
-        "--data-binary @" OPENAI_REQUEST_FILE " ";
+        "--output " LLM_RESPONSE_FILE " "
+        "--header @" LLM_HEADERS_FILE " "
+        "--data-binary @" LLM_REQUEST_FILE " ";
     const char *base;
     char url[M262_RESPONSE_URL_MAX];
     char command[1024];

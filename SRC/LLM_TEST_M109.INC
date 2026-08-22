@@ -6,8 +6,8 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m109_state_writer(path);
-    text = openai_read_text_file(path);
+    ok = llm_m109_state_writer(path);
+    text = llm_read_text_file(path);
     ok =
         ok &&
         text != NULL &&
@@ -21,7 +21,7 @@
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "production state serializer tested",
         ok,
         &passed_count,
@@ -37,13 +37,13 @@
     }
 
     ok =
-        openai_m109_state_writer(path) &&
-        openai_m109_state_reader(path);
+        llm_m109_state_writer(path) &&
+        llm_m109_state_reader(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "production execute state reload tested",
         ok,
         &passed_count,
@@ -58,12 +58,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m109_invalid_workflow(path);
+    ok = llm_m109_invalid_workflow(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid workflow state rejected",
         ok,
         &passed_count,
@@ -78,12 +78,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m109_incomplete_state(path);
+    ok = llm_m109_incomplete_state(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "incomplete state file rejected",
         ok,
         &passed_count,

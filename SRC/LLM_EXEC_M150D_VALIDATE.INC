@@ -1,4 +1,4 @@
-static int openai_m150d_write(
+static int llm_m150d_write(
     const char *path,
     const char *text)
 {
@@ -20,7 +20,7 @@ static int openai_m150d_write(
     return result;
 }
 
-static int openai_m150d_exists(
+static int llm_m150d_exists(
     const char *path)
 {
     FILE *file;
@@ -35,7 +35,7 @@ static int openai_m150d_exists(
     return 1;
 }
 
-static int openai_m150d_contains(
+static int llm_m150d_contains(
     const char *path,
     const char *text)
 {
@@ -59,7 +59,7 @@ static int openai_m150d_contains(
     return 0;
 }
 
-static void openai_m150d_remove_pair(
+static void llm_m150d_remove_pair(
     const char *path)
 {
     char checksum_path[512];
@@ -81,7 +81,7 @@ static void openai_m150d_remove_pair(
     }
 }
 
-static int openai_m150d_make_plan(
+static int llm_m150d_make_plan(
     const char *plan_path,
     const char *target_path)
 {
@@ -143,23 +143,23 @@ static int openai_m150d_make_plan(
 
     return
         result &&
-        openai_plan_checksum_write(plan_path);
+        llm_plan_checksum_write(plan_path);
 }
 
-static int openai_m150d_run(
+static int llm_m150d_run(
     const char *plan_path,
     const char *new_path,
     const char *backup_path,
     int build_status)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     int result;
     int rollback_ok;
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
 
     transaction = (edit_txn *)malloc(
@@ -174,14 +174,14 @@ static int openai_m150d_run(
 
     operation_count = 0U;
 
-    openai_plan_recovery_sync(plan_path);
+    llm_plan_recovery_sync(plan_path);
 
     result =
-        openai_plan_file_current(plan_path, 0) &&
+        llm_plan_file_current(plan_path, 0) &&
         execute_parse_operations(
             plan_path,
             operations,
-            OPENAI_EXECUTE_MAX_OPERATIONS,
+            LLM_EXECUTE_MAX_OPERATIONS,
             &operation_count);
 
     if (!result) {
@@ -198,14 +198,14 @@ static int openai_m150d_run(
         operation_count);
 
     if (!result ||
-        !openai_plan_approval_valid(plan_path)) {
+        !llm_plan_approval_valid(plan_path)) {
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
         return 0;
     }
 
-    openai_plan_approval_consume();
+    llm_plan_approval_consume();
 
     result = edit_txn_write(transaction);
 
@@ -237,7 +237,7 @@ static int openai_m150d_run(
     free(transaction);
     free(operations);
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
     if (!execute_mark_consumed_file(
             plan_path,
@@ -250,44 +250,44 @@ static int openai_m150d_run(
     return 1;
 }
 
-static int openai_m150d_setup(
+static int llm_m150d_setup(
     const char *plan,
     const char *target,
     const char *new_path,
     const char *backup_path)
 {
-    openai_m150d_remove_pair(plan);
+    llm_m150d_remove_pair(plan);
 
     while (remove(target) == 0) {
     }
 
-    openai_m150d_remove_pair(new_path);
-    openai_m150d_remove_pair(backup_path);
-    openai_plan_approval_clear();
+    llm_m150d_remove_pair(new_path);
+    llm_m150d_remove_pair(backup_path);
+    llm_plan_approval_clear();
 
     return
-        openai_m150d_make_plan(plan, target) &&
-        openai_plan_approve_file(plan) &&
-        openai_plan_approval_valid(plan);
+        llm_m150d_make_plan(plan, target) &&
+        llm_plan_approve_file(plan) &&
+        llm_plan_approval_valid(plan);
 }
 
-static void openai_m150d_cleanup(
+static void llm_m150d_cleanup(
     const char *plan,
     const char *target,
     const char *new_path,
     const char *backup_path)
 {
-    openai_m150d_remove_pair(plan);
+    llm_m150d_remove_pair(plan);
 
     while (remove(target) == 0) {
     }
 
-    openai_m150d_remove_pair(new_path);
-    openai_m150d_remove_pair(backup_path);
-    openai_plan_approval_clear();
+    llm_m150d_remove_pair(new_path);
+    llm_m150d_remove_pair(backup_path);
+    llm_plan_approval_clear();
 }
 
-int openai_m150d_success(void)
+int llm_m150d_success(void)
 {
     const char *plan =
         "OVMS_AGENT_TEST_M150D_OK.PLAN";
@@ -299,12 +299,12 @@ int openai_m150d_success(void)
         "OVMS_AGENT_TEST_M150D_OK.OLD";
     int result;
 
-    if (!openai_m150d_setup(
+    if (!llm_m150d_setup(
             plan,
             target,
             new_path,
             backup_path)) {
-        openai_m150d_cleanup(
+        llm_m150d_cleanup(
             plan,
             target,
             new_path,
@@ -313,23 +313,23 @@ int openai_m150d_success(void)
     }
 
     result =
-        openai_m150d_run(
+        llm_m150d_run(
             plan,
             new_path,
             backup_path,
             1) == 1 &&
-        openai_m150d_exists(target) &&
-        openai_m150d_contains(
+        llm_m150d_exists(target) &&
+        llm_m150d_contains(
             target,
             "M150D created content") &&
-        openai_m150d_contains(
+        llm_m150d_contains(
             plan,
             "status=consumed") &&
-        !openai_plan_file_current(plan, 0) &&
-        !openai_plan_approved &&
-        openai_approved_hash == 0UL;
+        !llm_plan_file_current(plan, 0) &&
+        !llm_plan_approved &&
+        llm_approved_hash == 0UL;
 
-    openai_m150d_cleanup(
+    llm_m150d_cleanup(
         plan,
         target,
         new_path,
@@ -338,7 +338,7 @@ int openai_m150d_success(void)
     return result;
 }
 
-int openai_m150d_rollback(void)
+int llm_m150d_rollback(void)
 {
     const char *plan =
         "OVMS_AGENT_TEST_M150D_FAIL.PLAN";
@@ -350,12 +350,12 @@ int openai_m150d_rollback(void)
         "OVMS_AGENT_TEST_M150D_FAIL.OLD";
     int result;
 
-    if (!openai_m150d_setup(
+    if (!llm_m150d_setup(
             plan,
             target,
             new_path,
             backup_path)) {
-        openai_m150d_cleanup(
+        llm_m150d_cleanup(
             plan,
             target,
             new_path,
@@ -364,20 +364,20 @@ int openai_m150d_rollback(void)
     }
 
     result =
-        openai_m150d_run(
+        llm_m150d_run(
             plan,
             new_path,
             backup_path,
             0) == -1 &&
-        !openai_m150d_exists(target) &&
-        openai_m150d_contains(
+        !llm_m150d_exists(target) &&
+        llm_m150d_contains(
             plan,
             "status=active") &&
-        openai_plan_file_current(plan, 0) &&
-        !openai_plan_approved &&
-        openai_approved_hash == 0UL;
+        llm_plan_file_current(plan, 0) &&
+        !llm_plan_approved &&
+        llm_approved_hash == 0UL;
 
-    openai_m150d_cleanup(
+    llm_m150d_cleanup(
         plan,
         target,
         new_path,
@@ -386,7 +386,7 @@ int openai_m150d_rollback(void)
     return result;
 }
 
-int openai_m150d_tamper(void)
+int llm_m150d_tamper(void)
 {
     const char *plan =
         "OVMS_AGENT_TEST_M150D_BAD.PLAN";
@@ -399,12 +399,12 @@ int openai_m150d_tamper(void)
     FILE *file;
     int result;
 
-    if (!openai_m150d_setup(
+    if (!llm_m150d_setup(
             plan,
             target,
             new_path,
             backup_path)) {
-        openai_m150d_cleanup(
+        llm_m150d_cleanup(
             plan,
             target,
             new_path,
@@ -415,7 +415,7 @@ int openai_m150d_tamper(void)
     file = fopen(plan, "a");
 
     if (file == NULL) {
-        openai_m150d_cleanup(
+        llm_m150d_cleanup(
             plan,
             target,
             new_path,
@@ -425,7 +425,7 @@ int openai_m150d_tamper(void)
 
     if (fputs("tampered=1\n", file) == EOF ||
         fclose(file) != 0) {
-        openai_m150d_cleanup(
+        llm_m150d_cleanup(
             plan,
             target,
             new_path,
@@ -434,16 +434,16 @@ int openai_m150d_tamper(void)
     }
 
     result =
-        openai_m150d_run(
+        llm_m150d_run(
             plan,
             new_path,
             backup_path,
             1) == 0 &&
-        !openai_m150d_exists(target) &&
-        !openai_plan_approved &&
-        openai_approval_invalidated;
+        !llm_m150d_exists(target) &&
+        !llm_plan_approved &&
+        llm_approval_invalidated;
 
-    openai_m150d_cleanup(
+    llm_m150d_cleanup(
         plan,
         target,
         new_path,

@@ -22,16 +22,16 @@ void llm_agent_build(agent_state *state, const char *goal)
     char *arguments;
     char *context_items;
     char *tool_output;
-    const openai_tool_descriptor *descriptor;
+    const llm_tool_descriptor *descriptor;
     int build_status;
 
-    openai_last_workflow = OPENAI_WORKFLOW_BUILD;
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_last_workflow = LLM_WORKFLOW_BUILD;
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -72,14 +72,14 @@ void llm_agent_build(agent_state *state, const char *goal)
     }
 
     if (!perform_openai_request()) {
-        (void)puts("Initial OpenAI request failed.");
+        (void)puts("Initial LLM request failed.");
         remove_temporary_files();
         return;
     }
 
-    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    json = read_entire_file(LLM_RESPONSE_FILE, NULL);
     if (json == NULL) {
-        (void)puts("Unable to read initial OpenAI response.");
+        (void)puts("Unable to read initial LLM response.");
         remove_temporary_files();
         return;
     }
@@ -101,10 +101,10 @@ void llm_agent_build(agent_state *state, const char *goal)
         return;
     }
 
-    descriptor = openai_tool_find(name);
+    descriptor = llm_tool_find(name);
 
     if (descriptor == NULL ||
-        descriptor->kind != OPENAI_TOOL_RUN_BUILD) {
+        descriptor->kind != LLM_TOOL_RUN_BUILD) {
         (void)printf("Unsupported build tool requested: %s\n", name);
         free(name);
         free(call_id);
@@ -156,12 +156,12 @@ void llm_agent_build(agent_state *state, const char *goal)
     free(call_id);
 
     if (!perform_openai_request()) {
-        (void)puts("Follow-up OpenAI request failed.");
+        (void)puts("Follow-up LLM request failed.");
         remove_temporary_files();
         return;
     }
 
-    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    json = read_entire_file(LLM_RESPONSE_FILE, NULL);
     if (json == NULL) {
         (void)puts("Unable to read follow-up response.");
         remove_temporary_files();

@@ -6,12 +6,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m117_tmp_is_unique(path);
+    ok = llm_m117_tmp_is_unique(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "production temporary path is unique",
         ok,
         &passed_count,
@@ -24,9 +24,9 @@
         "OVMS_AGENT_TEST_M117_TRUNCATION.TMP";
     int ok;
 
-    ok = openai_m117_tmp_truncation(path);
+    ok = llm_m117_tmp_truncation(path);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "temporary path truncation rejected",
         ok,
         &passed_count,
@@ -39,9 +39,9 @@
         "OVMS_AGENT_TEST_M117_COLLISION.TMP";
     int ok;
 
-    ok = openai_m117_tmp_no_collision(path);
+    ok = llm_m117_tmp_no_collision(path);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "separate temporary paths do not collide",
         ok,
         &passed_count,
@@ -57,12 +57,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m117_atomic_valid(path);
+    ok = llm_m117_atomic_valid(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "atomic production writer still valid",
         ok,
         &passed_count,

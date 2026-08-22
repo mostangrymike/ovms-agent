@@ -10,52 +10,40 @@
 #ifndef LLM_INTERNAL_WRAPPER_H
 #define LLM_INTERNAL_WRAPPER_H
 
-#ifndef openai_git_refresh
-#define openai_git_refresh llm_git_refresh
+#ifndef llm_git_refresh
 #define LLM_INT_U_GIT_REFRESH 1
 #endif
-#ifndef openai_git_status_text
-#define openai_git_status_text llm_git_status_text
+#ifndef llm_git_status_text
 #define LLM_INT_U_GIT_STATUS 1
 #endif
-#ifndef openai_git_diff_text
-#define openai_git_diff_text llm_git_diff_text
+#ifndef llm_git_diff_text
 #define LLM_INT_U_GIT_DIFF 1
 #endif
-#ifndef openai_git_changed_text
-#define openai_git_changed_text llm_git_changed_text
+#ifndef llm_git_changed_text
 #define LLM_INT_U_GIT_CHANGED 1
 #endif
-#ifndef openai_git_context
-#define openai_git_context llm_git_context
+#ifndef llm_git_context
 #define LLM_INT_U_GIT_CONTEXT 1
 #endif
-#ifndef openai_git_compose
-#define openai_git_compose llm_git_compose
+#ifndef llm_git_compose
 #define LLM_INT_U_GIT_COMPOSE 1
 #endif
-#ifndef openai_show_git_status
-#define openai_show_git_status llm_show_git_status
+#ifndef llm_show_git_status
 #define LLM_INT_U_SHOW_GIT_STATUS 1
 #endif
-#ifndef openai_show_git_diff
-#define openai_show_git_diff llm_show_git_diff
+#ifndef llm_show_git_diff
 #define LLM_INT_U_SHOW_GIT_DIFF 1
 #endif
-#ifndef openai_show_git_changed
-#define openai_show_git_changed llm_show_git_changed
+#ifndef llm_show_git_changed
 #define LLM_INT_U_SHOW_GIT_CHANGED 1
 #endif
-#ifndef openai_show_git_context
-#define openai_show_git_context llm_show_git_context
+#ifndef llm_show_git_context
 #define LLM_INT_U_SHOW_GIT_CONTEXT 1
 #endif
-#ifndef openai_git_refresh_cmd
-#define openai_git_refresh_cmd llm_git_refresh_cmd
+#ifndef llm_git_refresh_cmd
 #define LLM_INT_U_GIT_REFRESH_CMD 1
 #endif
-#ifndef openai_test_git_data
-#define openai_test_git_data llm_test_git_data
+#ifndef llm_test_git_data
 #define LLM_INT_U_TEST_GIT_DATA 1
 #endif
 
@@ -64,51 +52,39 @@
 int llm_git_rms_copy(const char *path, const char *target);
 
 #ifdef LLM_INT_U_TEST_GIT_DATA
-#undef openai_test_git_data
 #undef LLM_INT_U_TEST_GIT_DATA
 #endif
 #ifdef LLM_INT_U_GIT_REFRESH_CMD
-#undef openai_git_refresh_cmd
 #undef LLM_INT_U_GIT_REFRESH_CMD
 #endif
 #ifdef LLM_INT_U_SHOW_GIT_CONTEXT
-#undef openai_show_git_context
 #undef LLM_INT_U_SHOW_GIT_CONTEXT
 #endif
 #ifdef LLM_INT_U_SHOW_GIT_CHANGED
-#undef openai_show_git_changed
 #undef LLM_INT_U_SHOW_GIT_CHANGED
 #endif
 #ifdef LLM_INT_U_SHOW_GIT_DIFF
-#undef openai_show_git_diff
 #undef LLM_INT_U_SHOW_GIT_DIFF
 #endif
 #ifdef LLM_INT_U_SHOW_GIT_STATUS
-#undef openai_show_git_status
 #undef LLM_INT_U_SHOW_GIT_STATUS
 #endif
 #ifdef LLM_INT_U_GIT_COMPOSE
-#undef openai_git_compose
 #undef LLM_INT_U_GIT_COMPOSE
 #endif
 #ifdef LLM_INT_U_GIT_CONTEXT
-#undef openai_git_context
 #undef LLM_INT_U_GIT_CONTEXT
 #endif
 #ifdef LLM_INT_U_GIT_CHANGED
-#undef openai_git_changed_text
 #undef LLM_INT_U_GIT_CHANGED
 #endif
 #ifdef LLM_INT_U_GIT_DIFF
-#undef openai_git_diff_text
 #undef LLM_INT_U_GIT_DIFF
 #endif
 #ifdef LLM_INT_U_GIT_STATUS
-#undef openai_git_status_text
 #undef LLM_INT_U_GIT_STATUS
 #endif
 #ifdef LLM_INT_U_GIT_REFRESH
-#undef openai_git_refresh
 #undef LLM_INT_U_GIT_REFRESH
 #endif
 

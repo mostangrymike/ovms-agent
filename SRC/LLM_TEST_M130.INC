@@ -1,9 +1,9 @@
 {
     int ok;
 
-    ok = openai_m130_first_fail_invalid();
+    ok = llm_m130_first_fail_invalid();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed first save remains invalid",
         ok,
         &passed_count,
@@ -14,9 +14,9 @@
 {
     int ok;
 
-    ok = openai_m130_later_fail_valid();
+    ok = llm_m130_later_fail_valid();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed later save preserves valid snapshot",
         ok,
         &passed_count,
@@ -27,9 +27,9 @@
 {
     int ok;
 
-    ok = openai_m130_success_valid();
+    ok = llm_m130_success_valid();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "successful save establishes validity",
         ok,
         &passed_count,
@@ -44,12 +44,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m130_load_resets_save(path);
+    ok = llm_m130_load_resets_save(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "load resets save-attempt status",
         ok,
         &passed_count,

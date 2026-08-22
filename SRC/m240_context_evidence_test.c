@@ -18,7 +18,7 @@ int main(void)
     while (remove("M240_TX.TMP") == 0) {
     }
 
-    openai_test_tx_path("M240_TX.TMP");
+    llm_test_tx_path("M240_TX.TMP");
 
     for (index = 0U; index < 36U; ++index) {
         (void)snprintf(
@@ -26,10 +26,10 @@ int main(void)
             "TOOL RESULT tool: read_file status: ok code: 1 "
             "effect: read truncated: no output: evidence-%u",
             index);
-        openai_tx_model_result("read_file", "ok", result);
+        llm_tx_model_result("read_file", "ok", result);
     }
 
-    openai_tx_model_result(
+    llm_tx_model_result(
         "run_build", "failure",
         "TOOL RESULT tool: run_build status: failure code: 2 "
         "effect: execute truncated: no output: M240-LAST-BUILD-FAILURE");
@@ -44,7 +44,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Priority result replay: available") == NULL) {
         (void)puts("M240 failed: parity status.");
         return EXIT_FAILURE;

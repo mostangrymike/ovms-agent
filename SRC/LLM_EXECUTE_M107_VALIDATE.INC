@@ -1,4 +1,4 @@
-int openai_m107_build_evidence(const char *path)
+int llm_m107_build_evidence(const char *path)
 {
     char *text;
     int result;
@@ -11,7 +11,7 @@ int openai_m107_build_evidence(const char *path)
         return 0;
     }
 
-    text = openai_read_text_file(path);
+    text = llm_read_text_file(path);
     result =
         text != NULL &&
         strstr(text, "SIMULATED BUILD FAILURE") != NULL;
@@ -19,16 +19,16 @@ int openai_m107_build_evidence(const char *path)
     return result;
 }
 
-int openai_m107_ops_evidence(const char *path)
+int llm_m107_ops_evidence(const char *path)
 {
-    openai_saved_operation operation;
+    llm_saved_operation operation;
     char *text;
     int result;
 
     (void)memset(&operation, 0, sizeof(operation));
     (void)strcpy(
         operation.path,
-        "SRC/OPENAI_M107_TEST.C");
+        "SRC/LLM_M107_TEST.C");
     (void)strcpy(operation.old_text, "ORIGINAL");
     (void)strcpy(operation.new_text, "BROKEN");
     operation.is_block = 1;
@@ -42,7 +42,7 @@ int openai_m107_ops_evidence(const char *path)
         return 0;
     }
 
-    text = openai_read_text_file(path);
+    text = llm_read_text_file(path);
     result =
         text != NULL &&
         strstr(text, "operation_count=1") != NULL &&
@@ -55,16 +55,16 @@ int openai_m107_ops_evidence(const char *path)
     return result;
 }
 
-int openai_m108_build_writer(const char *path)
+int llm_m108_build_writer(const char *path)
 {
     return execute_save_build_to(
         path,
         "M108 PRODUCTION BUILD EVIDENCE\n");
 }
 
-int openai_m108_ops_writer(const char *path)
+int llm_m108_ops_writer(const char *path)
 {
-    openai_saved_operation operation;
+    llm_saved_operation operation;
 
     (void)memset(&operation, 0, sizeof(operation));
     (void)strcpy(operation.path, "SRC/M108.C");
@@ -78,7 +78,7 @@ int openai_m108_ops_writer(const char *path)
         1U);
 }
 
-int openai_m108_null_path(void)
+int llm_m108_null_path(void)
 {
     return
         !execute_save_build_to(
@@ -90,7 +90,7 @@ int openai_m108_null_path(void)
             0U);
 }
 
-int openai_m108_null_ops(const char *path)
+int llm_m108_null_ops(const char *path)
 {
     return !execute_save_ops_to(
         path,

@@ -1,29 +1,29 @@
 #include "llm_internal.h"
 #include "LLM_STATE_M109_PATH_HELPERS.INC"
 
-static void openai_state_note_save_result(int save_succeeded);
+static void llm_state_note_save_result(int save_succeeded);
 
-void openai_save_state(void)
+void llm_save_state(void)
 {
     int save_succeeded;
     int prior_valid;
 
-    save_succeeded = openai_state_save_to(
-        OPENAI_STATE_FILE,
-        openai_last_workflow,
-        openai_last_build_known,
-        openai_last_build_status,
-        openai_last_rollback);
+    save_succeeded = llm_state_save_to(
+        LLM_STATE_FILE,
+        llm_last_workflow,
+        llm_last_build_known,
+        llm_last_build_status,
+        llm_last_rollback);
 
-    prior_valid = openai_state_valid;
-    openai_state_note_save_result(save_succeeded);
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = save_succeeded ? 1 : 0;
+    prior_valid = llm_state_valid;
+    llm_state_note_save_result(save_succeeded);
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = save_succeeded ? 1 : 0;
     if (save_succeeded) {
-        openai_state_recovered = 0;
-        openai_state_snapshot_current();
+        llm_state_recovered = 0;
+        llm_state_snapshot_current();
     } else {
-        openai_state_valid = prior_valid;
+        llm_state_valid = prior_valid;
     }
 }
 
@@ -53,32 +53,32 @@ void openai_save_state(void)
 #include "LLM_STATE_M133_VALIDATE.INC"
 #include "LLM_STATE_M134_VALIDATE.INC"
 
-void openai_state_save(void)
+void llm_state_save(void)
 {
-    openai_save_state();
+    llm_save_state();
 }
 
-void openai_load_state(void)
+void llm_load_state(void)
 {
-    if (openai_state_loaded) {
+    if (llm_state_loaded) {
         return;
     }
 
-    (void)openai_state_apply_load(OPENAI_STATE_FILE);
+    (void)llm_state_apply_load(LLM_STATE_FILE);
 }
 
-void openai_show_state(void)
+void llm_show_state(void)
 {
-    openai_load_state();
+    llm_load_state();
 
     (void)puts("OVMS Agent persisted state");
     (void)puts("--------------------------");
     (void)printf(
         "State file:               %s\n",
-        OPENAI_STATE_FILE
+        LLM_STATE_FILE
     );
 
-    if (!openai_state_valid) {
+    if (!llm_state_valid) {
         (void)puts(
             "State status:             unavailable or invalid"
         );
@@ -87,22 +87,22 @@ void openai_show_state(void)
 
     (void)printf(
         "State source:             %s\n",
-        openai_state_source_name(
-            openai_state_valid,
-            openai_state_recovered)
+        llm_state_source_name(
+            llm_state_valid,
+            llm_state_recovered)
     );
     (void)puts("State format:             1");
     (void)printf(
         "Last workflow:            %s\n",
-        openai_workflow_name(openai_saved_workflow)
+        llm_workflow_name(llm_saved_workflow)
     );
 
-    if (openai_saved_build_known) {
+    if (llm_saved_build_known) {
         (void)printf(
             "Last build:               %s (status %d)\n",
-            (openai_saved_build_status & 1) != 0 ?
+            (llm_saved_build_status & 1) != 0 ?
                 "success" : "failure",
-            openai_saved_build_status
+            llm_saved_build_status
         );
     } else {
         (void)puts(
@@ -112,14 +112,14 @@ void openai_show_state(void)
 
     (void)printf(
         "Last rollback:            %s\n",
-        openai_rollback_name(openai_saved_rollback)
+        llm_rollback_name(llm_saved_rollback)
     );
 
 
     {
         char repair_record[1024];
 
-        if (openai_last_repair_record(
+        if (llm_last_repair_record(
                 repair_record,
                 sizeof(repair_record))) {
             size_t length;
@@ -150,7 +150,7 @@ void openai_show_state(void)
     );
 }
 
-void openai_clear_state(void)
+void llm_clear_state(void)
 {
     char answer[32];
 
@@ -169,22 +169,22 @@ void openai_clear_state(void)
         return;
     }
 
-    if (!openai_state_purge_all(OPENAI_STATE_FILE)) {
+    if (!llm_state_purge_all(LLM_STATE_FILE)) {
         (void)printf(
             "Unable to remove %s: %s\n",
-            OPENAI_STATE_FILE,
+            LLM_STATE_FILE,
             strerror(errno)
         );
         return;
     }
 
-    openai_state_reset_memory();
-    openai_state_loaded = 1;
+    llm_state_reset_memory();
+    llm_state_loaded = 1;
 
     (void)puts("Persistent workflow state cleared.");
 }
 
-void openai_show_memory(void)
+void llm_show_memory(void)
 {
     FILE *file;
     char line[4096];
@@ -339,18 +339,18 @@ void openai_show_memory(void)
     }
 
     /* Now show persisted state file if available */
-    file = fopen(OPENAI_STATE_FILE, "r");
+    file = fopen(LLM_STATE_FILE, "r");
     if (file == NULL) {
-        (void)printf("State file unavailable: %s\n", OPENAI_STATE_FILE);
+        (void)printf("State file unavailable: %s\n", LLM_STATE_FILE);
         (void)puts("OVMS_AGENT.STATE not found or unreadable; state display skipped.");
     } else {
         (void)fclose(file);
         /* reuse existing display routine */
-        openai_show_state();
+        llm_show_state();
     }
 }
 
-int openai_state_load_path(const char *path)
+int llm_state_load_path(const char *path)
 {
-    return openai_state_apply_load(path);
+    return llm_state_apply_load(path);
 }

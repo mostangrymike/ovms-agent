@@ -415,7 +415,7 @@ project-relative task paths. Matching scopes are ordered broad-to-specific, deep
 rules are appended later with explicit precedence, active scoped files and
 truncation state are reported, and unsafe traversal/device tokens are rejected.
 M257.2 proves root+nested discovery, ordering, active-file reporting, and root-only
-fallback. M257.3 runs the real `OPENAI_AGENT.C` PLAN and WRITE entry paths with a
+fallback. M257.3 runs the real `LLM_AGENT.C` PLAN and WRITE entry paths with a
 capture stub at the final agent-mode boundary and proves that both workflows
 receive the root rule, scoped rule, precedence marker, and original request in
 the final model goal. The focused OpenVMS driver completed with `%X00000001`.

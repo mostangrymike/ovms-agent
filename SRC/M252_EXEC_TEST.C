@@ -4,7 +4,7 @@
 
 #include "edit_txn.h"
 
-int openai_m252_delete_exec(const char *path, int commit_change);
+int llm_m252_delete_exec(const char *path, int commit_change);
 
 int command_line_complete(
     const char *input,
@@ -150,7 +150,7 @@ static int m252_exec_rollback(void)
     }
 
     result =
-        openai_m252_delete_exec(plan, 0) &&
+        llm_m252_delete_exec(plan, 0) &&
         m252_exec_read(versioned, exact_spec, text);
 
     m252_exec_cleanup(plan);
@@ -177,7 +177,7 @@ static int m252_exec_commit(void)
     }
 
     result =
-        openai_m252_delete_exec(plan, 1) &&
+        llm_m252_delete_exec(plan, 1) &&
         m252_exec_absent(versioned) &&
         m252_exec_absent(base);
 

@@ -11,7 +11,5 @@ int llm_execute_count_ops(
     unsigned int *operation_count_out);
 
 /* Temporary M267 source compatibility for remaining live consumers. */
-#define openai_plan_execute llm_plan_execute
-#define openai_execute_count_ops llm_execute_count_ops
 
 #endif /* LLM_EXECUTE_H */

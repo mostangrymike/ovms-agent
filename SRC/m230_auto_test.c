@@ -33,7 +33,7 @@ static void cleanup(void)
 {
     llm_auto_test_limits(0U, 0U);
     llm_auto_reset();
-    openai_test_tx_path(NULL);
+    llm_test_tx_path(NULL);
     rms_run_commit();
     remove_all(TEST_TX);
     remove_all(TEST_ROLLBACK);
@@ -85,18 +85,18 @@ int main(void)
     unsigned int index;
 
     cleanup();
-    openai_test_tx_path(TEST_TX);
+    llm_test_tx_path(TEST_TX);
     llm_auto_test_limits(5U, 2U);
 
-    if (llm_auto_turn_limit(OPENAI_WORKFLOW_AGENT) != 5U ||
-        llm_auto_turn_limit(OPENAI_WORKFLOW_PLAN) !=
-            OPENAI_PLAN_MAX_TURNS) {
+    if (llm_auto_turn_limit(LLM_WORKFLOW_AGENT) != 5U ||
+        llm_auto_turn_limit(LLM_WORKFLOW_PLAN) !=
+            LLM_PLAN_MAX_TURNS) {
         (void)puts("M230 failed: autonomous turn limits.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    llm_auto_begin(OPENAI_WORKFLOW_WRITE);
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
     llm_auto_note_turn();
     llm_auto_note_turn();
     llm_auto_note_tool();
@@ -136,7 +136,7 @@ int main(void)
     }
 
     llm_auto_test_limits(2U, 2U);
-    llm_auto_begin(OPENAI_WORKFLOW_WRITE);
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
 
     if (!llm_auto_allow_write() ||
         !rms_replace_text_file(TEST_ROLLBACK, "after\n")) {
@@ -164,18 +164,18 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_tx_model_call(
+    llm_tx_model_call(
         "read_file",
         "{\"path\":\"SRC/MAIN.C\"}"
     );
-    openai_tx_model_result(
+    llm_tx_model_result(
         "read_file",
         "ok",
         "sample tool result"
     );
-    openai_tx_loop_event("agent", "final");
+    llm_tx_loop_event("agent", "final");
 
-    if (!openai_tool_hist_text(output, sizeof(output)) ||
+    if (!llm_tool_hist_text(output, sizeof(output)) ||
         strstr(output, "read_file") == NULL ||
         strstr(output, "requested") == NULL ||
         strstr(output, "ok") == NULL) {
@@ -184,7 +184,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_tool_last_text(output, sizeof(output)) ||
+    if (!llm_tool_last_text(output, sizeof(output)) ||
         strstr(output, "Tool:     read_file") == NULL ||
         strstr(output, "Status:   ok") == NULL ||
         strstr(output, "sample tool result") == NULL) {
@@ -193,7 +193,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Autonomous tool loop:  available") == NULL ||
         strstr(output, "Tool-result feedback:  available") == NULL ||
         strstr(output, "Bounded multi-patch:   available") == NULL) {

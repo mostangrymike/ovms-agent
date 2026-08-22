@@ -9,7 +9,7 @@
     operation_test_created = 0;
     operation_test_file = NULL;
 
-    if (!openai_selftest_file_exists(operation_test_path)) {
+    if (!llm_selftest_file_exists(operation_test_path)) {
         operation_test_file = fopen(operation_test_path, "w");
         if (operation_test_file != NULL) {
             operation_test_created = 1;
@@ -21,7 +21,7 @@
                     "operation_count=1\n"
                     "BEGIN_OPERATION\n"
                     "type=replace_block\n"
-                    "path=SRC/openai_status.c\n"
+                    "path=SRC/llm_status.c\n"
                     "old_text=legacy text\n"
                     "BEGIN_NEW_TEXT\n"
                     "new text\n"
@@ -30,7 +30,7 @@
             fclose(operation_test_file) == 0) {
             operation_test_file = NULL;
             operation_test_ok =
-                !openai_exec_validate_ops_file(operation_test_path);
+                !llm_exec_validate_ops_file(operation_test_path);
         }
     }
 
@@ -42,7 +42,7 @@
         (void)remove(operation_test_path);
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "mixed block and legacy fields rejected",
         operation_test_ok,
         &passed_count,

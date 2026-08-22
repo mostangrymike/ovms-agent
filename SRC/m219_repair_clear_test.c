@@ -7,7 +7,7 @@
 #define TEST_LOG "M219_REPAIR_CLEAR.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic clear-history test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
 
     while (remove(TEST_LOG) == 0) {
     }
@@ -87,7 +87,7 @@ int main(void)
     char summary[4096];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
     if (!append_text(
             "2026-08-07T12:00:00 workflow=AGENT event=start status=1\n")) {
@@ -96,14 +96,14 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0x21900001UL,
         2,
         2,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         0x21900002UL,
         1,
@@ -111,7 +111,7 @@ int main(void)
         "committed"
     );
 
-    if (openai_clear_repair_history(0)) {
+    if (llm_clear_repair_history(0)) {
         (void)puts("M219 failed: unapproved clear reported success.");
         cleanup();
         return EXIT_FAILURE;
@@ -125,7 +125,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_clear_repair_history(1)) {
+    if (!llm_clear_repair_history(1)) {
         (void)puts("M219 failed: approved clear failed.");
         cleanup();
         return EXIT_FAILURE;
@@ -141,9 +141,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (openai_repair_status_text(summary, sizeof(summary)) ||
-        openai_repair_history_text(summary, sizeof(summary)) ||
-        openai_repair_stats_text(summary, sizeof(summary))) {
+    if (llm_repair_status_text(summary, sizeof(summary)) ||
+        llm_repair_history_text(summary, sizeof(summary)) ||
+        llm_repair_stats_text(summary, sizeof(summary))) {
         (void)puts("M219 failed: repair summaries survived approved clear.");
         cleanup();
         return EXIT_FAILURE;

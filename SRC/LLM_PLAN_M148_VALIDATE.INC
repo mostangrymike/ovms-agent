@@ -1,6 +1,6 @@
 #include "LLM_INTERNAL.H"
 
-static int openai_m148_write_input(
+static int llm_m148_write_input(
     const char *path,
     const char *prefix,
     size_t repeat_count,
@@ -35,7 +35,7 @@ static int openai_m148_write_input(
     return result;
 }
 
-static int openai_m148_read_file(
+static int llm_m148_read_file(
     const char *path,
     char *input,
     size_t input_size)
@@ -58,7 +58,7 @@ static int openai_m148_read_file(
     return status;
 }
 
-int openai_m148_complete_accept(void)
+int llm_m148_complete_accept(void)
 {
     char input[32];
 
@@ -70,7 +70,7 @@ int openai_m148_complete_accept(void)
         0);
 }
 
-int openai_m148_exact_safe(void)
+int llm_m148_exact_safe(void)
 {
     char input[8];
 
@@ -87,14 +87,14 @@ int openai_m148_exact_safe(void)
             1);
 }
 
-int openai_m148_prefix_blocked(void)
+int llm_m148_prefix_blocked(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_PREFIX.TMP";
     char input[32];
     int status;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "AGENT/APPROVE ",
             80U,
@@ -102,7 +102,7 @@ int openai_m148_prefix_blocked(void)
         return 0;
     }
 
-    status = openai_m148_read_file(
+    status = llm_m148_read_file(
         path,
         input,
         sizeof(input));
@@ -113,7 +113,7 @@ int openai_m148_prefix_blocked(void)
     return status < 0 && input[0] == '\0';
 }
 
-int openai_m148_remainder_drained(void)
+int llm_m148_remainder_drained(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_DRAIN.TMP";
@@ -123,7 +123,7 @@ int openai_m148_remainder_drained(void)
     int second_status;
     int result;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "AGENT/APPROVE ",
             80U,
@@ -160,7 +160,7 @@ int openai_m148_remainder_drained(void)
     return result;
 }
 
-int openai_m148_approval_unchanged(void)
+int llm_m148_approval_unchanged(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_APPROVE.TMP";
@@ -170,13 +170,13 @@ int openai_m148_approval_unchanged(void)
     int invalid_before;
     int status;
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    approved_before = openai_plan_approved;
-    hash_before = openai_approved_hash;
-    invalid_before = openai_approval_invalidated;
+    approved_before = llm_plan_approved;
+    hash_before = llm_approved_hash;
+    invalid_before = llm_approval_invalidated;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "AGENT/APPROVE ",
             80U,
@@ -184,7 +184,7 @@ int openai_m148_approval_unchanged(void)
         return 0;
     }
 
-    status = openai_m148_read_file(
+    status = llm_m148_read_file(
         path,
         input,
         sizeof(input));
@@ -194,12 +194,12 @@ int openai_m148_approval_unchanged(void)
 
     return
         status < 0 &&
-        openai_plan_approved == approved_before &&
-        openai_approved_hash == hash_before &&
-        openai_approval_invalidated == invalid_before;
+        llm_plan_approved == approved_before &&
+        llm_approved_hash == hash_before &&
+        llm_approval_invalidated == invalid_before;
 }
 
-int openai_m148_execute_no_action(void)
+int llm_m148_execute_no_action(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_EXEC.TMP";
@@ -208,10 +208,10 @@ int openai_m148_execute_no_action(void)
     int rollback_before;
     int status;
 
-    workflow_before = openai_last_workflow;
-    rollback_before = openai_last_rollback;
+    workflow_before = llm_last_workflow;
+    rollback_before = llm_last_rollback;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "AGENT/EXECUTE ",
             80U,
@@ -219,7 +219,7 @@ int openai_m148_execute_no_action(void)
         return 0;
     }
 
-    status = openai_m148_read_file(
+    status = llm_m148_read_file(
         path,
         input,
         sizeof(input));
@@ -229,18 +229,18 @@ int openai_m148_execute_no_action(void)
 
     return
         status < 0 &&
-        openai_last_workflow == workflow_before &&
-        openai_last_rollback == rollback_before;
+        llm_last_workflow == workflow_before &&
+        llm_last_rollback == rollback_before;
 }
 
-int openai_m148_eof_accept(void)
+int llm_m148_eof_accept(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_EOF.TMP";
     char input[32];
     int status;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "AGENT/STATUS",
             0U,
@@ -248,7 +248,7 @@ int openai_m148_eof_accept(void)
         return 0;
     }
 
-    status = openai_m148_read_file(
+    status = llm_m148_read_file(
         path,
         input,
         sizeof(input));
@@ -261,14 +261,14 @@ int openai_m148_eof_accept(void)
         strcmp(input, "AGENT/STATUS") == 0;
 }
 
-int openai_m148_empty_eof(void)
+int llm_m148_empty_eof(void)
 {
     const char *path =
         "OVMS_AGENT_TEST_M148_EMPTY.TMP";
     char input[32];
     int status;
 
-    if (!openai_m148_write_input(
+    if (!llm_m148_write_input(
             path,
             "",
             0U,
@@ -276,7 +276,7 @@ int openai_m148_empty_eof(void)
         return 0;
     }
 
-    status = openai_m148_read_file(
+    status = llm_m148_read_file(
         path,
         input,
         sizeof(input));

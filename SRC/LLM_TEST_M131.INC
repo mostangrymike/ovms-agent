@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m131_clear_workflow(path);
+    ok = llm_m131_clear_workflow(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears saved workflow",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m131_clear_build(path);
+    ok = llm_m131_clear_build(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears saved build state",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m131_clear_rollback(path);
+    ok = llm_m131_clear_rollback(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears saved rollback",
         ok,
         &passed_count,
@@ -61,9 +61,9 @@
 {
     int ok;
 
-    ok = openai_m131_save_preserves();
+    ok = llm_m131_save_preserves();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed save still preserves prior snapshot",
         ok,
         &passed_count,

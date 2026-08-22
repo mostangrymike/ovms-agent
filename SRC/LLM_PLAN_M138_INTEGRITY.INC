@@ -1,7 +1,7 @@
-void openai_plan_approval_clear(void);
-void openai_plan_recovery_sync(const char *plan_path);
+void llm_plan_approval_clear(void);
+void llm_plan_recovery_sync(const char *plan_path);
 
-static char *openai_m138_read_text(
+static char *llm_m138_read_text(
     const char *path)
 {
     FILE *file;
@@ -55,7 +55,7 @@ static char *openai_m138_read_text(
     return text;
 }
 
-static unsigned long openai_plan_fnv1a(
+static unsigned long llm_plan_fnv1a(
     const unsigned char *data,
     size_t length)
 {
@@ -73,7 +73,7 @@ static unsigned long openai_plan_fnv1a(
     return value;
 }
 
-static int openai_plan_checksum_path(
+static int llm_plan_checksum_path(
     const char *plan_path,
     char *checksum_path,
     size_t checksum_size)
@@ -96,7 +96,7 @@ static int openai_plan_checksum_path(
         (size_t)count < checksum_size;
 }
 
-static int openai_plan_checksum_temp(
+static int llm_plan_checksum_temp(
     const char *plan_path,
     char *temp_path,
     size_t temp_size)
@@ -119,7 +119,7 @@ static int openai_plan_checksum_temp(
         (size_t)count < temp_size;
 }
 
-static int openai_plan_file_hash(
+static int llm_plan_file_hash(
     const char *plan_path,
     unsigned long *value_out)
 {
@@ -130,13 +130,13 @@ static int openai_plan_file_hash(
         return 0;
     }
 
-    text = openai_m138_read_text(plan_path);
+    text = llm_m138_read_text(plan_path);
 
     if (text == NULL) {
         return 0;
     }
 
-    *value_out = openai_plan_fnv1a(
+    *value_out = llm_plan_fnv1a(
         (const unsigned char *)text,
         strlen(text));
 
@@ -144,27 +144,27 @@ static int openai_plan_file_hash(
     return 1;
 }
 
-int openai_plan_checksum_write(
+int llm_plan_checksum_write(
     const char *plan_path)
 {
-    char checksum_path[OPENAI_PLAN_PATH_SIZE + 16];
-    char temp_path[OPENAI_PLAN_PATH_SIZE + 16];
-    char old_path[OPENAI_PLAN_PATH_SIZE + 16];
+    char checksum_path[LLM_PLAN_PATH_SIZE + 16];
+    char temp_path[LLM_PLAN_PATH_SIZE + 16];
+    char old_path[LLM_PLAN_PATH_SIZE + 16];
     unsigned long value;
     FILE *file;
     int success;
     int had_old;
     int count;
 
-    if (!openai_plan_checksum_path(
+    if (!llm_plan_checksum_path(
             plan_path,
             checksum_path,
             sizeof(checksum_path)) ||
-        !openai_plan_checksum_temp(
+        !llm_plan_checksum_temp(
             plan_path,
             temp_path,
             sizeof(temp_path)) ||
-        !openai_plan_file_hash(
+        !llm_plan_file_hash(
             plan_path,
             &value)) {
         return 0;
@@ -226,21 +226,21 @@ int openai_plan_checksum_write(
     return 1;
 }
 
-int openai_plan_checksum_valid(
+int llm_plan_checksum_valid(
     const char *plan_path)
 {
-    char checksum_path[OPENAI_PLAN_PATH_SIZE + 16];
+    char checksum_path[LLM_PLAN_PATH_SIZE + 16];
     char line[64];
     unsigned long expected;
     unsigned long actual;
     char extra;
     FILE *file;
 
-    if (!openai_plan_checksum_path(
+    if (!llm_plan_checksum_path(
             plan_path,
             checksum_path,
             sizeof(checksum_path)) ||
-        !openai_plan_file_hash(
+        !llm_plan_file_hash(
             plan_path,
             &actual)) {
         return 0;
@@ -262,18 +262,18 @@ int openai_plan_checksum_valid(
         (actual & 0xffffffffUL);
 }
 
-static int openai_plan_restore_old(void)
+static int llm_plan_restore_old(void)
 {
     const char *old_plan = "OVMS_AGENT_PLAN_SAVE_OLD.TXT";
     const char *old_check = "OVMS_AGENT_PLAN_SAVE_OLD.CHK";
     const char *check_path = "OVMS_AGENT_PLAN.TXT.CHK";
 
-    while (remove(OPENAI_PLAN_FILE) == 0) {
+    while (remove(LLM_PLAN_FILE) == 0) {
     }
     while (remove(check_path) == 0) {
     }
 
-    if (rename(old_plan, OPENAI_PLAN_FILE) != 0) {
+    if (rename(old_plan, LLM_PLAN_FILE) != 0) {
         return 0;
     }
 
@@ -284,7 +284,7 @@ static int openai_plan_restore_old(void)
     return 1;
 }
 
-static int openai_m195_check_begin_order(
+static int llm_m195_check_begin_order(
     const char *plan_text)
 {
     const char *cursor;
@@ -348,9 +348,9 @@ static int openai_m195_check_begin_order(
     return 1;
 }
 
-#define OPENAI_M251_TEXT_LIMIT 4096U
+#define LLM_M251_TEXT_LIMIT 4096U
 
-static int openai_m251_payload_ok(
+static int llm_m251_payload_ok(
     const char *plan_text)
 {
     static const char begin_old[] = "BEGIN_OLD_TEXT";
@@ -466,7 +466,7 @@ static int openai_m251_payload_ok(
                 }
 
                 if (used + payload_length + 1U >=
-                    OPENAI_M251_TEXT_LIMIT) {
+                    LLM_M251_TEXT_LIMIT) {
                     (void)puts(
                         "Implementation plan was not saved because "
                         "an OLD or NEW payload exceeds executor capacity.");
@@ -490,7 +490,7 @@ static int openai_m251_payload_ok(
     return 1;
 }
 
-static char *openai_m195_normalize_count(
+static char *llm_m195_normalize_count(
     const char *plan_text)
 {
     static const char prefix[] =
@@ -515,11 +515,11 @@ static char *openai_m195_normalize_count(
         return NULL;
     }
 
-    if (!openai_m195_check_begin_order(plan_text)) {
+    if (!llm_m195_check_begin_order(plan_text)) {
         return NULL;
     }
 
-    if (!openai_execute_count_ops(
+    if (!llm_execute_count_ops(
             plan_text,
             &actual_count)) {
         (void)puts(
@@ -528,7 +528,7 @@ static char *openai_m195_normalize_count(
         return NULL;
     }
 
-    if (!openai_m251_payload_ok(plan_text)) {
+    if (!llm_m251_payload_ok(plan_text)) {
         return NULL;
     }
 
@@ -665,7 +665,7 @@ static char *openai_m195_normalize_count(
     return normalized;
 }
 
-int openai_plan_save(
+int llm_plan_save(
     const char *goal,
     const char *plan_text)
 {
@@ -678,33 +678,33 @@ int openai_plan_save(
     int result;
 
     normalized_plan =
-        openai_m195_normalize_count(plan_text);
+        llm_m195_normalize_count(plan_text);
 
     if (normalized_plan == NULL) {
         return 0;
     }
 
     had_plan = rename(
-        OPENAI_PLAN_FILE,
+        LLM_PLAN_FILE,
         old_plan) == 0;
 
     had_check = rename(
         check_path,
         old_check) == 0;
 
-    result = openai_plan_save_legacy(
+    result = llm_plan_save_legacy(
         goal,
         normalized_plan);
 
     free(normalized_plan);
 
     if (result) {
-        result = openai_plan_checksum_write(
-            OPENAI_PLAN_FILE);
+        result = llm_plan_checksum_write(
+            LLM_PLAN_FILE);
     }
 
     if (!result) {
-        while (remove(OPENAI_PLAN_FILE) == 0) {
+        while (remove(LLM_PLAN_FILE) == 0) {
         }
         while (remove(check_path) == 0) {
         }
@@ -712,7 +712,7 @@ int openai_plan_save(
         if (had_plan) {
             (void)rename(
                 old_plan,
-                OPENAI_PLAN_FILE);
+                LLM_PLAN_FILE);
         }
 
         if (had_check) {
@@ -721,8 +721,8 @@ int openai_plan_save(
                 check_path);
         }
 
-        openai_plan_recovery_sync(
-            OPENAI_PLAN_FILE);
+        llm_plan_recovery_sync(
+            LLM_PLAN_FILE);
         return 0;
     }
 
@@ -731,11 +731,11 @@ int openai_plan_save(
     while (remove(old_check) == 0) {
     }
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
     return 1;
 }
 
-int openai_plan_file_current(
+int llm_plan_file_current(
     const char *plan_path,
     int verbose)
 {
@@ -759,7 +759,7 @@ int openai_plan_file_current(
 
     (void)fclose(file);
 
-    if (!openai_plan_checksum_valid(plan_path)) {
+    if (!llm_plan_checksum_valid(plan_path)) {
         if (verbose) {
             (void)puts(
                 "Saved implementation plan failed integrity validation.");
@@ -768,7 +768,7 @@ int openai_plan_file_current(
         return 0;
     }
 
-    return openai_plan_file_current_legacy(
+    return llm_plan_file_current_legacy(
         plan_path,
         verbose);
 }

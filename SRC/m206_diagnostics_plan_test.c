@@ -13,7 +13,7 @@
 #define TARGET_B "M206_TARGET_B.TMP"
 
 /*
- * Link-only stubs for OPENAI_PLAN.OBJ interactive input helpers.
+ * Link-only stubs for LLM_PLAN.OBJ interactive input helpers.
  * The deterministic M206 regression path never calls these.
  */
 int command_line_complete(const char *input,
@@ -130,7 +130,7 @@ int main(void)
         goto done;
     }
 
-    prompt = openai_build_repair_prompt(
+    prompt = llm_build_repair_prompt(
         "Repair the controlled M206 compiler failure",
         diagnostic);
 
@@ -162,8 +162,8 @@ int main(void)
             "old_text=BETA\n"
             "new_text=BETA_FIXED\n"
             "END_OPERATION\n") ||
-        !openai_exec_validate_ops_file(PLAN_VALID) ||
-        !openai_exec_dry_validate(
+        !llm_exec_validate_ops_file(PLAN_VALID) ||
+        !llm_exec_dry_validate(
             PLAN_VALID,
             TARGET_A,
             "ALPHA\n")) {
@@ -180,7 +180,7 @@ int main(void)
             "old_text=ALPHA\n"
             "new_text=ALPHA_FIXED\n"
             "END_OPERATION\n") ||
-        openai_exec_validate_ops_file(PLAN_BAD)) {
+        llm_exec_validate_ops_file(PLAN_BAD)) {
         (void)puts("M206 failed: malformed plan was accepted.");
         goto done;
     }
@@ -194,7 +194,7 @@ int main(void)
             "old_text=ALPHA\n"
             "new_text=ESCAPE\n"
             "END_OPERATION\n") ||
-        openai_exec_dry_validate(
+        llm_exec_dry_validate(
             PLAN_UNSAFE,
             TARGET_A,
             "ALPHA\n")) {
@@ -217,7 +217,7 @@ int main(void)
             "old_text=GAMMA\n"
             "new_text=ALPHA_AGAIN\n"
             "END_OPERATION\n") ||
-        openai_exec_dry_validate(
+        llm_exec_dry_validate(
             PLAN_DUP,
             TARGET_A,
             "ALPHA\n")) {

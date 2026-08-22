@@ -7,7 +7,7 @@
         "OVMS_AGENT_TEST_M137_OLD.TMP";
     int ok;
 
-    ok = openai_m137_success_cleanup(
+    ok = llm_m137_success_cleanup(
         plan,
         fresh,
         backup);
@@ -25,7 +25,7 @@ while (remove("OVMS_AGENT_TEST_M137_NEW.TMP.CHK") == 0) {
 while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
 }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "successful consumption cleans temporary files",
         ok,
         &passed_count,
@@ -42,7 +42,7 @@ while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
         "OVMS_AGENT_TEST_M137_FAIL_OLD.TMP";
     int ok;
 
-    ok = openai_m137_failure_restore(
+    ok = llm_m137_failure_restore(
         plan,
         fresh,
         backup);
@@ -60,7 +60,7 @@ while (remove("OVMS_AGENT_TEST_M137_NEW.TMP.CHK") == 0) {
 while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
 }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed consumption restores approved plan",
         ok,
         &passed_count,
@@ -73,14 +73,14 @@ while (remove("OVMS_AGENT_TEST_M137_OLD.TMP.CHK") == 0) {
         "OVMS_AGENT_TEST_M137_CONSUMED.TMP";
     int ok;
 
-    ok = openai_m137_consumed_rejected(plan);
+    ok = llm_m137_consumed_rejected(plan);
 
 while (remove(plan) == 0) {
 }
 while (remove("OVMS_AGENT_TEST_M137_CONSUMED.TMP.CHK") == 0) {
 }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "consumed plan cannot execute again",
         ok,
         &passed_count,
@@ -97,7 +97,7 @@ while (remove("OVMS_AGENT_TEST_M137_CONSUMED.TMP.CHK") == 0) {
         "OVMS_AGENT_TEST_M137_RECOVER_OLD.TMP";
     int ok;
 
-    ok = openai_m137_artifact_recovery(
+    ok = llm_m137_artifact_recovery(
         plan,
         fresh,
         backup);
@@ -115,7 +115,7 @@ while (remove("OVMS_AGENT_TEST_M137_RECOVER_NEW.TMP.CHK") == 0) {
 while (remove("OVMS_AGENT_TEST_M137_RECOVER_OLD.TMP.CHK") == 0) {
 }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "stale-plan checks ignore recovery artifacts",
         ok,
         &passed_count,

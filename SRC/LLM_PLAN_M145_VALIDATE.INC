@@ -1,21 +1,21 @@
-int openai_plan_recover_paths(
+int llm_plan_recover_paths(
     const char *plan_path,
     const char *new_path,
     const char *backup_path);
 
-int openai_state_load_path(
+int llm_state_load_path(
     const char *path);
 
-static void openai_m145_remove_pair(
+static void llm_m145_remove_pair(
     const char *path)
 {
     char checksum_path[
-        OPENAI_PLAN_PATH_SIZE + 16];
+        LLM_PLAN_PATH_SIZE + 16];
 
     while (remove(path) == 0) {
     }
 
-    if (openai_plan_checksum_path(
+    if (llm_plan_checksum_path(
             path,
             checksum_path,
             sizeof(checksum_path))) {
@@ -24,125 +24,125 @@ static void openai_m145_remove_pair(
     }
 }
 
-static int openai_m145_make_plan(
+static int llm_m145_make_plan(
     const char *path,
     const char *status)
 {
-    openai_m145_remove_pair(path);
-    return openai_m140_write_plan(path, status);
+    llm_m145_remove_pair(path);
+    return llm_m140_write_plan(path, status);
 }
 
-static int openai_m145_is_unapproved(void)
+static int llm_m145_is_unapproved(void)
 {
     return
-        !openai_plan_approved &&
-        openai_approved_hash == 0UL &&
-        !openai_approval_invalidated &&
+        !llm_plan_approved &&
+        llm_approved_hash == 0UL &&
+        !llm_approval_invalidated &&
         strcmp(
-            openai_plan_approval_name(),
+            llm_plan_approval_name(),
             "NOT APPROVED") == 0;
 }
 
-int openai_m145_fresh_unapproved(void)
+int llm_m145_fresh_unapproved(void)
 {
-    openai_plan_session_reset();
-    return openai_m145_is_unapproved();
+    llm_plan_session_reset();
+    return llm_m145_is_unapproved();
 }
 
-int openai_m145_active_no_restore(
+int llm_m145_active_no_restore(
     const char *path)
 {
     int result;
 
-    if (!openai_m145_make_plan(path, "active") ||
-        !openai_plan_approve_file(path)) {
+    if (!llm_m145_make_plan(path, "active") ||
+        !llm_plan_approve_file(path)) {
         return 0;
     }
 
-    openai_plan_session_reset();
-    openai_plan_recovery_sync(path);
-    result = openai_m145_is_unapproved();
-    openai_m145_remove_pair(path);
+    llm_plan_session_reset();
+    llm_plan_recovery_sync(path);
+    result = llm_m145_is_unapproved();
+    llm_m145_remove_pair(path);
     return result;
 }
 
-int openai_m145_consumed_no_restore(
+int llm_m145_consumed_no_restore(
     const char *path)
 {
     int result;
 
-    if (!openai_m145_make_plan(path, "consumed")) {
+    if (!llm_m145_make_plan(path, "consumed")) {
         return 0;
     }
 
-    openai_plan_session_reset();
-    openai_plan_recovery_sync(path);
-    result = openai_m145_is_unapproved();
-    openai_m145_remove_pair(path);
+    llm_plan_session_reset();
+    llm_plan_recovery_sync(path);
+    result = llm_m145_is_unapproved();
+    llm_m145_remove_pair(path);
     return result;
 }
 
-int openai_m145_new_no_restore(
+int llm_m145_new_no_restore(
     const char *plan_path,
     const char *new_path,
     const char *old_path)
 {
     int result;
 
-    openai_m145_remove_pair(plan_path);
-    openai_m145_remove_pair(new_path);
-    openai_m145_remove_pair(old_path);
+    llm_m145_remove_pair(plan_path);
+    llm_m145_remove_pair(new_path);
+    llm_m145_remove_pair(old_path);
 
-    if (!openai_m145_make_plan(new_path, "active")) {
+    if (!llm_m145_make_plan(new_path, "active")) {
         return 0;
     }
 
-    openai_plan_session_reset();
+    llm_plan_session_reset();
 
     result =
-        openai_plan_recover_paths(
+        llm_plan_recover_paths(
             plan_path,
             new_path,
             old_path) &&
-        openai_m145_is_unapproved();
+        llm_m145_is_unapproved();
 
-    openai_m145_remove_pair(plan_path);
-    openai_m145_remove_pair(new_path);
-    openai_m145_remove_pair(old_path);
+    llm_m145_remove_pair(plan_path);
+    llm_m145_remove_pair(new_path);
+    llm_m145_remove_pair(old_path);
     return result;
 }
 
-int openai_m145_old_no_restore(
+int llm_m145_old_no_restore(
     const char *plan_path,
     const char *new_path,
     const char *old_path)
 {
     int result;
 
-    openai_m145_remove_pair(plan_path);
-    openai_m145_remove_pair(new_path);
-    openai_m145_remove_pair(old_path);
+    llm_m145_remove_pair(plan_path);
+    llm_m145_remove_pair(new_path);
+    llm_m145_remove_pair(old_path);
 
-    if (!openai_m145_make_plan(old_path, "active")) {
+    if (!llm_m145_make_plan(old_path, "active")) {
         return 0;
     }
 
-    openai_plan_session_reset();
+    llm_plan_session_reset();
 
     result =
-        openai_plan_recover_paths(
+        llm_plan_recover_paths(
             plan_path,
             new_path,
             old_path) &&
-        openai_m145_is_unapproved();
+        llm_m145_is_unapproved();
 
-    openai_m145_remove_pair(plan_path);
-    openai_m145_remove_pair(new_path);
-    openai_m145_remove_pair(old_path);
+    llm_m145_remove_pair(plan_path);
+    llm_m145_remove_pair(new_path);
+    llm_m145_remove_pair(old_path);
     return result;
 }
 
-int openai_m145_state_no_restore(
+int llm_m145_state_no_restore(
     const char *path)
 {
     FILE *file;
@@ -168,10 +168,10 @@ int openai_m145_state_no_restore(
         return 0;
     }
 
-    openai_plan_session_reset();
+    llm_plan_session_reset();
     result =
-        openai_state_load_path(path) &&
-        openai_m145_is_unapproved();
+        llm_state_load_path(path) &&
+        llm_m145_is_unapproved();
 
     while (remove(path) == 0) {
     }
@@ -179,29 +179,29 @@ int openai_m145_state_no_restore(
     return result;
 }
 
-int openai_m145_logs_no_restore(void)
+int llm_m145_logs_no_restore(void)
 {
-    openai_plan_session_reset();
-    openai_m143_log_reset();
-    openai_m143_emit_cancel();
+    llm_plan_session_reset();
+    llm_m143_log_reset();
+    llm_m143_emit_cancel();
 
     return
-        openai_m143_cancel_logs() == 1U &&
-        openai_m145_is_unapproved();
+        llm_m143_cancel_logs() == 1U &&
+        llm_m145_is_unapproved();
 }
 
-int openai_m145_reset_authority(
+int llm_m145_reset_authority(
     const char *path)
 {
     int result;
 
-    if (!openai_m145_make_plan(path, "active") ||
-        !openai_plan_approve_file(path)) {
+    if (!llm_m145_make_plan(path, "active") ||
+        !llm_plan_approve_file(path)) {
         return 0;
     }
 
-    openai_plan_session_reset();
-    result = openai_m145_is_unapproved();
-    openai_m145_remove_pair(path);
+    llm_plan_session_reset();
+    result = llm_m145_is_unapproved();
+    llm_m145_remove_pair(path);
     return result;
 }

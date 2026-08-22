@@ -1,4 +1,4 @@
-static void openai_m130_save_state_flags(
+static void llm_m130_save_state_flags(
     int *loaded,
     int *valid,
     int *recovered,
@@ -9,18 +9,18 @@ static void openai_m130_save_state_flags(
     int *saved_build_status,
     int *saved_rollback)
 {
-    *loaded = openai_state_loaded;
-    *valid = openai_state_valid;
-    *recovered = openai_state_recovered;
-    *save_known = openai_state_save_known;
-    *save_succeeded = openai_state_save_succeeded;
-    *saved_workflow = openai_saved_workflow;
-    *saved_build_known = openai_saved_build_known;
-    *saved_build_status = openai_saved_build_status;
-    *saved_rollback = openai_saved_rollback;
+    *loaded = llm_state_loaded;
+    *valid = llm_state_valid;
+    *recovered = llm_state_recovered;
+    *save_known = llm_state_save_known;
+    *save_succeeded = llm_state_save_succeeded;
+    *saved_workflow = llm_saved_workflow;
+    *saved_build_known = llm_saved_build_known;
+    *saved_build_status = llm_saved_build_status;
+    *saved_rollback = llm_saved_rollback;
 }
 
-static void openai_m130_restore_state_flags(
+static void llm_m130_restore_state_flags(
     int loaded,
     int valid,
     int recovered,
@@ -31,18 +31,18 @@ static void openai_m130_restore_state_flags(
     int saved_build_status,
     int saved_rollback)
 {
-    openai_state_loaded = loaded;
-    openai_state_valid = valid;
-    openai_state_recovered = recovered;
-    openai_state_save_known = save_known;
-    openai_state_save_succeeded = save_succeeded;
-    openai_saved_workflow = saved_workflow;
-    openai_saved_build_known = saved_build_known;
-    openai_saved_build_status = saved_build_status;
-    openai_saved_rollback = saved_rollback;
+    llm_state_loaded = loaded;
+    llm_state_valid = valid;
+    llm_state_recovered = recovered;
+    llm_state_save_known = save_known;
+    llm_state_save_succeeded = save_succeeded;
+    llm_saved_workflow = saved_workflow;
+    llm_saved_build_known = saved_build_known;
+    llm_saved_build_status = saved_build_status;
+    llm_saved_rollback = saved_rollback;
 }
 
-int openai_m130_first_fail_invalid(void)
+int llm_m130_first_fail_invalid(void)
 {
     int loaded;
     int valid;
@@ -56,7 +56,7 @@ int openai_m130_first_fail_invalid(void)
     int prior_valid;
     int ok;
 
-    openai_m130_save_state_flags(
+    llm_m130_save_state_flags(
         &loaded,
         &valid,
         &recovered,
@@ -67,25 +67,25 @@ int openai_m130_first_fail_invalid(void)
         &saved_build_status,
         &saved_rollback);
 
-    openai_state_loaded = 0;
-    openai_state_valid = 0;
-    openai_state_recovered = 0;
-    openai_state_save_known = 0;
-    openai_state_save_succeeded = 0;
-    openai_state_snapshot_clear();
+    llm_state_loaded = 0;
+    llm_state_valid = 0;
+    llm_state_recovered = 0;
+    llm_state_save_known = 0;
+    llm_state_save_succeeded = 0;
+    llm_state_snapshot_clear();
 
-    prior_valid = openai_state_valid;
-    openai_state_note_save_result(0);
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = 0;
-    openai_state_valid = prior_valid;
+    prior_valid = llm_state_valid;
+    llm_state_note_save_result(0);
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = 0;
+    llm_state_valid = prior_valid;
 
     ok =
-        openai_state_valid == 0 &&
-        openai_state_save_known == 1 &&
-        openai_state_save_succeeded == 0;
+        llm_state_valid == 0 &&
+        llm_state_save_known == 1 &&
+        llm_state_save_succeeded == 0;
 
-    openai_m130_restore_state_flags(
+    llm_m130_restore_state_flags(
         loaded,
         valid,
         recovered,
@@ -99,7 +99,7 @@ int openai_m130_first_fail_invalid(void)
     return ok;
 }
 
-int openai_m130_later_fail_valid(void)
+int llm_m130_later_fail_valid(void)
 {
     int loaded;
     int valid;
@@ -113,7 +113,7 @@ int openai_m130_later_fail_valid(void)
     int prior_valid;
     int ok;
 
-    openai_m130_save_state_flags(
+    llm_m130_save_state_flags(
         &loaded,
         &valid,
         &recovered,
@@ -124,29 +124,29 @@ int openai_m130_later_fail_valid(void)
         &saved_build_status,
         &saved_rollback);
 
-    openai_state_loaded = 1;
-    openai_state_valid = 1;
-    openai_state_recovered = 0;
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = 1;
-    openai_saved_workflow = OPENAI_WORKFLOW_EXECUTE;
-    openai_saved_build_known = 1;
-    openai_saved_build_status = 23;
-    openai_saved_rollback = OPENAI_ROLLBACK_SUCCEEDED;
+    llm_state_loaded = 1;
+    llm_state_valid = 1;
+    llm_state_recovered = 0;
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = 1;
+    llm_saved_workflow = LLM_WORKFLOW_EXECUTE;
+    llm_saved_build_known = 1;
+    llm_saved_build_status = 23;
+    llm_saved_rollback = LLM_ROLLBACK_SUCCEEDED;
 
-    prior_valid = openai_state_valid;
-    openai_state_note_save_result(0);
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = 0;
-    openai_state_valid = prior_valid;
+    prior_valid = llm_state_valid;
+    llm_state_note_save_result(0);
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = 0;
+    llm_state_valid = prior_valid;
 
     ok =
-        openai_state_valid == 1 &&
-        openai_saved_build_status == 23 &&
-        openai_state_save_known == 1 &&
-        openai_state_save_succeeded == 0;
+        llm_state_valid == 1 &&
+        llm_saved_build_status == 23 &&
+        llm_state_save_known == 1 &&
+        llm_state_save_succeeded == 0;
 
-    openai_m130_restore_state_flags(
+    llm_m130_restore_state_flags(
         loaded,
         valid,
         recovered,
@@ -160,7 +160,7 @@ int openai_m130_later_fail_valid(void)
     return ok;
 }
 
-int openai_m130_success_valid(void)
+int llm_m130_success_valid(void)
 {
     int loaded;
     int valid;
@@ -173,7 +173,7 @@ int openai_m130_success_valid(void)
     int saved_rollback;
     int ok;
 
-    openai_m130_save_state_flags(
+    llm_m130_save_state_flags(
         &loaded,
         &valid,
         &recovered,
@@ -184,24 +184,24 @@ int openai_m130_success_valid(void)
         &saved_build_status,
         &saved_rollback);
 
-    openai_last_workflow = OPENAI_WORKFLOW_EXECUTE;
-    openai_last_build_known = 1;
-    openai_last_build_status = 25;
-    openai_last_rollback = OPENAI_ROLLBACK_SUCCEEDED;
+    llm_last_workflow = LLM_WORKFLOW_EXECUTE;
+    llm_last_build_known = 1;
+    llm_last_build_status = 25;
+    llm_last_rollback = LLM_ROLLBACK_SUCCEEDED;
 
-    openai_state_valid = 0;
-    openai_state_note_save_result(1);
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = 1;
-    openai_state_snapshot_current();
+    llm_state_valid = 0;
+    llm_state_note_save_result(1);
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = 1;
+    llm_state_snapshot_current();
 
     ok =
-        openai_state_valid == 1 &&
-        openai_state_save_known == 1 &&
-        openai_state_save_succeeded == 1 &&
-        openai_saved_build_status == 25;
+        llm_state_valid == 1 &&
+        llm_state_save_known == 1 &&
+        llm_state_save_succeeded == 1 &&
+        llm_saved_build_status == 25;
 
-    openai_m130_restore_state_flags(
+    llm_m130_restore_state_flags(
         loaded,
         valid,
         recovered,
@@ -215,7 +215,7 @@ int openai_m130_success_valid(void)
     return ok;
 }
 
-int openai_m130_load_resets_save(
+int llm_m130_load_resets_save(
     const char *path)
 {
     int loaded;
@@ -229,7 +229,7 @@ int openai_m130_load_resets_save(
     int saved_rollback;
     int ok;
 
-    openai_m130_save_state_flags(
+    llm_m130_save_state_flags(
         &loaded,
         &valid,
         &recovered,
@@ -240,15 +240,15 @@ int openai_m130_load_resets_save(
         &saved_build_status,
         &saved_rollback);
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             27,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
-        openai_m130_restore_state_flags(
+            LLM_ROLLBACK_SUCCEEDED)) {
+        llm_m130_restore_state_flags(
             loaded,
             valid,
             recovered,
@@ -261,19 +261,19 @@ int openai_m130_load_resets_save(
         return 0;
     }
 
-    openai_state_save_known = 1;
-    openai_state_save_succeeded = 0;
+    llm_state_save_known = 1;
+    llm_state_save_succeeded = 0;
 
     ok =
-        openai_state_apply_load(path) &&
-        openai_state_valid == 1 &&
-        openai_state_save_known == 0 &&
-        openai_state_save_succeeded == 0 &&
-        openai_saved_build_status == 27;
+        llm_state_apply_load(path) &&
+        llm_state_valid == 1 &&
+        llm_state_save_known == 0 &&
+        llm_state_save_succeeded == 0 &&
+        llm_saved_build_status == 27;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    openai_m130_restore_state_flags(
+    llm_m130_restore_state_flags(
         loaded,
         valid,
         recovered,

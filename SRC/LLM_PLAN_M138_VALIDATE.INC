@@ -1,4 +1,4 @@
-static int openai_m138_write_text(
+static int llm_m138_write_text(
     const char *path,
     const char *text)
 {
@@ -18,14 +18,14 @@ static int openai_m138_write_text(
     return fclose(file) == 0;
 }
 
-int openai_m138_body_tamper(
+int llm_m138_body_tamper(
     const char *plan_path)
 {
     char *text;
     char *position;
     int result;
 
-    if (!openai_m138_write_text(
+    if (!llm_m138_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
@@ -37,11 +37,11 @@ int openai_m138_body_tamper(
             "old_text=OLD\n"
             "new_text=NEW\n"
             "END_OPERATION\n") ||
-        !openai_plan_checksum_write(plan_path)) {
+        !llm_plan_checksum_write(plan_path)) {
         return 0;
     }
 
-    text = openai_m138_read_text(plan_path);
+    text = llm_m138_read_text(plan_path);
 
     if (text == NULL) {
         return 0;
@@ -55,31 +55,31 @@ int openai_m138_body_tamper(
     }
 
     (void)memcpy(position, "new_text=BAD", 12U);
-    result = openai_m138_write_text(plan_path, text);
+    result = llm_m138_write_text(plan_path, text);
     free(text);
 
     return
         result &&
-        !openai_plan_checksum_valid(plan_path);
+        !llm_plan_checksum_valid(plan_path);
 }
 
-int openai_m138_meta_tamper(
+int llm_m138_meta_tamper(
     const char *plan_path)
 {
     char *text;
     char *position;
     int result;
 
-    if (!openai_m138_write_text(
+    if (!llm_m138_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(plan_path)) {
+        !llm_plan_checksum_write(plan_path)) {
         return 0;
     }
 
-    text = openai_m138_read_text(plan_path);
+    text = llm_m138_read_text(plan_path);
 
     if (text == NULL) {
         return 0;
@@ -93,44 +93,44 @@ int openai_m138_meta_tamper(
     }
 
     (void)memcpy(position, "status=altered", 14U);
-    result = openai_m138_write_text(plan_path, text);
+    result = llm_m138_write_text(plan_path, text);
     free(text);
 
     return
         result &&
-        !openai_plan_checksum_valid(plan_path);
+        !llm_plan_checksum_valid(plan_path);
 }
 
-int openai_m138_partial_reject(
+int llm_m138_partial_reject(
     const char *plan_path)
 {
     return
-        openai_m138_write_text(
+        llm_m138_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
             "file_count=0\n") &&
-        !openai_plan_checksum_valid(plan_path);
+        !llm_plan_checksum_valid(plan_path);
 }
 
-int openai_m138_save_preserves(
+int llm_m138_save_preserves(
     const char *plan_path)
 {
     char *before;
     char *after;
     int result;
 
-    before = openai_m138_read_text(plan_path);
+    before = llm_m138_read_text(plan_path);
 
     if (before == NULL) {
         return 1;
     }
 
-    result = !openai_plan_save(
+    result = !llm_plan_save(
         "",
         "INVALID");
 
-    after = openai_m138_read_text(plan_path);
+    after = llm_m138_read_text(plan_path);
 
     result =
         result &&
@@ -141,7 +141,7 @@ int openai_m138_save_preserves(
     free(after);
     return result;
 }
-static int openai_m195_normalized_equals(
+static int llm_m195_normalized_equals(
     const char *input,
     const char *expected)
 {
@@ -149,7 +149,7 @@ static int openai_m195_normalized_equals(
     int result;
 
     normalized =
-        openai_m195_normalize_count(input);
+        llm_m195_normalize_count(input);
 
     if (normalized == NULL) {
         return 0;
@@ -160,9 +160,9 @@ static int openai_m195_normalized_equals(
     return result;
 }
 
-int openai_m195_normalize_one(void)
+int llm_m195_normalize_one(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "Plan text\n"
         "operation_count=9\n"
         "BEGIN_OPERATION\n"
@@ -181,9 +181,9 @@ int openai_m195_normalize_one(void)
         "END_OPERATION\n");
 }
 
-int openai_m195_normalize_two(void)
+int llm_m195_normalize_two(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "operation_count=0\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n"
@@ -196,9 +196,9 @@ int openai_m195_normalize_two(void)
         "END_OPERATION\n");
 }
 
-int openai_m195_normalize_correct(void)
+int llm_m195_normalize_correct(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n",
@@ -207,20 +207,20 @@ int openai_m195_normalize_correct(void)
         "END_OPERATION\n");
 }
 
-int openai_m195_norm_inspect(void)
+int llm_m195_norm_inspect(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "Inspection-only plan.\n"
         "No source changes are required.\n",
         "Inspection-only plan.\n"
         "No source changes are required.\n");
 }
 
-int openai_m195_reject_missing(void)
+int llm_m195_reject_missing(void)
 {
     char *normalized;
 
-    normalized = openai_m195_normalize_count(
+    normalized = llm_m195_normalize_count(
         "Executable plan\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n");
@@ -233,11 +233,11 @@ int openai_m195_reject_missing(void)
     return 1;
 }
 
-int openai_m195_reject_duplicate(void)
+int llm_m195_reject_duplicate(void)
 {
     char *normalized;
 
-    normalized = openai_m195_normalize_count(
+    normalized = llm_m195_normalize_count(
         "operation_count=1\n"
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
@@ -251,19 +251,19 @@ int openai_m195_reject_duplicate(void)
     return 1;
 }
 
-int openai_m195_reject_markers(void)
+int llm_m195_reject_markers(void)
 {
     char *nested;
     char *unmatched;
 
-    nested = openai_m195_normalize_count(
+    nested = llm_m195_normalize_count(
         "operation_count=2\n"
         "BEGIN_OPERATION\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n"
         "END_OPERATION\n");
 
-    unmatched = openai_m195_normalize_count(
+    unmatched = llm_m195_normalize_count(
         "operation_count=1\n"
         "BEGIN_OPERATION\n");
 
@@ -279,11 +279,11 @@ int openai_m195_reject_markers(void)
            unmatched == NULL;
 }
 
-int openai_m195_reject_early_begin(void)
+int llm_m195_reject_early_begin(void)
 {
     char *normalized;
 
-    normalized = openai_m195_normalize_count(
+    normalized = llm_m195_normalize_count(
         "Narrative prose\n"
         "Ordered edits\n"
         "BEGIN_OPERATION\n"
@@ -317,7 +317,7 @@ int openai_m195_reject_early_begin(void)
     return 1;
 }
 
-int openai_m195_failure_preserves(void)
+int llm_m195_failure_preserves(void)
 {
     const char *plan_path =
         "OVMS_AGENT_PLAN.TXT";
@@ -330,11 +330,11 @@ int openai_m195_failure_preserves(void)
     int result;
 
     plan_before =
-        openai_m138_read_text(plan_path);
+        llm_m138_read_text(plan_path);
     check_before =
-        openai_m138_read_text(checksum_path);
+        llm_m138_read_text(checksum_path);
 
-    result = !openai_plan_save(
+    result = !llm_plan_save(
         "M195 normalization rejection test",
         "operation_count=1\n"
         "operation_count=1\n"
@@ -342,9 +342,9 @@ int openai_m195_failure_preserves(void)
         "END_OPERATION\n");
 
     plan_after =
-        openai_m138_read_text(plan_path);
+        llm_m138_read_text(plan_path);
     check_after =
-        openai_m138_read_text(checksum_path);
+        llm_m138_read_text(checksum_path);
 
     if (plan_before == NULL) {
         result =
@@ -376,7 +376,7 @@ int openai_m195_failure_preserves(void)
     return result;
 }
 
-static int openai_m251_append(
+static int llm_m251_append(
     char *buffer,
     size_t capacity,
     size_t *used,
@@ -400,7 +400,7 @@ static int openai_m251_append(
     return 1;
 }
 
-static char *openai_m251_big_plan(int old_side)
+static char *llm_m251_big_plan(int old_side)
 {
     static const char fill_line[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n";
@@ -417,7 +417,7 @@ static char *openai_m251_big_plan(int old_side)
     used = 0U;
     plan[0] = '\0';
 
-    if (!openai_m251_append(plan, 7000U, &used,
+    if (!llm_m251_append(plan, 7000U, &used,
             "operation_count=1\n"
             "BEGIN_OPERATION\n"
             "type=replace_block\n"
@@ -429,19 +429,19 @@ static char *openai_m251_big_plan(int old_side)
 
     if (old_side) {
         for (index = 0; index < 70; ++index) {
-            if (!openai_m251_append(
+            if (!llm_m251_append(
                     plan, 7000U, &used, fill_line)) {
                 free(plan);
                 return NULL;
             }
         }
-    } else if (!openai_m251_append(
+    } else if (!llm_m251_append(
                    plan, 7000U, &used, "OLD\n")) {
         free(plan);
         return NULL;
     }
 
-    if (!openai_m251_append(plan, 7000U, &used,
+    if (!llm_m251_append(plan, 7000U, &used,
             "END_OLD_TEXT\n"
             "BEGIN_NEW_TEXT\n")) {
         free(plan);
@@ -450,19 +450,19 @@ static char *openai_m251_big_plan(int old_side)
 
     if (!old_side) {
         for (index = 0; index < 70; ++index) {
-            if (!openai_m251_append(
+            if (!llm_m251_append(
                     plan, 7000U, &used, fill_line)) {
                 free(plan);
                 return NULL;
             }
         }
-    } else if (!openai_m251_append(
+    } else if (!llm_m251_append(
                    plan, 7000U, &used, "NEW\n")) {
         free(plan);
         return NULL;
     }
 
-    if (!openai_m251_append(plan, 7000U, &used,
+    if (!llm_m251_append(plan, 7000U, &used,
             "END_NEW_TEXT\n"
             "END_OPERATION\n")) {
         free(plan);
@@ -472,11 +472,11 @@ static char *openai_m251_big_plan(int old_side)
     return plan;
 }
 
-int openai_m251_fence_old(void)
+int llm_m251_fence_old(void)
 {
     char *normalized;
 
-    normalized = openai_m195_normalize_count(
+    normalized = llm_m195_normalize_count(
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "type=replace_block\n"
@@ -498,11 +498,11 @@ int openai_m251_fence_old(void)
     return 1;
 }
 
-int openai_m251_fence_new(void)
+int llm_m251_fence_new(void)
 {
     char *normalized;
 
-    normalized = openai_m195_normalize_count(
+    normalized = llm_m195_normalize_count(
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "type=replace_block\n"
@@ -524,18 +524,18 @@ int openai_m251_fence_new(void)
     return 1;
 }
 
-int openai_m251_size_old(void)
+int llm_m251_size_old(void)
 {
     char *plan;
     char *normalized;
 
-    plan = openai_m251_big_plan(1);
+    plan = llm_m251_big_plan(1);
 
     if (plan == NULL) {
         return 0;
     }
 
-    normalized = openai_m195_normalize_count(plan);
+    normalized = llm_m195_normalize_count(plan);
     free(plan);
 
     if (normalized != NULL) {
@@ -546,18 +546,18 @@ int openai_m251_size_old(void)
     return 1;
 }
 
-int openai_m251_size_new(void)
+int llm_m251_size_new(void)
 {
     char *plan;
     char *normalized;
 
-    plan = openai_m251_big_plan(0);
+    plan = llm_m251_big_plan(0);
 
     if (plan == NULL) {
         return 0;
     }
 
-    normalized = openai_m195_normalize_count(plan);
+    normalized = llm_m195_normalize_count(plan);
     free(plan);
 
     if (normalized != NULL) {
@@ -568,9 +568,9 @@ int openai_m251_size_new(void)
     return 1;
 }
 
-int openai_m251_payload_ok_test(void)
+int llm_m251_payload_ok_test(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "operation_count=0\n"
         "BEGIN_OPERATION\n"
         "type=replace_block\n"
@@ -595,9 +595,9 @@ int openai_m251_payload_ok_test(void)
         "END_OPERATION\n");
 }
 
-int openai_m251_narr_ok(void)
+int llm_m251_narr_ok(void)
 {
-    return openai_m195_normalized_equals(
+    return llm_m195_normalized_equals(
         "Goal\n"
         "Inline `code` is narrative.\n"
         "``` narrative fence\n"

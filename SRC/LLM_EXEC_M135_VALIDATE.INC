@@ -1,4 +1,4 @@
-static int openai_m135_write_text(
+static int llm_m135_write_text(
     const char *path,
     const char *text)
 {
@@ -22,14 +22,14 @@ static int openai_m135_write_text(
     return fclose(file) == 0;
 }
 
-static int openai_m135_text_equals(
+static int llm_m135_text_equals(
     const char *path,
     const char *expected)
 {
     char *text;
     int ok;
 
-    text = openai_read_text_file(path);
+    text = llm_read_text_file(path);
 
     if (text == NULL) {
         return 0;
@@ -40,20 +40,20 @@ static int openai_m135_text_equals(
     return ok;
 }
 
-int openai_m135_shared_validation(
+int llm_m135_shared_validation(
     const char *operations_path,
     const char *target_path)
 {
     int validate_ok;
     int dry_ok;
 
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             target_path,
             "ALPHA\n")) {
         return 0;
     }
 
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             operations_path,
             "operation_count=1\n"
             "BEGIN_OPERATION\n"
@@ -66,11 +66,11 @@ int openai_m135_shared_validation(
     }
 
     validate_ok =
-        !openai_exec_validate_ops_file(
+        !llm_exec_validate_ops_file(
             operations_path);
 
     dry_ok =
-        !openai_exec_dry_validate(
+        !llm_exec_dry_validate(
             operations_path,
             target_path,
             "ALPHA\n");
@@ -78,22 +78,22 @@ int openai_m135_shared_validation(
     return
         validate_ok &&
         dry_ok &&
-        openai_m135_text_equals(
+        llm_m135_text_equals(
             target_path,
             "ALPHA\n");
 }
 
-int openai_m135_prewrite_validation(
+int llm_m135_prewrite_validation(
     const char *operations_path,
     const char *target_path)
 {
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             target_path,
             "ALPHA\n")) {
         return 0;
     }
 
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             operations_path,
             "operation_count=2\n"
             "BEGIN_OPERATION\n"
@@ -112,26 +112,26 @@ int openai_m135_prewrite_validation(
     }
 
     return
-        openai_exec_stage_expect_fail(
+        llm_exec_stage_expect_fail(
             operations_path,
             target_path,
             "ALPHA\n") &&
-        openai_m135_text_equals(
+        llm_m135_text_equals(
             target_path,
             "ALPHA\n");
 }
 
-int openai_m135_chain_deterministic(
+int llm_m135_chain_deterministic(
     const char *operations_path,
     const char *target_path)
 {
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             target_path,
             "ALPHA\n")) {
         return 0;
     }
 
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             operations_path,
             "operation_count=2\n"
             "BEGIN_OPERATION\n"
@@ -150,25 +150,25 @@ int openai_m135_chain_deterministic(
     }
 
     return
-        openai_exec_stage_ops_file(
+        llm_exec_stage_ops_file(
             operations_path,
             "GAMMA\n") &&
-        openai_m135_text_equals(
+        llm_m135_text_equals(
             target_path,
             "ALPHA\n");
 }
 
-int openai_m135_rollback_all(
+int llm_m135_rollback_all(
     const char *operations_path,
     const char *target_path)
 {
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             target_path,
             "ALPHA\n")) {
         return 0;
     }
 
-    if (!openai_m135_write_text(
+    if (!llm_m135_write_text(
             operations_path,
             "operation_count=1\n"
             "BEGIN_OPERATION\n"
@@ -181,12 +181,12 @@ int openai_m135_rollback_all(
     }
 
     return
-        openai_exec_rollback_validate(
+        llm_exec_rollback_validate(
             operations_path,
             target_path,
             "ALPHA\n",
             0) &&
-        openai_m135_text_equals(
+        llm_m135_text_equals(
             target_path,
             "ALPHA\n");
 }

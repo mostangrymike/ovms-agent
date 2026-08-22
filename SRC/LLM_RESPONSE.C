@@ -40,7 +40,7 @@ int display_clean_response(void)
     const char *text_value;
     char *decoded;
 
-    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
     if (json == NULL) {
         return 0;
@@ -81,11 +81,11 @@ void display_raw_response(void)
     FILE *file;
     char line[2048];
 
-    file = fopen(OPENAI_RESPONSE_FILE, "r");
+    file = fopen(LLM_RESPONSE_FILE, "r");
 
     if (file == NULL) {
         (void)printf("Unable to open %s: %s\n",
-                     OPENAI_RESPONSE_FILE,
+                     LLM_RESPONSE_FILE,
                      strerror(errno));
         return;
     }

@@ -9,11 +9,11 @@
  *   - later resumes require the same plan checksum and current file
  *     fingerprints before continuation is allowed.
  */
-#define openai_session_resume openai_sess_resume_base
-#define openai_session_resume_cmd openai_sess_resume_cmd_base
+#define llm_session_resume llm_sess_resume_base
+#define llm_session_resume_cmd llm_sess_resume_cmd_base
 #include "LLM_SESSION_CORE.INC"
-#undef openai_session_resume
-#undef openai_session_resume_cmd
+#undef llm_session_resume
+#undef llm_session_resume_cmd
 
 #include "LLM_CHECKPOINT.INC"
 
@@ -39,7 +39,7 @@ static int m256_resume_id(const char *arguments, char id[9])
     return value[8] == '\0';
 }
 
-int openai_session_resume(const char *arguments)
+int llm_session_resume(const char *arguments)
 {
     char target[9];
     char previous[9];
@@ -50,33 +50,33 @@ int openai_session_resume(const char *arguments)
 
     if (!m256_resume_id(arguments, target)) return 0;
 
-    had_previous = openai_session_current_id(previous);
+    had_previous = llm_session_current_id(previous);
     may_bind = had_previous && strcmp(previous, target) == 0;
     summary[0] = '\0';
 
-    checkpoint = openai_checkpoint_resume(
+    checkpoint = llm_checkpoint_resume(
         target, may_bind, summary, sizeof(summary));
 
     if (checkpoint < 0) {
         if (summary[0] != '\0') (void)puts(summary);
-        openai_plan_session_reset();
+        llm_plan_session_reset();
         return 0;
     }
 
-    if (checkpoint == 0 || !openai_sess_resume_base(arguments)) {
+    if (checkpoint == 0 || !llm_sess_resume_base(arguments)) {
         return 0;
     }
 
     /* Approval is intentionally process/session-local and must be reacquired. */
-    openai_plan_session_reset();
+    llm_plan_session_reset();
 
     if (summary[0] != '\0') (void)puts(summary);
     return 1;
 }
 
-void openai_session_resume_cmd(const char *arguments)
+void llm_session_resume_cmd(const char *arguments)
 {
-    if (!openai_session_resume(arguments)) {
+    if (!llm_session_resume(arguments)) {
         (void)puts(
             "Unable to resume session. It may not exist, may be archived, "
             "or its saved-plan checkpoint may be stale."

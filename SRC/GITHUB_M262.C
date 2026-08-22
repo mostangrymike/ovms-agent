@@ -47,7 +47,7 @@ void m262_show_github(const char *operation, const char *arguments)
     if (operation == NULL || *operation == '\0') return;
 
     if (!m262_net_op(operation)) {
-        openai_show_github(operation, arguments);
+        llm_show_github(operation, arguments);
         if (strcmp(operation, "help") == 0) m262_active_note();
         return;
     }
@@ -77,7 +77,7 @@ void m262_show_github(const char *operation, const char *arguments)
         }
     }
 
-    if (!openai_gh_run_text(operation, run_args, gh_saved_exec,
+    if (!llm_gh_run_text(operation, run_args, gh_saved_exec,
                             NULL, output, sizeof(output))) {
         if (output[0] != '\0') {
             (void)fputs(output, stdout);

@@ -15,8 +15,8 @@
     target_file = NULL;
     operation_test_file = NULL;
 
-    if (!openai_selftest_file_exists(target_path) &&
-        !openai_selftest_file_exists(operation_test_path)) {
+    if (!llm_selftest_file_exists(target_path) &&
+        !llm_selftest_file_exists(operation_test_path)) {
         target_file = fopen(target_path, "w");
         if (target_file != NULL) {
             target_created = 1;
@@ -51,7 +51,7 @@
             fclose(operation_test_file) == 0) {
             operation_test_file = NULL;
             operation_test_ok =
-                openai_exec_stage_expect_fail(
+                llm_exec_stage_expect_fail(
                     operation_test_path,
                     target_path,
                     "A A");
@@ -71,7 +71,7 @@
         (void)remove(target_path);
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "non-unique chained match rejected",
         operation_test_ok,
         &passed_count,

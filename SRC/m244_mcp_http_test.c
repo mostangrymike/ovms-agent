@@ -71,20 +71,20 @@ int main(void)
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "issues get 42", fake_stdio, fake_http, &probe,
                 output, sizeof(output)) &&
             strstr(output, "FULL approval policy is required") != NULL &&
             probe.http_calls == 0,
             "approval refusal")) return 1;
 
-    if (!require_true(openai_set_approval("full"), "enable full approval"))
+    if (!require_true(llm_set_approval("full"), "enable full approval"))
         return 1;
 
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "issues get {\\\"id\\\":42}", fake_stdio, fake_http,
                 &probe, output, sizeof(output)) &&
             probe.http_calls == 1 && probe.stdio_calls == 0 &&
@@ -96,7 +96,7 @@ int main(void)
             "approved HTTP execution")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "docs search RMS", fake_stdio, fake_http, &probe,
                 output, sizeof(output)) &&
             probe.stdio_calls == 1 &&
@@ -104,14 +104,14 @@ int main(void)
             "stdio compatibility")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "stream watch x", fake_stdio, fake_http, &probe,
                 output, sizeof(output)) &&
             strstr(output, "transport sse is not enabled in M244") != NULL,
             "SSE remains disabled")) return 1;
 
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "badhttp get x", fake_stdio, fake_http, &probe,
                 output, sizeof(output)) &&
             strstr(output, "unsafe HTTP endpoint") != NULL,
@@ -119,13 +119,13 @@ int main(void)
 
     probe.succeed = 0;
     if (!require_true(
-            openai_mcp_exec_transport_text(
+            llm_mcp_exec_transport_text(
                 config, "issues get fail", fake_stdio, fake_http, &probe,
                 output, sizeof(output)) &&
             strstr(output, "MCP http execution failed") != NULL,
             "HTTP failure normalization")) return 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     (void)puts("M244 MCP HTTP regression passed.");
     return 0;
 }

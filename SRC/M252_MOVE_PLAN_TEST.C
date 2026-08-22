@@ -56,7 +56,7 @@ static int m252_mp_check(
         return 0;
     }
 
-    actual = openai_exec_validate_ops_file(path);
+    actual = llm_exec_validate_ops_file(path);
     m252_mp_cleanup(path);
     return actual == expected;
 }

@@ -265,7 +265,7 @@ static char *goal_guard_line_text(const char *arguments)
         return NULL;
     }
 
-    output = (char *)malloc(OPENAI_RANGE_OUTPUT_LIMIT);
+    output = (char *)malloc(LLM_RANGE_OUTPUT_LIMIT);
     if (output == NULL) {
         (void)fclose(file);
         return NULL;
@@ -285,7 +285,7 @@ static char *goal_guard_line_text(const char *arguments)
         if (line_number >= first_line) {
             length = strlen(line);
 
-            if (length >= OPENAI_RANGE_OUTPUT_LIMIT - used) {
+            if (length >= LLM_RANGE_OUTPUT_LIMIT - used) {
                 free(output);
                 (void)fclose(file);
                 return NULL;

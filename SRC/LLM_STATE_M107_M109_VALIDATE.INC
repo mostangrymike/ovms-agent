@@ -1,20 +1,20 @@
-int openai_m107_state_serialize(const char *path)
+int llm_m107_state_serialize(const char *path)
 {
     char *text;
     int result;
 
-    result = openai_state_save_to(
+    result = llm_state_save_to(
         path,
-        OPENAI_WORKFLOW_EXECUTE,
+        LLM_WORKFLOW_EXECUTE,
         1,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED);
+        LLM_ROLLBACK_SUCCEEDED);
 
     if (!result) {
         return 0;
     }
 
-    text = openai_read_text_file(path);
+    text = llm_read_text_file(path);
     result =
         text != NULL &&
         strstr(text, "last_workflow=13") != NULL &&
@@ -23,18 +23,18 @@ int openai_m107_state_serialize(const char *path)
     return result;
 }
 
-int openai_m107_state_reload(const char *path)
+int llm_m107_state_reload(const char *path)
 {
     int workflow;
     int build_known;
     int build_status;
     int rollback;
 
-    if (!openai_m107_state_serialize(path)) {
+    if (!llm_m107_state_serialize(path)) {
         return 0;
     }
 
-    if (!openai_state_load_from(
+    if (!llm_state_load_from(
             path,
             &workflow,
             &build_known,
@@ -44,23 +44,23 @@ int openai_m107_state_reload(const char *path)
     }
 
     return
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 2 &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }
 
-int openai_m109_state_writer(const char *path)
+int llm_m109_state_writer(const char *path)
 {
-    return openai_state_save_to(
+    return llm_state_save_to(
         path,
-        OPENAI_WORKFLOW_EXECUTE,
+        LLM_WORKFLOW_EXECUTE,
         1,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED);
+        LLM_ROLLBACK_SUCCEEDED);
 }
 
-int openai_m109_state_reader(const char *path)
+int llm_m109_state_reader(const char *path)
 {
     int workflow;
     int build_known;
@@ -68,19 +68,19 @@ int openai_m109_state_reader(const char *path)
     int rollback;
 
     return
-        openai_state_load_from(
+        llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback) &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 2 &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }
 
-int openai_m109_invalid_workflow(const char *path)
+int llm_m109_invalid_workflow(const char *path)
 {
     FILE *file;
     int workflow;
@@ -109,7 +109,7 @@ int openai_m109_invalid_workflow(const char *path)
         return 0;
     }
 
-    return !openai_state_load_from(
+    return !llm_state_load_from(
         path,
         &workflow,
         &build_known,
@@ -117,7 +117,7 @@ int openai_m109_invalid_workflow(const char *path)
         &rollback);
 }
 
-int openai_m109_incomplete_state(const char *path)
+int llm_m109_incomplete_state(const char *path)
 {
     FILE *file;
     int workflow;
@@ -145,7 +145,7 @@ int openai_m109_incomplete_state(const char *path)
         return 0;
     }
 
-    return !openai_state_load_from(
+    return !llm_state_load_from(
         path,
         &workflow,
         &build_known,
@@ -154,7 +154,7 @@ int openai_m109_incomplete_state(const char *path)
 }
 
 
-static int openai_m110_write_and_reject(
+static int llm_m110_write_and_reject(
     const char *path,
     const char *text)
 {
@@ -181,7 +181,7 @@ static int openai_m110_write_and_reject(
         return 0;
     }
 
-    return !openai_state_load_from(
+    return !llm_state_load_from(
         path,
         &workflow,
         &build_known,
@@ -189,9 +189,9 @@ static int openai_m110_write_and_reject(
         &rollback);
 }
 
-int openai_m110_dup_workflow(const char *path)
+int llm_m110_dup_workflow(const char *path)
 {
-    return openai_m110_write_and_reject(
+    return llm_m110_write_and_reject(
         path,
         "format=1\n"
         "last_workflow=13\n"
@@ -201,9 +201,9 @@ int openai_m110_dup_workflow(const char *path)
         "last_rollback=2\n");
 }
 
-int openai_m110_dup_rollback(const char *path)
+int llm_m110_dup_rollback(const char *path)
 {
-    return openai_m110_write_and_reject(
+    return llm_m110_write_and_reject(
         path,
         "format=1\n"
         "last_workflow=13\n"
@@ -213,9 +213,9 @@ int openai_m110_dup_rollback(const char *path)
         "last_rollback=3\n");
 }
 
-int openai_m110_unknown_field(const char *path)
+int llm_m110_unknown_field(const char *path)
 {
-    return openai_m110_write_and_reject(
+    return llm_m110_write_and_reject(
         path,
         "format=1\n"
         "last_workflow=13\n"
@@ -225,9 +225,9 @@ int openai_m110_unknown_field(const char *path)
         "last_rollback=2\n");
 }
 
-int openai_m110_value_suffix(const char *path)
+int llm_m110_value_suffix(const char *path)
 {
-    return openai_m110_write_and_reject(
+    return llm_m110_write_and_reject(
         path,
         "format=1\n"
         "last_workflow=13x\n"

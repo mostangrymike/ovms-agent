@@ -394,7 +394,7 @@ static char *patch_json_string(const char *json, const char *name)
     return out;
 }
 
-int openai_patch_apply_json(const char *arguments,
+int llm_patch_apply_json(const char *arguments,
                             char *output,
                             size_t output_size)
 {
@@ -461,7 +461,7 @@ int openai_patch_apply_json(const char *arguments,
         return 0;
     }
 
-    result = openai_patch_apply(temp_spec, output, output_size);
+    result = llm_patch_apply(temp_spec, output, output_size);
 
     while (remove(temp_spec) == 0) {
     }
@@ -471,14 +471,14 @@ int openai_patch_apply_json(const char *arguments,
     return result;
 }
 
-int openai_patch_validate(const char *p, char *o, size_t n)
+int llm_patch_validate(const char *p, char *o, size_t n)
 { return process_patch(p, 0, o, n); }
-int openai_patch_dry(const char *p, char *o, size_t n)
+int llm_patch_dry(const char *p, char *o, size_t n)
 { return process_patch(p, 0, o, n); }
-int openai_patch_apply(const char *p, char *o, size_t n)
+int llm_patch_apply(const char *p, char *o, size_t n)
 { return process_patch(p, 1, o, n); }
 
-int openai_patch_last_text(char *o, size_t n)
+int llm_patch_last_text(char *o, size_t n)
 {
     int w;
     if (o == NULL || n == 0U) return 0;
@@ -496,20 +496,20 @@ static void run_patch_cmd(const char *arg, int mode)
                                "Usage: AGENT/PATCH/VALIDATE patch-spec-filespec");
         return;
     }
-    ok = mode == 2 ? openai_patch_apply(arg, out, sizeof(out)) :
-         mode == 1 ? openai_patch_dry(arg, out, sizeof(out)) :
-                     openai_patch_validate(arg, out, sizeof(out));
+    ok = mode == 2 ? llm_patch_apply(arg, out, sizeof(out)) :
+         mode == 1 ? llm_patch_dry(arg, out, sizeof(out)) :
+                     llm_patch_validate(arg, out, sizeof(out));
     (void)strncpy(patch_last, out, sizeof(patch_last)-1U);
     patch_last[sizeof(patch_last)-1U] = '\0';
     (void)puts(out);
     if (!ok && mode == 2) (void)puts("No validated multi-hunk change was committed.");
 }
 
-void openai_patch_validate_cmd(const char *a) { run_patch_cmd(a, 0); }
-void openai_patch_dry_cmd(const char *a) { run_patch_cmd(a, 1); }
-void openai_patch_apply_cmd(const char *a) { run_patch_cmd(a, 2); }
-void openai_patch_last_cmd(void)
+void llm_patch_validate_cmd(const char *a) { run_patch_cmd(a, 0); }
+void llm_patch_dry_cmd(const char *a) { run_patch_cmd(a, 1); }
+void llm_patch_apply_cmd(const char *a) { run_patch_cmd(a, 2); }
+void llm_patch_last_cmd(void)
 {
     char out[PATCH_LAST_MAX+16U];
-    if (openai_patch_last_text(out, sizeof(out))) (void)fputs(out, stdout);
+    if (llm_patch_last_text(out, sizeof(out))) (void)fputs(out, stdout);
 }

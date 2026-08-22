@@ -1,9 +1,9 @@
-int openai_exec_stage_expect_fail(
+int llm_exec_stage_expect_fail(
     const char *operations_path,
     const char *target_path,
     const char *expected_original_text)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     char *actual_text;
     unsigned int operation_count;
@@ -19,8 +19,8 @@ int openai_exec_stage_expect_fail(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
     transaction = (edit_txn *)malloc(sizeof(*transaction));
 
@@ -34,7 +34,7 @@ int openai_exec_stage_expect_fail(
     parse_result = execute_parse_operations(
         operations_path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     result = 0;
@@ -47,7 +47,7 @@ int openai_exec_stage_expect_fail(
             operation_count);
         edit_txn_dispose(transaction);
 
-        actual_text = openai_read_text_file(target_path);
+        actual_text = llm_read_text_file(target_path);
 
         if (!stage_result &&
             actual_text != NULL &&

@@ -149,7 +149,7 @@ static int m256_ckpt_save(const m256_checkpoint *record)
     return 1;
 }
 
-int openai_checkpoint_resume(const char *session,
+int llm_checkpoint_resume(const char *session,
                              int may_bind,
                              char *summary,
                              size_t summary_size)
@@ -170,7 +170,7 @@ int openai_checkpoint_resume(const char *session,
         }
         if (!m256_plan_hash(&hash) ||
             !m256_plan_steps(&total) ||
-            !openai_plan_file_current(M256_PLAN_FILE, 0)) {
+            !llm_plan_file_current(M256_PLAN_FILE, 0)) {
             if (summary != NULL && summary_size > 0U) summary[0] = '\0';
             return 1;
         }
@@ -182,7 +182,7 @@ int openai_checkpoint_resume(const char *session,
     } else {
         if (!m256_plan_hash(&hash) ||
             hash != record.plan_hash ||
-            !openai_plan_file_current(M256_PLAN_FILE, 0)) {
+            !llm_plan_file_current(M256_PLAN_FILE, 0)) {
             if (summary != NULL && summary_size > 0U) {
                 (void)snprintf(summary, summary_size,
                     "Checkpoint stale: saved plan or planned files changed; regenerate the plan.");
@@ -202,7 +202,7 @@ int openai_checkpoint_resume(const char *session,
     return 1;
 }
 
-void openai_test_ckpt_clear(void)
+void llm_test_ckpt_clear(void)
 {
     while (remove(M256_CKPT_FILE) == 0) { }
     while (remove("OVMS_AGENT_CHECKPOINTS.NEW") == 0) { }

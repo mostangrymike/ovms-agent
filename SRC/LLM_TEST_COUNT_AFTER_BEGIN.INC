@@ -8,7 +8,7 @@
     operation_test_created = 0;
     operation_test_file = NULL;
 
-    if (!openai_selftest_file_exists(operation_test_path)) {
+    if (!llm_selftest_file_exists(operation_test_path)) {
         operation_test_file = fopen(operation_test_path, "w");
 
         if (operation_test_file != NULL) {
@@ -22,7 +22,7 @@
                     "BEGIN_OPERATION\n"
                     "type=replace_block\n"
                     "operation_count=1\n"
-                    "path=SRC/openai_status.c\n"
+                    "path=SRC/llm_status.c\n"
                     "BEGIN_OLD_TEXT\n"
                     "A\n"
                     "END_OLD_TEXT\n"
@@ -33,7 +33,7 @@
             fclose(operation_test_file) == 0) {
             operation_test_file = NULL;
             operation_test_ok =
-                !openai_exec_validate_ops_file(operation_test_path);
+                !llm_exec_validate_ops_file(operation_test_path);
         }
     }
 
@@ -45,7 +45,7 @@
         (void)remove(operation_test_path);
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "operation_count after begin rejected",
         operation_test_ok,
         &passed_count,

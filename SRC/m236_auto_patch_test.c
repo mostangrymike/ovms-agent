@@ -75,13 +75,13 @@ int main(void)
     { puts("M236 failed: stale autonomous hunk."); return EXIT_FAILURE; }
 
     llm_auto_test_limits(12U,1U);
-    llm_auto_begin(OPENAI_WORKFLOW_WRITE);
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
     if(!llm_auto_allow_write() || llm_auto_allow_write())
     { puts("M236 failed: one patch/write accounting."); return EXIT_FAILURE; }
     llm_auto_finish("test");
     llm_auto_test_limits(0U,0U);
 
-    if(!openai_parity_text(out,sizeof(out)) ||
+    if(!llm_parity_text(out,sizeof(out)) ||
        strstr(out,"Autonomous multi-hunk:  available")==NULL)
     { puts("M236 failed: parity."); return EXIT_FAILURE; }
 

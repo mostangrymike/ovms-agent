@@ -27,7 +27,7 @@ int llm_image_log(const char *image_path,
                        "%s path=%s", outcome, image_path);
     }
 
-    openai_log_event("AGENT/IMAGE", event, status);
+    llm_log_event("AGENT/IMAGE", event, status);
     return 1;
 }
 
@@ -49,7 +49,7 @@ void llm_agent_image(agent_state *state,
     }
 
     if (!llm_agent_image_set(meta.path)) {
-        openai_log_event("AGENT/IMAGE", "image_context_failed", 2);
+        llm_log_event("AGENT/IMAGE", "image_context_failed", 2);
         (void)puts("Unable to prepare image context.");
         return;
     }

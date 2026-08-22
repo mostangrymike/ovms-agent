@@ -58,7 +58,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(parity, sizeof(parity)) ||
+    if (!llm_parity_text(parity, sizeof(parity)) ||
         strstr(parity, "Normalized build result: available") == NULL ||
         strstr(parity, "Build evidence replay:  available") == NULL) {
         (void)puts("M238 failed: parity.");

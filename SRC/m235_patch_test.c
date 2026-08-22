@@ -72,7 +72,7 @@ int main(void)
        strstr(out,"not found")==NULL)
     { puts("M235 failed: stale rejection."); return EXIT_FAILURE; }
 
-    if(!openai_parity_text(out,sizeof(out)) ||
+    if(!llm_parity_text(out,sizeof(out)) ||
        strstr(out,"Multi-hunk patching:   available")==NULL ||
        strstr(out,"Patch prevalidation:   available")==NULL)
     { puts("M235 failed: parity."); return EXIT_FAILURE; }

@@ -1,6 +1,6 @@
 static char *execute_apply_replacement_to_content(
     const char *content,
-    const openai_saved_operation *operation)
+    const llm_saved_operation *operation)
 {
     const char *match;
     const char *second_match;
@@ -98,7 +98,7 @@ static int execute_target_exists(
 }
 
 static int execute_create_precheck(
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -149,7 +149,7 @@ static int execute_create_precheck(
 }
 
 static int execute_delete_precheck(
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -186,7 +186,7 @@ static int execute_delete_precheck(
 }
 
 static int execute_rename_precheck(
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -224,7 +224,7 @@ static int execute_rename_precheck(
 }
 
 static int execute_move_precheck(
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -263,7 +263,7 @@ static int execute_move_precheck(
 
 static int execute_stage_operations_chained(
     edit_txn *transaction,
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -384,7 +384,7 @@ static int execute_stage_operations_chained(
         }
 
         working_content =
-            openai_read_text_file(operations[index].path);
+            llm_read_text_file(operations[index].path);
 
         if (working_content == NULL) {
             (void)printf(

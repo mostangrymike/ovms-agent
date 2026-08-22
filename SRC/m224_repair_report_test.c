@@ -36,8 +36,8 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
     remove_all(TEST_LOG);
     remove_all(TEST_CSV);
     remove_all(TEST_KV);
@@ -123,8 +123,8 @@ int main(void)
     char output[32768];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
-    openai_test_set_history_limit(4U);
+    llm_test_set_log_path(TEST_LOG);
+    llm_test_set_history_limit(4U);
 
     if (!seed_history()) {
         (void)puts("M224 failed: unable to seed history.");
@@ -132,7 +132,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_report_text(
+    if (!llm_report_text(
             output,
             sizeof(output)) ||
         strstr(output, "History window: 4") == NULL ||
@@ -144,7 +144,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_summary_text(
+    if (!llm_summary_text(
             output,
             sizeof(output)) ||
         strstr(output, "Runs analyzed:    4") == NULL ||
@@ -159,7 +159,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_csv_file(TEST_CSV, 0) ||
+    if (!llm_csv_file(TEST_CSV, 0) ||
         !read_file(TEST_CSV, output, sizeof(output)) ||
         strstr(output, "run,started,attempt,plan") == NULL ||
         strstr(output, "1,2026-08-07T13:00:00,1,22400006") == NULL ||
@@ -169,7 +169,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_kv_file(TEST_KV, 0) ||
+    if (!llm_kv_file(TEST_KV, 0) ||
         !read_file(TEST_KV, output, sizeof(output)) ||
         strstr(output, "history.window=4") == NULL ||
         strstr(output, "history.runs=4") == NULL ||
@@ -181,7 +181,7 @@ int main(void)
     }
 
     if (!seed_protected(TEST_CSV) ||
-        openai_csv_file(TEST_CSV, 0) ||
+        llm_csv_file(TEST_CSV, 0) ||
         !read_file(TEST_CSV, output, sizeof(output)) ||
         strcmp(output, "protected\n") != 0) {
         (void)puts("M224 failed: CSV overwrite protection failed.");
@@ -189,15 +189,15 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_csv_file(TEST_CSV, 1)) {
+    if (!llm_csv_file(TEST_CSV, 1)) {
         (void)puts("M224 failed: approved CSV overwrite failed.");
         cleanup();
         return EXIT_FAILURE;
     }
 
-    if (openai_csv_file("../M224_ESCAPE.CSV", 0) ||
-        openai_kv_file("M224*.KV", 0) ||
-        openai_kv_file("M224;1", 0)) {
+    if (llm_csv_file("../M224_ESCAPE.CSV", 0) ||
+        llm_kv_file("M224*.KV", 0) ||
+        llm_kv_file("M224;1", 0)) {
         (void)puts("M224 failed: unsafe export filespec was accepted.");
         cleanup();
         return EXIT_FAILURE;

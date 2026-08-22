@@ -1,4 +1,4 @@
-int openai_m120_recovery_version(
+int llm_m120_recovery_version(
     const char *path)
 {
     int workflow;
@@ -6,64 +6,64 @@ int openai_m120_recovery_version(
     int build_status;
     int rollback;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
-        (void)openai_state_purge_all(path);
+            LLM_ROLLBACK_SUCCEEDED)) {
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
     if (remove(path) != 0) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    if (!openai_state_load_from(
+    if (!llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
     return
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 1 &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }
 
-int openai_m120_versions_bounded(
+int llm_m120_versions_bounded(
     const char *path)
 {
     int index;
     int removed;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
     for (index = 1; index <= 4; ++index) {
-        if (!openai_state_save_to(
+        if (!llm_state_save_to(
                 path,
-                OPENAI_WORKFLOW_EXECUTE,
+                LLM_WORKFLOW_EXECUTE,
                 1,
                 index,
-                OPENAI_ROLLBACK_SUCCEEDED)) {
-            (void)openai_state_purge_all(path);
+                LLM_ROLLBACK_SUCCEEDED)) {
+            (void)llm_state_purge_all(path);
             return 0;
         }
     }
@@ -77,7 +77,7 @@ int openai_m120_versions_bounded(
     return removed == 2 && errno == ENOENT;
 }
 
-int openai_m120_newest_preserved(
+int llm_m120_newest_preserved(
     const char *path)
 {
     int workflow;
@@ -87,41 +87,41 @@ int openai_m120_newest_preserved(
     int index;
     int valid;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
     for (index = 1; index <= 4; ++index) {
-        if (!openai_state_save_to(
+        if (!llm_state_save_to(
                 path,
-                OPENAI_WORKFLOW_EXECUTE,
+                LLM_WORKFLOW_EXECUTE,
                 1,
                 index,
-                OPENAI_ROLLBACK_SUCCEEDED)) {
-            (void)openai_state_purge_all(path);
+                LLM_ROLLBACK_SUCCEEDED)) {
+            (void)llm_state_purge_all(path);
             return 0;
         }
     }
 
     valid =
-        openai_state_load_from(
+        llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback) &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 4 &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return valid;
 }
 
-int openai_m120_unsafe_rejected(void)
+int llm_m120_unsafe_rejected(void)
 {
     return
-        !openai_state_prune_versions("../BAD.STATE") &&
-        !openai_state_prune_versions("BAD;1") &&
-        !openai_state_prune_versions("SYS$DISK:[BAD]STATE.DAT") &&
-        !openai_state_prune_versions("BAD STATE.DAT");
+        !llm_state_prune_versions("../BAD.STATE") &&
+        !llm_state_prune_versions("BAD;1") &&
+        !llm_state_prune_versions("SYS$DISK:[BAD]STATE.DAT") &&
+        !llm_state_prune_versions("BAD STATE.DAT");
 }

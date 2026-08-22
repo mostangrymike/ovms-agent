@@ -9,11 +9,11 @@
 #include "LLM_JSON_PARSE.H"
 #include "LLM_AUTO.H"
 
-#define OPENAI_AGENT_GOAL_MAX 8192U
+#define LLM_AGENT_GOAL_MAX 8192U
 
-static char openai_agent_goal[OPENAI_AGENT_GOAL_MAX];
+static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
 
-static int openai_update_local_ctx(const char *call_id,
+static int llm_update_local_ctx(const char *call_id,
                                    const char *tool_output)
 {
     char *json;
@@ -23,7 +23,7 @@ static int openai_update_local_ctx(const char *call_id,
         return 0;
     }
 
-    json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+    json = read_entire_file(LLM_RESPONSE_FILE, NULL);
     if (json == NULL) {
         return 0;
     }
@@ -43,7 +43,7 @@ static int openai_update_local_ctx(const char *call_id,
     return llm_agent_ctx_add_tool(call_id, tool_output);
 }
 
-static int openai_write_local_input(FILE *file,
+static int llm_write_local_input(FILE *file,
                                     const char *user_prompt,
                                     const char *call_id,
                                     const char *tool_output)
@@ -56,13 +56,13 @@ static int openai_write_local_input(FILE *file,
 
     if (call_id == NULL || tool_output == NULL) {
         goal_length = strlen(user_prompt);
-        if (goal_length >= sizeof(openai_agent_goal)) {
+        if (goal_length >= sizeof(llm_agent_goal)) {
             return 0;
         }
 
         llm_agent_ctx_reset();
-        (void)strcpy(openai_agent_goal, user_prompt);
-    } else if (!openai_update_local_ctx(call_id, tool_output)) {
+        (void)strcpy(llm_agent_goal, user_prompt);
+    } else if (!llm_update_local_ctx(call_id, tool_output)) {
         return 0;
     }
 
@@ -88,10 +88,10 @@ int write_create_agent_request(
 
     (void)previous_id;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -106,7 +106,7 @@ int write_create_agent_request(
     }
 
     if (success) {
-        success = openai_write_local_input(
+        success = llm_write_local_input(
             file, user_prompt, call_id, tool_output);
     }
 
@@ -152,10 +152,10 @@ int write_agent_request_mode(const char *model,
 
     (void)previous_id;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -170,7 +170,7 @@ int write_agent_request_mode(const char *model,
     }
 
     if (success) {
-        success = openai_write_local_input(
+        success = llm_write_local_input(
             file, user_prompt, call_id, tool_output);
     }
 
@@ -232,18 +232,18 @@ int write_agent_final_request(
     if (model == NULL ||
         call_id == NULL || *call_id == '\0' ||
         tool_output == NULL ||
-        openai_agent_goal[0] == '\0') {
+        llm_agent_goal[0] == '\0') {
         return 0;
     }
 
-    if (!openai_update_local_ctx(call_id, tool_output)) {
+    if (!llm_update_local_ctx(call_id, tool_output)) {
         return 0;
     }
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -254,7 +254,7 @@ int write_agent_final_request(
         fputs("\",\"instructions\":\"", file) == EOF ||
         !json_write_escaped(file, instructions) ||
         fputs("\",\"input\":", file) == EOF ||
-        !llm_agent_ctx_write_final(file, openai_agent_goal) ||
+        !llm_agent_ctx_write_final(file, llm_agent_goal) ||
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
@@ -283,10 +283,10 @@ int write_agent_request(const char *model,
 
     (void)previous_id;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -301,7 +301,7 @@ int write_agent_request(const char *model,
     }
 
     if (success) {
-        success = openai_write_local_input(
+        success = llm_write_local_input(
             file, user_prompt, call_id, tool_output);
     }
 

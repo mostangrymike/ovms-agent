@@ -5,7 +5,7 @@
         "OVMS_AGENT_TEST_M136_EVIDENCE.TMP";
     int ok;
 
-    ok = openai_m136_evidence_rollback(
+    ok = llm_m136_evidence_rollback(
         target,
         evidence);
 
@@ -14,7 +14,7 @@
     while (remove(evidence) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed build evidence precedes rollback",
         ok,
         &passed_count,
@@ -27,12 +27,12 @@
         "OVMS_AGENT_TEST_M136_COMMIT.TMP";
     int ok;
 
-    ok = openai_m136_commit_closes(target);
+    ok = llm_m136_commit_closes(target);
 
     while (remove(target) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "commit closes rollback capability",
         ok,
         &passed_count,
@@ -49,7 +49,7 @@
         "OVMS_AGENT_TEST_M136_OLD.TMP";
     int ok;
 
-    ok = openai_m136_consume_restore(
+    ok = llm_m136_consume_restore(
         plan,
         fresh,
         backup);
@@ -61,7 +61,7 @@
     while (remove(backup) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "consume failure preserves committed outcome",
         ok,
         &passed_count,
@@ -77,12 +77,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m136_final_state(path);
+    ok = llm_m136_final_state(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "execution state reflects final transaction",
         ok,
         &passed_count,

@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m132_clear_current_work(path);
+    ok = llm_m132_clear_current_work(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears current workflow",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m132_clear_current_build(path);
+    ok = llm_m132_clear_current_build(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears current build state",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m132_clear_current_roll(path);
+    ok = llm_m132_clear_current_roll(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed load clears current rollback",
         ok,
         &passed_count,
@@ -61,9 +61,9 @@
 {
     int ok;
 
-    ok = openai_m132_fail_keeps_current();
+    ok = llm_m132_fail_keeps_current();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed save leaves current values unchanged",
         ok,
         &passed_count,

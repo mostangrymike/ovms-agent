@@ -110,7 +110,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Project instructions:  available") == NULL ||
         strstr(output, "Instruction reload:    available") == NULL) {
         (void)puts("M232 failed: parity status.");

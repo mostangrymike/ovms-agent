@@ -6,7 +6,7 @@
 #include "LLM_REQUEST_BASIC.H"
 #include "llm_config.h"
 
-void openai_send(agent_state *state,
+void llm_send(agent_state *state,
                  const char *prompt,
                  int continue_conversation)
 {
@@ -16,11 +16,11 @@ void openai_send(agent_state *state,
 
     (void)state;
 
-    openai_last_workflow = continue_conversation ?
-        OPENAI_WORKFLOW_CHAT : OPENAI_WORKFLOW_ASK;
+    llm_last_workflow = continue_conversation ?
+        LLM_WORKFLOW_CHAT : LLM_WORKFLOW_ASK;
 
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
@@ -78,4 +78,3 @@ void openai_send(agent_state *state,
 
     (void)putchar('\n');
 }
-

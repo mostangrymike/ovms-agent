@@ -6,8 +6,8 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m108_build_writer(path);
-    text = openai_read_text_file(path);
+    ok = llm_m108_build_writer(path);
+    text = llm_read_text_file(path);
     ok =
         ok &&
         text != NULL &&
@@ -17,7 +17,7 @@
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "production build evidence writer tested",
         ok,
         &passed_count,
@@ -33,8 +33,8 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m108_ops_writer(path);
-    text = openai_read_text_file(path);
+    ok = llm_m108_ops_writer(path);
+    text = llm_read_text_file(path);
     ok =
         ok &&
         text != NULL &&
@@ -47,7 +47,7 @@
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "production operation evidence writer tested",
         ok,
         &passed_count,
@@ -55,9 +55,9 @@
     );
 }
 
-openai_selftest_report(
+llm_selftest_report(
     "evidence writer rejects null path",
-    openai_m108_null_path(),
+    llm_m108_null_path(),
     &passed_count,
     &failed_count
 );
@@ -68,9 +68,9 @@ openai_selftest_report(
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "evidence writer rejects null operations",
-        openai_m108_null_ops(path),
+        llm_m108_null_ops(path),
         &passed_count,
         &failed_count
     );

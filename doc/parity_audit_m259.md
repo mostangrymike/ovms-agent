@@ -16,11 +16,11 @@ Phase 8 requires:
 
 ## Existing request-path audit
 
-Before M259, `SRC/OPENAI_REQUEST.C` called the text-only `write_request(model, prompt, previous_id)` path before invoking curl against `/v1/responses`.
+Before M259, `SRC/LLM_REQUEST.C` called the text-only `write_request(model, prompt, previous_id)` path before invoking curl against `/v1/responses`.
 
-`SRC/OPENAI_REQUEST_BASIC.C` serialized `input` as a single JSON string.
+`SRC/LLM_REQUEST_BASIC.C` serialized `input` as a single JSON string.
 
-`SRC/OPENAI_REQUEST_AGENT.C` likewise serialized the initial agent user prompt as a single JSON string; only function-call output continuations used structured `input` arrays.
+`SRC/LLM_REQUEST_AGENT.C` likewise serialized the initial agent user prompt as a single JSON string; only function-call output continuations used structured `input` arrays.
 
 No production image-input parser, binary reader, base64 encoder, MIME detector, or `input_image` request serializer existed before M259.
 
@@ -74,7 +74,7 @@ M259 text-only request baseline evidence passed.
 
 ### M259.2 - guarded local image ingestion
 
-`SRC/OPENAI_IMAGE.C` plus `SRC/M259_IMAGE_INGEST_TEST.C` prove:
+`SRC/LLM_IMAGE.C` plus `SRC/M259_IMAGE_INGEST_TEST.C` prove:
 
 - PNG/JPEG/GIF/WEBP extension and signature validation;
 - unsafe path refusal;
@@ -91,7 +91,7 @@ M259 guarded image-ingestion evidence passed.
 
 ### M259.3 - production request serialization
 
-The production OpenAI module set includes image support. `write_request_image` emits a structured `input_text` plus `input_image` request while the original `write_request` behavior remains the normal text-only path.
+The production LLM module set includes image support. `write_request_image` emits a structured `input_text` plus `input_image` request while the original `write_request` behavior remains the normal text-only path.
 
 `SRC/M259_REQUEST_IMAGE_TEST.C` proves multimodal serialization, previous-response handling, and refusal without leaving a partial request file.
 

@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m119_writer_negative(path);
+    ok = llm_m119_writer_negative(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "writer rejects negative build status",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m119_loader_negative(path);
+    ok = llm_m119_loader_negative(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "loader rejects negative build status",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m119_known_zero(path);
+    ok = llm_m119_known_zero(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "known zero build status accepted",
         ok,
         &passed_count,
@@ -65,12 +65,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m119_writer_reloads(path);
+    ok = llm_m119_writer_reloads(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "writer output reloads successfully",
         ok,
         &passed_count,

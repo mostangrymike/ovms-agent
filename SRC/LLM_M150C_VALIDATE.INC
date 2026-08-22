@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <string.h>
 
-int openai_m150c_has_create(void)
+int llm_m150c_has_create(void)
 {
     return
         strstr(prompt_plan, "type=create_file") != NULL &&
@@ -9,7 +9,7 @@ int openai_m150c_has_create(void)
         strstr(prompt_plan, "must not contain BEGIN_OLD_TEXT") != NULL;
 }
 
-int openai_m150c_guards_target(void)
+int llm_m150c_guards_target(void)
 {
     return
         strstr(prompt_plan, "shown not to exist") != NULL &&
@@ -21,7 +21,7 @@ int openai_m150c_guards_target(void)
             "Do not reuse a create_file path") != NULL;
 }
 
-int openai_m150c_keeps_replace(void)
+int llm_m150c_keeps_replace(void)
 {
     return
         strstr(prompt_plan, "type=replace_block") != NULL &&
@@ -31,7 +31,7 @@ int openai_m150c_keeps_replace(void)
         strstr(prompt_plan, "END_NEW_TEXT") != NULL;
 }
 
-int openai_m150c_blocks_legacy(void)
+int llm_m150c_blocks_legacy(void)
 {
     return
         strstr(

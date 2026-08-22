@@ -1,9 +1,9 @@
-int openai_exec_dry_validate(
+int llm_exec_dry_validate(
     const char *operations_path,
     const char *target_path,
     const char *expected_original_text)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     char *actual_text;
     unsigned int operation_count;
@@ -17,8 +17,8 @@ int openai_exec_dry_validate(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
 
     transaction = (edit_txn *)malloc(sizeof(*transaction));
@@ -34,7 +34,7 @@ int openai_exec_dry_validate(
     result = execute_parse_operations(
         operations_path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     if (result) {
@@ -53,7 +53,7 @@ int openai_exec_dry_validate(
         edit_txn_dispose(transaction);
     }
 
-    actual_text = openai_read_text_file(target_path);
+    actual_text = llm_read_text_file(target_path);
 
     if (actual_text == NULL ||
         strcmp(

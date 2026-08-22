@@ -1,4 +1,4 @@
-static int openai_m136_write_text(
+static int llm_m136_write_text(
     const char *path,
     const char *text)
 {
@@ -17,7 +17,7 @@ static int openai_m136_write_text(
     return fclose(file) == 0;
 }
 
-int openai_m136_evidence_rollback(
+int llm_m136_evidence_rollback(
     const char *target_path,
     const char *evidence_path)
 {
@@ -30,7 +30,7 @@ int openai_m136_evidence_rollback(
     while (remove(evidence_path) == 0) {
     }
 
-    if (!openai_m136_write_text(target_path, "ORIGINAL\n")) {
+    if (!llm_m136_write_text(target_path, "ORIGINAL\n")) {
         return 0;
     }
 
@@ -49,7 +49,7 @@ int openai_m136_evidence_rollback(
     }
 
     ok = edit_txn_rollback(&transaction);
-    text = openai_read_text_file(evidence_path);
+    text = llm_read_text_file(evidence_path);
 
     ok =
         ok &&
@@ -57,7 +57,7 @@ int openai_m136_evidence_rollback(
         strstr(text, "SIMULATED FAILURE") != NULL;
 
     free(text);
-    text = openai_read_text_file(target_path);
+    text = llm_read_text_file(target_path);
 
     ok =
         ok &&
@@ -69,7 +69,7 @@ int openai_m136_evidence_rollback(
     return ok;
 }
 
-int openai_m136_commit_closes(
+int llm_m136_commit_closes(
     const char *target_path)
 {
     edit_txn transaction;
@@ -78,7 +78,7 @@ int openai_m136_commit_closes(
     while (remove(target_path) == 0) {
     }
 
-    if (!openai_m136_write_text(target_path, "ORIGINAL\n")) {
+    if (!llm_m136_write_text(target_path, "ORIGINAL\n")) {
         return 0;
     }
 
@@ -97,7 +97,7 @@ int openai_m136_commit_closes(
     return ok;
 }
 
-int openai_m136_consume_restore(
+int llm_m136_consume_restore(
     const char *plan_path,
     const char *new_path,
     const char *backup_path)
@@ -112,7 +112,7 @@ int openai_m136_consume_restore(
     while (remove(backup_path) == 0) {
     }
 
-    if (!openai_m136_write_text(
+    if (!llm_m136_write_text(
             plan_path,
             "status=approved\n"
             "operation_count=1\n")) {
@@ -125,7 +125,7 @@ int openai_m136_consume_restore(
         backup_path,
         1);
 
-    text = openai_read_text_file(plan_path);
+    text = llm_read_text_file(plan_path);
     ok =
         ok &&
         text != NULL &&
@@ -136,7 +136,7 @@ int openai_m136_consume_restore(
     return ok;
 }
 
-int openai_m136_final_state(
+int llm_m136_final_state(
     const char *path)
 {
     int last_workflow;
@@ -152,43 +152,43 @@ int openai_m136_final_state(
 
     (void)path;
 
-    last_workflow = openai_last_workflow;
-    last_build_known = openai_last_build_known;
-    last_build_status = openai_last_build_status;
-    last_rollback = openai_last_rollback;
-    saved_workflow = openai_saved_workflow;
-    saved_build_known = openai_saved_build_known;
-    saved_build_status = openai_saved_build_status;
-    saved_rollback = openai_saved_rollback;
-    state_valid = openai_state_valid;
+    last_workflow = llm_last_workflow;
+    last_build_known = llm_last_build_known;
+    last_build_status = llm_last_build_status;
+    last_rollback = llm_last_rollback;
+    saved_workflow = llm_saved_workflow;
+    saved_build_known = llm_saved_build_known;
+    saved_build_status = llm_saved_build_status;
+    saved_rollback = llm_saved_rollback;
+    state_valid = llm_state_valid;
 
-    openai_last_workflow = OPENAI_WORKFLOW_EXECUTE;
-    openai_last_build_known = 1;
-    openai_last_build_status = 1;
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    llm_last_workflow = LLM_WORKFLOW_EXECUTE;
+    llm_last_build_known = 1;
+    llm_last_build_status = 1;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
 
-    openai_saved_workflow = openai_last_workflow;
-    openai_saved_build_known = openai_last_build_known;
-    openai_saved_build_status = openai_last_build_status;
-    openai_saved_rollback = openai_last_rollback;
-    openai_state_valid = 1;
+    llm_saved_workflow = llm_last_workflow;
+    llm_saved_build_known = llm_last_build_known;
+    llm_saved_build_status = llm_last_build_status;
+    llm_saved_rollback = llm_last_rollback;
+    llm_state_valid = 1;
 
     result =
-        openai_state_valid &&
-        openai_saved_workflow == OPENAI_WORKFLOW_EXECUTE &&
-        openai_saved_build_known == 1 &&
-        (openai_saved_build_status & 1) != 0 &&
-        openai_saved_rollback == OPENAI_ROLLBACK_NONE;
+        llm_state_valid &&
+        llm_saved_workflow == LLM_WORKFLOW_EXECUTE &&
+        llm_saved_build_known == 1 &&
+        (llm_saved_build_status & 1) != 0 &&
+        llm_saved_rollback == LLM_ROLLBACK_NONE;
 
-    openai_last_workflow = last_workflow;
-    openai_last_build_known = last_build_known;
-    openai_last_build_status = last_build_status;
-    openai_last_rollback = last_rollback;
-    openai_saved_workflow = saved_workflow;
-    openai_saved_build_known = saved_build_known;
-    openai_saved_build_status = saved_build_status;
-    openai_saved_rollback = saved_rollback;
-    openai_state_valid = state_valid;
+    llm_last_workflow = last_workflow;
+    llm_last_build_known = last_build_known;
+    llm_last_build_status = last_build_status;
+    llm_last_rollback = last_rollback;
+    llm_saved_workflow = saved_workflow;
+    llm_saved_build_known = saved_build_known;
+    llm_saved_build_status = saved_build_status;
+    llm_saved_rollback = saved_rollback;
+    llm_state_valid = state_valid;
 
     return result;
 }

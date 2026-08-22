@@ -12,16 +12,6 @@ $ SET DEFAULT 'PROJECT_DIR'
 $ FINAL_STATUS = 1
 $
 $ WRITE SYS$OUTPUT "Building OVMS Agent Version 2..."
-$ IF F$SEARCH("[.SRC]OPENAI_TOOL_WRITE.C;*") .NES. ""
-$ THEN
-$     WRITE SYS$OUTPUT -
-          "Stale SRC/OPENAI_TOOL_WRITE.C must not be present."
-$     WRITE SYS$OUTPUT -
-          "Live write tools are provided by OPENAI_TOOLS.C."
-$     FINAL_STATUS = %X10000002
-$     GOTO FINISH
-$ ENDIF
-$
 $
 $ BUILD_VERBOSE = F$TRNLNM("OVMS_AGENT_BUILD_VERBOSE")
 $ BUILD_QUIET = 1

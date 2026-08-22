@@ -7,7 +7,7 @@
 #define TEST_LOG "M211_REPAIR_STATUS.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * This deterministic status test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
     while (remove(TEST_LOG) == 0) {
     }
 }
@@ -54,41 +54,41 @@ int main(void)
     char summary[2048];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
     /* Older run: must not appear in latest-run summary. */
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0x11111111UL,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         0x22222222UL,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 
     /* Latest run: two attempts ending in safe rollback. */
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0xA1A1A1A1UL,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         0xB2B2B2B2UL,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
 
-    if (!openai_repair_status_text(
+    if (!llm_repair_status_text(
             summary,
             sizeof(summary))) {
         (void)puts("M211 failed: repair status summary unavailable.");
@@ -110,15 +110,15 @@ int main(void)
     }
 
     /* New one-attempt run must replace the prior two-attempt run. */
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0xC3C3C3C3UL,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 
-    if (!openai_repair_status_text(
+    if (!llm_repair_status_text(
             summary,
             sizeof(summary)) ||
         !contains_all(

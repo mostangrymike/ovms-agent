@@ -24,7 +24,7 @@ static int execute_sidecar_path(
 static void execute_remove_pair(
     const char *path)
 {
-    char sidecar[OPENAI_EXECUTE_PATH_SIZE + 16];
+    char sidecar[LLM_EXECUTE_PATH_SIZE + 16];
 
     while (remove(path) == 0) {
     }
@@ -42,8 +42,8 @@ static int execute_rename_pair(
     const char *from_path,
     const char *to_path)
 {
-    char from_sidecar[OPENAI_EXECUTE_PATH_SIZE + 16];
-    char to_sidecar[OPENAI_EXECUTE_PATH_SIZE + 16];
+    char from_sidecar[LLM_EXECUTE_PATH_SIZE + 16];
+    char to_sidecar[LLM_EXECUTE_PATH_SIZE + 16];
 
     if (!execute_sidecar_path(
             from_path,
@@ -81,7 +81,7 @@ static int execute_mark_consumed_file(
 {
     FILE *input;
     FILE *output;
-    char line[OPENAI_EXECUTE_LINE_SIZE];
+    char line[LLM_EXECUTE_LINE_SIZE];
     int replaced;
     int success;
 
@@ -137,7 +137,7 @@ static int execute_mark_consumed_file(
 
     if (!success ||
         !replaced ||
-        !openai_plan_checksum_write(new_path)) {
+        !llm_plan_checksum_write(new_path)) {
         execute_remove_pair(new_path);
         return 0;
     }
@@ -169,7 +169,7 @@ static int execute_mark_consumed_file(
 static int execute_mark_consumed_safe(void)
 {
     return execute_mark_consumed_file(
-        OPENAI_PLAN_FILE,
+        LLM_PLAN_FILE,
         "OVMS_AGENT_PLAN_NEW.TXT",
         "OVMS_AGENT_PLAN_OLD.TXT",
         0);

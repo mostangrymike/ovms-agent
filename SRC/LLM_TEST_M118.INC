@@ -6,12 +6,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m118_purge_versions(path);
+    ok = llm_m118_purge_versions(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "state purge removes all versions",
         ok,
         &passed_count,
@@ -27,9 +27,9 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m118_purge_missing(path);
+    ok = llm_m118_purge_missing(path);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "state purge accepts missing file",
         ok,
         &passed_count,
@@ -40,9 +40,9 @@
 {
     int ok;
 
-    ok = openai_m118_purge_empty();
+    ok = llm_m118_purge_empty();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "state purge rejects empty path",
         ok,
         &passed_count,
@@ -58,12 +58,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m118_state_stays_clear(path);
+    ok = llm_m118_state_stays_clear(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "cleared state does not reappear",
         ok,
         &passed_count,

@@ -11,11 +11,11 @@ int write_request(const char *model,
     FILE *file;
     int success;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
 
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -77,10 +77,10 @@ int write_request_image(const char *model,
         return 0;
     }
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -113,7 +113,7 @@ int write_request_image(const char *model,
     if (fclose(file) != 0) success = 0;
 
     if (!success) {
-        (void)remove(OPENAI_REQUEST_FILE);
+        (void)remove(LLM_REQUEST_FILE);
         (void)puts("Unable to write complete image API request.");
         return 0;
     }

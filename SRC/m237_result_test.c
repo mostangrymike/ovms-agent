@@ -17,7 +17,7 @@ int main(void)
 
     result=llm_result_make(
         "read_file","ok","read",1,
-        "{\"path\":\"SRC/OPENAI.C\"}","sample output");
+        "{\"path\":\"SRC/LLM.C\"}","sample output");
     if(result==NULL ||
        strstr(result,"tool: read_file")==NULL ||
        strstr(result,"status: ok")==NULL ||
@@ -44,7 +44,7 @@ int main(void)
        strstr(last,"status: failure")==NULL)
     {puts("M237 failed: last result.");return EXIT_FAILURE;}
 
-    if(!openai_parity_text(last,sizeof(last)) ||
+    if(!llm_parity_text(last,sizeof(last)) ||
        strstr(last,"Normalized results:     available")==NULL ||
        strstr(last,"Result persistence:     available")==NULL)
     {puts("M237 failed: parity.");return EXIT_FAILURE;}

@@ -32,14 +32,14 @@ int main(void)
     char final_report[8192];
     char tools[4096];
 
-    if (!openai_parity_text(legacy, sizeof(legacy)) ||
+    if (!llm_parity_text(legacy, sizeof(legacy)) ||
         !has_text(legacy, "MCP/tool servers:     not yet implemented") ||
         !has_text(legacy, "Unix sandbox parity:  not applicable on OpenVMS")) {
         (void)puts("M248 failed: legacy parity compatibility.");
         return 2;
     }
 
-    if (!openai_final_parity_text(final_report, sizeof(final_report)) ||
+    if (!llm_final_parity_text(final_report, sizeof(final_report)) ||
         !has_text(final_report, "practical parity achieved") ||
         !has_text(final_report, "Fork and delegated branch:     adapted") ||
         !has_text(final_report, "MCP result/session evidence:   native") ||
@@ -50,7 +50,7 @@ int main(void)
         return 2;
     }
 
-    if (!openai_tools_ext_text(tools, sizeof(tools)) ||
+    if (!llm_tools_ext_text(tools, sizeof(tools)) ||
         !has_text(tools, "mcp_call") ||
         !has_text(tools, "approval=full")) {
         (void)puts("M248 failed: extended tool catalog.");

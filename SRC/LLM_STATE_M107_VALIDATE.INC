@@ -1,4 +1,4 @@
-int openai_m107_state_serialize(const char *path)
+int llm_m107_state_serialize(const char *path)
 {
     FILE *file;
     char *text;
@@ -22,15 +22,15 @@ int openai_m107_state_serialize(const char *path)
             "last_build_known=1\n"
             "last_build_status=2\n"
             "last_rollback=%d\n",
-            OPENAI_WORKFLOW_EXECUTE,
-            OPENAI_ROLLBACK_SUCCEEDED) >= 0 &&
+            LLM_WORKFLOW_EXECUTE,
+            LLM_ROLLBACK_SUCCEEDED) >= 0 &&
         fclose(file) == 0;
 
     if (!result) {
         return 0;
     }
 
-    text = openai_read_text_file(path);
+    text = llm_read_text_file(path);
     result =
         text != NULL &&
         strstr(text, "last_workflow=13") != NULL &&
@@ -39,7 +39,7 @@ int openai_m107_state_serialize(const char *path)
     return result;
 }
 
-int openai_m107_state_reload(const char *path)
+int llm_m107_state_reload(const char *path)
 {
     FILE *file;
     char line[128];
@@ -54,7 +54,7 @@ int openai_m107_state_reload(const char *path)
     int saw_build_status;
     int saw_rollback;
 
-    if (!openai_m107_state_serialize(path)) {
+    if (!llm_m107_state_serialize(path)) {
         return 0;
     }
 
@@ -65,10 +65,10 @@ int openai_m107_state_reload(const char *path)
     }
 
     format = 0;
-    workflow = OPENAI_WORKFLOW_NONE;
+    workflow = LLM_WORKFLOW_NONE;
     build_known = 0;
     build_status = 0;
-    rollback = OPENAI_ROLLBACK_NONE;
+    rollback = LLM_ROLLBACK_NONE;
     saw_format = 0;
     saw_workflow = 0;
     saw_build_known = 0;
@@ -105,12 +105,12 @@ int openai_m107_state_reload(const char *path)
         saw_build_status &&
         saw_rollback &&
         format == 1 &&
-        workflow >= OPENAI_WORKFLOW_NONE &&
-        workflow <= OPENAI_WORKFLOW_EXECUTE &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow >= LLM_WORKFLOW_NONE &&
+        workflow <= LLM_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 2 &&
-        rollback >= OPENAI_ROLLBACK_NONE &&
-        rollback <= OPENAI_ROLLBACK_DECLINED &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback >= LLM_ROLLBACK_NONE &&
+        rollback <= LLM_ROLLBACK_DECLINED &&
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }

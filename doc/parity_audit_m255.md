@@ -47,9 +47,9 @@ The Phase 4 roadmap additionally requires:
 ## Existing repair engine
 
 `SRC/COMMAND.C` recognizes `AGENT/REPAIR` explicitly and dispatches to
-`openai_agent_repair()`.
+`llm_agent_repair()`.
 
-`SRC/OPENAI_RETRY.C` provides the core loop:
+`SRC/LLM_RETRY.C` provides the core loop:
 
 - captures the controlled build result before planning,
 - uses current diagnostics as repair-plan evidence,
@@ -135,7 +135,7 @@ Source inspection after M255.1 found one real Phase 4 roadmap gap: the repair
 engine persisted outcome evidence and printed terminal one-line messages, but did
 not itself produce a terminal execution summary plus final diff.
 
-M255.2 updates `SRC/OPENAI_RETRY.C` without changing repair semantics. On terminal
+M255.2 updates `SRC/LLM_RETRY.C` without changing repair semantics. On terminal
 repair execution outcomes it now prints:
 
 - `Repair execution summary:`,
@@ -213,7 +213,7 @@ The authoritative reconciliation may therefore:
 OpenVMS V7.2 VAX / DEC C remains the target. Every production external identifier
 introduced by M255 must be 31 characters or fewer.
 
-M255.2 introduced only the reporting helpers `openai_repair_rollback_text` and
-`openai_repair_report`, both declared `static`. The later M255 harness fixes added
+M255.2 introduced only the reporting helpers `llm_repair_rollback_text` and
+`llm_repair_report`, both declared `static`. The later M255 harness fixes added
 no production C identifiers. Therefore M255 adds no linker-visible symbol that can
 violate the DEC C/VAX 31-character external-identifier limit.

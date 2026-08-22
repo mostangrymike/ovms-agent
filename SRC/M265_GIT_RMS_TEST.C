@@ -9,7 +9,7 @@
 #define GAP008_EXPECTED "repository version\nlocal newer version\n"
 #define GAP008_OPT_PATH "TEST/GAP008_RECORD.OPT"
 #define GAP008_OPT_TEXT \
-    "[.BUILD]OPENAI_REPAIR.OBJ\n" \
+    "[.BUILD]LLM_REPAIR.OBJ\n" \
     "[.BUILD]GIT_RMS_RESTORE.OBJ\n"
 #define GAP008_COM_PATH "TEST/GAP008_RECORD.COM"
 #define GAP008_COM_TEXT \

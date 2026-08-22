@@ -1,6 +1,6 @@
 #include "llm_internal.h"
 
-static int openai_m150_write_plan(
+static int llm_m150_write_plan(
     const char *path,
     const char *text)
 {
@@ -22,19 +22,19 @@ static int openai_m150_write_plan(
     return result;
 }
 
-static int openai_m150_check_plan(
+static int llm_m150_check_plan(
     const char *path,
     const char *text,
     int expected)
 {
     int result;
 
-    if (!openai_m150_write_plan(path, text)) {
+    if (!llm_m150_write_plan(path, text)) {
         return 0;
     }
 
     result =
-        openai_exec_validate_ops_file(path) == expected;
+        llm_exec_validate_ops_file(path) == expected;
 
     while (remove(path) == 0) {
     }
@@ -42,9 +42,9 @@ static int openai_m150_check_plan(
     return result;
 }
 
-int openai_m150_create_valid(void)
+int llm_m150_create_valid(void)
 {
-    return openai_m150_check_plan(
+    return llm_m150_check_plan(
         "OVMS_AGENT_TEST_M150_VALID.TMP",
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
@@ -58,9 +58,9 @@ int openai_m150_create_valid(void)
         1);
 }
 
-int openai_m150_create_old_reject(void)
+int llm_m150_create_old_reject(void)
 {
-    return openai_m150_check_plan(
+    return llm_m150_check_plan(
         "OVMS_AGENT_TEST_M150_OLD.TMP",
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
@@ -76,9 +76,9 @@ int openai_m150_create_old_reject(void)
         0);
 }
 
-int openai_m150_create_missing_new(void)
+int llm_m150_create_missing_new(void)
 {
-    return openai_m150_check_plan(
+    return llm_m150_check_plan(
         "OVMS_AGENT_TEST_M150_MISSING.TMP",
         "operation_count=1\n"
         "BEGIN_OPERATION\n"

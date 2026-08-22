@@ -69,48 +69,6 @@ int llm_test_agent_image_req(const char *model,
     return result;
 }
 
-#define openai_auto_begin llm_auto_begin
-#define openai_auto_turn_limit llm_auto_turn_limit
-#define openai_auto_note_turn llm_auto_note_turn
-#define openai_auto_note_tool llm_auto_note_tool
-#define openai_auto_allow_write llm_auto_allow_write
-#define openai_auto_partial_limit llm_auto_partial_limit
-#define openai_auto_finish llm_auto_finish
-#define openai_auto_limits_text llm_auto_limits_text
-#define openai_auto_status_text llm_auto_status_text
-#define openai_show_auto_limits llm_show_auto_limits
-#define openai_show_auto_status llm_show_auto_status
-#define openai_auto_reset llm_auto_reset
-#define openai_auto_test_limits llm_auto_test_limits
-#define openai_patch_apply_json llm_patch_apply_json
-#define openai_tool_descriptor llm_tool_descriptor
-#define openai_tool_find llm_tool_find
-#define openai_tool_is_read llm_tool_is_read
-#define openai_tool_is_replace llm_tool_is_replace
-#define openai_tool_execute_read llm_tool_execute_read
-#define openai_git_refresh llm_git_refresh
-#define OPENAI_TOOL_REPLACE_LINES LLM_TOOL_REPLACE_LINES
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
-#undef OPENAI_TOOL_REPLACE_LINES
-#undef openai_git_refresh
-#undef openai_tool_execute_read
-#undef openai_tool_is_replace
-#undef openai_tool_is_read
-#undef openai_tool_find
-#undef openai_tool_descriptor
-#undef openai_patch_apply_json
-#undef openai_auto_test_limits
-#undef openai_auto_reset
-#undef openai_show_auto_status
-#undef openai_show_auto_limits
-#undef openai_auto_status_text
-#undef openai_auto_limits_text
-#undef openai_auto_finish
-#undef openai_auto_partial_limit
-#undef openai_auto_allow_write
-#undef openai_auto_note_tool
-#undef openai_auto_note_turn
-#undef openai_auto_turn_limit
-#undef openai_auto_begin

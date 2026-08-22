@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m125_fail_clears(path);
+    ok = llm_m125_fail_clears(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed state load clears recovery marker",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m125_fail_invalid(path);
+    ok = llm_m125_fail_invalid(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed state load remains invalid",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m125_normal_resets(path);
+    ok = llm_m125_normal_resets(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "normal reload clears prior recovery marker",
         ok,
         &passed_count,
@@ -65,12 +65,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m125_recovery_sets(path);
+    ok = llm_m125_recovery_sets(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "recovery reload sets marker again",
         ok,
         &passed_count,

@@ -9,12 +9,12 @@ static unsigned int m258_log_calls;
 static int m258_log_status;
 static char m258_log_event[512];
 
-const char *openai_approval_name(void)
+const char *llm_approval_name(void)
 {
     return m258_policy_name;
 }
 
-void openai_log_event(const char *workflow, const char *event, int status)
+void llm_log_event(const char *workflow, const char *event, int status)
 {
     if (workflow != NULL && strcmp(workflow, "NETWORK") == 0) {
         ++m258_log_calls;

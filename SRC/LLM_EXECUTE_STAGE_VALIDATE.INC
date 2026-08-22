@@ -1,8 +1,8 @@
-int openai_exec_stage_ops_file(
+int llm_exec_stage_ops_file(
     const char *path,
     const char *expected_text)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     int result;
@@ -13,8 +13,8 @@ int openai_exec_stage_ops_file(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
 
     transaction = (edit_txn *)malloc(sizeof(*transaction));
@@ -30,7 +30,7 @@ int openai_exec_stage_ops_file(
     result = execute_parse_operations(
         path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     if (result) {
@@ -58,11 +58,11 @@ int openai_exec_stage_ops_file(
     return result;
 }
 
-int openai_m252_delete_exec(
+int llm_m252_delete_exec(
     const char *path,
     int commit_change)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     int result;
@@ -71,8 +71,8 @@ int openai_m252_delete_exec(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
     transaction = (edit_txn *)malloc(sizeof(*transaction));
 
@@ -86,7 +86,7 @@ int openai_m252_delete_exec(
     result = execute_parse_operations(
         path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     if (result) {
@@ -116,11 +116,11 @@ int openai_m252_delete_exec(
     return result;
 }
 
-int openai_m252_rename_exec(
+int llm_m252_rename_exec(
     const char *path,
     int commit_change)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     int result;
@@ -129,8 +129,8 @@ int openai_m252_rename_exec(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
     transaction = (edit_txn *)malloc(sizeof(*transaction));
 
@@ -144,7 +144,7 @@ int openai_m252_rename_exec(
     result = execute_parse_operations(
         path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     if (result) {
@@ -174,11 +174,11 @@ int openai_m252_rename_exec(
     return result;
 }
 
-int openai_m252_move_exec(
+int llm_m252_move_exec(
     const char *path,
     int commit_change)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     int result;
@@ -187,8 +187,8 @@ int openai_m252_move_exec(
         return 0;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
     transaction = (edit_txn *)malloc(sizeof(*transaction));
 
@@ -202,7 +202,7 @@ int openai_m252_move_exec(
     result = execute_parse_operations(
         path,
         operations,
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+        LLM_EXECUTE_MAX_OPERATIONS,
         &operation_count);
 
     if (result) {

@@ -16,7 +16,7 @@ int write_agent_image_req(const char *model,
     if (model == NULL || instructions == NULL || user_prompt == NULL ||
         image_path == NULL || *image_path == '\0') return 0;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) return 0;
 
     success = 1;
@@ -46,7 +46,7 @@ int write_agent_image_req(const char *model,
 
     if (fclose(file) != 0) success = 0;
     if (!success) {
-        (void)remove(OPENAI_REQUEST_FILE);
+        (void)remove(LLM_REQUEST_FILE);
         return 0;
     }
     return 1;

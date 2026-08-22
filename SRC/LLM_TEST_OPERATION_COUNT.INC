@@ -9,7 +9,7 @@
     operation_test_created = 0;
     operation_test_file = NULL;
 
-    if (!openai_selftest_file_exists(operation_test_path)) {
+    if (!llm_selftest_file_exists(operation_test_path)) {
         operation_test_file =
             fopen(operation_test_path, "w");
 
@@ -24,14 +24,14 @@
                 "operation_count=2\n"
                 "BEGIN_OPERATION\n"
                 "type=replace_text\n"
-                "path=SRC/openai_status.c\n"
+                "path=SRC/llm_status.c\n"
                 "old_text=old\n"
                 "new_text=new\n"
                 "END_OPERATION\n") >= 0 &&
             fclose(operation_test_file) == 0) {
             operation_test_file = NULL;
             operation_test_ok =
-                !openai_exec_validate_ops_file(
+                !llm_exec_validate_ops_file(
                     operation_test_path);
         }
     }
@@ -44,7 +44,7 @@
         (void)remove(operation_test_path);
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "operation_count mismatch rejected",
         operation_test_ok,
         &passed_count,
@@ -57,12 +57,12 @@
     int ok;
 
     count = 999U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "inspection only\n"
         "operation_count=0\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count zero operations",
         ok && count == 0U,
         &passed_count,
@@ -75,13 +75,13 @@
     int ok;
 
     count = 0U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "operation_count=1\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count one operation",
         ok && count == 1U,
         &passed_count,
@@ -94,13 +94,13 @@
     int ok;
 
     count = 0U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "operation_count=19\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count ignores declared mismatch",
         ok && count == 1U,
         &passed_count,
@@ -113,13 +113,13 @@
     int ok;
 
     count = 0U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "operation_count=1\r\n"
         "BEGIN_OPERATION\r\n"
         "END_OPERATION\r\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count supports CRLF",
         ok && count == 1U,
         &passed_count,
@@ -132,12 +132,12 @@
     int ok;
 
     count = 0U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "BEGIN_OPERATION\n"
         "END_OPERATION",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count supports no final newline",
         ok && count == 1U,
         &passed_count,
@@ -150,14 +150,14 @@
     int ok;
 
     count = 777U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         "BEGIN_OPERATION\n"
         "BEGIN_OPERATION\n"
         "END_OPERATION\n"
         "END_OPERATION\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count rejects nested operations",
         !ok && count == 777U,
         &passed_count,
@@ -171,16 +171,16 @@
     int end_ok;
 
     count = 777U;
-    begin_ok = openai_execute_count_ops(
+    begin_ok = llm_execute_count_ops(
         "BEGIN_OPERATION\n",
         &count);
 
     count = 777U;
-    end_ok = openai_execute_count_ops(
+    end_ok = llm_execute_count_ops(
         "END_OPERATION\n",
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count rejects unmatched operations",
         !begin_ok && !end_ok,
         &passed_count,
@@ -205,11 +205,11 @@
     }
 
     count = 777U;
-    ok = openai_execute_count_ops(
+    ok = llm_execute_count_ops(
         too_many,
         &count);
 
-    openai_selftest_report(
+    llm_selftest_report(
         "count rejects too many operations",
         !ok && count == 777U,
         &passed_count,

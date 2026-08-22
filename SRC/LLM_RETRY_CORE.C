@@ -5,22 +5,22 @@
 #include "llm_internal.h"
 #include "project.h"
 
-int openai_plan_clear_files(const char *plan_path);
+int llm_plan_clear_files(const char *plan_path);
 
-static const char *openai_repair_rollback_text(void)
+static const char *llm_repair_rollback_text(void)
 {
-    if (openai_last_rollback == OPENAI_ROLLBACK_SUCCEEDED) {
+    if (llm_last_rollback == LLM_ROLLBACK_SUCCEEDED) {
         return "succeeded";
     }
 
-    if (openai_last_rollback == OPENAI_ROLLBACK_FAILED) {
+    if (llm_last_rollback == LLM_ROLLBACK_FAILED) {
         return "failed";
     }
 
     return "not-required";
 }
 
-static void openai_repair_report(const agent_state *state,
+static void llm_repair_report(const agent_state *state,
                                  const char *outcome,
                                  unsigned int attempt)
 {
@@ -30,24 +30,24 @@ static void openai_repair_report(const agent_state *state,
                  outcome != NULL ? outcome : "unknown");
     (void)printf("  Attempts: %u of 2\n", attempt);
 
-    if (openai_last_build_known) {
+    if (llm_last_build_known) {
         (void)printf(
             "  Build:    status %d (%s)\n",
-            openai_last_build_status,
-            (openai_last_build_status & 1) != 0 ? "success" : "failure"
+            llm_last_build_status,
+            (llm_last_build_status & 1) != 0 ? "success" : "failure"
         );
     } else {
         (void)puts("  Build:    status unavailable");
     }
 
     (void)printf("  Rollback: %s\n",
-                 openai_repair_rollback_text());
+                 llm_repair_rollback_text());
     (void)puts("");
     (void)puts("Final diff:");
     project_git_diff(state);
 }
 
-int openai_plan_is_noop_text(const char *text)
+int llm_plan_is_noop_text(const char *text)
 {
     static const char marker[] = "operation_count=0";
     const char *position;
@@ -84,22 +84,22 @@ int openai_plan_is_noop_text(const char *text)
     return 0;
 }
 
-static const char *openai_test_repair_plan_text = NULL;
-static const char *openai_test_repair_plan_text2 = NULL;
-static int openai_test_repair_auto_approve = 0;
-static unsigned int openai_test_repair_plan_index = 0U;
-static char *openai_test_repair_prompt1 = NULL;
-static char *openai_test_repair_prompt2 = NULL;
+static const char *llm_test_repair_plan_text = NULL;
+static const char *llm_test_repair_plan_text2 = NULL;
+static int llm_test_repair_auto_approve = 0;
+static unsigned int llm_test_repair_plan_index = 0U;
+static char *llm_test_repair_prompt1 = NULL;
+static char *llm_test_repair_prompt2 = NULL;
 
-static void openai_test_clear_repair_prompts(void)
+static void llm_test_clear_repair_prompts(void)
 {
-    free(openai_test_repair_prompt1);
-    free(openai_test_repair_prompt2);
-    openai_test_repair_prompt1 = NULL;
-    openai_test_repair_prompt2 = NULL;
+    free(llm_test_repair_prompt1);
+    free(llm_test_repair_prompt2);
+    llm_test_repair_prompt1 = NULL;
+    llm_test_repair_prompt2 = NULL;
 }
 
-static void openai_test_capture_repair_prompt(unsigned int attempt,
+static void llm_test_capture_repair_prompt(unsigned int attempt,
                                               const char *prompt)
 {
     char **destination;
@@ -109,70 +109,70 @@ static void openai_test_capture_repair_prompt(unsigned int attempt,
     }
 
     if (attempt == 1U) {
-        destination = &openai_test_repair_prompt1;
+        destination = &llm_test_repair_prompt1;
     } else if (attempt == 2U) {
-        destination = &openai_test_repair_prompt2;
+        destination = &llm_test_repair_prompt2;
     } else {
         return;
     }
 
     free(*destination);
-    *destination = openai_duplicate_text(prompt);
+    *destination = llm_duplicate_text(prompt);
 }
 
-const char *openai_test_get_repair_prompt(unsigned int attempt)
+const char *llm_test_get_repair_prompt(unsigned int attempt)
 {
     if (attempt == 1U) {
-        return openai_test_repair_prompt1;
+        return llm_test_repair_prompt1;
     }
 
     if (attempt == 2U) {
-        return openai_test_repair_prompt2;
+        return llm_test_repair_prompt2;
     }
 
     return NULL;
 }
 
-void openai_test_set_repair_plan(const char *plan_text,
+void llm_test_set_repair_plan(const char *plan_text,
                                  int auto_approve)
 {
-    openai_test_repair_plan_text = plan_text;
-    openai_test_repair_plan_text2 = NULL;
-    openai_test_repair_auto_approve = auto_approve;
-    openai_test_repair_plan_index = 0U;
-    openai_test_clear_repair_prompts();
+    llm_test_repair_plan_text = plan_text;
+    llm_test_repair_plan_text2 = NULL;
+    llm_test_repair_auto_approve = auto_approve;
+    llm_test_repair_plan_index = 0U;
+    llm_test_clear_repair_prompts();
 }
 
-void openai_test_set_repair_plans(const char *plan_text1,
+void llm_test_set_repair_plans(const char *plan_text1,
                                   const char *plan_text2,
                                   int auto_approve)
 {
-    openai_test_repair_plan_text = plan_text1;
-    openai_test_repair_plan_text2 = plan_text2;
-    openai_test_repair_auto_approve = auto_approve;
-    openai_test_repair_plan_index = 0U;
-    openai_test_clear_repair_prompts();
+    llm_test_repair_plan_text = plan_text1;
+    llm_test_repair_plan_text2 = plan_text2;
+    llm_test_repair_auto_approve = auto_approve;
+    llm_test_repair_plan_index = 0U;
+    llm_test_clear_repair_prompts();
 }
 
-static const char *openai_test_next_repair_plan(void)
+static const char *llm_test_next_repair_plan(void)
 {
     const char *plan_text;
 
-    if (openai_test_repair_plan_text == NULL) {
+    if (llm_test_repair_plan_text == NULL) {
         return NULL;
     }
 
-    if (openai_test_repair_plan_index == 0U) {
-        plan_text = openai_test_repair_plan_text;
+    if (llm_test_repair_plan_index == 0U) {
+        plan_text = llm_test_repair_plan_text;
     } else {
-        plan_text = openai_test_repair_plan_text2;
+        plan_text = llm_test_repair_plan_text2;
     }
 
-    ++openai_test_repair_plan_index;
+    ++llm_test_repair_plan_index;
     return plan_text;
 }
 
-static char *openai_saved_plan_body(const char *saved_plan)
+static char *llm_saved_plan_body(const char *saved_plan)
 {
     static const char marker[] = "\n[plan]\n";
     const char *body;
@@ -187,10 +187,10 @@ static char *openai_saved_plan_body(const char *saved_plan)
     }
 
     body += strlen(marker);
-    return openai_duplicate_text(body);
+    return llm_duplicate_text(body);
 }
 
-char *openai_build_goal_prompt(const char *goal,
+char *llm_build_goal_prompt(const char *goal,
                                const char *build_output)
 {
     static const char introduction[] =
@@ -233,7 +233,7 @@ char *openai_build_goal_prompt(const char *goal,
     return combined_goal;
 }
 
-char *openai_build_repair_prompt(const char *goal,
+char *llm_build_repair_prompt(const char *goal,
                                  const char *build_output)
 {
     static const char introduction[] =
@@ -275,7 +275,7 @@ char *openai_build_repair_prompt(const char *goal,
     return combined_goal;
 }
 
-static char *openai_quote_plan_context(const char *plan)
+static char *llm_quote_plan_context(const char *plan)
 {
     static const char prefix[] = "PRIOR> ";
     const char *source;
@@ -326,7 +326,7 @@ static char *openai_quote_plan_context(const char *plan)
     return quoted;
 }
 
-char *openai_build_retry_prompt(const char *goal,
+char *llm_build_retry_prompt(const char *goal,
                                 const char *build_output,
                                 const char *previous_plan)
 {
@@ -353,7 +353,7 @@ char *openai_build_retry_prompt(const char *goal,
         return NULL;
     }
 
-    quoted_plan = openai_quote_plan_context(previous_plan);
+    quoted_plan = llm_quote_plan_context(previous_plan);
     if (quoted_plan == NULL) {
         return NULL;
     }
@@ -401,13 +401,13 @@ void llm_agent_retry(agent_state *state, const char *goal)
     size_t combined_size;
     int build_status;
 
-    openai_last_workflow = OPENAI_WORKFLOW_RETRY;
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_last_workflow = LLM_WORKFLOW_RETRY;
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -473,7 +473,7 @@ void llm_agent_retry(agent_state *state, const char *goal)
      * A retry remains one patch and one post-patch controlled build. The
      * existing supervised mode enforces local confirmation and rollback.
      */
-    llm_agent_mode(state, combined_goal, 1, 1, OPENAI_WORKFLOW_FIX);
+    llm_agent_mode(state, combined_goal, 1, 1, LLM_WORKFLOW_FIX);
 
     free(combined_goal);
     free(build_output);
@@ -517,11 +517,11 @@ void llm_agent_repair(agent_state *state, const char *goal)
         return;
     }
 
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
-    openai_log_event("AGENT/REPAIR", "start", 0);
+    llm_last_rollback = LLM_ROLLBACK_NONE;
+    llm_log_event("AGENT/REPAIR", "start", 0);
 
     using_test_plans =
-        openai_test_repair_plan_text != NULL;
+        llm_test_repair_plan_text != NULL;
 
     (void)puts("Checking the current project build before repair...");
 
@@ -529,7 +529,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
 
     if (build_output == NULL) {
         (void)puts("Unable to capture the current build result.");
-        openai_log_event("AGENT/REPAIR", "build_capture_failed", 0);
+        llm_log_event("AGENT/REPAIR", "build_capture_failed", 0);
         return;
     }
 
@@ -543,7 +543,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
         (void)puts(
             "Current build succeeds. Continuing with the explicit repair goal."
         );
-        openai_log_event(
+        llm_log_event(
             "AGENT/REPAIR",
             "passing_baseline",
             build_status
@@ -556,14 +556,14 @@ void llm_agent_repair(agent_state *state, const char *goal)
         if (attempt == 1U) {
             if ((build_status & 1) != 0) {
                 combined_goal =
-                    openai_build_goal_prompt(goal, build_output);
+                    llm_build_goal_prompt(goal, build_output);
             } else {
                 combined_goal =
-                    openai_build_repair_prompt(goal, build_output);
+                    llm_build_repair_prompt(goal, build_output);
             }
         } else {
             combined_goal =
-                openai_build_retry_prompt(
+                llm_build_retry_prompt(
                     goal,
                     build_output,
                     previous_plan
@@ -573,13 +573,13 @@ void llm_agent_repair(agent_state *state, const char *goal)
         if (combined_goal == NULL) {
             (void)puts("Insufficient memory for repair prompt.");
             free(build_output);
-            openai_log_event("AGENT/REPAIR", "allocation_failed", 0);
+            llm_log_event("AGENT/REPAIR", "allocation_failed", 0);
             free(previous_plan);
             return;
         }
 
         if (using_test_plans) {
-            openai_test_capture_repair_prompt(attempt, combined_goal);
+            llm_test_capture_repair_prompt(attempt, combined_goal);
         }
 
         (void)printf(
@@ -590,7 +590,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
         test_plan = NULL;
 
         if (using_test_plans) {
-            test_plan = openai_test_next_repair_plan();
+            test_plan = llm_test_next_repair_plan();
 
             if (test_plan == NULL) {
                 free(combined_goal);
@@ -598,7 +598,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
                 (void)puts(
                     "AGENT/REPAIR deterministic test plan sequence ended."
                 );
-                openai_log_event(
+                llm_log_event(
                     "AGENT/REPAIR",
                     "test_plan_sequence_ended",
                     (int)attempt
@@ -607,7 +607,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
                 return;
             }
 
-            if (!openai_plan_save(combined_goal, test_plan)) {
+            if (!llm_plan_save(combined_goal, test_plan)) {
                 (void)puts(
                     "AGENT/REPAIR test hook could not save deterministic plan."
                 );
@@ -620,13 +620,13 @@ void llm_agent_repair(agent_state *state, const char *goal)
         free(build_output);
         build_output = NULL;
 
-        if (!openai_plan_is_current(1)) {
+        if (!llm_plan_is_current(1)) {
             (void)puts(
                 "AGENT/REPAIR stopped because no current deterministic plan "
                 "was produced."
             );
             free(previous_plan);
-            openai_log_event("AGENT/REPAIR", "plan_missing", (int)attempt);
+            llm_log_event("AGENT/REPAIR", "plan_missing", (int)attempt);
             return;
         }
 
@@ -634,13 +634,13 @@ void llm_agent_repair(agent_state *state, const char *goal)
             char *saved_plan;
 
             saved_plan =
-                openai_read_text_file("OVMS_AGENT_PLAN.TXT");
+                llm_read_text_file("OVMS_AGENT_PLAN.TXT");
 
             if (saved_plan != NULL &&
-                openai_plan_is_noop_text(saved_plan)) {
+                llm_plan_is_noop_text(saved_plan)) {
                 free(saved_plan);
 
-                if (!openai_plan_clear_files(
+                if (!llm_plan_clear_files(
                         "OVMS_AGENT_PLAN.TXT")) {
                     (void)puts(
                         "Warning: no-op repair plan could not be cleared."
@@ -651,7 +651,7 @@ void llm_agent_repair(agent_state *state, const char *goal)
                 (void)puts(
                     "AGENT/REPAIR completed without modifying the project."
                 );
-                openai_log_event(
+                llm_log_event(
                     "AGENT/REPAIR",
                     "no_operations",
                     (int)attempt
@@ -667,18 +667,18 @@ void llm_agent_repair(agent_state *state, const char *goal)
             char *saved_plan;
 
             saved_plan =
-                openai_read_text_file("OVMS_AGENT_PLAN.TXT");
+                llm_read_text_file("OVMS_AGENT_PLAN.TXT");
 
             free(previous_plan);
             previous_plan =
-                openai_saved_plan_body(saved_plan);
+                llm_saved_plan_body(saved_plan);
             free(saved_plan);
 
             if (previous_plan == NULL) {
                 (void)puts(
                     "AGENT/REPAIR could not snapshot the first repair plan."
                 );
-                openai_log_event(
+                llm_log_event(
                     "AGENT/REPAIR",
                     "prior_plan_snapshot_failed",
                     1
@@ -688,17 +688,17 @@ void llm_agent_repair(agent_state *state, const char *goal)
         }
 
         if (using_test_plans &&
-            openai_test_repair_auto_approve) {
-            (void)openai_plan_approve_file("OVMS_AGENT_PLAN.TXT");
+            llm_test_repair_auto_approve) {
+            (void)llm_plan_approve_file("OVMS_AGENT_PLAN.TXT");
         } else {
-            openai_plan_approve();
+            llm_plan_approve();
         }
 
-        if (!openai_plan_approved) {
+        if (!llm_plan_approved) {
             (void)puts(
                 "AGENT/REPAIR cancelled before any project write."
             );
-            openai_log_event(
+            llm_log_event(
                 "AGENT/REPAIR",
                 "approval_declined",
                 (int)attempt
@@ -716,62 +716,62 @@ void llm_agent_repair(agent_state *state, const char *goal)
          * Clear prior workflow evidence so only this transaction's result
          * can authorize either success or a bounded retry.
          */
-        openai_last_build_known = 0;
-        openai_last_rollback = OPENAI_ROLLBACK_NONE;
+        llm_last_build_known = 0;
+        llm_last_rollback = LLM_ROLLBACK_NONE;
 
-        openai_plan_execute(state);
+        llm_plan_execute(state);
 
-        if (openai_last_build_known &&
-            (openai_last_build_status & 1) != 0) {
+        if (llm_last_build_known &&
+            (llm_last_build_status & 1) != 0) {
             (void)printf(
                 "AGENT/REPAIR succeeded on attempt %u.\n",
                 attempt
             );
-            openai_log_repair_attempt(
+            llm_log_repair_attempt(
                 attempt,
-                openai_approved_hash,
-                openai_last_build_status,
-                openai_last_rollback,
+                llm_approved_hash,
+                llm_last_build_status,
+                llm_last_rollback,
                 "committed"
             );
-            openai_log_event(
+            llm_log_event(
                 "AGENT/REPAIR",
                 "repair_succeeded",
                 (int)attempt
             );
-            openai_repair_report(state, "committed", attempt);
+            llm_repair_report(state, "committed", attempt);
             free(previous_plan);
             return;
         }
 
-        if (!openai_last_build_known ||
-            openai_last_rollback != OPENAI_ROLLBACK_SUCCEEDED) {
+        if (!llm_last_build_known ||
+            llm_last_rollback != LLM_ROLLBACK_SUCCEEDED) {
             (void)puts(
                 "AGENT/REPAIR stopped because the failed attempt did not "
                 "complete a safe rollback."
             );
-            openai_log_repair_attempt(
+            llm_log_repair_attempt(
                 attempt,
-                openai_approved_hash,
-                openai_last_build_status,
-                openai_last_rollback,
+                llm_approved_hash,
+                llm_last_build_status,
+                llm_last_rollback,
                 "unsafe"
             );
-            openai_log_event(
+            llm_log_event(
                 "AGENT/REPAIR",
                 "unsafe_retry_state",
                 (int)attempt
             );
-            openai_repair_report(state, "unsafe-stop", attempt);
+            llm_repair_report(state, "unsafe-stop", attempt);
             free(previous_plan);
             return;
         }
 
-        openai_log_repair_attempt(
+        llm_log_repair_attempt(
             attempt,
-            openai_approved_hash,
-            openai_last_build_status,
-            openai_last_rollback,
+            llm_approved_hash,
+            llm_last_build_status,
+            llm_last_rollback,
             "rolled_back"
         );
 
@@ -780,25 +780,25 @@ void llm_agent_repair(agent_state *state, const char *goal)
                 "AGENT/REPAIR reached the two-attempt limit. "
                 "The final failed transaction was rolled back."
             );
-            openai_log_event(
+            llm_log_event(
                 "AGENT/REPAIR",
                 "retry_limit_reached",
                 2
             );
-            openai_repair_report(state, "attempt-limit", attempt);
+            llm_repair_report(state, "attempt-limit", attempt);
             free(previous_plan);
             return;
         }
 
         build_output =
-            openai_read_text_file("OVMS_AGENT_FAILED_BUILD.TXT");
+            llm_read_text_file("OVMS_AGENT_FAILED_BUILD.TXT");
 
         if (build_output == NULL) {
             (void)puts(
                 "AGENT/REPAIR cannot continue because the failed rebuild "
                 "diagnostics could not be reloaded."
             );
-            openai_log_event(
+            llm_log_event(
                 "AGENT/REPAIR",
                 "retry_diagnostics_missing",
                 (int)attempt
@@ -812,6 +812,6 @@ void llm_agent_repair(agent_state *state, const char *goal)
             "Attempt 2 will receive the first plan and new diagnostics."
         );
 
-        openai_plan_approval_clear();
+        llm_plan_approval_clear();
     }
 }

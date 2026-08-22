@@ -71,7 +71,7 @@ int main(void)
         "bad|sse|file://bad";
     static char net_allow[] = "OVMS_AGENT_NET_ALLOW=tools.example.test";
     static char net_deny[] = "OVMS_AGENT_NET_DENY=";
-    openai_mcp_result result;
+    llm_mcp_result result;
     m246_probe probe;
     char output[4096];
 
@@ -80,22 +80,22 @@ int main(void)
     memset(&probe, 0, sizeof(probe));
     probe.succeed = 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     if (!require_true(
-            openai_mcp_run_result(config, "stream watch build",
+            llm_mcp_run_result(config, "stream watch build",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_REFUSED &&
+            result.status == LLM_MCP_RES_REFUSED &&
             strstr(result.detail, "FULL approval") != NULL &&
             probe.sse_calls == 0,
             "approval refusal result")) return 1;
 
-    if (!require_true(openai_set_approval("full"), "enable full approval"))
+    if (!require_true(llm_set_approval("full"), "enable full approval"))
         return 1;
 
     if (!require_true(
-            openai_mcp_run_result(config, "docs search RMS",
+            llm_mcp_run_result(config, "docs search RMS",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_SUCCESS &&
+            result.status == LLM_MCP_RES_SUCCESS &&
             strcmp(result.transport, "stdio") == 0 &&
             strcmp(result.server, "docs") == 0 &&
             strcmp(result.tool, "search") == 0 &&
@@ -104,23 +104,23 @@ int main(void)
             "stdio normalized success")) return 1;
 
     if (!require_true(
-            openai_mcp_run_result(config, "issues get 42",
+            llm_mcp_run_result(config, "issues get 42",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_SUCCESS &&
+            result.status == LLM_MCP_RES_SUCCESS &&
             strcmp(result.transport, "http") == 0 &&
             probe.http_calls == 1,
             "HTTP normalized success")) return 1;
 
     if (!require_true(
-            openai_mcp_run_result(config, "stream watch x",
+            llm_mcp_run_result(config, "stream watch x",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_SUCCESS &&
+            result.status == LLM_MCP_RES_SUCCESS &&
             strcmp(result.transport, "sse") == 0 &&
             probe.sse_calls == 1,
             "SSE normalized success")) return 1;
 
     if (!require_true(
-            openai_mcp_result_text(&result, output, sizeof(output)) &&
+            llm_mcp_result_text(&result, output, sizeof(output)) &&
             strstr(output, "Status:     success") != NULL &&
             strstr(output, "Transport:  sse") != NULL &&
             strstr(output, "sse-result") != NULL,
@@ -128,28 +128,28 @@ int main(void)
 
     probe.succeed = 0;
     if (!require_true(
-            openai_mcp_run_result(config, "issues get fail",
+            llm_mcp_run_result(config, "issues get fail",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_FAILED &&
+            result.status == LLM_MCP_RES_FAILED &&
             strstr(result.detail, "execution failed") != NULL,
             "normalized failure")) return 1;
 
     probe.succeed = 1;
     if (!require_true(
-            openai_mcp_run_result(config, "bad watch x",
+            llm_mcp_run_result(config, "bad watch x",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_REFUSED &&
+            result.status == LLM_MCP_RES_REFUSED &&
             strstr(result.detail, "unsafe SSE") != NULL,
             "normalized unsafe refusal")) return 1;
 
     if (!require_true(
-            openai_mcp_run_result(config, "missing tool x",
+            llm_mcp_run_result(config, "missing tool x",
                 fake_stdio, fake_http, fake_sse, &probe, &result) &&
-            result.status == OPENAI_MCP_RES_REFUSED &&
+            result.status == LLM_MCP_RES_REFUSED &&
             strstr(result.detail, "not configured") != NULL,
             "unknown server refusal")) return 1;
 
-    openai_test_reset_approval();
+    llm_test_reset_approval();
     (void)puts("M246 MCP normalized result regression passed.");
     return 0;
 }

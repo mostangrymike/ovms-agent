@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m120_recovery_version(path);
+    ok = llm_m120_recovery_version(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "state save retains recovery version",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m120_versions_bounded(path);
+    ok = llm_m120_versions_bounded(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "state versions are bounded",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m120_newest_preserved(path);
+    ok = llm_m120_newest_preserved(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "pruning never removes newest state",
         ok,
         &passed_count,
@@ -61,9 +61,9 @@
 {
     int ok;
 
-    ok = openai_m120_unsafe_rejected();
+    ok = llm_m120_unsafe_rejected();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "unsafe prune path rejected",
         ok,
         &passed_count,

@@ -1,9 +1,9 @@
 {
     int ok;
 
-    ok = openai_m127_hide_workflow();
+    ok = llm_m127_hide_workflow();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid state hides workflow details",
         ok,
         &passed_count,
@@ -14,9 +14,9 @@
 {
     int ok;
 
-    ok = openai_m127_hide_build();
+    ok = llm_m127_hide_build();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid state hides build details",
         ok,
         &passed_count,
@@ -27,9 +27,9 @@
 {
     int ok;
 
-    ok = openai_m127_hide_rollback();
+    ok = llm_m127_hide_rollback();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid state hides rollback details",
         ok,
         &passed_count,
@@ -40,9 +40,9 @@
 {
     int ok;
 
-    ok = openai_m127_valid_details();
+    ok = llm_m127_valid_details();
 
-    openai_selftest_report(
+    llm_selftest_report(
         "valid state details remain visible",
         ok,
         &passed_count,

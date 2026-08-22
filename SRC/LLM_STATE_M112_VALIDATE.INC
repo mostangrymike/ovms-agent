@@ -1,4 +1,4 @@
-static int openai_m112_load_rejected(
+static int llm_m112_load_rejected(
     const char *path)
 {
     int workflow;
@@ -6,7 +6,7 @@ static int openai_m112_load_rejected(
     int build_status;
     int rollback;
 
-    return !openai_state_load_from(
+    return !llm_state_load_from(
         path,
         &workflow,
         &build_known,
@@ -14,7 +14,7 @@ static int openai_m112_load_rejected(
         &rollback);
 }
 
-int openai_m112_big_workflow(
+int llm_m112_big_workflow(
     const char *path)
 {
     FILE *file;
@@ -55,10 +55,10 @@ int openai_m112_big_workflow(
         return 0;
     }
 
-    return openai_m112_load_rejected(path);
+    return llm_m112_load_rejected(path);
 }
 
-int openai_m112_big_unknown(
+int llm_m112_big_unknown(
     const char *path)
 {
     FILE *file;
@@ -99,10 +99,10 @@ int openai_m112_big_unknown(
         return 0;
     }
 
-    return openai_m112_load_rejected(path);
+    return llm_m112_load_rejected(path);
 }
 
-int openai_m112_unterm_middle(
+int llm_m112_unterm_middle(
     const char *path)
 {
     FILE *file;
@@ -128,10 +128,10 @@ int openai_m112_unterm_middle(
         return 0;
     }
 
-    return openai_m112_load_rejected(path);
+    return llm_m112_load_rejected(path);
 }
 
-int openai_m112_unterm_final(
+int llm_m112_unterm_final(
     const char *path)
 {
     FILE *file;
@@ -162,14 +162,14 @@ int openai_m112_unterm_final(
     }
 
     return
-        openai_state_load_from(
+        llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback) &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == 2 &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }

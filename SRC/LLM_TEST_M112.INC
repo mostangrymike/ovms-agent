@@ -6,12 +6,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m112_big_workflow(path);
+    ok = llm_m112_big_workflow(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "oversized workflow record rejected",
         ok,
         &passed_count,
@@ -27,12 +27,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m112_big_unknown(path);
+    ok = llm_m112_big_unknown(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "oversized unknown record rejected",
         ok,
         &passed_count,
@@ -48,12 +48,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m112_unterm_middle(path);
+    ok = llm_m112_unterm_middle(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "unterminated nonfinal record rejected",
         ok,
         &passed_count,
@@ -69,12 +69,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m112_unterm_final(path);
+    ok = llm_m112_unterm_final(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "unterminated final rollback accepted",
         ok,
         &passed_count,

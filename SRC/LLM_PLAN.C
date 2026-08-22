@@ -8,10 +8,10 @@
 #include "LLM_PLAN.H"
 #include "LLM_EXECUTE.H"
 
-#define OPENAI_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
-#define OPENAI_PLAN_MAX_BYTES 65536U
-#define OPENAI_PLAN_MAX_FILES 32U
-#define OPENAI_PLAN_PATH_SIZE 256U
+#define LLM_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
+#define LLM_PLAN_MAX_BYTES 65536U
+#define LLM_PLAN_MAX_FILES 32U
+#define LLM_PLAN_PATH_SIZE 256U
 
 #include "LLM_PLAN_SENSITIVE.INC"
 static int plan_path_char(int ch)
@@ -37,7 +37,7 @@ static int plan_path_safe(const char *path)
 }
 
 typedef struct plan_scope_file {
-    char path[OPENAI_PLAN_PATH_SIZE];
+    char path[LLM_PLAN_PATH_SIZE];
     int expect_missing;
 } plan_scope_file;
 
@@ -71,7 +71,7 @@ static int plan_scope_add(
         count == NULL ||
         path == NULL ||
         !plan_path_safe(path) ||
-        strlen(path) >= OPENAI_PLAN_PATH_SIZE) {
+        strlen(path) >= LLM_PLAN_PATH_SIZE) {
         return 0;
     }
 
@@ -81,7 +81,7 @@ static int plan_scope_add(
         return files[index].expect_missing == expect_missing;
     }
 
-    if (*count >= OPENAI_PLAN_MAX_FILES) {
+    if (*count >= LLM_PLAN_MAX_FILES) {
         return 0;
     }
 
@@ -142,8 +142,8 @@ static int plan_collect_ops(
     int in_operation;
     int in_payload;
     char type[32];
-    char path[OPENAI_PLAN_PATH_SIZE];
-    char target[OPENAI_PLAN_PATH_SIZE];
+    char path[LLM_PLAN_PATH_SIZE];
+    char target[LLM_PLAN_PATH_SIZE];
 
     section = strstr(plan_text, "operation_count=");
 
@@ -297,7 +297,7 @@ static int plan_collect_section(
            (end == NULL || position < end)) {
         const char *token_start;
         size_t length;
-        char candidate[OPENAI_PLAN_PATH_SIZE];
+        char candidate[LLM_PLAN_PATH_SIZE];
 
         if (!(isalpha((unsigned char)*position) ||
               *position == '.' ||
@@ -483,13 +483,13 @@ static int plan_write_contents(
     return 1;
 }
 
-#define openai_plan_save openai_plan_save_legacy
-int openai_plan_save(const char *goal,
+#define llm_plan_save llm_plan_save_legacy
+int llm_plan_save(const char *goal,
                      const char *plan_text)
 {
     FILE *file;
     size_t total_size;
-    plan_scope_file files[OPENAI_PLAN_MAX_FILES];
+    plan_scope_file files[LLM_PLAN_MAX_FILES];
     unsigned int path_count;
     int success;
 
@@ -502,11 +502,11 @@ int openai_plan_save(const char *goal,
 
     total_size = strlen(goal) + strlen(plan_text);
 
-    if (total_size > OPENAI_PLAN_MAX_BYTES) {
+    if (total_size > LLM_PLAN_MAX_BYTES) {
         (void)printf(
             "Implementation plan is too large (%lu bytes; limit %u).\n",
             (unsigned long)total_size,
-            OPENAI_PLAN_MAX_BYTES
+            LLM_PLAN_MAX_BYTES
         );
         return 0;
     }
@@ -528,12 +528,12 @@ int openai_plan_save(const char *goal,
         return 0;
     }
 
-    file = fopen(OPENAI_PLAN_FILE, "w");
+    file = fopen(LLM_PLAN_FILE, "w");
 
     if (file == NULL) {
         (void)printf(
             "Unable to create %s: %s\n",
-            OPENAI_PLAN_FILE,
+            LLM_PLAN_FILE,
             strerror(errno)
         );
         return 0;
@@ -554,13 +554,13 @@ int openai_plan_save(const char *goal,
     return success;
 }
 
-#define openai_plan_show openai_plan_show_legacy
-void openai_plan_show(void)
+#define llm_plan_show llm_plan_show_legacy
+void llm_plan_show(void)
 {
     FILE *file;
     char line[1024];
 
-    file = fopen(OPENAI_PLAN_FILE, "r");
+    file = fopen(LLM_PLAN_FILE, "r");
 
     if (file == NULL) {
         (void)puts("No saved implementation plan is available.");
@@ -578,8 +578,8 @@ void openai_plan_show(void)
 }
 
 
-#define openai_plan_file_current openai_plan_file_current_legacy
-int openai_plan_file_current(const char *plan_path, int verbose)
+#define llm_plan_file_current llm_plan_file_current_legacy
+int llm_plan_file_current(const char *plan_path, int verbose)
 {
     FILE *file;
     char line[1024];
@@ -611,7 +611,7 @@ int openai_plan_file_current(const char *plan_path, int verbose)
         int format_value;
         unsigned int file_count;
         unsigned int missing_flag;
-        char path[OPENAI_PLAN_PATH_SIZE];
+        char path[LLM_PLAN_PATH_SIZE];
         unsigned long saved_size;
         long saved_modified;
 
@@ -815,12 +815,12 @@ int openai_plan_file_current(const char *plan_path, int verbose)
     return current;
 }
 
-#undef openai_plan_save
-#undef openai_plan_file_current
+#undef llm_plan_save
+#undef llm_plan_file_current
 #include "LLM_PLAN_M138_INTEGRITY.INC"
 #include "LLM_PLAN_M138_VALIDATE.INC"
-#undef openai_plan_show
-#undef openai_plan_clear
+#undef llm_plan_show
+#undef llm_plan_clear
 #include "LLM_PLAN_M139_LIFECYCLE.INC"
 #include "LLM_PLAN_M139_VALIDATE.INC"
 #include "LLM_PLAN_M140_APPROVAL.INC"
@@ -835,14 +835,14 @@ int openai_plan_file_current(const char *plan_path, int verbose)
 #include "LLM_PLAN_M149_VALIDATE.INC"
 #include "LLM_PLAN_M150_VALIDATE.INC"
 #include "LLM_PLAN_CURRENT_WRAPPER.INC"
-void openai_plan_validate(void)
+void llm_plan_validate(void)
 {
-    (void)openai_plan_is_current(1);
-    openai_plan_approval_report();
+    (void)llm_plan_is_current(1);
+    llm_plan_approval_report();
 }
 
-#define openai_plan_clear openai_plan_clear_legacy
-void openai_plan_clear(void)
+#define llm_plan_clear llm_plan_clear_legacy
+void llm_plan_clear(void)
 {
     char answer[32];
 
@@ -859,10 +859,10 @@ void openai_plan_clear(void)
         return;
     }
 
-    if (remove(OPENAI_PLAN_FILE) != 0 && errno != ENOENT) {
+    if (remove(LLM_PLAN_FILE) != 0 && errno != ENOENT) {
         (void)printf(
             "Unable to remove %s: %s\n",
-            OPENAI_PLAN_FILE,
+            LLM_PLAN_FILE,
             strerror(errno)
         );
         return;

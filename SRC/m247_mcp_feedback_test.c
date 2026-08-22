@@ -27,7 +27,7 @@ static int has_text(const char *text, const char *needle)
 
 int main(void)
 {
-    openai_mcp_result result;
+    llm_mcp_result result;
     char output[4096];
     char history[8192];
     char tools[4096];
@@ -35,17 +35,17 @@ int main(void)
     (void)remove("M247_MCP_TX.TMP");
     (void)remove("M247_SESS.TMP");
     (void)remove("M247_CUR.TMP");
-    openai_test_tx_path("M247_MCP_TX.TMP");
-    openai_test_session_paths("M247_SESS.TMP", "M247_CUR.TMP");
+    llm_test_tx_path("M247_MCP_TX.TMP");
+    llm_test_session_paths("M247_SESS.TMP", "M247_CUR.TMP");
 
     memset(&result, 0, sizeof(result));
-    result.status = OPENAI_MCP_RES_SUCCESS;
+    result.status = LLM_MCP_RES_SUCCESS;
     (void)strcpy(result.server, "docs");
     (void)strcpy(result.transport, "stdio");
     (void)strcpy(result.tool, "lookup");
     (void)strcpy(result.detail, "found documentation");
 
-    if (!openai_mcp_record_result(
+    if (!llm_mcp_record_result(
             "docs lookup topic", &result, output, sizeof(output)) ||
         !has_text(output, "TOOL RESULT MCP") ||
         !has_text(output, "server=docs") ||
@@ -54,7 +54,7 @@ int main(void)
         return 2;
     }
 
-    if (!openai_session_results_text(
+    if (!llm_session_results_text(
             "--------", history, sizeof(history)) ||
         !has_text(history, "tool=mcp_call") ||
         !has_text(history, "status=success") ||
@@ -64,20 +64,20 @@ int main(void)
     }
 
     memset(&result, 0, sizeof(result));
-    result.status = OPENAI_MCP_RES_REFUSED;
+    result.status = LLM_MCP_RES_REFUSED;
     (void)strcpy(result.server, "remote");
     (void)strcpy(result.transport, "http");
     (void)strcpy(result.tool, "write_issue");
     (void)strcpy(result.detail, "FULL approval policy is required.");
 
-    if (!openai_mcp_record_result(
+    if (!llm_mcp_record_result(
             "remote write_issue x", &result, output, sizeof(output)) ||
         !has_text(output, "status=refused")) {
         (void)puts("M247 failed: MCP refusal feedback.");
         return 2;
     }
 
-    if (!openai_session_result_last(
+    if (!llm_session_result_last(
             "--------", history, sizeof(history)) ||
         !has_text(history, "status=refused") ||
         !has_text(history, "server=remote")) {
@@ -85,7 +85,7 @@ int main(void)
         return 2;
     }
 
-    if (!openai_tools_ext_text(tools, sizeof(tools)) ||
+    if (!llm_tools_ext_text(tools, sizeof(tools)) ||
         !has_text(tools, "mcp_call") ||
         !has_text(tools, "approval=full")) {
         (void)puts("M247 failed: MCP tool discovery.");
@@ -95,8 +95,8 @@ int main(void)
     (void)remove("M247_MCP_TX.TMP");
     (void)remove("M247_SESS.TMP");
     (void)remove("M247_CUR.TMP");
-    openai_test_tx_path(NULL);
-    openai_test_session_paths(NULL, NULL);
+    llm_test_tx_path(NULL);
+    llm_test_session_paths(NULL, NULL);
 
     (void)puts("M247 MCP agent feedback regression passed.");
     return 1;

@@ -34,8 +34,8 @@ static void remove_all(const char *path)
 
 static void cleanup(void)
 {
-    openai_test_set_history_limit(0U);
-    openai_test_set_log_path(NULL);
+    llm_test_set_history_limit(0U);
+    llm_test_set_log_path(NULL);
     remove_all(TEST_LOG);
 }
 
@@ -78,8 +78,8 @@ int main(void)
     char output[8192];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
-    openai_test_set_history_limit(6U);
+    llm_test_set_log_path(TEST_LOG);
+    llm_test_set_history_limit(6U);
 
     if (!seed_history()) {
         (void)puts("M225 failed: unable to seed history.");
@@ -87,7 +87,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_compare_text(
+    if (!llm_compare_text(
             output,
             sizeof(output)) ||
         strstr(output, "Latest attempts:  1") == NULL ||
@@ -100,7 +100,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_streak_text(
+    if (!llm_streak_text(
             output,
             sizeof(output)) ||
         strstr(output, "Current outcome: committed") == NULL ||
@@ -110,7 +110,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_recovery_text(
+    if (!llm_recovery_text(
             output,
             sizeof(output)) ||
         strstr(output, "Two-attempt runs:   2") == NULL ||
@@ -122,7 +122,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_trend_text(
+    if (!llm_trend_text(
             output,
             sizeof(output)) ||
         strstr(output, "Outcomes newest-first: C,C,R,C,R,R") == NULL ||
@@ -134,13 +134,13 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_test_set_history_limit(1U);
+    llm_test_set_history_limit(1U);
 
-    if (!openai_compare_text(
+    if (!llm_compare_text(
             output,
             sizeof(output)) ||
         strstr(output, "Comparison: unavailable") == NULL ||
-        !openai_trend_text(
+        !llm_trend_text(
             output,
             sizeof(output)) ||
         strstr(output, "Trend: unavailable") == NULL) {

@@ -7,31 +7,31 @@
 #include "LLM_LOG.H"
 #include "LLM_STATE.H"
 
-const char *openai_rollback_name(int rollback_state);
+const char *llm_rollback_name(int rollback_state);
 
-#define OPENAI_ACTIVITY_LOG_FILE "OVMS_AGENT_ACTIVITY.LOG"
-#define OPENAI_ACTIVITY_LOG_OLD_FILE "OVMS_AGENT_ACTIVITY_OLD.LOG"
-#define OPENAI_ACTIVITY_LOG_MAX_BYTES 262144L
+#define LLM_ACTIVITY_LOG_FILE "OVMS_AGENT_ACTIVITY.LOG"
+#define LLM_ACTIVITY_LOG_OLD_FILE "OVMS_AGENT_ACTIVITY_OLD.LOG"
+#define LLM_ACTIVITY_LOG_MAX_BYTES 262144L
 
 
-static const char *openai_test_log_path = NULL;
+static const char *llm_test_log_path = NULL;
 
-void openai_test_set_log_path(const char *path)
+void llm_test_set_log_path(const char *path)
 {
-    openai_test_log_path = path;
+    llm_test_log_path = path;
 }
 
-static const char *openai_activity_path(void)
+static const char *llm_activity_path(void)
 {
-    if (openai_test_log_path != NULL &&
-        *openai_test_log_path != '\0') {
-        return openai_test_log_path;
+    if (llm_test_log_path != NULL &&
+        *llm_test_log_path != '\0') {
+        return llm_test_log_path;
     }
 
-    return OPENAI_ACTIVITY_LOG_FILE;
+    return LLM_ACTIVITY_LOG_FILE;
 }
 
-static int openai_copy_file(const char *source_path,
+static int llm_copy_file(const char *source_path,
                             const char *destination_path)
 {
     unsigned char buffer[8192];
@@ -81,16 +81,16 @@ static int openai_copy_file(const char *source_path,
     return success;
 }
 
-static int openai_rotate_log_if_needed(void)
+static int llm_rotate_log_if_needed(void)
 {
     FILE *file;
     long length;
 
-    if (openai_test_log_path != NULL) {
+    if (llm_test_log_path != NULL) {
         return 1;
     }
 
-    file = fopen(OPENAI_ACTIVITY_LOG_FILE, "rb");
+    file = fopen(LLM_ACTIVITY_LOG_FILE, "rb");
 
     if (file == NULL) {
         return 1;
@@ -108,19 +108,19 @@ static int openai_rotate_log_if_needed(void)
         return 0;
     }
 
-    if (length < OPENAI_ACTIVITY_LOG_MAX_BYTES) {
+    if (length < LLM_ACTIVITY_LOG_MAX_BYTES) {
         return 1;
     }
 
-    (void)remove(OPENAI_ACTIVITY_LOG_OLD_FILE);
+    (void)remove(LLM_ACTIVITY_LOG_OLD_FILE);
 
-    if (!openai_copy_file(
-            OPENAI_ACTIVITY_LOG_FILE,
-            OPENAI_ACTIVITY_LOG_OLD_FILE)) {
+    if (!llm_copy_file(
+            LLM_ACTIVITY_LOG_FILE,
+            LLM_ACTIVITY_LOG_OLD_FILE)) {
         return 0;
     }
 
-    file = fopen(openai_activity_path(), "w");
+    file = fopen(llm_activity_path(), "w");
 
     if (file == NULL) {
         return 0;
@@ -131,7 +131,7 @@ static int openai_rotate_log_if_needed(void)
         "Log rotated after reaching %ld bytes. "
         "Previous snapshot: %s\n",
         length,
-        OPENAI_ACTIVITY_LOG_OLD_FILE
+        LLM_ACTIVITY_LOG_OLD_FILE
     );
 
     if (fclose(file) != 0) {
@@ -141,7 +141,7 @@ static int openai_rotate_log_if_needed(void)
     return 1;
 }
 
-void openai_log_event(const char *workflow,
+void llm_log_event(const char *workflow,
                              const char *event,
                              int status)
 {
@@ -167,11 +167,11 @@ void openai_log_event(const char *workflow,
         (void)strcpy(timestamp, "unknown-time");
     }
 
-    if (!openai_rotate_log_if_needed()) {
+    if (!llm_rotate_log_if_needed()) {
         return;
     }
 
-    file = fopen(openai_activity_path(), "a");
+    file = fopen(llm_activity_path(), "a");
 
     if (file == NULL) {
         return;
@@ -187,11 +187,11 @@ void openai_log_event(const char *workflow,
     );
 
     (void)fclose(file);
-    openai_state_save();
+    llm_state_save();
 }
 
 
-void openai_log_repair_attempt(unsigned int attempt,
+void llm_log_repair_attempt(unsigned int attempt,
                                unsigned long plan_hash,
                                int build_status,
                                int rollback,
@@ -219,11 +219,11 @@ void openai_log_repair_attempt(unsigned int attempt,
         (void)strcpy(timestamp, "unknown-time");
     }
 
-    if (!openai_rotate_log_if_needed()) {
+    if (!llm_rotate_log_if_needed()) {
         return;
     }
 
-    file = fopen(openai_activity_path(), "a");
+    file = fopen(llm_activity_path(), "a");
     if (file == NULL) {
         return;
     }
@@ -241,10 +241,10 @@ void openai_log_repair_attempt(unsigned int attempt,
     );
 
     (void)fclose(file);
-    openai_state_save();
+    llm_state_save();
 }
 
-int openai_last_repair_record(char *output,
+int llm_last_repair_record(char *output,
                               size_t output_size)
 {
     FILE *file;
@@ -256,7 +256,7 @@ int openai_last_repair_record(char *output,
     }
 
     output[0] = '\0';
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file == NULL) {
         return 0;
@@ -285,17 +285,17 @@ int openai_last_repair_record(char *output,
 }
 
 
-typedef struct openai_repair_attempt_record {
+typedef struct llm_repair_attempt_record {
     unsigned int attempt;
     unsigned long plan_hash;
     int build_status;
     int rollback;
     char outcome[32];
-} openai_repair_attempt_record;
+} llm_repair_attempt_record;
 
-static int openai_parse_repair_record(
+static int llm_parse_repair_record(
     const char *line,
-    openai_repair_attempt_record *record)
+    llm_repair_attempt_record *record)
 {
     char timestamp[32];
     unsigned int attempt;
@@ -338,13 +338,13 @@ static int openai_parse_repair_record(
     return 1;
 }
 
-int openai_repair_status_text(char *output,
+int llm_repair_status_text(char *output,
                               size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_attempt_record records[2];
-    openai_repair_attempt_record parsed;
+    llm_repair_attempt_record records[2];
+    llm_repair_attempt_record parsed;
     unsigned int count;
     int found;
     int written;
@@ -355,7 +355,7 @@ int openai_repair_status_text(char *output,
     }
 
     output[0] = '\0';
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file == NULL) {
         return 0;
@@ -365,7 +365,7 @@ int openai_repair_status_text(char *output,
     found = 0;
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -409,7 +409,7 @@ int openai_repair_status_text(char *output,
         unsigned int index;
 
         for (index = 0U; index < count; ++index) {
-            const openai_repair_attempt_record *record;
+            const llm_repair_attempt_record *record;
             const char *build_name;
             const char *rollback_name;
 
@@ -418,7 +418,7 @@ int openai_repair_status_text(char *output,
                 (record->build_status & 1) != 0 ?
                 "success" : "failure";
             rollback_name =
-                openai_rollback_name(record->rollback);
+                llm_rollback_name(record->rollback);
 
             written = snprintf(
                 output + used,
@@ -456,12 +456,12 @@ int openai_repair_status_text(char *output,
     return 1;
 }
 
-#define OPENAI_REPAIR_HISTORY_DEFAULT 5U
-#define OPENAI_REPAIR_HISTORY_MAXIMUM 20U
+#define LLM_REPAIR_HISTORY_DEFAULT 5U
+#define LLM_REPAIR_HISTORY_MAXIMUM 20U
 
-static unsigned int openai_repair_history_override = 0U;
+static unsigned int llm_repair_history_override = 0U;
 
-static int openai_history_limit_valid(const char *value)
+static int llm_history_limit_valid(const char *value)
 {
     unsigned int result;
     const unsigned char *position;
@@ -484,7 +484,7 @@ static int openai_history_limit_valid(const char *value)
         digit = (unsigned int)(*position - (unsigned char)'0');
 
         if (result >
-            (OPENAI_REPAIR_HISTORY_MAXIMUM - digit) / 10U) {
+            (LLM_REPAIR_HISTORY_MAXIMUM - digit) / 10U) {
             return 0;
         }
 
@@ -494,16 +494,16 @@ static int openai_history_limit_valid(const char *value)
 
     return
         result >= 1U &&
-        result <= OPENAI_REPAIR_HISTORY_MAXIMUM;
+        result <= LLM_REPAIR_HISTORY_MAXIMUM;
 }
 
-static unsigned int openai_parse_history_limit(const char *value)
+static unsigned int llm_parse_history_limit(const char *value)
 {
     unsigned int result;
     const unsigned char *position;
 
-    if (!openai_history_limit_valid(value)) {
-        return OPENAI_REPAIR_HISTORY_DEFAULT;
+    if (!llm_history_limit_valid(value)) {
+        return LLM_REPAIR_HISTORY_DEFAULT;
     }
 
     result = 0U;
@@ -519,34 +519,34 @@ static unsigned int openai_parse_history_limit(const char *value)
     return result;
 }
 
-static unsigned int openai_repair_history_limit(void)
+static unsigned int llm_repair_history_limit(void)
 {
-    if (openai_repair_history_override != 0U) {
-        return openai_repair_history_override;
+    if (llm_repair_history_override != 0U) {
+        return llm_repair_history_override;
     }
 
-    return openai_parse_history_limit(
+    return llm_parse_history_limit(
         getenv("OVMS_AGENT_REPAIR_HISTORY_RUNS")
     );
 }
 
-unsigned int openai_test_history_limit(const char *value)
+unsigned int llm_test_history_limit(const char *value)
 {
-    return openai_parse_history_limit(value);
+    return llm_parse_history_limit(value);
 }
 
-void openai_test_set_history_limit(unsigned int limit)
+void llm_test_set_history_limit(unsigned int limit)
 {
     if (limit >= 1U &&
-        limit <= OPENAI_REPAIR_HISTORY_MAXIMUM) {
-        openai_repair_history_override = limit;
+        limit <= LLM_REPAIR_HISTORY_MAXIMUM) {
+        llm_repair_history_override = limit;
     } else {
-        openai_repair_history_override = 0U;
+        llm_repair_history_override = 0U;
     }
 }
 
 
-static int openai_repair_line_candidate(const char *line)
+static int llm_repair_line_candidate(const char *line)
 {
     if (line == NULL) {
         return 0;
@@ -559,7 +559,7 @@ static int openai_repair_line_candidate(const char *line)
         ) != NULL;
 }
 
-static int openai_plan_token_valid(const char *line)
+static int llm_plan_token_valid(const char *line)
 {
     const char *plan;
     unsigned int index;
@@ -593,7 +593,7 @@ static int openai_plan_token_valid(const char *line)
     return plan[8] == ' ';
 }
 
-static int openai_repair_outcome_valid(const char *outcome)
+static int llm_repair_outcome_valid(const char *outcome)
 {
     if (outcome == NULL) {
         return 0;
@@ -605,12 +605,12 @@ static int openai_repair_outcome_valid(const char *outcome)
         strcmp(outcome, "unsafe") == 0;
 }
 
-int openai_repair_check_text(char *output,
+int llm_repair_check_text(char *output,
                              size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_attempt_record parsed;
+    llm_repair_attempt_record parsed;
     unsigned int record_count;
     unsigned int run_count;
     unsigned int malformed_count;
@@ -635,26 +635,26 @@ int openai_repair_check_text(char *output,
     active_run = 0;
     saw_attempt2 = 0;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file != NULL) {
         while (fgets(line, sizeof(line), file) != NULL) {
-            if (!openai_repair_line_candidate(line)) {
+            if (!llm_repair_line_candidate(line)) {
                 continue;
             }
 
             ++record_count;
 
-            if (!openai_parse_repair_record(line, &parsed)) {
+            if (!llm_parse_repair_record(line, &parsed)) {
                 ++malformed_count;
                 continue;
             }
 
-            if (!openai_plan_token_valid(line)) {
+            if (!llm_plan_token_valid(line)) {
                 ++plan_errors;
             }
 
-            if (!openai_repair_outcome_valid(parsed.outcome)) {
+            if (!llm_repair_outcome_valid(parsed.outcome)) {
                 ++outcome_errors;
             }
 
@@ -705,11 +705,11 @@ int openai_repair_check_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_repair_check(void)
+void llm_show_repair_check(void)
 {
     char report[2048];
 
-    if (!openai_repair_check_text(
+    if (!llm_repair_check_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -722,10 +722,10 @@ void openai_show_repair_check(void)
 }
 
 
-int openai_repair_info_text(char *output,
+int llm_repair_info_text(char *output,
                             size_t output_size);
 
-int openai_repair_diag_text(char *output,
+int llm_repair_diag_text(char *output,
                             size_t output_size)
 {
     char information[2048];
@@ -738,10 +738,10 @@ int openai_repair_diag_text(char *output,
         return 0;
     }
 
-    if (!openai_repair_info_text(
+    if (!llm_repair_info_text(
             information,
             sizeof(information)) ||
-        !openai_repair_check_text(
+        !llm_repair_check_text(
             check,
             sizeof(check))) {
         return 0;
@@ -783,11 +783,11 @@ int openai_repair_diag_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_repair_diag(void)
+void llm_show_repair_diag(void)
 {
     char report[4096];
 
-    if (!openai_repair_diag_text(
+    if (!llm_repair_diag_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -799,12 +799,12 @@ void openai_show_repair_diag(void)
     (void)fputs(report, stdout);
 }
 
-int openai_repair_count_text(char *output,
+int llm_repair_count_text(char *output,
                              size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_attempt_record parsed;
+    llm_repair_attempt_record parsed;
     unsigned int record_count;
     unsigned int run_count;
     int written;
@@ -816,10 +816,10 @@ int openai_repair_count_text(char *output,
     record_count = 0U;
     run_count = 0U;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file != NULL) {
         while (fgets(line, sizeof(line), file) != NULL) {
-            if (!openai_parse_repair_record(line, &parsed)) {
+            if (!llm_parse_repair_record(line, &parsed)) {
                 continue;
             }
 
@@ -848,11 +848,11 @@ int openai_repair_count_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_repair_count(void)
+void llm_show_repair_count(void)
 {
     char report[512];
 
-    if (!openai_repair_count_text(
+    if (!llm_repair_count_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -864,7 +864,7 @@ void openai_show_repair_count(void)
     (void)fputs(report, stdout);
 }
 
-static int openai_edge_run_text(int newest,
+static int llm_edge_run_text(int newest,
                                 char *output,
                                 size_t output_size)
 {
@@ -873,9 +873,9 @@ static int openai_edge_run_text(int newest,
     char timestamp[32];
     char current_time[32];
     char selected_time[32];
-    openai_repair_attempt_record parsed;
-    openai_repair_attempt_record current[2];
-    openai_repair_attempt_record selected[2];
+    llm_repair_attempt_record parsed;
+    llm_repair_attempt_record current[2];
+    llm_repair_attempt_record selected[2];
     unsigned int current_count;
     unsigned int selected_count;
     int have_current;
@@ -898,13 +898,13 @@ static int openai_edge_run_text(int newest,
     have_current = 0;
     have_selected = 0;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -1005,7 +1005,7 @@ static int openai_edge_run_text(int newest,
     used += (size_t)written;
 
     for (index = 0U; index < selected_count; ++index) {
-        const openai_repair_attempt_record *record;
+        const llm_repair_attempt_record *record;
         const char *build_name;
         const char *rollback_name;
 
@@ -1014,7 +1014,7 @@ static int openai_edge_run_text(int newest,
             (record->build_status & 1) != 0 ?
             "success" : "failure";
         rollback_name =
-            openai_rollback_name(record->rollback);
+            llm_rollback_name(record->rollback);
 
         written = snprintf(
             output + used,
@@ -1048,21 +1048,21 @@ static int openai_edge_run_text(int newest,
         (size_t)written < output_size - used;
 }
 
-int openai_repair_latest_text(char *output,
+int llm_repair_latest_text(char *output,
                               size_t output_size)
 {
-    return openai_edge_run_text(
+    return llm_edge_run_text(
         1,
         output,
         output_size
     );
 }
 
-void openai_show_repair_latest(void)
+void llm_show_repair_latest(void)
 {
     char report[2048];
 
-    if (!openai_repair_latest_text(
+    if (!llm_repair_latest_text(
             report,
             sizeof(report))) {
         (void)puts("No persisted AGENT/REPAIR history is available.");
@@ -1072,21 +1072,21 @@ void openai_show_repair_latest(void)
     (void)fputs(report, stdout);
 }
 
-int openai_repair_oldest_text(char *output,
+int llm_repair_oldest_text(char *output,
                               size_t output_size)
 {
-    return openai_edge_run_text(
+    return llm_edge_run_text(
         0,
         output,
         output_size
     );
 }
 
-void openai_show_repair_oldest(void)
+void llm_show_repair_oldest(void)
 {
     char report[2048];
 
-    if (!openai_repair_oldest_text(
+    if (!llm_repair_oldest_text(
             report,
             sizeof(report))) {
         (void)puts("No persisted AGENT/REPAIR history is available.");
@@ -1097,7 +1097,7 @@ void openai_show_repair_oldest(void)
 }
 
 
-int openai_repair_info_text(char *output,
+int llm_repair_info_text(char *output,
                             size_t output_size)
 {
     FILE *file;
@@ -1105,7 +1105,7 @@ int openai_repair_info_text(char *output,
     char timestamp[32];
     char oldest[32];
     char newest[32];
-    openai_repair_attempt_record parsed;
+    llm_repair_attempt_record parsed;
     unsigned int record_count;
     unsigned int run_count;
     unsigned int history_limit;
@@ -1120,13 +1120,13 @@ int openai_repair_info_text(char *output,
     newest[0] = '\0';
     record_count = 0U;
     run_count = 0U;
-    history_limit = openai_repair_history_limit();
+    history_limit = llm_repair_history_limit();
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file != NULL) {
         while (fgets(line, sizeof(line), file) != NULL) {
-            if (!openai_parse_repair_record(line, &parsed)) {
+            if (!llm_parse_repair_record(line, &parsed)) {
                 continue;
             }
 
@@ -1172,7 +1172,7 @@ int openai_repair_info_text(char *output,
         "Newest repair:       %s\n"
         "History window:      %u\n"
         "History available:   %s\n",
-        openai_activity_path(),
+        llm_activity_path(),
         record_count,
         run_count,
         record_count > 0U ? oldest : "none",
@@ -1186,11 +1186,11 @@ int openai_repair_info_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_repair_info(void)
+void llm_show_repair_info(void)
 {
     char information[2048];
 
-    if (!openai_repair_info_text(
+    if (!llm_repair_info_text(
             information,
             sizeof(information))) {
         (void)puts(
@@ -1203,17 +1203,17 @@ void openai_show_repair_info(void)
 }
 
 
-typedef struct openai_repair_run_record {
-    openai_repair_attempt_record attempts[2];
+typedef struct llm_repair_run_record {
+    llm_repair_attempt_record attempts[2];
     unsigned int count;
-} openai_repair_run_record;
+} llm_repair_run_record;
 
-typedef struct openai_query_run {
-    openai_repair_run_record run;
+typedef struct llm_query_run {
+    llm_repair_run_record run;
     char started[32];
-} openai_query_run;
+} llm_query_run;
 
-static const char *openai_skip_spaces(const char *text)
+static const char *llm_skip_spaces(const char *text)
 {
     if (text == NULL) {
         return "";
@@ -1226,7 +1226,7 @@ static const char *openai_skip_spaces(const char *text)
     return text;
 }
 
-static int openai_arg_is_single(const char *text)
+static int llm_arg_is_single(const char *text)
 {
     const unsigned char *position;
 
@@ -1249,14 +1249,14 @@ static int openai_arg_is_single(const char *text)
     return 1;
 }
 
-static unsigned int openai_collect_query_runs(
-    openai_query_run *runs,
+static unsigned int llm_collect_query_runs(
+    llm_query_run *runs,
     unsigned int capacity)
 {
     FILE *file;
     char line[1024];
     char timestamp[32];
-    openai_repair_attempt_record parsed;
+    llm_repair_attempt_record parsed;
     unsigned int run_count;
 
     if (runs == NULL || capacity == 0U) {
@@ -1266,19 +1266,19 @@ static unsigned int openai_collect_query_runs(
     (void)memset(
         runs,
         0,
-        sizeof(openai_query_run) * capacity
+        sizeof(llm_query_run) * capacity
     );
     run_count = 0U;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0U;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        openai_query_run *entry;
+        llm_query_run *entry;
 
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -1325,12 +1325,12 @@ static unsigned int openai_collect_query_runs(
     return run_count;
 }
 
-static int openai_append_query_run(
+static int llm_append_query_run(
     char *output,
     size_t output_size,
     size_t *used,
     unsigned int display_index,
-    const openai_query_run *entry)
+    const llm_query_run *entry)
 {
     unsigned int attempt_index;
     int written;
@@ -1361,7 +1361,7 @@ static int openai_append_query_run(
     for (attempt_index = 0U;
          attempt_index < entry->run.count;
          ++attempt_index) {
-        const openai_repair_attempt_record *record;
+        const llm_repair_attempt_record *record;
         const char *build_name;
         const char *rollback_name;
 
@@ -1370,7 +1370,7 @@ static int openai_append_query_run(
             (record->build_status & 1) != 0 ?
             "success" : "failure";
         rollback_name =
-            openai_rollback_name(record->rollback);
+            llm_rollback_name(record->rollback);
 
         written = snprintf(
             output + *used,
@@ -1410,7 +1410,7 @@ static int openai_append_query_run(
     return 1;
 }
 
-static int openai_hash_prefix_ok(const char *prefix)
+static int llm_hash_prefix_ok(const char *prefix)
 {
     const unsigned char *position;
     unsigned int length;
@@ -1442,7 +1442,7 @@ static int openai_hash_prefix_ok(const char *prefix)
     return length >= 1U;
 }
 
-static int openai_time_prefix_ok(const char *value)
+static int llm_time_prefix_ok(const char *value)
 {
     const unsigned char *position;
     unsigned int length;
@@ -1477,7 +1477,7 @@ static int openai_time_prefix_ok(const char *value)
     return length >= 4U;
 }
 
-static int openai_hash_has_prefix(
+static int llm_hash_has_prefix(
     unsigned long hash,
     const char *prefix)
 {
@@ -1500,7 +1500,7 @@ static int openai_hash_has_prefix(
     return strncmp(text, prefix, length) == 0;
 }
 
-static int openai_hash_prefix_ci(
+static int llm_hash_prefix_ci(
     unsigned long hash,
     const char *prefix)
 {
@@ -1508,7 +1508,7 @@ static int openai_hash_prefix_ci(
     size_t index;
     size_t length;
 
-    if (!openai_hash_prefix_ok(prefix)) {
+    if (!llm_hash_prefix_ok(prefix)) {
         return 0;
     }
 
@@ -1531,13 +1531,13 @@ static int openai_hash_prefix_ci(
     }
     upper_prefix[length] = '\0';
 
-    return openai_hash_has_prefix(
+    return llm_hash_has_prefix(
         hash,
         upper_prefix
     );
 }
 
-static int openai_query_header(
+static int llm_query_header(
     char *output,
     size_t output_size,
     const char *label,
@@ -1576,12 +1576,12 @@ static int openai_query_header(
     return 1;
 }
 
-int openai_query_outcome_text(
+int llm_query_outcome_text(
     const char *arguments,
     char *output,
     size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     const char *value;
     unsigned int history_limit;
     unsigned int run_count;
@@ -1590,22 +1590,22 @@ int openai_query_outcome_text(
     size_t used;
     int written;
 
-    value = openai_skip_spaces(arguments);
+    value = llm_skip_spaces(arguments);
 
-    if (!openai_arg_is_single(value) ||
+    if (!llm_arg_is_single(value) ||
         !(strcmp(value, "committed") == 0 ||
           strcmp(value, "rolled_back") == 0 ||
           strcmp(value, "unsafe") == 0)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
 
-    if (!openai_query_header(
+    if (!llm_query_header(
             output,
             output_size,
             "final outcome",
@@ -1620,7 +1620,7 @@ int openai_query_outcome_text(
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
 
         stored_index = run_count - 1U - display_index;
@@ -1636,7 +1636,7 @@ int openai_query_outcome_text(
 
         ++match_count;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -1658,12 +1658,12 @@ int openai_query_outcome_text(
         (size_t)written < output_size - used;
 }
 
-void openai_show_query_outcome(
+void llm_show_query_outcome(
     const char *arguments)
 {
     char report[32768];
 
-    if (!openai_query_outcome_text(
+    if (!llm_query_outcome_text(
             arguments,
             report,
             sizeof(report))) {
@@ -1677,12 +1677,12 @@ void openai_show_query_outcome(
     (void)fputs(report, stdout);
 }
 
-int openai_query_attempts_text(
+int llm_query_attempts_text(
     const char *arguments,
     char *output,
     size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     const char *value;
     unsigned int wanted;
     unsigned int history_limit;
@@ -1692,22 +1692,22 @@ int openai_query_attempts_text(
     size_t used;
     int written;
 
-    value = openai_skip_spaces(arguments);
+    value = llm_skip_spaces(arguments);
 
-    if (!openai_arg_is_single(value) ||
+    if (!llm_arg_is_single(value) ||
         (strcmp(value, "1") != 0 &&
          strcmp(value, "2") != 0)) {
         return 0;
     }
 
     wanted = value[0] == '1' ? 1U : 2U;
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
 
-    if (!openai_query_header(
+    if (!llm_query_header(
             output,
             output_size,
             "attempt count",
@@ -1722,7 +1722,7 @@ int openai_query_attempts_text(
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
 
         stored_index = run_count - 1U - display_index;
@@ -1734,7 +1734,7 @@ int openai_query_attempts_text(
 
         ++match_count;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -1756,12 +1756,12 @@ int openai_query_attempts_text(
         (size_t)written < output_size - used;
 }
 
-void openai_show_query_attempts(
+void llm_show_query_attempts(
     const char *arguments)
 {
     char report[32768];
 
-    if (!openai_query_attempts_text(
+    if (!llm_query_attempts_text(
             arguments,
             report,
             sizeof(report))) {
@@ -1774,12 +1774,12 @@ void openai_show_query_attempts(
     (void)fputs(report, stdout);
 }
 
-int openai_query_plan_text(
+int llm_query_plan_text(
     const char *arguments,
     char *output,
     size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     const char *value;
     unsigned int history_limit;
     unsigned int run_count;
@@ -1788,20 +1788,20 @@ int openai_query_plan_text(
     size_t used;
     int written;
 
-    value = openai_skip_spaces(arguments);
+    value = llm_skip_spaces(arguments);
 
-    if (!openai_arg_is_single(value) ||
-        !openai_hash_prefix_ok(value)) {
+    if (!llm_arg_is_single(value) ||
+        !llm_hash_prefix_ok(value)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
 
-    if (!openai_query_header(
+    if (!llm_query_header(
             output,
             output_size,
             "plan hash prefix",
@@ -1816,7 +1816,7 @@ int openai_query_plan_text(
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
         unsigned int attempt_index;
         int matched;
@@ -1828,7 +1828,7 @@ int openai_query_plan_text(
         for (attempt_index = 0U;
              attempt_index < entry->run.count;
              ++attempt_index) {
-            if (openai_hash_prefix_ci(
+            if (llm_hash_prefix_ci(
                     entry->run.attempts[
                         attempt_index
                     ].plan_hash,
@@ -1844,7 +1844,7 @@ int openai_query_plan_text(
 
         ++match_count;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -1866,12 +1866,12 @@ int openai_query_plan_text(
         (size_t)written < output_size - used;
 }
 
-void openai_show_query_plan(
+void llm_show_query_plan(
     const char *arguments)
 {
     char report[32768];
 
-    if (!openai_query_plan_text(
+    if (!llm_query_plan_text(
             arguments,
             report,
             sizeof(report))) {
@@ -1884,12 +1884,12 @@ void openai_show_query_plan(
     (void)fputs(report, stdout);
 }
 
-int openai_query_since_text(
+int llm_query_since_text(
     const char *arguments,
     char *output,
     size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     const char *value;
     unsigned int history_limit;
     unsigned int run_count;
@@ -1898,20 +1898,20 @@ int openai_query_since_text(
     size_t used;
     int written;
 
-    value = openai_skip_spaces(arguments);
+    value = llm_skip_spaces(arguments);
 
-    if (!openai_arg_is_single(value) ||
-        !openai_time_prefix_ok(value)) {
+    if (!llm_arg_is_single(value) ||
+        !llm_time_prefix_ok(value)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
 
-    if (!openai_query_header(
+    if (!llm_query_header(
             output,
             output_size,
             "started since",
@@ -1926,7 +1926,7 @@ int openai_query_since_text(
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
 
         stored_index = run_count - 1U - display_index;
@@ -1939,7 +1939,7 @@ int openai_query_since_text(
 
         ++match_count;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -1961,12 +1961,12 @@ int openai_query_since_text(
         (size_t)written < output_size - used;
 }
 
-void openai_show_query_since(
+void llm_show_query_since(
     const char *arguments)
 {
     char report[32768];
 
-    if (!openai_query_since_text(
+    if (!llm_query_since_text(
             arguments,
             report,
             sizeof(report))) {
@@ -1981,13 +1981,13 @@ void openai_show_query_since(
 }
 
 
-int openai_repair_history_text(char *output,
+int llm_repair_history_text(char *output,
                                size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
-    openai_repair_attempt_record parsed;
+    llm_repair_run_record runs[LLM_REPAIR_HISTORY_MAXIMUM];
+    llm_repair_attempt_record parsed;
     unsigned int run_count;
     unsigned int history_limit;
     int written;
@@ -2000,17 +2000,17 @@ int openai_repair_history_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
-    history_limit = openai_repair_history_limit();
+    history_limit = llm_repair_history_limit();
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        openai_repair_run_record *run;
+        llm_repair_run_record *run;
 
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -2072,7 +2072,7 @@ int openai_repair_history_text(char *output,
         for (display_run = 0U;
              display_run < run_count;
              ++display_run) {
-            const openai_repair_run_record *run;
+            const llm_repair_run_record *run;
             unsigned int stored_index;
             unsigned int attempt_index;
 
@@ -2096,7 +2096,7 @@ int openai_repair_history_text(char *output,
             for (attempt_index = 0U;
                  attempt_index < run->count;
                  ++attempt_index) {
-                const openai_repair_attempt_record *record;
+                const llm_repair_attempt_record *record;
                 const char *build_name;
                 const char *rollback_name;
 
@@ -2105,7 +2105,7 @@ int openai_repair_history_text(char *output,
                     (record->build_status & 1) != 0 ?
                     "success" : "failure";
                 rollback_name =
-                    openai_rollback_name(record->rollback);
+                    llm_rollback_name(record->rollback);
 
                 written = snprintf(
                     output + used,
@@ -2146,13 +2146,13 @@ int openai_repair_history_text(char *output,
 }
 
 
-int openai_repair_failures_text(char *output,
+int llm_repair_failures_text(char *output,
                                 size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
-    openai_repair_attempt_record parsed;
+    llm_repair_run_record runs[LLM_REPAIR_HISTORY_MAXIMUM];
+    llm_repair_attempt_record parsed;
     unsigned int run_count;
     unsigned int history_limit;
     unsigned int failure_count;
@@ -2166,17 +2166,17 @@ int openai_repair_failures_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
-    history_limit = openai_repair_history_limit();
+    history_limit = llm_repair_history_limit();
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        openai_repair_run_record *run;
+        llm_repair_run_record *run;
 
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -2221,7 +2221,7 @@ int openai_repair_failures_text(char *output,
         unsigned int index;
 
         for (index = 0U; index < run_count; ++index) {
-            const openai_repair_run_record *run;
+            const llm_repair_run_record *run;
             const char *outcome;
 
             run = &runs[index];
@@ -2278,7 +2278,7 @@ int openai_repair_failures_text(char *output,
         for (display_run = 0U;
              display_run < run_count;
              ++display_run) {
-            const openai_repair_run_record *run;
+            const llm_repair_run_record *run;
             unsigned int stored_index;
             unsigned int attempt_index;
             const char *final_outcome;
@@ -2317,7 +2317,7 @@ int openai_repair_failures_text(char *output,
             for (attempt_index = 0U;
                  attempt_index < run->count;
                  ++attempt_index) {
-                const openai_repair_attempt_record *record;
+                const llm_repair_attempt_record *record;
                 const char *build_name;
                 const char *rollback_name;
 
@@ -2326,7 +2326,7 @@ int openai_repair_failures_text(char *output,
                     (record->build_status & 1) != 0 ?
                     "success" : "failure";
                 rollback_name =
-                    openai_rollback_name(record->rollback);
+                    llm_rollback_name(record->rollback);
 
                 written = snprintf(
                     output + used,
@@ -2368,15 +2368,15 @@ int openai_repair_failures_text(char *output,
 
 
 
-int openai_repair_show_text(unsigned long plan_hash,
+int llm_repair_show_text(unsigned long plan_hash,
                             char *output,
                             size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_attempt_record parsed;
-    openai_repair_run_record current;
-    openai_repair_run_record selected;
+    llm_repair_attempt_record parsed;
+    llm_repair_run_record current;
+    llm_repair_run_record selected;
     unsigned int run_number;
     unsigned int selected_run;
     unsigned int total_runs;
@@ -2399,13 +2399,13 @@ int openai_repair_show_text(unsigned long plan_hash,
     current_matches = 0;
     selected_found = 0;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -2470,7 +2470,7 @@ int openai_repair_show_text(unsigned long plan_hash,
     used += (size_t)written;
 
     for (index = 0U; index < selected.count; ++index) {
-        const openai_repair_attempt_record *record;
+        const llm_repair_attempt_record *record;
         const char *build_name;
         const char *rollback_name;
         const char *requested;
@@ -2480,7 +2480,7 @@ int openai_repair_show_text(unsigned long plan_hash,
             (record->build_status & 1) != 0 ?
             "success" : "failure";
         rollback_name =
-            openai_rollback_name(record->rollback);
+            llm_rollback_name(record->rollback);
         requested =
             record->plan_hash == plan_hash ?
             " [requested]" : "";
@@ -2521,7 +2521,7 @@ int openai_repair_show_text(unsigned long plan_hash,
     return 1;
 }
 
-static int openai_parse_plan_hash(const char *text,
+static int llm_parse_plan_hash(const char *text,
                                   unsigned long *hash_out)
 {
     const char *position;
@@ -2576,19 +2576,19 @@ static int openai_parse_plan_hash(const char *text,
     return 1;
 }
 
-void openai_show_repair_plan(const char *arguments)
+void llm_show_repair_plan(const char *arguments)
 {
     unsigned long plan_hash;
     char detail[4096];
 
-    if (!openai_parse_plan_hash(arguments, &plan_hash)) {
+    if (!llm_parse_plan_hash(arguments, &plan_hash)) {
         (void)puts(
             "Usage: AGENT/REPAIR/SHOW <8-digit-plan-hash>"
         );
         return;
     }
 
-    if (!openai_repair_show_text(
+    if (!llm_repair_show_text(
             plan_hash,
             detail,
             sizeof(detail))) {
@@ -2603,11 +2603,11 @@ void openai_show_repair_plan(const char *arguments)
     (void)fputs(detail, stdout);
 }
 
-void openai_show_repair_failures(void)
+void llm_show_repair_failures(void)
 {
     char history[32768];
 
-    if (!openai_repair_failures_text(
+    if (!llm_repair_failures_text(
             history,
             sizeof(history))) {
         (void)puts(
@@ -2620,7 +2620,7 @@ void openai_show_repair_failures(void)
 }
 
 
-static int openai_is_repair_record_line(const char *line)
+static int llm_is_repair_record_line(const char *line)
 {
     if (line == NULL) {
         return 0;
@@ -2631,7 +2631,7 @@ static int openai_is_repair_record_line(const char *line)
         strstr(line, " event=repair_attempt ") != NULL;
 }
 
-int openai_clear_repair_history(int approved)
+int llm_clear_repair_history(int approved)
 {
     FILE *file;
     char *contents;
@@ -2645,7 +2645,7 @@ int openai_clear_repair_history(int approved)
         return 0;
     }
 
-    file = fopen(openai_activity_path(), "rb");
+    file = fopen(llm_activity_path(), "rb");
     if (file == NULL) {
         return 1;
     }
@@ -2686,7 +2686,7 @@ int openai_clear_repair_history(int approved)
         return 0;
     }
 
-    file = fopen(openai_activity_path(), "w");
+    file = fopen(llm_activity_path(), "w");
     if (file == NULL) {
         free(contents);
         return 0;
@@ -2703,7 +2703,7 @@ int openai_clear_repair_history(int approved)
             saved = position[1];
             position[1] = '\0';
 
-            if (openai_is_repair_record_line(line_start)) {
+            if (llm_is_repair_record_line(line_start)) {
                 ++removed;
             } else if (fputs(line_start, file) == EOF) {
                 position[1] = saved;
@@ -2720,7 +2720,7 @@ int openai_clear_repair_history(int approved)
     }
 
     if (*line_start != '\0') {
-        if (openai_is_repair_record_line(line_start)) {
+        if (llm_is_repair_record_line(line_start)) {
             ++removed;
         } else if (fputs(line_start, file) == EOF) {
             free(contents);
@@ -2738,7 +2738,7 @@ int openai_clear_repair_history(int approved)
     return 1;
 }
 
-void openai_clear_repair_cmd(void)
+void llm_clear_repair_cmd(void)
 {
     char answer[64];
     size_t length;
@@ -2774,10 +2774,10 @@ void openai_clear_repair_cmd(void)
         return;
     }
 
-    if (!openai_clear_repair_history(1)) {
+    if (!llm_clear_repair_history(1)) {
         (void)printf(
             "Unable to clear repair history from %s: %s\n",
-            openai_activity_path(),
+            llm_activity_path(),
             strerror(errno)
         );
         return;
@@ -2786,7 +2786,7 @@ void openai_clear_repair_cmd(void)
     (void)puts("Persisted repair history cleared.");
 }
 
-static int openai_format_repair_config(const char *value,
+static int llm_format_repair_config(const char *value,
                                        char *output,
                                        size_t output_size)
 {
@@ -2798,11 +2798,11 @@ static int openai_format_repair_config(const char *value,
         return 0;
     }
 
-    if (openai_history_limit_valid(value)) {
-        resolved = openai_parse_history_limit(value);
+    if (llm_history_limit_valid(value)) {
+        resolved = llm_parse_history_limit(value);
         source = "environment";
     } else {
-        resolved = OPENAI_REPAIR_HISTORY_DEFAULT;
+        resolved = LLM_REPAIR_HISTORY_DEFAULT;
         source = "default";
     }
 
@@ -2817,8 +2817,8 @@ static int openai_format_repair_config(const char *value,
         "Source:               %s\n"
         "Environment variable: OVMS_AGENT_REPAIR_HISTORY_RUNS\n",
         resolved,
-        OPENAI_REPAIR_HISTORY_DEFAULT,
-        OPENAI_REPAIR_HISTORY_MAXIMUM,
+        LLM_REPAIR_HISTORY_DEFAULT,
+        LLM_REPAIR_HISTORY_MAXIMUM,
         source
     );
 
@@ -2827,10 +2827,10 @@ static int openai_format_repair_config(const char *value,
         (size_t)written < output_size;
 }
 
-int openai_repair_config_text(char *output,
+int llm_repair_config_text(char *output,
                               size_t output_size)
 {
-    if (openai_repair_history_override != 0U) {
+    if (llm_repair_history_override != 0U) {
         int written;
 
         written = snprintf(
@@ -2843,9 +2843,9 @@ int openai_repair_config_text(char *output,
             "Maximum window:       %u\n"
             "Source:               test override\n"
             "Environment variable: OVMS_AGENT_REPAIR_HISTORY_RUNS\n",
-            openai_repair_history_override,
-            OPENAI_REPAIR_HISTORY_DEFAULT,
-            OPENAI_REPAIR_HISTORY_MAXIMUM
+            llm_repair_history_override,
+            LLM_REPAIR_HISTORY_DEFAULT,
+            LLM_REPAIR_HISTORY_MAXIMUM
         );
 
         return
@@ -2853,29 +2853,29 @@ int openai_repair_config_text(char *output,
             (size_t)written < output_size;
     }
 
-    return openai_format_repair_config(
+    return llm_format_repair_config(
         getenv("OVMS_AGENT_REPAIR_HISTORY_RUNS"),
         output,
         output_size
     );
 }
 
-int openai_test_repair_config_text(const char *value,
+int llm_test_repair_config_text(const char *value,
                                    char *output,
                                    size_t output_size)
 {
-    return openai_format_repair_config(
+    return llm_format_repair_config(
         value,
         output,
         output_size
     );
 }
 
-void openai_show_repair_config(void)
+void llm_show_repair_config(void)
 {
     char configuration[1024];
 
-    if (!openai_repair_config_text(
+    if (!llm_repair_config_text(
             configuration,
             sizeof(configuration))) {
         (void)puts(
@@ -2888,13 +2888,13 @@ void openai_show_repair_config(void)
 }
 
 
-int openai_repair_stats_text(char *output,
+int llm_repair_stats_text(char *output,
                              size_t output_size)
 {
     FILE *file;
     char line[1024];
-    openai_repair_run_record runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
-    openai_repair_attempt_record parsed;
+    llm_repair_run_record runs[LLM_REPAIR_HISTORY_MAXIMUM];
+    llm_repair_attempt_record parsed;
     unsigned int run_count;
     unsigned int history_limit;
     unsigned int committed_runs;
@@ -2914,17 +2914,17 @@ int openai_repair_stats_text(char *output,
     output[0] = '\0';
     (void)memset(runs, 0, sizeof(runs));
     run_count = 0U;
-    history_limit = openai_repair_history_limit();
+    history_limit = llm_repair_history_limit();
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
     if (file == NULL) {
         return 0;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        openai_repair_run_record *run;
+        llm_repair_run_record *run;
 
-        if (!openai_parse_repair_record(line, &parsed)) {
+        if (!llm_parse_repair_record(line, &parsed)) {
             continue;
         }
 
@@ -2971,7 +2971,7 @@ int openai_repair_stats_text(char *output,
     for (run_index = 0U;
          run_index < run_count;
          ++run_index) {
-        const openai_repair_run_record *run;
+        const llm_repair_run_record *run;
         const char *final_outcome;
         unsigned int attempt_index;
         int committed;
@@ -3053,11 +3053,11 @@ int openai_repair_stats_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_repair_stats(void)
+void llm_show_repair_stats(void)
 {
     char statistics[2048];
 
-    if (!openai_repair_stats_text(
+    if (!llm_repair_stats_text(
             statistics,
             sizeof(statistics))) {
         (void)puts(
@@ -3069,7 +3069,7 @@ void openai_show_repair_stats(void)
     (void)fputs(statistics, stdout);
 }
 
-static int openai_repair_export_path_safe(const char *path)
+static int llm_repair_export_path_safe(const char *path)
 {
     const unsigned char *position;
 
@@ -3105,8 +3105,8 @@ static int openai_repair_export_path_safe(const char *path)
     return 1;
 }
 
-static const char *openai_run_outcome(
-    const openai_query_run *entry)
+static const char *llm_run_outcome(
+    const llm_query_run *entry)
 {
     if (entry == NULL || entry->run.count == 0U) {
         return "unknown";
@@ -3117,8 +3117,8 @@ static const char *openai_run_outcome(
     ].outcome;
 }
 
-static int openai_run_score(
-    const openai_query_run *entry)
+static int llm_run_score(
+    const llm_query_run *entry)
 {
     const char *outcome;
 
@@ -3126,7 +3126,7 @@ static int openai_run_score(
         return -1;
     }
 
-    outcome = openai_run_outcome(entry);
+    outcome = llm_run_outcome(entry);
 
     if (strcmp(outcome, "committed") == 0) {
         return entry->run.count == 1U ? 3 : 2;
@@ -3143,7 +3143,7 @@ static int openai_run_score(
     return -1;
 }
 
-static const char *openai_change_name(
+static const char *llm_change_name(
     int latest_score,
     int previous_score)
 {
@@ -3158,12 +3158,12 @@ static const char *openai_change_name(
     return "unchanged";
 }
 
-int openai_compare_text(char *output,
+int llm_compare_text(char *output,
                         size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
-    const openai_query_run *latest;
-    const openai_query_run *previous;
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
+    const llm_query_run *latest;
+    const llm_query_run *previous;
     unsigned int history_limit;
     unsigned int run_count;
     int latest_score;
@@ -3174,8 +3174,8 @@ int openai_compare_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3201,8 +3201,8 @@ int openai_compare_text(char *output,
 
     latest = &runs[run_count - 1U];
     previous = &runs[run_count - 2U];
-    latest_score = openai_run_score(latest);
-    previous_score = openai_run_score(previous);
+    latest_score = llm_run_score(latest);
+    previous_score = llm_run_score(previous);
 
     written = snprintf(
         output,
@@ -3221,12 +3221,12 @@ int openai_compare_text(char *output,
         latest->started[0] != '\0' ?
             latest->started : "unknown",
         latest->run.count,
-        openai_run_outcome(latest),
+        llm_run_outcome(latest),
         previous->started[0] != '\0' ?
             previous->started : "unknown",
         previous->run.count,
-        openai_run_outcome(previous),
-        openai_change_name(
+        llm_run_outcome(previous),
+        llm_change_name(
             latest_score,
             previous_score)
     );
@@ -3236,11 +3236,11 @@ int openai_compare_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_compare(void)
+void llm_show_compare(void)
 {
     char report[2048];
 
-    if (!openai_compare_text(
+    if (!llm_compare_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -3252,10 +3252,10 @@ void openai_show_compare(void)
     (void)fputs(report, stdout);
 }
 
-int openai_streak_text(char *output,
+int llm_streak_text(char *output,
                        size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     const char *current;
     unsigned int history_limit;
     unsigned int run_count;
@@ -3267,8 +3267,8 @@ int openai_streak_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3291,7 +3291,7 @@ int openai_streak_text(char *output,
             (size_t)written < output_size;
     }
 
-    current = openai_run_outcome(
+    current = llm_run_outcome(
         &runs[run_count - 1U]
     );
     streak = 1U;
@@ -3301,7 +3301,7 @@ int openai_streak_text(char *output,
         --index;
 
         if (strcmp(
-                openai_run_outcome(&runs[index]),
+                llm_run_outcome(&runs[index]),
                 current) != 0) {
             break;
         }
@@ -3329,11 +3329,11 @@ int openai_streak_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_streak(void)
+void llm_show_streak(void)
 {
     char report[1024];
 
-    if (!openai_streak_text(
+    if (!llm_streak_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -3345,10 +3345,10 @@ void openai_show_streak(void)
     (void)fputs(report, stdout);
 }
 
-int openai_recovery_text(char *output,
+int llm_recovery_text(char *output,
                          size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int index;
@@ -3362,8 +3362,8 @@ int openai_recovery_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3380,7 +3380,7 @@ int openai_recovery_text(char *output,
         ++two_attempt;
 
         if (strcmp(
-                openai_run_outcome(&runs[index]),
+                llm_run_outcome(&runs[index]),
                 "committed") == 0) {
             ++recovered;
         } else {
@@ -3416,11 +3416,11 @@ int openai_recovery_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_recovery(void)
+void llm_show_recovery(void)
 {
     char report[1024];
 
-    if (!openai_recovery_text(
+    if (!llm_recovery_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -3432,12 +3432,12 @@ void openai_show_recovery(void)
     (void)fputs(report, stdout);
 }
 
-static char openai_outcome_code(
-    const openai_query_run *entry)
+static char llm_outcome_code(
+    const llm_query_run *entry)
 {
     const char *outcome;
 
-    outcome = openai_run_outcome(entry);
+    outcome = llm_run_outcome(entry);
 
     if (strcmp(outcome, "committed") == 0) {
         return 'C';
@@ -3454,7 +3454,7 @@ static char openai_outcome_code(
     return '?';
 }
 
-static const char *openai_trend_name(
+static const char *llm_trend_name(
     unsigned int newer_rate,
     unsigned int older_rate)
 {
@@ -3469,11 +3469,11 @@ static const char *openai_trend_name(
     return "steady";
 }
 
-int openai_trend_text(char *output,
+int llm_trend_text(char *output,
                       size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
-    char outcomes[OPENAI_REPAIR_HISTORY_MAXIMUM * 2U + 1U];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
+    char outcomes[LLM_REPAIR_HISTORY_MAXIMUM * 2U + 1U];
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int newer_count;
@@ -3490,8 +3490,8 @@ int openai_trend_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3511,7 +3511,7 @@ int openai_trend_text(char *output,
         }
 
         outcomes[used++] =
-            openai_outcome_code(&runs[stored_index]);
+            llm_outcome_code(&runs[stored_index]);
     }
     outcomes[used] = '\0';
 
@@ -3529,7 +3529,7 @@ int openai_trend_text(char *output,
             run_count - 1U - display_index;
 
         if (strcmp(
-                openai_run_outcome(&runs[stored_index]),
+                llm_run_outcome(&runs[stored_index]),
                 "committed") != 0) {
             continue;
         }
@@ -3584,7 +3584,7 @@ int openai_trend_text(char *output,
             older_rate,
             older_committed,
             older_count,
-            openai_trend_name(
+            llm_trend_name(
                 newer_rate,
                 older_rate)
         );
@@ -3595,11 +3595,11 @@ int openai_trend_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_trend(void)
+void llm_show_trend(void)
 {
     char report[2048];
 
-    if (!openai_trend_text(
+    if (!llm_trend_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -3612,7 +3612,7 @@ void openai_show_trend(void)
 }
 
 
-static int openai_parse_positive(
+static int llm_parse_positive(
     const char *arguments,
     unsigned int *value)
 {
@@ -3623,9 +3623,9 @@ static int openai_parse_positive(
         return 0;
     }
 
-    position = openai_skip_spaces(arguments);
+    position = llm_skip_spaces(arguments);
 
-    if (!openai_arg_is_single(position)) {
+    if (!llm_arg_is_single(position)) {
         return 0;
     }
 
@@ -3649,7 +3649,7 @@ static int openai_parse_positive(
     }
 
     if (parsed == 0UL ||
-        parsed > (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM) {
+        parsed > (unsigned long)LLM_REPAIR_HISTORY_MAXIMUM) {
         return 0;
     }
 
@@ -3657,7 +3657,7 @@ static int openai_parse_positive(
     return 1;
 }
 
-static int openai_parse_range_args(
+static int llm_parse_range_args(
     const char *arguments,
     unsigned int *start,
     unsigned int *count)
@@ -3674,7 +3674,7 @@ static int openai_parse_range_args(
         return 0;
     }
 
-    position = openai_skip_spaces(arguments);
+    position = llm_skip_spaces(arguments);
 
     if (*position == '\0') {
         return 0;
@@ -3735,9 +3735,9 @@ static int openai_parse_range_args(
     if (first_value == 0UL ||
         second_value == 0UL ||
         first_value >
-            (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM ||
+            (unsigned long)LLM_REPAIR_HISTORY_MAXIMUM ||
         second_value >
-            (unsigned long)OPENAI_REPAIR_HISTORY_MAXIMUM) {
+            (unsigned long)LLM_REPAIR_HISTORY_MAXIMUM) {
         return 0;
     }
 
@@ -3746,7 +3746,7 @@ static int openai_parse_range_args(
     return 1;
 }
 
-static int openai_select_header(
+static int llm_select_header(
     char *output,
     size_t output_size,
     const char *selection,
@@ -3784,11 +3784,11 @@ static int openai_select_header(
     return 1;
 }
 
-int openai_first_text(const char *arguments,
+int llm_first_text(const char *arguments,
                       char *output,
                       size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     char selection[64];
     unsigned int wanted;
     unsigned int history_limit;
@@ -3798,12 +3798,12 @@ int openai_first_text(const char *arguments,
     size_t used;
     int written;
 
-    if (!openai_parse_positive(arguments, &wanted)) {
+    if (!llm_parse_positive(arguments, &wanted)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3819,7 +3819,7 @@ int openai_first_text(const char *arguments,
         wanted
     );
 
-    if (!openai_select_header(
+    if (!llm_select_header(
             output,
             output_size,
             selection,
@@ -3834,7 +3834,7 @@ int openai_first_text(const char *arguments,
     for (index = 0U; index < wanted; ++index) {
         ++shown;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -3856,11 +3856,11 @@ int openai_first_text(const char *arguments,
         (size_t)written < output_size - used;
 }
 
-void openai_show_first(const char *arguments)
+void llm_show_first(const char *arguments)
 {
     char report[32768];
 
-    if (!openai_first_text(
+    if (!llm_first_text(
             arguments,
             report,
             sizeof(report))) {
@@ -3874,11 +3874,11 @@ void openai_show_first(const char *arguments)
     (void)fputs(report, stdout);
 }
 
-int openai_last_text(const char *arguments,
+int llm_last_text(const char *arguments,
                      char *output,
                      size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     char selection[64];
     unsigned int wanted;
     unsigned int history_limit;
@@ -3888,12 +3888,12 @@ int openai_last_text(const char *arguments,
     size_t used;
     int written;
 
-    if (!openai_parse_positive(arguments, &wanted)) {
+    if (!llm_parse_positive(arguments, &wanted)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -3909,7 +3909,7 @@ int openai_last_text(const char *arguments,
         wanted
     );
 
-    if (!openai_select_header(
+    if (!llm_select_header(
             output,
             output_size,
             selection,
@@ -3930,7 +3930,7 @@ int openai_last_text(const char *arguments,
             run_count - 1U - display_index;
         ++shown;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -3952,11 +3952,11 @@ int openai_last_text(const char *arguments,
         (size_t)written < output_size - used;
 }
 
-void openai_show_last(const char *arguments)
+void llm_show_last(const char *arguments)
 {
     char report[32768];
 
-    if (!openai_last_text(
+    if (!llm_last_text(
             arguments,
             report,
             sizeof(report))) {
@@ -3970,11 +3970,11 @@ void openai_show_last(const char *arguments)
     (void)fputs(report, stdout);
 }
 
-int openai_range_text(const char *arguments,
+int llm_range_text(const char *arguments,
                       char *output,
                       size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     char selection[80];
     unsigned int start;
     unsigned int count;
@@ -3985,15 +3985,15 @@ int openai_range_text(const char *arguments,
     size_t used;
     int written;
 
-    if (!openai_parse_range_args(
+    if (!llm_parse_range_args(
             arguments,
             &start,
             &count)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4011,7 +4011,7 @@ int openai_range_text(const char *arguments,
         count
     );
 
-    if (!openai_select_header(
+    if (!llm_select_header(
             output,
             output_size,
             selection,
@@ -4032,7 +4032,7 @@ int openai_range_text(const char *arguments,
             run_count - 1U - display_index;
         ++shown;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -4054,11 +4054,11 @@ int openai_range_text(const char *arguments,
         (size_t)written < output_size - used;
 }
 
-void openai_show_range(const char *arguments)
+void llm_show_range(const char *arguments)
 {
     char report[32768];
 
-    if (!openai_range_text(
+    if (!llm_range_text(
             arguments,
             report,
             sizeof(report))) {
@@ -4072,11 +4072,11 @@ void openai_show_range(const char *arguments)
     (void)fputs(report, stdout);
 }
 
-int openai_index_text(const char *arguments,
+int llm_index_text(const char *arguments,
                       char *output,
                       size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     char selection[64];
     unsigned int index;
     unsigned int history_limit;
@@ -4085,12 +4085,12 @@ int openai_index_text(const char *arguments,
     size_t used;
     int written;
 
-    if (!openai_parse_positive(arguments, &index)) {
+    if (!llm_parse_positive(arguments, &index)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4106,7 +4106,7 @@ int openai_index_text(const char *arguments,
         index
     );
 
-    if (!openai_select_header(
+    if (!llm_select_header(
             output,
             output_size,
             selection,
@@ -4118,7 +4118,7 @@ int openai_index_text(const char *arguments,
 
     stored_index = run_count - index;
 
-    if (!openai_append_query_run(
+    if (!llm_append_query_run(
             output,
             output_size,
             &used,
@@ -4138,11 +4138,11 @@ int openai_index_text(const char *arguments,
         (size_t)written < output_size - used;
 }
 
-void openai_show_index(const char *arguments)
+void llm_show_index(const char *arguments)
 {
     char report[32768];
 
-    if (!openai_index_text(
+    if (!llm_index_text(
             arguments,
             report,
             sizeof(report))) {
@@ -4157,10 +4157,10 @@ void openai_show_index(const char *arguments)
 }
 
 
-int openai_report_text(char *output,
+int llm_report_text(char *output,
                        size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int display_index;
@@ -4171,8 +4171,8 @@ int openai_report_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4203,7 +4203,7 @@ int openai_report_text(char *output,
         stored_index =
             run_count - 1U - display_index;
 
-        if (!openai_append_query_run(
+        if (!llm_append_query_run(
                 output,
                 output_size,
                 &used,
@@ -4229,11 +4229,11 @@ int openai_report_text(char *output,
     return 1;
 }
 
-void openai_show_report(void)
+void llm_show_report(void)
 {
     char report[32768];
 
-    if (!openai_report_text(
+    if (!llm_report_text(
             report,
             sizeof(report))) {
         (void)puts(
@@ -4245,10 +4245,10 @@ void openai_show_report(void)
     (void)fputs(report, stdout);
 }
 
-int openai_summary_text(char *output,
+int llm_summary_text(char *output,
                         size_t output_size)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int index;
@@ -4264,8 +4264,8 @@ int openai_summary_text(char *output,
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4277,7 +4277,7 @@ int openai_summary_text(char *output,
     two_attempt = 0U;
 
     for (index = 0U; index < run_count; ++index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         const char *outcome;
 
         entry = &runs[index];
@@ -4336,11 +4336,11 @@ int openai_summary_text(char *output,
         (size_t)written < output_size;
 }
 
-void openai_show_summary(void)
+void llm_show_summary(void)
 {
     char summary[2048];
 
-    if (!openai_summary_text(
+    if (!llm_summary_text(
             summary,
             sizeof(summary))) {
         (void)puts(
@@ -4352,13 +4352,13 @@ void openai_show_summary(void)
     (void)fputs(summary, stdout);
 }
 
-static int openai_export_probe(
+static int llm_export_probe(
     const char *path,
     int allow_overwrite)
 {
     FILE *probe;
 
-    if (!openai_repair_export_path_safe(path)) {
+    if (!llm_repair_export_path_safe(path)) {
         return 0;
     }
 
@@ -4375,23 +4375,23 @@ static int openai_export_probe(
     return 1;
 }
 
-int openai_csv_file(const char *path,
+int llm_csv_file(const char *path,
                     int allow_overwrite)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     FILE *file;
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int display_index;
 
-    if (!openai_export_probe(
+    if (!llm_export_probe(
             path,
             allow_overwrite)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4412,7 +4412,7 @@ int openai_csv_file(const char *path,
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
         unsigned int attempt_index;
         const char *final_outcome;
@@ -4428,7 +4428,7 @@ int openai_csv_file(const char *path,
         for (attempt_index = 0U;
              attempt_index < entry->run.count;
              ++attempt_index) {
-            const openai_repair_attempt_record *record;
+            const llm_repair_attempt_record *record;
 
             record =
                 &entry->run.attempts[attempt_index];
@@ -4454,23 +4454,23 @@ int openai_csv_file(const char *path,
     return fclose(file) == 0;
 }
 
-int openai_kv_file(const char *path,
+int llm_kv_file(const char *path,
                    int allow_overwrite)
 {
-    openai_query_run runs[OPENAI_REPAIR_HISTORY_MAXIMUM];
+    llm_query_run runs[LLM_REPAIR_HISTORY_MAXIMUM];
     FILE *file;
     unsigned int history_limit;
     unsigned int run_count;
     unsigned int display_index;
 
-    if (!openai_export_probe(
+    if (!llm_export_probe(
             path,
             allow_overwrite)) {
         return 0;
     }
 
-    history_limit = openai_repair_history_limit();
-    run_count = openai_collect_query_runs(
+    history_limit = llm_repair_history_limit();
+    run_count = llm_collect_query_runs(
         runs,
         history_limit
     );
@@ -4493,7 +4493,7 @@ int openai_kv_file(const char *path,
     for (display_index = 0U;
          display_index < run_count;
          ++display_index) {
-        const openai_query_run *entry;
+        const llm_query_run *entry;
         unsigned int stored_index;
         unsigned int attempt_index;
         const char *final_outcome;
@@ -4525,7 +4525,7 @@ int openai_kv_file(const char *path,
         for (attempt_index = 0U;
              attempt_index < entry->run.count;
              ++attempt_index) {
-            const openai_repair_attempt_record *record;
+            const llm_repair_attempt_record *record;
 
             record =
                 &entry->run.attempts[attempt_index];
@@ -4557,7 +4557,7 @@ int openai_kv_file(const char *path,
     return fclose(file) == 0;
 }
 
-static void openai_export_format(
+static void llm_export_format(
     const char *arguments,
     const char *label,
     int csv_format)
@@ -4568,9 +4568,9 @@ static void openai_export_format(
     int exists;
     int success;
 
-    path = openai_skip_spaces(arguments);
+    path = llm_skip_spaces(arguments);
 
-    if (!openai_repair_export_path_safe(path)) {
+    if (!llm_repair_export_path_safe(path)) {
         (void)printf(
             "Usage: AGENT/REPAIR/HISTORY/%s <safe-filespec>\n",
             label
@@ -4606,8 +4606,8 @@ static void openai_export_format(
     }
 
     success = csv_format ?
-        openai_csv_file(path, exists ? 1 : 0) :
-        openai_kv_file(path, exists ? 1 : 0);
+        llm_csv_file(path, exists ? 1 : 0) :
+        llm_kv_file(path, exists ? 1 : 0);
 
     if (!success) {
         (void)printf(
@@ -4624,18 +4624,18 @@ static void openai_export_format(
     );
 }
 
-void openai_export_csv(const char *arguments)
+void llm_export_csv(const char *arguments)
 {
-    openai_export_format(
+    llm_export_format(
         arguments,
         "CSV",
         1
     );
 }
 
-void openai_export_kv(const char *arguments)
+void llm_export_kv(const char *arguments)
 {
-    openai_export_format(
+    llm_export_format(
         arguments,
         "KV",
         0
@@ -4643,18 +4643,18 @@ void openai_export_kv(const char *arguments)
 }
 
 
-int openai_repair_export_file(const char *path,
+int llm_repair_export_file(const char *path,
                               int allow_overwrite)
 {
     FILE *probe;
     FILE *file;
     char history[32768];
 
-    if (!openai_repair_export_path_safe(path)) {
+    if (!llm_repair_export_path_safe(path)) {
         return 0;
     }
 
-    if (!openai_repair_history_text(
+    if (!llm_repair_history_text(
             history,
             sizeof(history))) {
         return 0;
@@ -4682,7 +4682,7 @@ int openai_repair_export_file(const char *path,
     return 1;
 }
 
-void openai_export_repair_history(const char *arguments)
+void llm_export_repair_history(const char *arguments)
 {
     const char *path;
     FILE *probe;
@@ -4696,7 +4696,7 @@ void openai_export_repair_history(const char *arguments)
         ++path;
     }
 
-    if (!openai_repair_export_path_safe(path)) {
+    if (!llm_repair_export_path_safe(path)) {
         (void)puts(
             "Usage: AGENT/REPAIR/EXPORT <safe-filespec>"
         );
@@ -4728,7 +4728,7 @@ void openai_export_repair_history(const char *arguments)
         }
     }
 
-    if (!openai_repair_export_file(path, exists ? 1 : 0)) {
+    if (!llm_repair_export_file(path, exists ? 1 : 0)) {
         (void)printf(
             "Unable to export repair history to %s.\n",
             path
@@ -4742,11 +4742,11 @@ void openai_export_repair_history(const char *arguments)
     );
 }
 
-void openai_show_repair_history(void)
+void llm_show_repair_history(void)
 {
     char history[32768];
 
-    if (!openai_repair_history_text(
+    if (!llm_repair_history_text(
             history,
             sizeof(history))) {
         (void)puts("No persisted AGENT/REPAIR history is available.");
@@ -4756,11 +4756,11 @@ void openai_show_repair_history(void)
     (void)fputs(history, stdout);
 }
 
-void openai_show_repair_status(void)
+void llm_show_repair_status(void)
 {
     char summary[2048];
 
-    if (!openai_repair_status_text(
+    if (!llm_repair_status_text(
             summary,
             sizeof(summary))) {
         (void)puts("No persisted AGENT/REPAIR history is available.");
@@ -4770,12 +4770,12 @@ void openai_show_repair_status(void)
     (void)fputs(summary, stdout);
 }
 
-void openai_show_log(void)
+void llm_show_log(void)
 {
     FILE *file;
     char line[1024];
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file == NULL) {
         (void)puts("No activity log is available in this process directory.");
@@ -4792,12 +4792,12 @@ void openai_show_log(void)
     (void)fclose(file);
 }
 
-void openai_show_old_log(void)
+void llm_show_old_log(void)
 {
     FILE *file;
     char line[1024];
 
-    file = fopen(OPENAI_ACTIVITY_LOG_OLD_FILE, "r");
+    file = fopen(LLM_ACTIVITY_LOG_OLD_FILE, "r");
 
     if (file == NULL) {
         (void)puts("No rotated activity log is available.");
@@ -4814,7 +4814,7 @@ void openai_show_old_log(void)
     (void)fclose(file);
 }
 
-void openai_clear_log(void)
+void llm_clear_log(void)
 {
     char answer[32];
     FILE *file;
@@ -4834,12 +4834,12 @@ void openai_clear_log(void)
         return;
     }
 
-    file = fopen(openai_activity_path(), "w");
+    file = fopen(llm_activity_path(), "w");
 
     if (file == NULL) {
         (void)printf(
             "Unable to clear %s: %s\n",
-            OPENAI_ACTIVITY_LOG_FILE,
+            LLM_ACTIVITY_LOG_FILE,
             strerror(errno)
         );
         return;
@@ -4849,7 +4849,7 @@ void openai_clear_log(void)
     (void)puts("Active activity log cleared.");
 }
 
-static unsigned long openai_percentage(unsigned long part,
+static unsigned long llm_percentage(unsigned long part,
                                        unsigned long total)
 {
     if (total == 0UL) {
@@ -4859,7 +4859,7 @@ static unsigned long openai_percentage(unsigned long part,
     return (part * 100UL + total / 2UL) / total;
 }
 
-void openai_show_metrics(void)
+void llm_show_metrics(void)
 {
     FILE *file;
     char line[1024];
@@ -4893,7 +4893,7 @@ void openai_show_metrics(void)
     verifies_passed = 0UL;
     verifies_failed = 0UL;
 
-    file = fopen(openai_activity_path(), "r");
+    file = fopen(llm_activity_path(), "r");
 
     if (file == NULL) {
         (void)puts(
@@ -4947,7 +4947,7 @@ void openai_show_metrics(void)
     (void)printf("  Failure:                    %lu\n", builds_failure);
     (void)printf(
         "  Success rate:               %lu%%\n",
-        openai_percentage(
+        llm_percentage(
             builds_success,
             builds_success + builds_failure
         )

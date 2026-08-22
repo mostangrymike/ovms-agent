@@ -15,8 +15,8 @@
     target_file = NULL;
     plan_file = NULL;
 
-    if (!openai_selftest_file_exists(target_path) &&
-        !openai_selftest_file_exists(plan_path)) {
+    if (!llm_selftest_file_exists(target_path) &&
+        !llm_selftest_file_exists(plan_path)) {
         target_file = fopen(target_path, "w");
 
         if (target_file != NULL) {
@@ -47,7 +47,7 @@
             fclose(plan_file) == 0) {
             plan_file = NULL;
             operation_test_ok =
-                !openai_plan_file_current(
+                !llm_plan_file_current(
                     plan_path,
                     0);
         }
@@ -69,7 +69,7 @@
         (void)remove(target_path);
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "dry run rejects stale plan",
         operation_test_ok,
         &passed_count,

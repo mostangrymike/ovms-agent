@@ -1,33 +1,33 @@
 #include <limits.h>
 #include <unistd.h>
 
-#define OPENAI_STATE_PATH_SIZE 512U
-#define OPENAI_STATE_COMMAND_SIZE 1024U
+#define LLM_STATE_PATH_SIZE 512U
+#define LLM_STATE_COMMAND_SIZE 1024U
 
-#define OPENAI_STATE_EXPECT_FORMAT 0
-#define OPENAI_STATE_EXPECT_WORKFLOW 1
-#define OPENAI_STATE_EXPECT_BUILD_KNOWN 2
-#define OPENAI_STATE_EXPECT_BUILD_STATUS 3
-#define OPENAI_STATE_EXPECT_ROLLBACK 4
-#define OPENAI_STATE_EXPECT_END 5
+#define LLM_STATE_EXPECT_FORMAT 0
+#define LLM_STATE_EXPECT_WORKFLOW 1
+#define LLM_STATE_EXPECT_BUILD_KNOWN 2
+#define LLM_STATE_EXPECT_BUILD_STATUS 3
+#define LLM_STATE_EXPECT_ROLLBACK 4
+#define LLM_STATE_EXPECT_END 5
 
-static int openai_state_values_valid(
+static int llm_state_values_valid(
     int workflow,
     int build_known,
     int build_status,
     int rollback)
 {
     return
-        workflow >= OPENAI_WORKFLOW_NONE &&
-        workflow <= OPENAI_WORKFLOW_EXECUTE &&
+        workflow >= LLM_WORKFLOW_NONE &&
+        workflow <= LLM_WORKFLOW_EXECUTE &&
         (build_known == 0 || build_known == 1) &&
         build_status >= 0 &&
         !(build_known == 0 && build_status != 0) &&
-        rollback >= OPENAI_ROLLBACK_NONE &&
-        rollback <= OPENAI_ROLLBACK_DECLINED;
+        rollback >= LLM_ROLLBACK_NONE &&
+        rollback <= LLM_ROLLBACK_DECLINED;
 }
 
-static int openai_state_line_complete(
+static int llm_state_line_complete(
     FILE *file,
     const char *line)
 {
@@ -50,7 +50,7 @@ static int openai_state_line_complete(
     return feof(file) != 0;
 }
 
-static int openai_state_parse_uint(
+static int llm_state_parse_uint(
     const char *text,
     int *value_out)
 {
@@ -111,7 +111,7 @@ static int openai_state_parse_uint(
     return 0;
 }
 
-static int openai_state_parse_int_line(
+static int llm_state_parse_int_line(
     const char *line,
     const char *key,
     int *value_out)
@@ -131,12 +131,12 @@ static int openai_state_parse_int_line(
         return 0;
     }
 
-    return openai_state_parse_uint(
+    return llm_state_parse_uint(
         line + key_length + 1U,
         value_out);
 }
 
-static int openai_state_purge_all(
+static int llm_state_purge_all(
     const char *path)
 {
     if (path == NULL || *path == '\0') {
@@ -149,13 +149,13 @@ static int openai_state_purge_all(
     return errno == ENOENT;
 }
 
-static void openai_state_purge_file(
+static void llm_state_purge_file(
     const char *path)
 {
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 }
 
-static int openai_state_prune_path_safe(
+static int llm_state_prune_path_safe(
     const char *path)
 {
     const unsigned char *cursor;
@@ -181,14 +181,14 @@ static int openai_state_prune_path_safe(
     return 1;
 }
 
-static int openai_state_prune_versions(
+static int llm_state_prune_versions(
     const char *path)
 {
-    char command[OPENAI_STATE_COMMAND_SIZE];
+    char command[LLM_STATE_COMMAND_SIZE];
     int count;
     int status;
 
-    if (!openai_state_prune_path_safe(path)) {
+    if (!llm_state_prune_path_safe(path)) {
         return 0;
     }
 
@@ -210,7 +210,7 @@ static int openai_state_prune_versions(
         (status & 1) != 0;
 }
 
-static int openai_state_save_with_tmp(
+static int llm_state_save_with_tmp(
     const char *path,
     const char *temporary_path,
     int workflow,
@@ -226,7 +226,7 @@ static int openai_state_save_with_tmp(
         temporary_path == NULL ||
         *temporary_path == '\0' ||
         strcmp(path, temporary_path) == 0 ||
-        !openai_state_values_valid(
+        !llm_state_values_valid(
             workflow,
             build_known,
             build_status,
@@ -234,7 +234,7 @@ static int openai_state_save_with_tmp(
         return 0;
     }
 
-    openai_state_purge_file(temporary_path);
+    llm_state_purge_file(temporary_path);
 
     file = fopen(temporary_path, "w");
 
@@ -260,21 +260,21 @@ static int openai_state_save_with_tmp(
     }
 
     if (!success) {
-        openai_state_purge_file(temporary_path);
+        llm_state_purge_file(temporary_path);
         return 0;
     }
 
     if (rename(temporary_path, path) != 0) {
-        openai_state_purge_file(temporary_path);
+        llm_state_purge_file(temporary_path);
         return 0;
     }
 
-    openai_state_purge_file(temporary_path);
-    (void)openai_state_prune_versions(path);
+    llm_state_purge_file(temporary_path);
+    (void)llm_state_prune_versions(path);
     return 1;
 }
 
-static int openai_state_make_tmp_path(
+static int llm_state_make_tmp_path(
     const char *destination_path,
     char *temporary_path,
     size_t temporary_size)
@@ -300,23 +300,23 @@ static int openai_state_make_tmp_path(
         (size_t)count < temporary_size;
 }
 
-static int openai_state_save_to(
+static int llm_state_save_to(
     const char *path,
     int workflow,
     int build_known,
     int build_status,
     int rollback)
 {
-    char temporary_path[OPENAI_STATE_PATH_SIZE];
+    char temporary_path[LLM_STATE_PATH_SIZE];
 
-    if (!openai_state_make_tmp_path(
+    if (!llm_state_make_tmp_path(
             path,
             temporary_path,
             sizeof(temporary_path))) {
         return 0;
     }
 
-    return openai_state_save_with_tmp(
+    return llm_state_save_with_tmp(
         path,
         temporary_path,
         workflow,
@@ -325,7 +325,7 @@ static int openai_state_save_to(
         rollback);
 }
 
-static int openai_state_load_from(
+static int llm_state_load_from(
     const char *path,
     int *workflow_out,
     int *build_known_out,
@@ -358,76 +358,76 @@ static int openai_state_load_from(
     }
 
     format = 0;
-    workflow = OPENAI_WORKFLOW_NONE;
+    workflow = LLM_WORKFLOW_NONE;
     build_known = 0;
     build_status = 0;
-    rollback = OPENAI_ROLLBACK_NONE;
-    expected_field = OPENAI_STATE_EXPECT_FORMAT;
+    rollback = LLM_ROLLBACK_NONE;
+    expected_field = LLM_STATE_EXPECT_FORMAT;
     valid = 1;
 
     while (valid &&
            fgets(line, sizeof(line), file) != NULL) {
         int value;
 
-        if (!openai_state_line_complete(file, line)) {
+        if (!llm_state_line_complete(file, line)) {
             valid = 0;
         } else if (
-            expected_field == OPENAI_STATE_EXPECT_FORMAT &&
+            expected_field == LLM_STATE_EXPECT_FORMAT &&
             strncmp(line, "format=", 7U) == 0 &&
-            openai_state_parse_int_line(
+            llm_state_parse_int_line(
                 line,
                 "format",
                 &value)) {
             format = value;
-            expected_field = OPENAI_STATE_EXPECT_WORKFLOW;
+            expected_field = LLM_STATE_EXPECT_WORKFLOW;
         } else if (
-            expected_field == OPENAI_STATE_EXPECT_WORKFLOW &&
+            expected_field == LLM_STATE_EXPECT_WORKFLOW &&
             strncmp(
                 line,
                 "last_workflow=",
                 14U) == 0 &&
-            openai_state_parse_int_line(
+            llm_state_parse_int_line(
                 line,
                 "last_workflow",
                 &value)) {
             workflow = value;
-            expected_field = OPENAI_STATE_EXPECT_BUILD_KNOWN;
+            expected_field = LLM_STATE_EXPECT_BUILD_KNOWN;
         } else if (
-            expected_field == OPENAI_STATE_EXPECT_BUILD_KNOWN &&
+            expected_field == LLM_STATE_EXPECT_BUILD_KNOWN &&
             strncmp(
                 line,
                 "last_build_known=",
                 17U) == 0 &&
-            openai_state_parse_int_line(
+            llm_state_parse_int_line(
                 line,
                 "last_build_known",
                 &value)) {
             build_known = value;
-            expected_field = OPENAI_STATE_EXPECT_BUILD_STATUS;
+            expected_field = LLM_STATE_EXPECT_BUILD_STATUS;
         } else if (
-            expected_field == OPENAI_STATE_EXPECT_BUILD_STATUS &&
+            expected_field == LLM_STATE_EXPECT_BUILD_STATUS &&
             strncmp(
                 line,
                 "last_build_status=",
                 18U) == 0 &&
-            openai_state_parse_int_line(
+            llm_state_parse_int_line(
                 line,
                 "last_build_status",
                 &value)) {
             build_status = value;
-            expected_field = OPENAI_STATE_EXPECT_ROLLBACK;
+            expected_field = LLM_STATE_EXPECT_ROLLBACK;
         } else if (
-            expected_field == OPENAI_STATE_EXPECT_ROLLBACK &&
+            expected_field == LLM_STATE_EXPECT_ROLLBACK &&
             strncmp(
                 line,
                 "last_rollback=",
                 14U) == 0 &&
-            openai_state_parse_int_line(
+            llm_state_parse_int_line(
                 line,
                 "last_rollback",
                 &value)) {
             rollback = value;
-            expected_field = OPENAI_STATE_EXPECT_END;
+            expected_field = LLM_STATE_EXPECT_END;
         } else {
             valid = 0;
         }
@@ -436,9 +436,9 @@ static int openai_state_load_from(
     (void)fclose(file);
 
     if (!valid ||
-        expected_field != OPENAI_STATE_EXPECT_END ||
+        expected_field != LLM_STATE_EXPECT_END ||
         format != 1 ||
-        !openai_state_values_valid(
+        !llm_state_values_valid(
             workflow,
             build_known,
             build_status,
@@ -453,7 +453,7 @@ static int openai_state_load_from(
     return 1;
 }
 
-static int openai_state_load_recovery_flag(
+static int llm_state_load_recovery_flag(
     const char *path,
     int *workflow_out,
     int *build_known_out,
@@ -461,7 +461,7 @@ static int openai_state_load_recovery_flag(
     int *rollback_out,
     int *recovered_out)
 {
-    char recovery_path[OPENAI_STATE_PATH_SIZE];
+    char recovery_path[LLM_STATE_PATH_SIZE];
     int count;
 
     if (recovered_out == NULL) {
@@ -470,7 +470,7 @@ static int openai_state_load_recovery_flag(
 
     *recovered_out = 0;
 
-    if (openai_state_load_from(
+    if (llm_state_load_from(
             path,
             workflow_out,
             build_known_out,
@@ -494,7 +494,7 @@ static int openai_state_load_recovery_flag(
         return 0;
     }
 
-    if (!openai_state_load_from(
+    if (!llm_state_load_from(
             recovery_path,
             workflow_out,
             build_known_out,
@@ -507,7 +507,7 @@ static int openai_state_load_recovery_flag(
     return 1;
 }
 
-static int openai_state_load_recovery(
+static int llm_state_load_recovery(
     const char *path,
     int *workflow_out,
     int *build_known_out,
@@ -516,7 +516,7 @@ static int openai_state_load_recovery(
 {
     int recovered;
 
-    return openai_state_load_recovery_flag(
+    return llm_state_load_recovery_flag(
         path,
         workflow_out,
         build_known_out,
@@ -525,38 +525,38 @@ static int openai_state_load_recovery(
         &recovered);
 }
 
-static void openai_state_snapshot_current(void)
+static void llm_state_snapshot_current(void)
 {
-    openai_saved_workflow = openai_last_workflow;
-    openai_saved_build_known = openai_last_build_known;
-    openai_saved_build_status = openai_last_build_status;
-    openai_saved_rollback = openai_last_rollback;
+    llm_saved_workflow = llm_last_workflow;
+    llm_saved_build_known = llm_last_build_known;
+    llm_saved_build_status = llm_last_build_status;
+    llm_saved_rollback = llm_last_rollback;
 }
 
-static void openai_state_snapshot_clear(void)
+static void llm_state_snapshot_clear(void)
 {
-    openai_saved_workflow = OPENAI_WORKFLOW_NONE;
-    openai_saved_build_known = 0;
-    openai_saved_build_status = 0;
-    openai_saved_rollback = OPENAI_ROLLBACK_NONE;
+    llm_saved_workflow = LLM_WORKFLOW_NONE;
+    llm_saved_build_known = 0;
+    llm_saved_build_status = 0;
+    llm_saved_rollback = LLM_ROLLBACK_NONE;
 }
 
-static void openai_state_reset_memory(void)
+static void llm_state_reset_memory(void)
 {
-    openai_last_workflow = OPENAI_WORKFLOW_NONE;
-    openai_last_build_known = 0;
-    openai_last_build_status = 0;
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    llm_last_workflow = LLM_WORKFLOW_NONE;
+    llm_last_build_known = 0;
+    llm_last_build_status = 0;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
 
-    openai_state_snapshot_clear();
+    llm_state_snapshot_clear();
 
-    openai_state_valid = 0;
-    openai_state_recovered = 0;
-    openai_state_save_known = 0;
-    openai_state_save_succeeded = 0;
+    llm_state_valid = 0;
+    llm_state_recovered = 0;
+    llm_state_save_known = 0;
+    llm_state_save_succeeded = 0;
 }
 
-static int openai_state_apply_load(
+static int llm_state_apply_load(
     const char *path)
 {
     int workflow;
@@ -565,10 +565,10 @@ static int openai_state_apply_load(
     int rollback;
     int recovered;
 
-    openai_state_loaded = 1;
-    openai_state_reset_memory();
+    llm_state_loaded = 1;
+    llm_state_reset_memory();
 
-    if (!openai_state_load_recovery_flag(
+    if (!llm_state_load_recovery_flag(
             path,
             &workflow,
             &build_known,
@@ -578,19 +578,19 @@ static int openai_state_apply_load(
         return 0;
     }
 
-    openai_last_workflow = workflow;
-    openai_last_build_known = build_known;
-    openai_last_build_status = build_status;
-    openai_last_rollback = rollback;
-    openai_state_snapshot_current();
-    openai_state_recovered = recovered;
-    openai_state_valid = 1;
+    llm_last_workflow = workflow;
+    llm_last_build_known = build_known;
+    llm_last_build_status = build_status;
+    llm_last_rollback = rollback;
+    llm_state_snapshot_current();
+    llm_state_recovered = recovered;
+    llm_state_valid = 1;
     return 1;
 }
 
 
 
-const char *openai_state_source_name(
+const char *llm_state_source_name(
     int valid,
     int recovered)
 {
@@ -604,7 +604,7 @@ const char *openai_state_source_name(
 }
 
 
-const char *openai_persist_workflow(
+const char *llm_persist_workflow(
     int valid,
     int workflow)
 {
@@ -612,10 +612,10 @@ const char *openai_persist_workflow(
         return "unavailable";
     }
 
-    return openai_workflow_name(workflow);
+    return llm_workflow_name(workflow);
 }
 
-const char *openai_persist_build(
+const char *llm_persist_build(
     int valid,
     int build_known,
     int build_status)
@@ -633,7 +633,7 @@ const char *openai_persist_build(
         "failure";
 }
 
-const char *openai_persist_rollback(
+const char *llm_persist_rollback(
     int valid,
     int rollback)
 {
@@ -641,11 +641,11 @@ const char *openai_persist_rollback(
         return "unavailable";
     }
 
-    return openai_rollback_name(rollback);
+    return llm_rollback_name(rollback);
 }
 
 
-const char *openai_state_save_name(
+const char *llm_state_save_name(
     int known,
     int succeeded)
 {

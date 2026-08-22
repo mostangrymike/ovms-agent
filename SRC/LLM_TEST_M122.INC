@@ -6,12 +6,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m122_zero_is_newest(path);
+    ok = llm_m122_zero_is_newest(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "version zero selects newest state",
         ok,
         &passed_count,
@@ -27,12 +27,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m122_minus_one_prior(path);
+    ok = llm_m122_minus_one_prior(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "minus-one selects prior state",
         ok,
         &passed_count,
@@ -48,12 +48,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m122_missing_prior_fails(path);
+    ok = llm_m122_missing_prior_fails(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "missing prior version rejected",
         ok,
         &passed_count,
@@ -69,12 +69,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m122_probe_read_only(path);
+    ok = llm_m122_probe_read_only(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "version probe leaves files unchanged",
         ok,
         &passed_count,

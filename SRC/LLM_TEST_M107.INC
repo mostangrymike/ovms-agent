@@ -5,12 +5,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m107_build_evidence(path);
+    ok = llm_m107_build_evidence(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed-build evidence file written",
         ok,
         &passed_count,
@@ -25,12 +25,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m107_ops_evidence(path);
+    ok = llm_m107_ops_evidence(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed-operation evidence file written",
         ok,
         &passed_count,
@@ -45,12 +45,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m107_state_serialize(path);
+    ok = llm_m107_state_serialize(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "rollback state serializes success",
         ok,
         &passed_count,
@@ -65,12 +65,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m107_state_reload(path);
+    ok = llm_m107_state_reload(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "execute workflow state reload accepted",
         ok,
         &passed_count,

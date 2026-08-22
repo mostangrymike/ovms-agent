@@ -2,8 +2,8 @@
 #include "LLM_PROMPTS.H"
 #include "LLM_PROJECT_MAP.H"
 
-#ifndef OPENAI_PLAN_MAX_TURNS
-#define OPENAI_PLAN_MAX_TURNS 24
+#ifndef LLM_PLAN_MAX_TURNS
+#define LLM_PLAN_MAX_TURNS 24
 #endif
 
 
@@ -47,28 +47,27 @@ static void llm_agent_instr(agent_state *state,
 void llm_agent(agent_state *state, const char *goal)
 {
     llm_agent_instr(
-        state, goal, 0, 0, OPENAI_WORKFLOW_AGENT
+        state, goal, 0, 0, LLM_WORKFLOW_AGENT
     );
 }
 
 void llm_agent_plan(agent_state *state, const char *goal)
 {
     llm_agent_instr(
-        state, goal, 0, 0, OPENAI_WORKFLOW_PLAN
+        state, goal, 0, 0, LLM_WORKFLOW_PLAN
     );
 }
 
 void llm_agent_write(agent_state *state, const char *goal)
 {
     llm_agent_instr(
-        state, goal, 1, 0, OPENAI_WORKFLOW_WRITE
+        state, goal, 1, 0, LLM_WORKFLOW_WRITE
     );
 }
 
 void llm_agent_fix(agent_state *state, const char *goal)
 {
     llm_agent_instr(
-        state, goal, 1, 1, OPENAI_WORKFLOW_FIX
+        state, goal, 1, 1, LLM_WORKFLOW_FIX
     );
 }
-

@@ -98,9 +98,7 @@ int main(void)
     if (!llm_project_src_text(
             &state, output, sizeof(output)) ||
         (strstr(output, "LLM_") == NULL &&
-         strstr(output, "llm_") == NULL &&
-         strstr(output, "OPENAI_") == NULL &&
-         strstr(output, "openai_") == NULL) ||
+         strstr(output, "llm_") == NULL) ||
         (strstr(output, "M233_SAMPLE.COB") == NULL &&
          strstr(output, "m233_sample.cob") == NULL) ||
         (strstr(output, "M233_SAMPLE.CBL") == NULL &&
@@ -153,7 +151,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Repository map:       available") == NULL ||
         strstr(output, "Context preloading:   available") == NULL) {
         (void)puts("M233 failed: parity status.");

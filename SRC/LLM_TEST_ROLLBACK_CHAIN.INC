@@ -21,8 +21,8 @@
     while (remove(target_path) == 0) {
     }
 
-    if (!openai_selftest_file_exists(target_path) &&
-        !openai_selftest_file_exists(operation_test_path)) {
+    if (!llm_selftest_file_exists(target_path) &&
+        !llm_selftest_file_exists(operation_test_path)) {
         target_file = fopen(target_path, "w");
 
         if (target_file != NULL) {
@@ -63,7 +63,7 @@
             fclose(operation_test_file) == 0) {
             operation_test_file = NULL;
             operation_test_ok =
-                openai_exec_rollback_validate(
+                llm_exec_rollback_validate(
                     operation_test_path,
                     target_path,
                     "A",
@@ -89,7 +89,7 @@
         }
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "failed build restores chained file",
         operation_test_ok,
         &passed_count,

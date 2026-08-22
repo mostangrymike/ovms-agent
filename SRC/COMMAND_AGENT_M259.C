@@ -7,53 +7,9 @@
 #include "LLM_PROJECT_MAP.H"
 
 #define command_register_agent command_register_agent_base
-#define openai_show_github m262_show_github
-#define openai_selftest llm_selftest
-#define openai_status llm_status
-#define openai_verify llm_verify
-#define openai_show_log llm_show_log
-#define openai_show_old_log llm_show_old_log
-#define openai_clear_log llm_clear_log
-#define openai_show_metrics llm_show_metrics
-#define openai_show_state llm_show_state
-#define openai_show_memory llm_show_memory
-#define openai_clear_state llm_clear_state
-#define openai_show_auto_status llm_show_auto_status
-#define openai_show_auto_limits llm_show_auto_limits
-#define openai_auto_reset llm_auto_reset
-#define openai_patch_apply_cmd llm_patch_apply_cmd
-#define openai_patch_dry_cmd llm_patch_dry_cmd
-#define openai_patch_validate_cmd llm_patch_validate_cmd
-#define openai_patch_last_cmd llm_patch_last_cmd
-#define openai_show_git_status llm_show_git_status
-#define openai_show_git_diff llm_show_git_diff
-#define openai_show_git_changed llm_show_git_changed
-#define openai_show_git_context llm_show_git_context
-#define openai_git_refresh_cmd llm_git_refresh_cmd
+#define llm_show_github m262_show_github
 #include "COMMAND_AGENT.C"
-#undef openai_git_refresh_cmd
-#undef openai_show_git_context
-#undef openai_show_git_changed
-#undef openai_show_git_diff
-#undef openai_show_git_status
-#undef openai_patch_last_cmd
-#undef openai_patch_validate_cmd
-#undef openai_patch_dry_cmd
-#undef openai_patch_apply_cmd
-#undef openai_auto_reset
-#undef openai_show_auto_limits
-#undef openai_show_auto_status
-#undef openai_clear_state
-#undef openai_show_memory
-#undef openai_show_state
-#undef openai_show_metrics
-#undef openai_clear_log
-#undef openai_show_old_log
-#undef openai_show_log
-#undef openai_verify
-#undef openai_status
-#undef openai_selftest
-#undef openai_show_github
+#undef llm_show_github
 #undef command_register_agent
 
 void llm_agent_image(agent_state *state,

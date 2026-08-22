@@ -223,9 +223,9 @@ static int contains_text(const char *path, const char *expected)
 
 static void cleanup(void)
 {
-    openai_test_set_repair_plan(NULL, 0);
-    openai_test_set_build_hook(NULL);
-    openai_plan_approval_clear();
+    llm_test_set_repair_plan(NULL, 0);
+    llm_test_set_build_hook(NULL);
+    llm_plan_approval_clear();
     remove_all_versions(TARGET_A);
     remove_all_versions(TARGET_B);
     remove_all_versions("OVMS_AGENT_PLAN.TXT");
@@ -251,8 +251,8 @@ static int run_scenario(int second_succeeds)
     build_call_count = 0;
     second_rebuild_succeeds = second_succeeds;
 
-    openai_test_set_build_hook(m209_build_hook);
-    openai_test_set_repair_plans(
+    llm_test_set_build_hook(m209_build_hook);
+    llm_test_set_repair_plans(
         repair_plan1,
         repair_plan2,
         1
@@ -270,7 +270,7 @@ static int run_scenario(int second_succeeds)
     {
         const char *retry_prompt;
 
-        retry_prompt = openai_test_get_repair_prompt(2U);
+        retry_prompt = llm_test_get_repair_prompt(2U);
 
         if (retry_prompt == NULL ||
             strstr(retry_prompt,

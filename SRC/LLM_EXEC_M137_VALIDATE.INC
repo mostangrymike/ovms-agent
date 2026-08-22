@@ -1,4 +1,4 @@
-static int openai_m137_write_text(
+static int llm_m137_write_text(
     const char *path,
     const char *text)
 {
@@ -18,14 +18,14 @@ static int openai_m137_write_text(
     return fclose(file) == 0;
 }
 
-static int openai_m137_contains(
+static int llm_m137_contains(
     const char *path,
     const char *text)
 {
     char *content;
     int result;
 
-    content = openai_read_text_file(path);
+    content = llm_read_text_file(path);
 
     if (content == NULL) {
         return 0;
@@ -36,7 +36,7 @@ static int openai_m137_contains(
     return result;
 }
 
-int openai_m137_success_cleanup(
+int llm_m137_success_cleanup(
     const char *plan_path,
     const char *new_path,
     const char *backup_path)
@@ -47,12 +47,12 @@ int openai_m137_success_cleanup(
     execute_remove_pair(new_path);
     execute_remove_pair(backup_path);
 
-    if (!openai_m137_write_text(
+    if (!llm_m137_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(plan_path)) {
+        !llm_plan_checksum_write(plan_path)) {
         return 0;
     }
 
@@ -67,13 +67,13 @@ int openai_m137_success_cleanup(
         execute_plan_file_exists(plan_path) &&
         !execute_plan_file_exists(new_path) &&
         !execute_plan_file_exists(backup_path) &&
-        openai_m137_contains(
+        llm_m137_contains(
             plan_path,
             "status=consumed") &&
-        openai_plan_checksum_valid(plan_path);
+        llm_plan_checksum_valid(plan_path);
 }
 
-int openai_m137_failure_restore(
+int llm_m137_failure_restore(
     const char *plan_path,
     const char *new_path,
     const char *backup_path)
@@ -84,12 +84,12 @@ int openai_m137_failure_restore(
     execute_remove_pair(new_path);
     execute_remove_pair(backup_path);
 
-    if (!openai_m137_write_text(
+    if (!llm_m137_write_text(
             plan_path,
             "format=1\n"
             "status=active\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(plan_path)) {
+        !llm_plan_checksum_write(plan_path)) {
         return 0;
     }
 
@@ -104,34 +104,34 @@ int openai_m137_failure_restore(
         execute_plan_file_exists(plan_path) &&
         !execute_plan_file_exists(new_path) &&
         !execute_plan_file_exists(backup_path) &&
-        openai_m137_contains(
+        llm_m137_contains(
             plan_path,
             "status=active") &&
-        openai_plan_checksum_valid(plan_path);
+        llm_plan_checksum_valid(plan_path);
 }
 
-int openai_m137_consumed_rejected(
+int llm_m137_consumed_rejected(
     const char *plan_path)
 {
     execute_remove_pair(plan_path);
 
-    if (!openai_m137_write_text(
+    if (!llm_m137_write_text(
             plan_path,
             "format=1\n"
             "status=consumed\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(plan_path)) {
+        !llm_plan_checksum_write(plan_path)) {
         return 0;
     }
 
     return
-        openai_plan_checksum_valid(plan_path) &&
-        !openai_plan_file_current(
+        llm_plan_checksum_valid(plan_path) &&
+        !llm_plan_file_current(
             plan_path,
             0);
 }
 
-int openai_m137_artifact_recovery(
+int llm_m137_artifact_recovery(
     const char *plan_path,
     const char *new_path,
     const char *backup_path)
@@ -142,18 +142,18 @@ int openai_m137_artifact_recovery(
     execute_remove_pair(new_path);
     execute_remove_pair(backup_path);
 
-    if (!openai_m137_write_text(
+    if (!llm_m137_write_text(
             new_path,
             "format=1\n"
             "status=consumed\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(new_path) ||
-        !openai_m137_write_text(
+        !llm_plan_checksum_write(new_path) ||
+        !llm_m137_write_text(
             backup_path,
             "format=1\n"
             "status=active\n"
             "file_count=0\n") ||
-        !openai_plan_checksum_write(backup_path)) {
+        !llm_plan_checksum_write(backup_path)) {
         return 0;
     }
 
@@ -167,11 +167,11 @@ int openai_m137_artifact_recovery(
         execute_plan_file_exists(plan_path) &&
         !execute_plan_file_exists(new_path) &&
         !execute_plan_file_exists(backup_path) &&
-        openai_m137_contains(
+        llm_m137_contains(
             plan_path,
             "status=consumed") &&
-        openai_plan_checksum_valid(plan_path) &&
-        !openai_plan_file_current(
+        llm_plan_checksum_valid(plan_path) &&
+        !llm_plan_file_current(
             plan_path,
             0);
 }

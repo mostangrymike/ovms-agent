@@ -1,11 +1,11 @@
 void llm_plan_execute_dry(agent_state *state)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     unsigned int operation_count;
     unsigned int index;
 
-    openai_log_event("AGENT/EXECUTE/DRY_RUN", "start", 0);
+    llm_log_event("AGENT/EXECUTE/DRY_RUN", "start", 0);
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -14,14 +14,14 @@ void llm_plan_execute_dry(agent_state *state)
         return;
     }
 
-    if (!openai_plan_is_current(1)) {
+    if (!llm_plan_is_current(1)) {
         (void)puts("Saved plan dry run refused. Run AGENT/PLAN again.");
-        openai_log_event("AGENT/EXECUTE/DRY_RUN", "plan_invalid", 0);
+        llm_log_event("AGENT/EXECUTE/DRY_RUN", "plan_invalid", 0);
         return;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations));
     transaction = (edit_txn *)malloc(sizeof(*transaction));
 
@@ -29,23 +29,23 @@ void llm_plan_execute_dry(agent_state *state)
         (void)puts("Insufficient memory for execution dry run.");
         free(transaction);
         free(operations);
-        openai_log_event("AGENT/EXECUTE/DRY_RUN", "allocation_failed", 0);
+        llm_log_event("AGENT/EXECUTE/DRY_RUN", "allocation_failed", 0);
         return;
     }
 
     operation_count = 0U;
 
     if (!execute_parse_operations(
-            OPENAI_PLAN_FILE,
+            LLM_PLAN_FILE,
             operations,
-            OPENAI_EXECUTE_MAX_OPERATIONS,
+            LLM_EXECUTE_MAX_OPERATIONS,
             &operation_count)) {
         (void)puts(
             "Saved plan dry run refused because no deterministic "
             "operations are available.");
         free(transaction);
         free(operations);
-        openai_log_event("AGENT/EXECUTE/DRY_RUN", "operation_invalid", 0);
+        llm_log_event("AGENT/EXECUTE/DRY_RUN", "operation_invalid", 0);
         return;
     }
 
@@ -66,7 +66,7 @@ void llm_plan_execute_dry(agent_state *state)
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
-        openai_log_event("AGENT/EXECUTE/DRY_RUN", "stage_failed", 0);
+        llm_log_event("AGENT/EXECUTE/DRY_RUN", "stage_failed", 0);
         (void)puts("Execution dry run failed during in-memory staging.");
         return;
     }
@@ -85,7 +85,7 @@ void llm_plan_execute_dry(agent_state *state)
     free(transaction);
     free(operations);
 
-    openai_log_event(
+    llm_log_event(
         "AGENT/EXECUTE/DRY_RUN",
         "success",
         (int)operation_count);

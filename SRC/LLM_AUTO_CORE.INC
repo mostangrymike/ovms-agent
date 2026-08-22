@@ -1,27 +1,27 @@
 #include "llm_internal.h"
 #include "rms_write.h"
 
-#define OPENAI_AUTO_TURNS_DEFAULT 12U
-#define OPENAI_AUTO_TURNS_MAX 32U
-#define OPENAI_AUTO_WRITES_DEFAULT 3U
-#define OPENAI_AUTO_WRITES_MAX 8U
+#define LLM_AUTO_TURNS_DEFAULT 12U
+#define LLM_AUTO_TURNS_MAX 32U
+#define LLM_AUTO_WRITES_DEFAULT 3U
+#define LLM_AUTO_WRITES_MAX 8U
 
-static unsigned int openai_auto_turn_override = 0U;
-static unsigned int openai_auto_write_override = 0U;
+static unsigned int llm_auto_turn_override = 0U;
+static unsigned int llm_auto_write_override = 0U;
 
-static unsigned int openai_auto_cur_turns = 0U;
-static unsigned int openai_auto_cur_tools = 0U;
-static unsigned int openai_auto_cur_writes = 0U;
-static int openai_auto_cur_workflow = OPENAI_WORKFLOW_NONE;
-static int openai_auto_write_blocked = 0;
+static unsigned int llm_auto_cur_turns = 0U;
+static unsigned int llm_auto_cur_tools = 0U;
+static unsigned int llm_auto_cur_writes = 0U;
+static int llm_auto_cur_workflow = LLM_WORKFLOW_NONE;
+static int llm_auto_write_blocked = 0;
 
-static unsigned int openai_auto_last_turns = 0U;
-static unsigned int openai_auto_last_tools = 0U;
-static unsigned int openai_auto_last_writes = 0U;
-static int openai_auto_last_workflow = OPENAI_WORKFLOW_NONE;
-static char openai_auto_last_reason[32] = "none";
+static unsigned int llm_auto_last_turns = 0U;
+static unsigned int llm_auto_last_tools = 0U;
+static unsigned int llm_auto_last_writes = 0U;
+static int llm_auto_last_workflow = LLM_WORKFLOW_NONE;
+static char llm_auto_last_reason[32] = "none";
 
-static unsigned int openai_auto_env_limit(const char *name,
+static unsigned int llm_auto_env_limit(const char *name,
                                            unsigned int fallback,
                                            unsigned int maximum)
 {
@@ -46,105 +46,105 @@ static unsigned int openai_auto_env_limit(const char *name,
     return (unsigned int)parsed;
 }
 
-static unsigned int openai_auto_turn_cfg(void)
+static unsigned int llm_auto_turn_cfg(void)
 {
-    if (openai_auto_turn_override != 0U) {
-        return openai_auto_turn_override;
+    if (llm_auto_turn_override != 0U) {
+        return llm_auto_turn_override;
     }
 
-    return openai_auto_env_limit(
+    return llm_auto_env_limit(
         "OVMS_AGENT_AUTO_TURNS",
-        OPENAI_AUTO_TURNS_DEFAULT,
-        OPENAI_AUTO_TURNS_MAX
+        LLM_AUTO_TURNS_DEFAULT,
+        LLM_AUTO_TURNS_MAX
     );
 }
 
-static unsigned int openai_auto_write_cfg(void)
+static unsigned int llm_auto_write_cfg(void)
 {
-    if (openai_auto_write_override != 0U) {
-        return openai_auto_write_override;
+    if (llm_auto_write_override != 0U) {
+        return llm_auto_write_override;
     }
 
-    return openai_auto_env_limit(
+    return llm_auto_env_limit(
         "OVMS_AGENT_AUTO_WRITES",
-        OPENAI_AUTO_WRITES_DEFAULT,
-        OPENAI_AUTO_WRITES_MAX
+        LLM_AUTO_WRITES_DEFAULT,
+        LLM_AUTO_WRITES_MAX
     );
 }
 
-void openai_auto_begin(int workflow)
+void llm_auto_begin(int workflow)
 {
-    openai_auto_cur_turns = 0U;
-    openai_auto_cur_tools = 0U;
-    openai_auto_cur_writes = 0U;
-    openai_auto_cur_workflow = workflow;
-    openai_auto_write_blocked = 0;
+    llm_auto_cur_turns = 0U;
+    llm_auto_cur_tools = 0U;
+    llm_auto_cur_writes = 0U;
+    llm_auto_cur_workflow = workflow;
+    llm_auto_write_blocked = 0;
 
-    if (workflow == OPENAI_WORKFLOW_WRITE) {
+    if (workflow == LLM_WORKFLOW_WRITE) {
         rms_run_begin();
     } else {
         rms_run_commit();
     }
 }
 
-unsigned int openai_auto_turn_limit(int workflow)
+unsigned int llm_auto_turn_limit(int workflow)
 {
-    if (workflow == OPENAI_WORKFLOW_PLAN) {
-        return OPENAI_PLAN_MAX_TURNS;
+    if (workflow == LLM_WORKFLOW_PLAN) {
+        return LLM_PLAN_MAX_TURNS;
     }
 
-    return openai_auto_turn_cfg();
+    return llm_auto_turn_cfg();
 }
 
-void openai_auto_note_turn(void)
+void llm_auto_note_turn(void)
 {
-    ++openai_auto_cur_turns;
+    ++llm_auto_cur_turns;
 }
 
-void openai_auto_note_tool(void)
+void llm_auto_note_tool(void)
 {
-    ++openai_auto_cur_tools;
+    ++llm_auto_cur_tools;
 }
 
-int openai_auto_allow_write(void)
+int llm_auto_allow_write(void)
 {
-    if (openai_auto_cur_writes >= openai_auto_write_cfg()) {
-        openai_auto_write_blocked = 1;
+    if (llm_auto_cur_writes >= llm_auto_write_cfg()) {
+        llm_auto_write_blocked = 1;
         return 0;
     }
 
-    ++openai_auto_cur_writes;
+    ++llm_auto_cur_writes;
     return 1;
 }
 
-int openai_auto_partial_limit(void)
+int llm_auto_partial_limit(void)
 {
-    if (openai_auto_cur_workflow != OPENAI_WORKFLOW_WRITE ||
+    if (llm_auto_cur_workflow != LLM_WORKFLOW_WRITE ||
         !rms_run_has_writes()) {
         return 0;
     }
 
-    return openai_auto_write_blocked ||
-           openai_auto_cur_turns >= openai_auto_turn_cfg();
+    return llm_auto_write_blocked ||
+           llm_auto_cur_turns >= llm_auto_turn_cfg();
 }
 
-void openai_auto_finish(const char *reason)
+void llm_auto_finish(const char *reason)
 {
     int rollback_needed;
 
-    openai_auto_last_turns = openai_auto_cur_turns;
-    openai_auto_last_tools = openai_auto_cur_tools;
-    openai_auto_last_writes = openai_auto_cur_writes;
-    openai_auto_last_workflow = openai_auto_cur_workflow;
+    llm_auto_last_turns = llm_auto_cur_turns;
+    llm_auto_last_tools = llm_auto_cur_tools;
+    llm_auto_last_writes = llm_auto_cur_writes;
+    llm_auto_last_workflow = llm_auto_cur_workflow;
 
     if (reason == NULL || *reason == '\0') {
         reason = "unknown";
     }
 
     rollback_needed =
-        openai_auto_cur_workflow == OPENAI_WORKFLOW_WRITE &&
+        llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
         rms_run_has_writes() &&
-        (strcmp(reason, "final") != 0 || openai_auto_write_blocked);
+        (strcmp(reason, "final") != 0 || llm_auto_write_blocked);
 
     if (rollback_needed) {
         (void)puts(
@@ -168,16 +168,16 @@ void openai_auto_finish(const char *reason)
     }
 
     (void)strncpy(
-        openai_auto_last_reason,
+        llm_auto_last_reason,
         reason,
-        sizeof(openai_auto_last_reason) - 1U
+        sizeof(llm_auto_last_reason) - 1U
     );
-    openai_auto_last_reason[
-        sizeof(openai_auto_last_reason) - 1U
+    llm_auto_last_reason[
+        sizeof(llm_auto_last_reason) - 1U
     ] = '\0';
 }
 
-int openai_auto_limits_text(char *output, size_t output_size)
+int llm_auto_limits_text(char *output, size_t output_size)
 {
     int written;
 
@@ -193,16 +193,16 @@ int openai_auto_limits_text(char *output, size_t output_size)
         "Write actions:    %u (max %u)\n"
         "Turn variable:    OVMS_AGENT_AUTO_TURNS\n"
         "Write variable:   OVMS_AGENT_AUTO_WRITES\n",
-        openai_auto_turn_cfg(),
-        OPENAI_AUTO_TURNS_MAX,
-        openai_auto_write_cfg(),
-        OPENAI_AUTO_WRITES_MAX
+        llm_auto_turn_cfg(),
+        LLM_AUTO_TURNS_MAX,
+        llm_auto_write_cfg(),
+        LLM_AUTO_WRITES_MAX
     );
 
     return written >= 0 && (size_t)written < output_size;
 }
 
-int openai_auto_status_text(char *output, size_t output_size)
+int llm_auto_status_text(char *output, size_t output_size)
 {
     int written;
 
@@ -219,21 +219,21 @@ int openai_auto_status_text(char *output, size_t output_size)
         "Tool calls:    %u\n"
         "Write actions: %u\n"
         "Stop reason:   %s\n",
-        openai_workflow_name(openai_auto_last_workflow),
-        openai_auto_last_turns,
-        openai_auto_last_tools,
-        openai_auto_last_writes,
-        openai_auto_last_reason
+        llm_workflow_name(llm_auto_last_workflow),
+        llm_auto_last_turns,
+        llm_auto_last_tools,
+        llm_auto_last_writes,
+        llm_auto_last_reason
     );
 
     return written >= 0 && (size_t)written < output_size;
 }
 
-void openai_show_auto_limits(void)
+void llm_show_auto_limits(void)
 {
     char output[1024];
 
-    if (!openai_auto_limits_text(output, sizeof(output))) {
+    if (!llm_auto_limits_text(output, sizeof(output))) {
         (void)puts("Unable to show autonomous limits.");
         return;
     }
@@ -241,11 +241,11 @@ void openai_show_auto_limits(void)
     (void)fputs(output, stdout);
 }
 
-void openai_show_auto_status(void)
+void llm_show_auto_status(void)
 {
     char output[1024];
 
-    if (!openai_auto_status_text(output, sizeof(output))) {
+    if (!llm_auto_status_text(output, sizeof(output))) {
         (void)puts("Unable to show autonomous loop status.");
         return;
     }
@@ -253,26 +253,26 @@ void openai_show_auto_status(void)
     (void)fputs(output, stdout);
 }
 
-void openai_auto_reset(void)
+void llm_auto_reset(void)
 {
-    openai_auto_last_turns = 0U;
-    openai_auto_last_tools = 0U;
-    openai_auto_last_writes = 0U;
-    openai_auto_last_workflow = OPENAI_WORKFLOW_NONE;
-    (void)strcpy(openai_auto_last_reason, "none");
+    llm_auto_last_turns = 0U;
+    llm_auto_last_tools = 0U;
+    llm_auto_last_writes = 0U;
+    llm_auto_last_workflow = LLM_WORKFLOW_NONE;
+    (void)strcpy(llm_auto_last_reason, "none");
 }
 
-void openai_auto_test_limits(unsigned int turns,
+void llm_auto_test_limits(unsigned int turns,
                              unsigned int writes)
 {
-    if (turns > OPENAI_AUTO_TURNS_MAX) {
-        turns = OPENAI_AUTO_TURNS_MAX;
+    if (turns > LLM_AUTO_TURNS_MAX) {
+        turns = LLM_AUTO_TURNS_MAX;
     }
 
-    if (writes > OPENAI_AUTO_WRITES_MAX) {
-        writes = OPENAI_AUTO_WRITES_MAX;
+    if (writes > LLM_AUTO_WRITES_MAX) {
+        writes = LLM_AUTO_WRITES_MAX;
     }
 
-    openai_auto_turn_override = turns;
-    openai_auto_write_override = writes;
+    llm_auto_turn_override = turns;
+    llm_auto_write_override = writes;
 }

@@ -1,62 +1,62 @@
-void openai_log_event(
+void llm_log_event(
     const char *command,
     const char *event,
     int value);
 
-int openai_plan_approved = 0;
-unsigned long openai_approved_hash = 0UL;
-int openai_approval_invalidated = 0;
-static unsigned int openai_inv_log_count = 0U;
-static unsigned int openai_cancel_log_count = 0U;
-static unsigned int openai_fail_log_count = 0U;
+int llm_plan_approved = 0;
+unsigned long llm_approved_hash = 0UL;
+int llm_approval_invalidated = 0;
+static unsigned int llm_inv_log_count = 0U;
+static unsigned int llm_cancel_log_count = 0U;
+static unsigned int llm_fail_log_count = 0U;
 
-void openai_plan_approval_clear(void)
+void llm_plan_approval_clear(void)
 {
-    openai_plan_approved = 0;
-    openai_approved_hash = 0UL;
-    openai_approval_invalidated = 0;
+    llm_plan_approved = 0;
+    llm_approved_hash = 0UL;
+    llm_approval_invalidated = 0;
 }
 
-static void openai_log_invalidated(void)
+static void llm_log_invalidated(void)
 {
-    ++openai_inv_log_count;
-    openai_log_event(
+    ++llm_inv_log_count;
+    llm_log_event(
         "AGENT/APPROVE",
         "approval_invalidated",
         0);
 }
 
-static void openai_log_cancelled(void)
+static void llm_log_cancelled(void)
 {
-    ++openai_cancel_log_count;
-    openai_log_event(
+    ++llm_cancel_log_count;
+    llm_log_event(
         "AGENT/APPROVE",
         "approval_cancelled",
         0);
 }
 
-static void openai_log_failed(void)
+static void llm_log_failed(void)
 {
-    ++openai_fail_log_count;
-    openai_log_event(
+    ++llm_fail_log_count;
+    llm_log_event(
         "AGENT/APPROVE",
         "approval_failed",
         0);
 }
 
-static void openai_approval_invalidate(void)
+static void llm_approval_invalidate(void)
 {
-    openai_plan_approved = 0;
-    openai_approved_hash = 0UL;
-    openai_approval_invalidated = 1;
-    openai_log_invalidated();
+    llm_plan_approved = 0;
+    llm_approved_hash = 0UL;
+    llm_approval_invalidated = 1;
+    llm_log_invalidated();
 }
 
-static int openai_approval_value(
+static int llm_approval_value(
     const char *plan_path,
     unsigned long *value_out)
 {
-    char checksum_path[OPENAI_PLAN_PATH_SIZE + 16];
+    char checksum_path[LLM_PLAN_PATH_SIZE + 16];
     char line[64];
     unsigned long value;
     char extra;
@@ -64,7 +64,7 @@ static int openai_approval_value(
 
     if (plan_path == NULL ||
         value_out == NULL ||
-        !openai_plan_checksum_path(
+        !llm_plan_checksum_path(
             plan_path,
             checksum_path,
             sizeof(checksum_path))) {
@@ -87,63 +87,63 @@ static int openai_approval_value(
     return 1;
 }
 
-const char *openai_plan_approval_name(void)
+const char *llm_plan_approval_name(void)
 {
-    if (openai_plan_approved) {
+    if (llm_plan_approved) {
         return "APPROVED FOR THIS SESSION";
     }
 
-    if (openai_approval_invalidated) {
+    if (llm_approval_invalidated) {
         return "INVALIDATED";
     }
 
     return "NOT APPROVED";
 }
 
-void openai_plan_approval_report(void)
+void llm_plan_approval_report(void)
 {
     (void)printf(
         "Plan approval:             %s\n",
-        openai_plan_approval_name());
+        llm_plan_approval_name());
 }
 
-int openai_plan_approve_file(
+int llm_plan_approve_file(
     const char *plan_path)
 {
     unsigned long value;
 
-    if (!openai_plan_file_current(
+    if (!llm_plan_file_current(
             plan_path,
             0) ||
-        !openai_approval_value(
+        !llm_approval_value(
             plan_path,
             &value)) {
-        openai_plan_approval_clear();
+        llm_plan_approval_clear();
         return 0;
     }
 
-    openai_approved_hash = value;
-    openai_plan_approved = 1;
-    openai_approval_invalidated = 0;
+    llm_approved_hash = value;
+    llm_plan_approved = 1;
+    llm_approval_invalidated = 0;
     return 1;
 }
 
-int openai_plan_approval_valid(
+int llm_plan_approval_valid(
     const char *plan_path)
 {
     unsigned long value;
     int was_approved;
 
-    was_approved = openai_plan_approved;
+    was_approved = llm_plan_approved;
 
-    if (!openai_plan_approved ||
-        !openai_plan_checksum_valid(plan_path) ||
-        !openai_approval_value(
+    if (!llm_plan_approved ||
+        !llm_plan_checksum_valid(plan_path) ||
+        !llm_approval_value(
             plan_path,
             &value) ||
-        value != openai_approved_hash) {
+        value != llm_approved_hash) {
         if (was_approved) {
-            openai_approval_invalidate();
+            llm_approval_invalidate();
         }
 
         return 0;
@@ -152,7 +152,7 @@ int openai_plan_approval_valid(
     return 1;
 }
 
-int openai_plan_confirm_text(
+int llm_plan_confirm_text(
     const char *text)
 {
     if (text == NULL) {
@@ -164,7 +164,7 @@ int openai_plan_confirm_text(
         text[1] == '\0';
 }
 
-static int openai_plan_read_confirm(
+static int llm_plan_read_confirm(
     char *answer,
     size_t answer_size)
 {
@@ -193,57 +193,57 @@ static int openai_plan_read_confirm(
     return 0;
 }
 
-void openai_plan_approve(void)
+void llm_plan_approve(void)
 {
     char answer[32];
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    if (!openai_plan_is_current(1)) {
+    if (!llm_plan_is_current(1)) {
         (void)puts(
             "Saved plan cannot be approved. Run AGENT/PLAN again.");
-        openai_log_failed();
+        llm_log_failed();
         return;
     }
 
-    openai_plan_show();
+    llm_plan_show();
 
     (void)printf(
         "Approve this saved plan for execution in this session [y/N]? ");
     (void)fflush(stdout);
 
-    if (!openai_plan_read_confirm(
+    if (!llm_plan_read_confirm(
             answer,
             sizeof(answer))) {
         (void)putchar('\n');
-        openai_log_cancelled();
+        llm_log_cancelled();
         return;
     }
 
-    if (!openai_plan_confirm_text(answer)) {
+    if (!llm_plan_confirm_text(answer)) {
         (void)puts("Saved plan approval cancelled.");
-        openai_log_cancelled();
+        llm_log_cancelled();
         return;
     }
 
-    if (!openai_plan_approve_file(
-            OPENAI_PLAN_FILE)) {
+    if (!llm_plan_approve_file(
+            LLM_PLAN_FILE)) {
         (void)puts(
             "Saved plan approval failed integrity validation.");
-        openai_log_failed();
+        llm_log_failed();
         return;
     }
 
     (void)puts(
         "Saved plan approved for execution in this session.");
-    openai_log_event(
+    llm_log_event(
         "AGENT/APPROVE",
         "plan_approved",
         1);
 }
 
 
-static int openai_plan_consumed(
+static int llm_plan_consumed(
     const char *plan_path)
 {
     FILE *file;
@@ -269,67 +269,67 @@ static int openai_plan_consumed(
     return consumed;
 }
 
-void openai_plan_recovery_sync(
+void llm_plan_recovery_sync(
     const char *plan_path)
 {
     unsigned long value;
 
-    if (!openai_plan_approved) {
+    if (!llm_plan_approved) {
         return;
     }
 
-    if (openai_plan_consumed(plan_path)) {
-        openai_plan_approval_clear();
+    if (llm_plan_consumed(plan_path)) {
+        llm_plan_approval_clear();
         return;
     }
 
-    if (!openai_plan_checksum_valid(plan_path) ||
-        !openai_approval_value(plan_path, &value) ||
-        value != openai_approved_hash) {
-        openai_approval_invalidate();
+    if (!llm_plan_checksum_valid(plan_path) ||
+        !llm_approval_value(plan_path, &value) ||
+        value != llm_approved_hash) {
+        llm_approval_invalidate();
     }
 }
 
-void openai_m143_log_reset(void)
+void llm_m143_log_reset(void)
 {
-    openai_inv_log_count = 0U;
-    openai_cancel_log_count = 0U;
-    openai_fail_log_count = 0U;
+    llm_inv_log_count = 0U;
+    llm_cancel_log_count = 0U;
+    llm_fail_log_count = 0U;
 }
 
-unsigned int openai_m143_inv_logs(void)
+unsigned int llm_m143_inv_logs(void)
 {
-    return openai_inv_log_count;
+    return llm_inv_log_count;
 }
 
-unsigned int openai_m143_cancel_logs(void)
+unsigned int llm_m143_cancel_logs(void)
 {
-    return openai_cancel_log_count;
+    return llm_cancel_log_count;
 }
 
-unsigned int openai_m143_fail_logs(void)
+unsigned int llm_m143_fail_logs(void)
 {
-    return openai_fail_log_count;
+    return llm_fail_log_count;
 }
 
-void openai_m143_emit_cancel(void)
+void llm_m143_emit_cancel(void)
 {
-    openai_log_cancelled();
+    llm_log_cancelled();
 }
 
-void openai_m143_emit_fail(void)
+void llm_m143_emit_fail(void)
 {
-    openai_log_failed();
-}
-
-
-void openai_plan_approval_consume(void)
-{
-    openai_plan_approval_clear();
+    llm_log_failed();
 }
 
 
-void openai_plan_session_reset(void)
+void llm_plan_approval_consume(void)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
+}
+
+
+void llm_plan_session_reset(void)
+{
+    llm_plan_approval_clear();
 }

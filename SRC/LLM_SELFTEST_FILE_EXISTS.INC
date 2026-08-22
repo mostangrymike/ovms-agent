@@ -1,4 +1,4 @@
-static int openai_selftest_file_exists(const char *path)
+static int llm_selftest_file_exists(const char *path)
 {
     FILE *file;
 

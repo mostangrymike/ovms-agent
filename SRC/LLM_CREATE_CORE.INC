@@ -47,8 +47,8 @@ void llm_agent_create(agent_state *state, const char *goal)
     int create_attempted;
     llm_file_cache_entry cache[LLM_AGENT_CACHE_SIZE];
 
-    openai_last_workflow = OPENAI_WORKFLOW_CREATE;
-    openai_log_event("AGENT/CREATE", "start", 0);
+    llm_last_workflow = LLM_WORKFLOW_CREATE;
+    llm_log_event("AGENT/CREATE", "start", 0);
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -97,13 +97,13 @@ void llm_agent_create(agent_state *state, const char *goal)
 
     (void)puts("Starting guarded file-creation agent...");
 
-    for (turn = 0U; turn < OPENAI_AGENT_MAX_TURNS; ++turn) {
+    for (turn = 0U; turn < LLM_AGENT_MAX_TURNS; ++turn) {
         char *json;
         char *response_id;
         char *name;
         char *new_call_id;
         char *arguments;
-        const openai_tool_descriptor *descriptor;
+        const llm_tool_descriptor *descriptor;
 
         if (!write_create_agent_request(
                 model,
@@ -121,14 +121,14 @@ void llm_agent_create(agent_state *state, const char *goal)
         tool_output = NULL;
 
         if (!perform_openai_request()) {
-            (void)puts("OpenAI request failed.");
+            (void)puts("LLM request failed.");
             break;
         }
 
-        json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+        json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
         if (json == NULL) {
-            (void)puts("Unable to read OpenAI response.");
+            (void)puts("Unable to read LLM response.");
             break;
         }
 
@@ -175,18 +175,18 @@ void llm_agent_create(agent_state *state, const char *goal)
 
         free(json);
 
-        descriptor = openai_tool_find(name);
+        descriptor = llm_tool_find(name);
 
-        if (openai_tool_is_read(descriptor)) {
-            tool_output = openai_tool_execute_read(
+        if (llm_tool_is_read(descriptor)) {
+            tool_output = llm_tool_execute_read(
                 descriptor,
                 arguments,
                 cache
             );
         } else if (descriptor != NULL &&
-                   descriptor->kind == OPENAI_TOOL_CREATE_FILE) {
+                   descriptor->kind == LLM_TOOL_CREATE_FILE) {
             char *display_path;
-            openai_create_result create_result;
+            llm_create_result create_result;
 
             if (create_attempted) {
                 (void)puts(
@@ -216,22 +216,22 @@ void llm_agent_create(agent_state *state, const char *goal)
             free(arguments);
             free(new_call_id);
 
-            if (create_result == OPENAI_CREATE_CREATED) {
-                openai_log_event(
+            if (create_result == LLM_CREATE_CREATED) {
+                llm_log_event(
                     "AGENT/CREATE",
                     "file_created",
                     1
                 );
                 (void)puts("File created. Agent complete.");
-            } else if (create_result == OPENAI_CREATE_DECLINED) {
-                openai_log_event(
+            } else if (create_result == LLM_CREATE_DECLINED) {
+                llm_log_event(
                     "AGENT/CREATE",
                     "file_create_declined",
                     0
                 );
                 (void)puts("File creation cancelled. Agent complete.");
             } else {
-                openai_log_event(
+                llm_log_event(
                     "AGENT/CREATE",
                     "file_create_failed",
                     0

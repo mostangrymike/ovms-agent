@@ -1,4 +1,4 @@
-static int openai_m113_write_reject(
+static int llm_m113_write_reject(
     const char *path,
     const char *text)
 {
@@ -25,7 +25,7 @@ static int openai_m113_write_reject(
         return 0;
     }
 
-    return !openai_state_load_from(
+    return !llm_state_load_from(
         path,
         &workflow,
         &build_known,
@@ -33,10 +33,10 @@ static int openai_m113_write_reject(
         &rollback);
 }
 
-int openai_m113_signed_workflow(
+int llm_m113_signed_workflow(
     const char *path)
 {
-    return openai_m113_write_reject(
+    return llm_m113_write_reject(
         path,
         "format=1\n"
         "last_workflow=+13\n"
@@ -45,10 +45,10 @@ int openai_m113_signed_workflow(
         "last_rollback=2\n");
 }
 
-int openai_m113_zero_workflow(
+int llm_m113_zero_workflow(
     const char *path)
 {
-    return openai_m113_write_reject(
+    return llm_m113_write_reject(
         path,
         "format=1\n"
         "last_workflow=013\n"
@@ -57,10 +57,10 @@ int openai_m113_zero_workflow(
         "last_rollback=2\n");
 }
 
-int openai_m113_spaced_value(
+int llm_m113_spaced_value(
     const char *path)
 {
-    return openai_m113_write_reject(
+    return llm_m113_write_reject(
         path,
         "format=1\n"
         "last_workflow= 13\n"
@@ -69,7 +69,7 @@ int openai_m113_spaced_value(
         "last_rollback=2\n");
 }
 
-int openai_m113_zero_values(
+int llm_m113_zero_values(
     const char *path)
 {
     FILE *file;
@@ -100,14 +100,14 @@ int openai_m113_zero_values(
     }
 
     return
-        openai_state_load_from(
+        llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback) &&
-        workflow == OPENAI_WORKFLOW_NONE &&
+        workflow == LLM_WORKFLOW_NONE &&
         build_known == 0 &&
         build_status == 0 &&
-        rollback == OPENAI_ROLLBACK_NONE;
+        rollback == LLM_ROLLBACK_NONE;
 }

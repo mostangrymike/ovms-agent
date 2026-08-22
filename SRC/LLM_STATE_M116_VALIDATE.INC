@@ -1,4 +1,4 @@
-static int openai_m116_read_state(
+static int llm_m116_read_state(
     const char *path,
     int expected_status)
 {
@@ -8,81 +8,81 @@ static int openai_m116_read_state(
     int rollback;
 
     return
-        openai_state_load_from(
+        llm_state_load_from(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback) &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         build_known == 1 &&
         build_status == expected_status &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }
 
-int openai_m116_atomic_create(
+int llm_m116_atomic_create(
     const char *path)
 {
     return
-        openai_state_save_to(
+        llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) &&
-        openai_m116_read_state(path, 1);
+            LLM_ROLLBACK_SUCCEEDED) &&
+        llm_m116_read_state(path, 1);
 }
 
-int openai_m116_tmp_fail_keeps(
+int llm_m116_tmp_fail_keeps(
     const char *path)
 {
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
+            LLM_ROLLBACK_SUCCEEDED)) {
         return 0;
     }
 
-    if (openai_state_save_with_tmp(
+    if (llm_state_save_with_tmp(
             path,
             "",
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
+            LLM_ROLLBACK_SUCCEEDED)) {
         return 0;
     }
 
-    return openai_m116_read_state(path, 1);
+    return llm_m116_read_state(path, 1);
 }
 
-int openai_m116_bad_values_keep(
+int llm_m116_bad_values_keep(
     const char *path)
 {
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
+            LLM_ROLLBACK_SUCCEEDED)) {
         return 0;
     }
 
-    if (openai_state_save_to(
+    if (llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE + 1,
+            LLM_WORKFLOW_EXECUTE + 1,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
+            LLM_ROLLBACK_SUCCEEDED)) {
         return 0;
     }
 
-    return openai_m116_read_state(path, 1);
+    return llm_m116_read_state(path, 1);
 }
 
-int openai_m116_tmp_versions_clean(
+int llm_m116_tmp_versions_clean(
     const char *path)
 {
     const char *temporary_path =
@@ -90,31 +90,31 @@ int openai_m116_tmp_versions_clean(
     FILE *file;
     int index;
 
-    openai_state_purge_file(temporary_path);
+    llm_state_purge_file(temporary_path);
 
     for (index = 0; index < 3; ++index) {
         file = fopen(temporary_path, "w");
 
         if (file == NULL) {
-            openai_state_purge_file(temporary_path);
+            llm_state_purge_file(temporary_path);
             return 0;
         }
 
         if (fputs("stale\n", file) == EOF ||
             fclose(file) != 0) {
-            openai_state_purge_file(temporary_path);
+            llm_state_purge_file(temporary_path);
             return 0;
         }
     }
 
-    if (!openai_state_save_with_tmp(
+    if (!llm_state_save_with_tmp(
             path,
             temporary_path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
-        openai_state_purge_file(temporary_path);
+            LLM_ROLLBACK_SUCCEEDED)) {
+        llm_state_purge_file(temporary_path);
         return 0;
     }
 
@@ -122,9 +122,9 @@ int openai_m116_tmp_versions_clean(
 
     if (file != NULL) {
         (void)fclose(file);
-        openai_state_purge_file(temporary_path);
+        llm_state_purge_file(temporary_path);
         return 0;
     }
 
-    return openai_m116_read_state(path, 1);
+    return llm_m116_read_state(path, 1);
 }

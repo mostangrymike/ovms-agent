@@ -1,31 +1,29 @@
 #include <stdio.h>
 #include <string.h>
 
-#define openai_git_refresh llm_git_refresh_base
-#define openai_git_status_text llm_git_status_text_base
-#define openai_git_diff_text llm_git_diff_text_base
-#define openai_git_changed_text llm_git_changed_text_base
-#define openai_git_context llm_git_context_base
-#define openai_git_compose llm_git_compose_base
-#define openai_show_git_status llm_show_git_status_base
-#define openai_show_git_diff llm_show_git_diff_base
-#define openai_show_git_changed llm_show_git_changed_base
-#define openai_show_git_context llm_show_git_context_base
-#define openai_git_refresh_cmd llm_git_refresh_cmd_base
-#define openai_test_git_data llm_test_git_data
+#define llm_git_refresh llm_git_refresh_base
+#define llm_git_status_text llm_git_status_text_base
+#define llm_git_diff_text llm_git_diff_text_base
+#define llm_git_changed_text llm_git_changed_text_base
+#define llm_git_context llm_git_context_base
+#define llm_git_compose llm_git_compose_base
+#define llm_show_git_status llm_show_git_status_base
+#define llm_show_git_diff llm_show_git_diff_base
+#define llm_show_git_changed llm_show_git_changed_base
+#define llm_show_git_context llm_show_git_context_base
+#define llm_git_refresh_cmd llm_git_refresh_cmd_base
 #include "LLM_GIT_CONTEXT_M262_CORE.C"
-#undef openai_test_git_data
-#undef openai_git_refresh
-#undef openai_git_status_text
-#undef openai_git_diff_text
-#undef openai_git_changed_text
-#undef openai_git_context
-#undef openai_git_compose
-#undef openai_show_git_status
-#undef openai_show_git_diff
-#undef openai_show_git_changed
-#undef openai_show_git_context
-#undef openai_git_refresh_cmd
+#undef llm_git_refresh
+#undef llm_git_status_text
+#undef llm_git_diff_text
+#undef llm_git_changed_text
+#undef llm_git_context
+#undef llm_git_compose
+#undef llm_show_git_status
+#undef llm_show_git_diff
+#undef llm_show_git_changed
+#undef llm_show_git_context
+#undef llm_git_refresh_cmd
 
 #define M263_GIT_HEAD_TMP "OVMS_AGENT_GIT_HEAD.TMP"
 #define M263_GIT_RMS_TMP  "OVMS_AGENT_GIT_RMS.TMP"
@@ -73,7 +71,7 @@ int llm_git_rms_copy(const char *path, const char *target)
         return 0;
     }
 
-    openai_git_remove(target);
+    llm_git_remove(target);
     output = fopen(target, "w");
     if (output == NULL) {
         (void)fclose(input);
@@ -99,7 +97,7 @@ int llm_git_rms_copy(const char *path, const char *target)
     }
 
     if (!ok) {
-        openai_git_remove(target);
+        llm_git_remove(target);
     }
 
     return ok;
@@ -109,7 +107,7 @@ static int m263_git_empty_copy(const char *target)
 {
     FILE *output;
 
-    openai_git_remove(target);
+    llm_git_remove(target);
     output = fopen(target, "w");
     if (output == NULL) {
         return 0;
@@ -127,8 +125,8 @@ static int m263_git_head_copy(const char *path)
         return 0;
     }
 
-    openai_git_remove(M263_GIT_ONE_COM);
-    openai_git_remove(M263_GIT_HEAD_TMP);
+    llm_git_remove(M263_GIT_ONE_COM);
+    llm_git_remove(M263_GIT_HEAD_TMP);
 
     command = fopen(M263_GIT_ONE_COM, "w");
     if (command == NULL) {
@@ -142,17 +140,17 @@ static int m263_git_head_copy(const char *path)
             "$ EXIT 1\n",
             M263_GIT_HEAD_TMP, path) < 0 ||
         fclose(command) != 0) {
-        openai_git_remove(M263_GIT_ONE_COM);
+        llm_git_remove(M263_GIT_ONE_COM);
         return 0;
     }
 
     (void)snprintf(dcl, sizeof(dcl), "@%s", M263_GIT_ONE_COM);
     (void)system(dcl);
-    openai_git_remove(M263_GIT_ONE_COM);
+    llm_git_remove(M263_GIT_ONE_COM);
 
     check = fopen(M263_GIT_HEAD_TMP, "r");
     if (check == NULL) {
-        openai_git_remove(M263_GIT_HEAD_TMP);
+        llm_git_remove(M263_GIT_HEAD_TMP);
         return 0;
     }
     (void)fclose(check);
@@ -165,7 +163,7 @@ static int m263_git_one_diff(const char *path,
 {
     FILE *command;
     char dcl[256];
-    char captured[OPENAI_GIT_TEXT_MAX];
+    char captured[LLM_GIT_TEXT_MAX];
     int truncated;
     int written;
 
@@ -183,16 +181,16 @@ static int m263_git_one_diff(const char *path,
     }
 
     if (!m263_git_head_copy(path)) {
-        openai_git_remove(M263_GIT_RMS_TMP);
+        llm_git_remove(M263_GIT_RMS_TMP);
         return 0;
     }
 
-    openai_git_remove(M263_GIT_ONE_COM);
-    openai_git_remove(M263_GIT_ONE_TMP);
+    llm_git_remove(M263_GIT_ONE_COM);
+    llm_git_remove(M263_GIT_ONE_TMP);
     command = fopen(M263_GIT_ONE_COM, "w");
     if (command == NULL) {
-        openai_git_remove(M263_GIT_HEAD_TMP);
-        openai_git_remove(M263_GIT_RMS_TMP);
+        llm_git_remove(M263_GIT_HEAD_TMP);
+        llm_git_remove(M263_GIT_RMS_TMP);
         return 0;
     }
 
@@ -205,23 +203,23 @@ static int m263_git_one_diff(const char *path,
             M263_GIT_HEAD_TMP,
             M263_GIT_RMS_TMP) < 0 ||
         fclose(command) != 0) {
-        openai_git_remove(M263_GIT_ONE_COM);
-        openai_git_remove(M263_GIT_HEAD_TMP);
-        openai_git_remove(M263_GIT_RMS_TMP);
+        llm_git_remove(M263_GIT_ONE_COM);
+        llm_git_remove(M263_GIT_HEAD_TMP);
+        llm_git_remove(M263_GIT_RMS_TMP);
         return 0;
     }
 
     (void)snprintf(dcl, sizeof(dcl), "@%s", M263_GIT_ONE_COM);
     (void)system(dcl);
-    openai_git_remove(M263_GIT_ONE_COM);
+    llm_git_remove(M263_GIT_ONE_COM);
 
     truncated = 0;
     captured[0] = '\0';
-    if (!openai_git_read(M263_GIT_ONE_TMP,
+    if (!llm_git_read(M263_GIT_ONE_TMP,
                          captured, sizeof(captured), &truncated)) {
-        openai_git_remove(M263_GIT_ONE_TMP);
-        openai_git_remove(M263_GIT_HEAD_TMP);
-        openai_git_remove(M263_GIT_RMS_TMP);
+        llm_git_remove(M263_GIT_ONE_TMP);
+        llm_git_remove(M263_GIT_HEAD_TMP);
+        llm_git_remove(M263_GIT_RMS_TMP);
         return 0;
     }
 
@@ -230,12 +228,12 @@ static int m263_git_one_diff(const char *path,
         path,
         captured[0] != '\0' ? captured : "(no difference)");
 
-    openai_git_remove(M263_GIT_ONE_TMP);
-    openai_git_remove(M263_GIT_HEAD_TMP);
-    openai_git_remove(M263_GIT_RMS_TMP);
+    llm_git_remove(M263_GIT_ONE_TMP);
+    llm_git_remove(M263_GIT_HEAD_TMP);
+    llm_git_remove(M263_GIT_RMS_TMP);
 
     if (truncated) {
-        openai_git_truncated = 1;
+        llm_git_truncated = 1;
     }
 
     return written >= 0 && (size_t)written < output_size;
@@ -282,19 +280,19 @@ static int m263_git_rms_diff(void)
 {
     const char *cursor;
     char path[512];
-    char one[OPENAI_GIT_TEXT_MAX];
+    char one[LLM_GIT_TEXT_MAX];
     char kind;
     size_t used;
     int found;
 
-    if (!openai_git_status_ok) {
+    if (!llm_git_status_ok) {
         return 0;
     }
 
-    openai_git_diff[0] = '\0';
+    llm_git_diff[0] = '\0';
     used = 0U;
     found = 0;
-    cursor = openai_git_status;
+    cursor = llm_git_status;
 
     while (*cursor != '\0') {
         const char *next;
@@ -305,21 +303,21 @@ static int m263_git_rms_diff(void)
             m263_git_one_diff(path, kind == 'D', one, sizeof(one))) {
             one_len = strlen(one);
             if (used != 0U) {
-                if (used + 2U >= sizeof(openai_git_diff)) {
-                    openai_git_truncated = 1;
+                if (used + 2U >= sizeof(llm_git_diff)) {
+                    llm_git_truncated = 1;
                     break;
                 }
-                openai_git_diff[used++] = '\n';
-                openai_git_diff[used++] = '\n';
-                openai_git_diff[used] = '\0';
+                llm_git_diff[used++] = '\n';
+                llm_git_diff[used++] = '\n';
+                llm_git_diff[used] = '\0';
             }
-            if (one_len >= sizeof(openai_git_diff) - used) {
-                one_len = sizeof(openai_git_diff) - used - 1U;
-                openai_git_truncated = 1;
+            if (one_len >= sizeof(llm_git_diff) - used) {
+                one_len = sizeof(llm_git_diff) - used - 1U;
+                llm_git_truncated = 1;
             }
-            (void)memcpy(openai_git_diff + used, one, one_len);
+            (void)memcpy(llm_git_diff + used, one, one_len);
             used += one_len;
-            openai_git_diff[used] = '\0';
+            llm_git_diff[used] = '\0';
             found = 1;
         }
 
@@ -329,42 +327,42 @@ static int m263_git_rms_diff(void)
         cursor = next + 1;
     }
 
-    openai_git_diff_ok = 1;
-    return found || openai_git_status[0] == '\0';
+    llm_git_diff_ok = 1;
+    return found || llm_git_status[0] == '\0';
 }
 
 int llm_git_refresh(const agent_state *state)
 {
     (void)state;
 
-    if (openai_git_test_status != NULL || openai_git_test_diff != NULL) {
+    if (llm_git_test_status != NULL || llm_git_test_diff != NULL) {
         return llm_git_refresh_base(state);
     }
 
-    openai_git_status[0] = '\0';
-    openai_git_diff[0] = '\0';
-    openai_git_status_ok = 0;
-    openai_git_diff_ok = 0;
-    openai_git_truncated = 0;
+    llm_git_status[0] = '\0';
+    llm_git_diff[0] = '\0';
+    llm_git_status_ok = 0;
+    llm_git_diff_ok = 0;
+    llm_git_truncated = 0;
 
-    openai_git_status_ok = openai_git_capture_one(
+    llm_git_status_ok = llm_git_capture_one(
         "status",
-        OPENAI_GIT_STATUS_FILE,
-        openai_git_status,
-        sizeof(openai_git_status)
+        LLM_GIT_STATUS_FILE,
+        llm_git_status,
+        sizeof(llm_git_status)
     );
 
-    if (openai_git_status_ok) {
+    if (llm_git_status_ok) {
         (void)m263_git_rms_diff();
     }
 
-    openai_git_loaded = 1;
-    return openai_git_status_ok;
+    llm_git_loaded = 1;
+    return llm_git_status_ok;
 }
 
 static int m263_git_prepare(const agent_state *state)
 {
-    if (!openai_git_loaded) {
+    if (!llm_git_loaded) {
         return llm_git_refresh(state);
     }
     return 1;
@@ -450,6 +448,6 @@ void llm_git_refresh_cmd(const agent_state *state)
     }
     (void)printf(
         "Git context refreshed: %u changed path%s.\n",
-        openai_git_changed_count(),
-        openai_git_changed_count() == 1U ? "" : "s");
+        llm_git_changed_count(),
+        llm_git_changed_count() == 1U ? "" : "s");
 }

@@ -121,7 +121,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_parity_text(output, sizeof(output)) ||
+    if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Git state context:     available") == NULL ||
         strstr(output, "Git diff awareness:    available") == NULL) {
         (void)puts("M234 failed: parity status.");

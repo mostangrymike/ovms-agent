@@ -5,7 +5,7 @@ static int execute_read_text_block(
     size_t destination_size,
     int allow_empty)
 {
-    char block_line[OPENAI_EXECUTE_LINE_SIZE];
+    char block_line[LLM_EXECUTE_LINE_SIZE];
     size_t used;
     size_t line_length;
     size_t marker_length;

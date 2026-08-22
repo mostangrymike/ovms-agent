@@ -1,6 +1,6 @@
-void openai_plan_approval_report(void);
+void llm_plan_approval_report(void);
 
-static int openai_m139_file_exists(
+static int llm_m139_file_exists(
     const char *path)
 {
     FILE *file;
@@ -19,22 +19,22 @@ static int openai_m139_file_exists(
     return 1;
 }
 
-int openai_plan_clear_files(
+int llm_plan_clear_files(
     const char *plan_path)
 {
-    char checksum_path[OPENAI_PLAN_PATH_SIZE + 16];
-    char temp_path[OPENAI_PLAN_PATH_SIZE + 16];
-    char old_path[OPENAI_PLAN_PATH_SIZE + 16];
+    char checksum_path[LLM_PLAN_PATH_SIZE + 16];
+    char temp_path[LLM_PLAN_PATH_SIZE + 16];
+    char old_path[LLM_PLAN_PATH_SIZE + 16];
     int count;
     int success;
 
     if (plan_path == NULL ||
         *plan_path == '\0' ||
-        !openai_plan_checksum_path(
+        !llm_plan_checksum_path(
             plan_path,
             checksum_path,
             sizeof(checksum_path)) ||
-        !openai_plan_checksum_temp(
+        !llm_plan_checksum_temp(
             plan_path,
             temp_path,
             sizeof(temp_path))) {
@@ -68,39 +68,39 @@ int openai_plan_clear_files(
     while (remove(old_path) == 0) {
     }
 
-    if (strcmp(plan_path, OPENAI_PLAN_FILE) == 0) {
+    if (strcmp(plan_path, LLM_PLAN_FILE) == 0) {
         while (remove("OVMS_AGENT_PLAN_SAVE_OLD.TXT") == 0) {
         }
         while (remove("OVMS_AGENT_PLAN_SAVE_OLD.CHK") == 0) {
         }
 
-        openai_plan_approval_clear();
+        llm_plan_approval_clear();
     }
 
     return success;
 }
 
-void openai_plan_show(void)
+void llm_plan_show(void)
 {
-    if (!openai_m139_file_exists(
-            OPENAI_PLAN_FILE)) {
+    if (!llm_m139_file_exists(
+            LLM_PLAN_FILE)) {
         (void)puts(
             "No saved implementation plan is available.");
         return;
     }
 
-    if (!openai_plan_checksum_valid(
-            OPENAI_PLAN_FILE)) {
+    if (!llm_plan_checksum_valid(
+            LLM_PLAN_FILE)) {
         (void)puts(
             "Saved implementation plan failed integrity validation.");
         return;
     }
 
-    openai_plan_show_legacy();
-    openai_plan_approval_report();
+    llm_plan_show_legacy();
+    llm_plan_approval_report();
 }
 
-void openai_plan_clear(void)
+void llm_plan_clear(void)
 {
     char answer[32];
 
@@ -120,11 +120,11 @@ void openai_plan_clear(void)
         return;
     }
 
-    if (!openai_plan_clear_files(
-            OPENAI_PLAN_FILE)) {
+    if (!llm_plan_clear_files(
+            LLM_PLAN_FILE)) {
         (void)printf(
             "Unable to remove %s and its checksum artifacts.\n",
-            OPENAI_PLAN_FILE);
+            LLM_PLAN_FILE);
         return;
     }
 

@@ -31,7 +31,7 @@ int main(void)
         "events|sse|https://events.example.test/mcp";
 
     if (!require_true(
-            openai_mcp_call_text(
+            llm_mcp_call_text(
                 config,
                 "docs search {\\\"query\\\":\\\"RMS\\\"}",
                 output, sizeof(output)),
@@ -49,7 +49,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_mcp_call_text(
+            llm_mcp_call_text(
                 config, "ISSUES get_issue 42",
                 output, sizeof(output)) &&
             strstr(output, "guarded HTTP transport") != NULL,
@@ -58,7 +58,7 @@ int main(void)
     }
 
     if (!require_true(
-            openai_mcp_call_text(
+            llm_mcp_call_text(
                 config, "events subscribe",
                 output, sizeof(output)) &&
             strstr(output, "guarded SSE transport") != NULL &&
@@ -68,14 +68,14 @@ int main(void)
     }
 
     if (!require_true(
-            !openai_mcp_call_text(
+            !llm_mcp_call_text(
                 config, "missing search x", output, sizeof(output)),
             "unknown server rejection")) {
         return 1;
     }
 
     if (!require_true(
-            !openai_mcp_call_text(
+            !llm_mcp_call_text(
                 config, "docs bad/tool x", output, sizeof(output)),
             "unsafe tool-name rejection")) {
         return 1;

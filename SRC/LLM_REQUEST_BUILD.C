@@ -12,11 +12,11 @@ int write_build_initial_request(
     FILE *file;
     int success;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
 
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }
@@ -61,11 +61,11 @@ int write_build_followup_request(
     FILE *file;
     int success;
 
-    file = fopen(OPENAI_REQUEST_FILE, "w");
+    file = fopen(LLM_REQUEST_FILE, "w");
 
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
-                     OPENAI_REQUEST_FILE,
+                     LLM_REQUEST_FILE,
                      strerror(errno));
         return 0;
     }

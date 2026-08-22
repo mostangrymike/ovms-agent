@@ -9,19 +9,19 @@
 #include "LLM_PLAN.H"
 #include "project.h"
 
-#define OPENAI_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
-#define OPENAI_EXECUTE_LINE_SIZE 4096U
-#define OPENAI_EXECUTE_PATH_SIZE 256U
-#define OPENAI_EXECUTE_TEXT_SIZE 4096U
-#define OPENAI_EXECUTE_MAX_OPERATIONS 32U
+#define LLM_PLAN_FILE "OVMS_AGENT_PLAN.TXT"
+#define LLM_EXECUTE_LINE_SIZE 4096U
+#define LLM_EXECUTE_PATH_SIZE 256U
+#define LLM_EXECUTE_TEXT_SIZE 4096U
+#define LLM_EXECUTE_MAX_OPERATIONS 32U
 
-typedef struct openai_saved_operation {
-    char path[OPENAI_EXECUTE_PATH_SIZE];
-    char old_text[OPENAI_EXECUTE_TEXT_SIZE];
-    char new_text[OPENAI_EXECUTE_TEXT_SIZE];
+typedef struct llm_saved_operation {
+    char path[LLM_EXECUTE_PATH_SIZE];
+    char old_text[LLM_EXECUTE_TEXT_SIZE];
+    char new_text[LLM_EXECUTE_TEXT_SIZE];
     int is_block;
     int is_create;
-} openai_saved_operation;
+} llm_saved_operation;
 
 static int execute_operation_marker(
     const char *line,
@@ -46,7 +46,7 @@ static int execute_operation_marker(
            memcmp(line, marker, marker_length) == 0;
 }
 
-int openai_execute_count_ops(
+int llm_execute_count_ops(
     const char *plan_text,
     unsigned int *operation_count_out)
 {
@@ -96,7 +96,7 @@ int openai_execute_count_ops(
                 ++operation_count;
 
                 if (operation_count >
-                    OPENAI_EXECUTE_MAX_OPERATIONS) {
+                    LLM_EXECUTE_MAX_OPERATIONS) {
                     return 0;
                 }
 
@@ -154,13 +154,13 @@ static int execute_copy_value(char *destination,
 
 static int execute_parse_operations(
     const char *path,
-    openai_saved_operation *operations,
+    llm_saved_operation *operations,
     unsigned int operation_capacity,
     unsigned int *operation_count_out)
 {
     FILE *file;
-    char line[OPENAI_EXECUTE_LINE_SIZE];
-    openai_saved_operation *operation;
+    char line[LLM_EXECUTE_LINE_SIZE];
+    llm_saved_operation *operation;
     unsigned int operation_count;
     unsigned int declared_operation_count;
     int saw_declared_count;
@@ -335,7 +335,7 @@ static int execute_parse_operations(
 #include "LLM_EXECUTE_VALIDATE.INC"
 
 static char *execute_build_replacement(
-    const openai_saved_operation *operation)
+    const llm_saved_operation *operation)
 {
     char *content;
     char *match;
@@ -347,7 +347,7 @@ static char *execute_build_replacement(
     size_t content_length;
     size_t result_length;
 
-    content = openai_read_text_file(operation->path);
+    content = llm_read_text_file(operation->path);
 
     if (content == NULL ||
         operation->old_text[0] == '\0') {
@@ -429,7 +429,7 @@ static char *execute_build_replacement(
 
 static int execute_stage_operations(
     edit_txn *transaction,
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     unsigned int index;
@@ -487,11 +487,11 @@ static int execute_mark_consumed(void)
 {
     FILE *input;
     FILE *output;
-    char line[OPENAI_EXECUTE_LINE_SIZE];
+    char line[LLM_EXECUTE_LINE_SIZE];
     int replaced;
     int success;
 
-    input = fopen(OPENAI_PLAN_FILE, "r");
+    input = fopen(LLM_PLAN_FILE, "r");
 
     if (input == NULL) {
         return 0;
@@ -534,14 +534,14 @@ static int execute_mark_consumed(void)
         return 0;
     }
 
-    if (remove(OPENAI_PLAN_FILE) != 0) {
+    if (remove(LLM_PLAN_FILE) != 0) {
         (void)remove("OVMS_AGENT_PLAN_NEW.TXT");
         return 0;
     }
 
     if (rename("OVMS_AGENT_PLAN_NEW.TXT",
-               OPENAI_PLAN_FILE) != 0) {
-        (void)printf("Warning: could not rename OVMS_AGENT_PLAN_NEW.TXT to %s: %s\n", OPENAI_PLAN_FILE, strerror(errno));
+               LLM_PLAN_FILE) != 0) {
+        (void)printf("Warning: could not rename OVMS_AGENT_PLAN_NEW.TXT to %s: %s\n", LLM_PLAN_FILE, strerror(errno));
         return 0;
     }
     return 1;
@@ -551,7 +551,7 @@ static int execute_mark_consumed(void)
 #include "LLM_EXECUTE_M108_WRITERS.INC"
 static int execute_save_ops_to(
     const char *path,
-    const openai_saved_operation *operations,
+    const llm_saved_operation *operations,
     unsigned int operation_count)
 {
     FILE *f;
@@ -634,9 +634,9 @@ static int execute_save_ops_to(
 #include "LLM_EXEC_M137_VALIDATE.INC"
 #include "LLM_EXEC_M150B_VALIDATE.INC"
 #include "LLM_EXEC_M150D_VALIDATE.INC"
-void openai_plan_execute(agent_state *state)
+void llm_plan_execute(agent_state *state)
 {
-    openai_saved_operation *operations;
+    llm_saved_operation *operations;
     edit_txn *transaction;
     char *build_output;
     unsigned int operation_count;
@@ -645,7 +645,7 @@ void openai_plan_execute(agent_state *state)
     int write_ok;
     int rollback_ok;
 
-    openai_log_event("AGENT/EXECUTE", "start", 0);
+    llm_log_event("AGENT/EXECUTE", "start", 0);
 
     if (state == NULL ||
         state->project_root == NULL ||
@@ -655,9 +655,9 @@ void openai_plan_execute(agent_state *state)
     }
 
     if (!execute_plan_recover()) {
-        openai_plan_recovery_sync(OPENAI_PLAN_FILE);
+        llm_plan_recovery_sync(LLM_PLAN_FILE);
         (void)puts("Unable to recover plan-consumption artifacts.");
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "plan_recovery_failed",
             0
@@ -665,13 +665,13 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
-    openai_plan_recovery_sync(OPENAI_PLAN_FILE);
+    llm_plan_recovery_sync(LLM_PLAN_FILE);
 
-    if (!openai_plan_is_current(1)) {
+    if (!llm_plan_is_current(1)) {
         (void)puts(
             "Saved plan execution refused. Run AGENT/PLAN again."
         );
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "plan_invalid",
             0
@@ -679,8 +679,8 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
-    operations = (openai_saved_operation *)calloc(
-        OPENAI_EXECUTE_MAX_OPERATIONS,
+    operations = (llm_saved_operation *)calloc(
+        LLM_EXECUTE_MAX_OPERATIONS,
         sizeof(*operations)
     );
 
@@ -695,7 +695,7 @@ void openai_plan_execute(agent_state *state)
         );
         free(operations);
         free(transaction);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "allocation_failed",
             0
@@ -706,9 +706,9 @@ void openai_plan_execute(agent_state *state)
     operation_count = 0U;
 
     if (!execute_parse_operations(
-            OPENAI_PLAN_FILE,
+            LLM_PLAN_FILE,
             operations,
-            OPENAI_EXECUTE_MAX_OPERATIONS,
+            LLM_EXECUTE_MAX_OPERATIONS,
             &operation_count)) {
         (void)puts(
             "Saved plan execution refused because no deterministic "
@@ -716,7 +716,7 @@ void openai_plan_execute(agent_state *state)
         );
         free(operations);
         free(transaction);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "operation_invalid",
             0
@@ -745,7 +745,7 @@ void openai_plan_execute(agent_state *state)
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "stage_failed",
             0
@@ -753,8 +753,8 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
-    if (!openai_plan_approval_valid(OPENAI_PLAN_FILE)) {
-        if (openai_approval_invalidated) {
+    if (!llm_plan_approval_valid(LLM_PLAN_FILE)) {
+        if (llm_approval_invalidated) {
             (void)puts(
                 "Saved plan approval was invalidated; run AGENT/APPROVE again.");
         } else {
@@ -764,7 +764,7 @@ void openai_plan_execute(agent_state *state)
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "approval_required",
             0
@@ -773,7 +773,7 @@ void openai_plan_execute(agent_state *state)
     }
 
     /* Approval consumed before first project write. */
-    openai_plan_approval_consume();
+    llm_plan_approval_consume();
 
     (void)printf(
         "Executing %u saved operations as one transaction.\n",
@@ -791,7 +791,7 @@ void openai_plan_execute(agent_state *state)
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "write_failed",
             rollback_ok
@@ -799,7 +799,7 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
-    openai_log_event(
+    llm_log_event(
         "AGENT/EXECUTE",
         "transaction_written",
         (int)operation_count
@@ -820,7 +820,7 @@ void openai_plan_execute(agent_state *state)
     );
 
     if ((build_status & 1) == 0) {
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "build_failure",
             build_status
@@ -847,7 +847,7 @@ void openai_plan_execute(agent_state *state)
             rollback_ok ? "PASS" : "FAIL"
         );
 
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             rollback_ok ?
                 "rollback_succeeded" :
@@ -855,11 +855,11 @@ void openai_plan_execute(agent_state *state)
             rollback_ok
         );
 
-        openai_last_build_known = 1;
-        openai_last_build_status = build_status;
-        openai_last_rollback = rollback_ok ? OPENAI_ROLLBACK_SUCCEEDED : OPENAI_ROLLBACK_FAILED;
-        openai_last_workflow = OPENAI_WORKFLOW_EXECUTE;
-        openai_state_save();
+        llm_last_build_known = 1;
+        llm_last_build_status = build_status;
+        llm_last_rollback = rollback_ok ? LLM_ROLLBACK_SUCCEEDED : LLM_ROLLBACK_FAILED;
+        llm_last_workflow = LLM_WORKFLOW_EXECUTE;
+        llm_state_save();
 
         if (build_output != NULL) {
             (void)puts("");
@@ -882,7 +882,7 @@ void openai_plan_execute(agent_state *state)
         edit_txn_dispose(transaction);
         free(transaction);
         free(operations);
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "commit_failed",
             0
@@ -890,16 +890,16 @@ void openai_plan_execute(agent_state *state)
         return;
     }
 
-    openai_log_event(
+    llm_log_event(
         "AGENT/EXECUTE",
         "build_success",
         build_status
     );
 
-    openai_last_build_known = 1;
-    openai_last_build_status = build_status;
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
-    openai_state_save();
+    llm_last_build_known = 1;
+    llm_last_build_status = build_status;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
+    llm_state_save();
 
     if (build_output != NULL) {
         (void)puts("");
@@ -911,11 +911,11 @@ void openai_plan_execute(agent_state *state)
     free(transaction);
     free(operations);
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
     if (execute_mark_consumed_safe()) {
         (void)puts("Saved plan marked consumed.");
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "plan_consumed",
             1
@@ -924,7 +924,7 @@ void openai_plan_execute(agent_state *state)
         (void)puts(
             "Warning: changes committed, but plan could not be marked consumed."
         );
-        openai_log_event(
+        llm_log_event(
             "AGENT/EXECUTE",
             "consume_failed",
             0

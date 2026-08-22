@@ -11,10 +11,10 @@ const char *llm_prompt_create(void);
  * supervised-repair guard file-local and intercept only replacement calls
  * made by that loop.
  */
-#if defined(OPENAI_INTERNAL_H) || defined(LLM_INTERNAL_H)
+#if defined(LLM_PROMPTS_H) || defined(LLM_INTERNAL_H)
 #include "LLM_GOAL_GUARD.INC"
 
-static openai_replace_result llm_guard_rep_text(
+static llm_replace_result llm_guard_rep_text(
     const char *goal_text,
     int enforce,
     agent_state *state,
@@ -35,7 +35,7 @@ static openai_replace_result llm_guard_rep_text(
         path = extract_string_argument(arguments, "path");
         if (display_path != NULL) {
             *display_path = path != NULL ?
-                openai_duplicate_text(path) : NULL;
+                llm_duplicate_text(path) : NULL;
         }
         free(path);
 
@@ -44,13 +44,13 @@ static openai_replace_result llm_guard_rep_text(
             reason[0] != '\0' ? reason :
                 "the proposed replacement removes a required goal term."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     return execute_replace_text_tool(state, arguments, display_path);
 }
 
-static openai_replace_result llm_guard_rep_lines(
+static llm_replace_result llm_guard_rep_lines(
     const char *goal_text,
     int enforce,
     agent_state *state,
@@ -71,7 +71,7 @@ static openai_replace_result llm_guard_rep_lines(
         path = extract_string_argument(arguments, "path");
         if (display_path != NULL) {
             *display_path = path != NULL ?
-                openai_duplicate_text(path) : NULL;
+                llm_duplicate_text(path) : NULL;
         }
         free(path);
 
@@ -80,7 +80,7 @@ static openai_replace_result llm_guard_rep_lines(
             reason[0] != '\0' ? reason :
                 "the proposed replacement removes a required goal term."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     return execute_replace_lines_tool(state, arguments, display_path);

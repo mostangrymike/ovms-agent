@@ -1,13 +1,13 @@
 #include "llm_internal.h"
 #include "command_internal.h"
 
-#define OPENAI_TRANSCRIPT_FILE "OVMS_AGENT_TRANSCRIPT.DAT"
-#define OPENAI_TRANSCRIPT_PATH_MAX 256U
-#define OPENAI_TRANSCRIPT_MAX 256U
-#define OPENAI_TRANSCRIPT_LINE 1400U
-#define OPENAI_TRANSCRIPT_ARG 768U
+#define LLM_TRANSCRIPT_FILE "OVMS_AGENT_TRANSCRIPT.DAT"
+#define LLM_TRANSCRIPT_PATH_MAX 256U
+#define LLM_TRANSCRIPT_MAX 256U
+#define LLM_TRANSCRIPT_LINE 1400U
+#define LLM_TRANSCRIPT_ARG 768U
 
-typedef struct openai_transcript_rec {
+typedef struct llm_transcript_rec {
     char timestamp[32];
     char session[9];
     char kind[16];
@@ -15,47 +15,47 @@ typedef struct openai_transcript_rec {
     char effect[16];
     char policy[16];
     char status[16];
-    char arguments[OPENAI_TRANSCRIPT_ARG];
-} openai_transcript_rec;
+    char arguments[LLM_TRANSCRIPT_ARG];
+} llm_transcript_rec;
 
-typedef struct openai_run_tool {
+typedef struct llm_run_tool {
     const char *name;
     const char *effect;
     int minimum_policy;
     command_handler handler;
-} openai_run_tool;
+} llm_run_tool;
 
-#define OPENAI_TOOL_READ 0
-#define OPENAI_TOOL_WORK 1
-#define OPENAI_TOOL_FULL 2
+#define LLM_TOOL_READ 0
+#define LLM_TOOL_WORK 1
+#define LLM_TOOL_FULL 2
 
-static void openai_tx_mcp_cmd(agent_state *state, const char *arguments);
+static void llm_tx_mcp_cmd(agent_state *state, const char *arguments);
 
-static const openai_run_tool openai_run_tools[] = {
-    { "READ",      "read",    OPENAI_TOOL_READ, command_read },
-    { "SEARCH",    "read",    OPENAI_TOOL_READ, command_search },
-    { "GREP",      "read",    OPENAI_TOOL_READ, command_grep },
-    { "LIST",      "read",    OPENAI_TOOL_READ, command_list },
-    { "TREE",      "read",    OPENAI_TOOL_READ, command_tree },
-    { "GITSTATUS", "read",    OPENAI_TOOL_READ, command_gitstatus },
-    { "GITDIFF",   "read",    OPENAI_TOOL_READ, command_gitdiff },
-    { "EDIT",      "write",   OPENAI_TOOL_WORK, command_edit },
-    { "PATCH",     "write",   OPENAI_TOOL_WORK, command_patch },
-    { "BUILD",     "execute", OPENAI_TOOL_WORK, command_build },
-    { "RUN",       "execute", OPENAI_TOOL_FULL, command_run },
-    { "MCP",       "external", OPENAI_TOOL_FULL, openai_tx_mcp_cmd }
+static const llm_run_tool llm_run_tools[] = {
+    { "READ",      "read",    LLM_TOOL_READ, command_read },
+    { "SEARCH",    "read",    LLM_TOOL_READ, command_search },
+    { "GREP",      "read",    LLM_TOOL_READ, command_grep },
+    { "LIST",      "read",    LLM_TOOL_READ, command_list },
+    { "TREE",      "read",    LLM_TOOL_READ, command_tree },
+    { "GITSTATUS", "read",    LLM_TOOL_READ, command_gitstatus },
+    { "GITDIFF",   "read",    LLM_TOOL_READ, command_gitdiff },
+    { "EDIT",      "write",   LLM_TOOL_WORK, command_edit },
+    { "PATCH",     "write",   LLM_TOOL_WORK, command_patch },
+    { "BUILD",     "execute", LLM_TOOL_WORK, command_build },
+    { "RUN",       "execute", LLM_TOOL_FULL, command_run },
+    { "MCP",       "external", LLM_TOOL_FULL, llm_tx_mcp_cmd }
 };
 
-static void openai_tx_mcp_cmd(agent_state *state, const char *arguments)
+static void llm_tx_mcp_cmd(agent_state *state, const char *arguments)
 {
     (void)state;
-    openai_show_mcp_execute(arguments);
+    llm_show_mcp_execute(arguments);
 }
 
-static char openai_transcript_path[OPENAI_TRANSCRIPT_PATH_MAX] =
-    OPENAI_TRANSCRIPT_FILE;
+static char llm_transcript_path[LLM_TRANSCRIPT_PATH_MAX] =
+    LLM_TRANSCRIPT_FILE;
 
-static void openai_tx_now(char *output, size_t output_size)
+static void llm_tx_now(char *output, size_t output_size)
 {
     time_t now;
     struct tm *local;
@@ -77,7 +77,7 @@ static void openai_tx_now(char *output, size_t output_size)
     }
 }
 
-static void openai_tx_clean(const char *input,
+static void llm_tx_clean(const char *input,
                             char *output,
                             size_t output_size)
 {
@@ -115,7 +115,7 @@ static void openai_tx_clean(const char *input,
     output[used] = '\0';
 }
 
-static int openai_tx_equal_ci(const char *left,
+static int llm_tx_equal_ci(const char *left,
                               const char *right)
 {
     unsigned char a;
@@ -156,24 +156,24 @@ static int openai_tx_equal_ci(const char *left,
     return *left == '\0' && *right == '\0';
 }
 
-static int openai_tx_policy_level(void)
+static int llm_tx_policy_level(void)
 {
     const char *policy;
 
-    policy = openai_approval_name();
+    policy = llm_approval_name();
 
     if (strcmp(policy, "full") == 0) {
-        return OPENAI_TOOL_FULL;
+        return LLM_TOOL_FULL;
     }
 
     if (strcmp(policy, "workspace") == 0) {
-        return OPENAI_TOOL_WORK;
+        return LLM_TOOL_WORK;
     }
 
-    return OPENAI_TOOL_READ;
+    return LLM_TOOL_READ;
 }
 
-static int openai_tx_append(const char *kind,
+static int llm_tx_append(const char *kind,
                             const char *name,
                             const char *effect,
                             const char *status,
@@ -182,17 +182,17 @@ static int openai_tx_append(const char *kind,
     FILE *file;
     char timestamp[32];
     char session[9];
-    char clean_args[OPENAI_TRANSCRIPT_ARG];
+    char clean_args[LLM_TRANSCRIPT_ARG];
 
-    openai_tx_now(timestamp, sizeof(timestamp));
+    llm_tx_now(timestamp, sizeof(timestamp));
 
-    if (!openai_session_current_id(session)) {
+    if (!llm_session_current_id(session)) {
         (void)strcpy(session, "--------");
     }
 
-    openai_tx_clean(arguments, clean_args, sizeof(clean_args));
+    llm_tx_clean(arguments, clean_args, sizeof(clean_args));
 
-    file = fopen(openai_transcript_path, "a");
+    file = fopen(llm_transcript_path, "a");
 
     if (file == NULL) {
         return 0;
@@ -206,7 +206,7 @@ static int openai_tx_append(const char *kind,
             kind != NULL ? kind : "-",
             name != NULL ? name : "-",
             effect != NULL ? effect : "-",
-            openai_approval_name(),
+            llm_approval_name(),
             status != NULL ? status : "-",
             clean_args) < 0) {
         (void)fclose(file);
@@ -216,8 +216,8 @@ static int openai_tx_append(const char *kind,
     return fclose(file) == 0;
 }
 
-static int openai_tx_parse(char *line,
-                           openai_transcript_rec *record)
+static int llm_tx_parse(char *line,
+                           llm_transcript_rec *record)
 {
     char *field[8];
     char *position;
@@ -275,18 +275,18 @@ static int openai_tx_parse(char *line,
     return 1;
 }
 
-static unsigned int openai_tx_load(openai_transcript_rec *records,
+static unsigned int llm_tx_load(llm_transcript_rec *records,
                                    unsigned int capacity)
 {
     FILE *file;
-    char line[OPENAI_TRANSCRIPT_LINE];
+    char line[LLM_TRANSCRIPT_LINE];
     unsigned int count;
 
     if (records == NULL || capacity == 0U) {
         return 0U;
     }
 
-    file = fopen(openai_transcript_path, "r");
+    file = fopen(llm_transcript_path, "r");
 
     if (file == NULL) {
         return 0U;
@@ -295,9 +295,9 @@ static unsigned int openai_tx_load(openai_transcript_rec *records,
     count = 0U;
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        openai_transcript_rec parsed;
+        llm_transcript_rec parsed;
 
-        if (!openai_tx_parse(line, &parsed)) {
+        if (!llm_tx_parse(line, &parsed)) {
             continue;
         }
 
@@ -318,7 +318,7 @@ static unsigned int openai_tx_load(openai_transcript_rec *records,
     return count;
 }
 
-static int openai_tx_safe_path(const char *path)
+static int llm_tx_safe_path(const char *path)
 {
     const unsigned char *position;
 
@@ -355,7 +355,7 @@ static int openai_tx_safe_path(const char *path)
     return 1;
 }
 
-static int openai_tx_split(const char *arguments,
+static int llm_tx_split(const char *arguments,
                            char *first,
                            size_t first_size,
                            char *rest,
@@ -397,46 +397,46 @@ static int openai_tx_split(const char *arguments,
         ++position;
     }
 
-    openai_tx_clean(position, rest, rest_size);
+    llm_tx_clean(position, rest, rest_size);
     return 1;
 }
 
-static const openai_run_tool *openai_tx_find_tool(const char *name)
+static const llm_run_tool *llm_tx_find_tool(const char *name)
 {
     unsigned int index;
     unsigned int count;
 
     count = (unsigned int)(
-        sizeof(openai_run_tools) /
-        sizeof(openai_run_tools[0])
+        sizeof(llm_run_tools) /
+        sizeof(llm_run_tools[0])
     );
 
     for (index = 0U; index < count; ++index) {
-        if (openai_tx_equal_ci(name, openai_run_tools[index].name)) {
-            return &openai_run_tools[index];
+        if (llm_tx_equal_ci(name, llm_run_tools[index].name)) {
+            return &llm_run_tools[index];
         }
     }
 
     return NULL;
 }
 
-void openai_tx_model_call(const char *name,
+void llm_tx_model_call(const char *name,
                           const char *arguments)
 {
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "model_tool", name, "model", "requested", arguments
     );
 }
 
-void openai_tx_model_result(const char *name,
+void llm_tx_model_result(const char *name,
                             const char *status,
                             const char *output)
 {
-    char bounded[OPENAI_TRANSCRIPT_ARG];
+    char bounded[LLM_TRANSCRIPT_ARG];
 
-    openai_tx_clean(output, bounded, sizeof(bounded));
+    llm_tx_clean(output, bounded, sizeof(bounded));
 
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "model_tool",
         name,
         "model",
@@ -445,49 +445,49 @@ void openai_tx_model_result(const char *name,
     );
 }
 
-void openai_tx_loop_event(const char *name,
+void llm_tx_loop_event(const char *name,
                           const char *status)
 {
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "loop", name, "agent", status, ""
     );
 }
 
-int openai_tool_run(agent_state *state,
+int llm_tool_run(agent_state *state,
                     const char *arguments)
 {
-    const openai_run_tool *tool;
+    const llm_run_tool *tool;
     char name[32];
-    char rest[OPENAI_TRANSCRIPT_ARG];
+    char rest[LLM_TRANSCRIPT_ARG];
     int policy;
 
     if (state == NULL ||
-        !openai_tx_split(arguments, name, sizeof(name),
+        !llm_tx_split(arguments, name, sizeof(name),
                          rest, sizeof(rest))) {
         return 0;
     }
 
-    tool = openai_tx_find_tool(name);
+    tool = llm_tx_find_tool(name);
 
     if (tool == NULL) {
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", name, "unknown", "unknown", rest
         );
         return 0;
     }
 
-    policy = openai_tx_policy_level();
+    policy = llm_tx_policy_level();
 
     if (policy < tool->minimum_policy) {
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", tool->name, tool->effect, "denied", rest
         );
         return 0;
     }
 
-    if (tool->minimum_policy >= OPENAI_TOOL_WORK &&
+    if (tool->minimum_policy >= LLM_TOOL_WORK &&
         !state->write_enabled) {
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", tool->name, tool->effect, "write-gate", rest
         );
         return 0;
@@ -495,13 +495,13 @@ int openai_tool_run(agent_state *state,
 
     if (strcmp(tool->name, "RUN") == 0 &&
         !state->dcl_enabled) {
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", tool->name, tool->effect, "dcl-gate", rest
         );
         return 0;
     }
 
-    if (!openai_tx_append(
+    if (!llm_tx_append(
             "tool", tool->name, tool->effect, "dispatched", rest)) {
         return 0;
     }
@@ -510,10 +510,10 @@ int openai_tool_run(agent_state *state,
     return 1;
 }
 
-void openai_tool_run_cmd(agent_state *state,
+void llm_tool_run_cmd(agent_state *state,
                          const char *arguments)
 {
-    if (!openai_tool_run(state, arguments)) {
+    if (!llm_tool_run(state, arguments)) {
         (void)puts(
             "AGENT/TOOL/RUN refused or invalid. "
             "Use AGENT/TOOLS for supported capabilities."
@@ -521,10 +521,10 @@ void openai_tool_run_cmd(agent_state *state,
     }
 }
 
-int openai_tool_last_text(char *output,
+int llm_tool_last_text(char *output,
                           size_t output_size)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     unsigned int count;
     int index;
     int written;
@@ -533,7 +533,7 @@ int openai_tool_last_text(char *output,
         return 0;
     }
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
 
     for (index = (int)count - 1; index >= 0; --index) {
         if (strcmp(records[index].kind, "tool") == 0 ||
@@ -573,10 +573,10 @@ int openai_tool_last_text(char *output,
     return written >= 0 && (size_t)written < output_size;
 }
 
-int openai_tool_hist_text(char *output,
+int llm_tool_hist_text(char *output,
                           size_t output_size)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     unsigned int count;
     unsigned int shown;
     int index;
@@ -587,7 +587,7 @@ int openai_tool_hist_text(char *output,
         return 0;
     }
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
 
     written = snprintf(
         output, output_size,
@@ -641,11 +641,11 @@ int openai_tool_hist_text(char *output,
            (size_t)written < output_size - used;
 }
 
-void openai_show_tool_last(void)
+void llm_show_tool_last(void)
 {
     char output[4096];
 
-    if (!openai_tool_last_text(output, sizeof(output))) {
+    if (!llm_tool_last_text(output, sizeof(output))) {
         (void)puts("Unable to show last tool call.");
         return;
     }
@@ -653,11 +653,11 @@ void openai_show_tool_last(void)
     (void)fputs(output, stdout);
 }
 
-void openai_show_tool_hist(void)
+void llm_show_tool_hist(void)
 {
     char output[16384];
 
-    if (!openai_tool_hist_text(output, sizeof(output))) {
+    if (!llm_tool_hist_text(output, sizeof(output))) {
         (void)puts("Unable to show tool history.");
         return;
     }
@@ -665,7 +665,7 @@ void openai_show_tool_hist(void)
     (void)fputs(output, stdout);
 }
 
-int openai_tool_clear(const char *arguments)
+int llm_tool_clear(const char *arguments)
 {
     const char *required;
     const char *value;
@@ -681,15 +681,15 @@ int openai_tool_clear(const char *arguments)
         return 0;
     }
 
-    while (remove(openai_transcript_path) == 0) {
+    while (remove(llm_transcript_path) == 0) {
     }
 
     return 1;
 }
 
-void openai_tool_clear_cmd(const char *arguments)
+void llm_tool_clear_cmd(const char *arguments)
 {
-    if (!openai_tool_clear(arguments)) {
+    if (!llm_tool_clear(arguments)) {
         (void)puts(
             "Usage: AGENT/TOOL/CLEAR CLEAR TOOL HISTORY"
         );
@@ -700,28 +700,28 @@ void openai_tool_clear_cmd(const char *arguments)
 }
 
 
-static int openai_tx_is_result(const openai_transcript_rec *record)
+static int llm_tx_is_result(const llm_transcript_rec *record)
 {
     if (record == NULL) return 0;
-    return openai_tx_equal_ci(record->kind, "model_tool") &&
+    return llm_tx_equal_ci(record->kind, "model_tool") &&
            strncmp(record->arguments, "TOOL RESULT", 11U) == 0;
 }
 
-int openai_session_results_text(const char *arguments,
+int llm_session_results_text(const char *arguments,
                                 char *output,
                                 size_t output_size)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     char session[9];
     unsigned int count, index, shown;
     size_t used;
     int written;
 
     if (output == NULL || output_size == 0U) return 0;
-    openai_tx_clean(arguments, session, sizeof(session));
+    llm_tx_clean(arguments, session, sizeof(session));
     if (strlen(session) != 8U) return 0;
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
     written = snprintf(
         output, output_size,
         "OVMS Agent normalized session results\n"
@@ -733,8 +733,8 @@ int openai_session_results_text(const char *arguments,
     shown = 0U;
 
     for (index = 0U; index < count; ++index) {
-        if (!openai_tx_equal_ci(records[index].session, session) ||
-            !openai_tx_is_result(&records[index])) continue;
+        if (!llm_tx_equal_ci(records[index].session, session) ||
+            !llm_tx_is_result(&records[index])) continue;
 
         ++shown;
         written = snprintf(
@@ -758,26 +758,26 @@ int openai_session_results_text(const char *arguments,
            (size_t)written < output_size - used;
 }
 
-int openai_session_result_last(const char *arguments,
+int llm_session_result_last(const char *arguments,
                                char *output,
                                size_t output_size)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     char session[9];
     unsigned int count, index;
     int written;
 
     if (output == NULL || output_size == 0U) return 0;
-    openai_tx_clean(arguments, session, sizeof(session));
+    llm_tx_clean(arguments, session, sizeof(session));
     if (strlen(session) != 8U) return 0;
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
 
     for (index = count; index > 0U; --index) {
-        openai_transcript_rec *record = &records[index - 1U];
+        llm_transcript_rec *record = &records[index - 1U];
 
-        if (!openai_tx_equal_ci(record->session, session) ||
-            !openai_tx_is_result(record)) continue;
+        if (!llm_tx_equal_ci(record->session, session) ||
+            !llm_tx_is_result(record)) continue;
 
         written = snprintf(
             output, output_size,
@@ -808,21 +808,21 @@ int openai_session_result_last(const char *arguments,
            (size_t)written < output_size;
 }
 
-int openai_session_clear_results(const char *arguments)
+int llm_session_clear_results(const char *arguments)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     char session[9];
-    char temp_path[OPENAI_TRANSCRIPT_PATH_MAX];
+    char temp_path[LLM_TRANSCRIPT_PATH_MAX];
     unsigned int count, index, removed;
     FILE *file;
 
-    openai_tx_clean(arguments, session, sizeof(session));
+    llm_tx_clean(arguments, session, sizeof(session));
     if (strlen(session) != 8U) return 0;
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
 
     if (snprintf(temp_path, sizeof(temp_path),
-                 "%s.M239", openai_transcript_path) < 0) return 0;
+                 "%s.M239", llm_transcript_path) < 0) return 0;
 
     while (remove(temp_path) == 0) {
     }
@@ -833,8 +833,8 @@ int openai_session_clear_results(const char *arguments)
     removed = 0U;
 
     for (index = 0U; index < count; ++index) {
-        if (openai_tx_equal_ci(records[index].session, session) &&
-            openai_tx_is_result(&records[index])) {
+        if (llm_tx_equal_ci(records[index].session, session) &&
+            llm_tx_is_result(&records[index])) {
             ++removed;
             continue;
         }
@@ -861,10 +861,10 @@ int openai_session_clear_results(const char *arguments)
         return 0;
     }
 
-    while (remove(openai_transcript_path) == 0) {
+    while (remove(llm_transcript_path) == 0) {
     }
 
-    if (rename(temp_path, openai_transcript_path) != 0) {
+    if (rename(temp_path, llm_transcript_path) != 0) {
         (void)remove(temp_path);
         return 0;
     }
@@ -872,11 +872,11 @@ int openai_session_clear_results(const char *arguments)
     return removed > 0U;
 }
 
-void openai_show_session_results(const char *arguments)
+void llm_show_session_results(const char *arguments)
 {
     char output[32768];
 
-    if (!openai_session_results_text(
+    if (!llm_session_results_text(
             arguments, output, sizeof(output))) {
         (void)puts("Unable to show normalized session results.");
         return;
@@ -884,11 +884,11 @@ void openai_show_session_results(const char *arguments)
     (void)fputs(output, stdout);
 }
 
-void openai_show_session_result(const char *arguments)
+void llm_show_session_result(const char *arguments)
 {
     char output[8192];
 
-    if (!openai_session_result_last(
+    if (!llm_session_result_last(
             arguments, output, sizeof(output))) {
         (void)puts("Unable to show last normalized session result.");
         return;
@@ -896,20 +896,20 @@ void openai_show_session_result(const char *arguments)
     (void)fputs(output, stdout);
 }
 
-void openai_session_clear_res_cmd(const char *arguments)
+void llm_session_clear_res_cmd(const char *arguments)
 {
-    if (openai_session_clear_results(arguments)) {
+    if (llm_session_clear_results(arguments)) {
         (void)puts("Normalized session results cleared.");
     } else {
         (void)puts("No normalized session results were cleared.");
     }
 }
 
-int openai_session_hist_text(const char *arguments,
+int llm_session_hist_text(const char *arguments,
                              char *output,
                              size_t output_size)
 {
-    openai_transcript_rec records[OPENAI_TRANSCRIPT_MAX];
+    llm_transcript_rec records[LLM_TRANSCRIPT_MAX];
     char session[9];
     unsigned int count;
     unsigned int shown;
@@ -921,13 +921,13 @@ int openai_session_hist_text(const char *arguments,
         return 0;
     }
 
-    openai_tx_clean(arguments, session, sizeof(session));
+    llm_tx_clean(arguments, session, sizeof(session));
 
     if (strlen(session) != 8U) {
         return 0;
     }
 
-    count = openai_tx_load(records, OPENAI_TRANSCRIPT_MAX);
+    count = llm_tx_load(records, LLM_TRANSCRIPT_MAX);
 
     written = snprintf(
         output, output_size,
@@ -945,7 +945,7 @@ int openai_session_hist_text(const char *arguments,
     shown = 0U;
 
     for (index = 0U; index < count; ++index) {
-        if (!openai_tx_equal_ci(
+        if (!llm_tx_equal_ci(
                 records[index].session, session)) {
             continue;
         }
@@ -983,7 +983,7 @@ int openai_session_hist_text(const char *arguments,
            (size_t)written < output_size - used;
 }
 
-int openai_session_export(const char *arguments)
+int llm_session_export(const char *arguments)
 {
     char session[32];
     char path[256];
@@ -991,14 +991,14 @@ int openai_session_export(const char *arguments)
     FILE *probe;
     FILE *file;
 
-    if (!openai_tx_split(
+    if (!llm_tx_split(
             arguments, session, sizeof(session),
             path, sizeof(path))) {
         return 0;
     }
 
     if (strlen(session) != 8U ||
-        !openai_tx_safe_path(path)) {
+        !llm_tx_safe_path(path)) {
         return 0;
     }
 
@@ -1009,7 +1009,7 @@ int openai_session_export(const char *arguments)
         return 0;
     }
 
-    if (!openai_session_hist_text(
+    if (!llm_session_hist_text(
             session, output, sizeof(output))) {
         return 0;
     }
@@ -1028,9 +1028,9 @@ int openai_session_export(const char *arguments)
     return fclose(file) == 0;
 }
 
-void openai_session_export_cmd(const char *arguments)
+void llm_session_export_cmd(const char *arguments)
 {
-    if (!openai_session_export(arguments)) {
+    if (!llm_session_export(arguments)) {
         (void)puts(
             "Usage: AGENT/SESSION/EXPORT <id> <new-safe-filespec>"
         );
@@ -1040,11 +1040,11 @@ void openai_session_export_cmd(const char *arguments)
     (void)puts("Session transcript exported.");
 }
 
-void openai_show_session_hist(const char *arguments)
+void llm_show_session_hist(const char *arguments)
 {
     char output[32768];
 
-    if (!openai_session_hist_text(
+    if (!llm_session_hist_text(
             arguments, output, sizeof(output))) {
         (void)puts("Usage: AGENT/SESSION/HISTORY <id>");
         return;
@@ -1053,14 +1053,14 @@ void openai_show_session_hist(const char *arguments)
     (void)fputs(output, stdout);
 }
 
-int openai_session_exec(agent_state *state,
+int llm_session_exec(agent_state *state,
                         const char *arguments)
 {
     char session[32];
-    char goal[OPENAI_TRANSCRIPT_ARG];
+    char goal[LLM_TRANSCRIPT_ARG];
 
     if (state == NULL ||
-        !openai_tx_split(
+        !llm_tx_split(
             arguments, session, sizeof(session),
             goal, sizeof(goal)) ||
         strlen(session) != 8U ||
@@ -1068,28 +1068,28 @@ int openai_session_exec(agent_state *state,
         return 0;
     }
 
-    if (!openai_session_resume(session)) {
+    if (!llm_session_resume(session)) {
         return 0;
     }
 
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "exec", "SESSION", "agent", "started", goal
     );
-    openai_exec_context(state, goal);
+    llm_exec_context(state, goal);
     return 1;
 }
 
-void openai_session_exec_cmd(agent_state *state,
+void llm_session_exec_cmd(agent_state *state,
                              const char *arguments)
 {
-    if (!openai_session_exec(state, arguments)) {
+    if (!llm_session_exec(state, arguments)) {
         (void)puts(
             "Usage: AGENT/SESSION/EXEC <id> <goal>"
         );
     }
 }
 
-int openai_exec_resume(agent_state *state,
+int llm_exec_resume(agent_state *state,
                        const char *goal)
 {
     char session[9];
@@ -1097,28 +1097,28 @@ int openai_exec_resume(agent_state *state,
     if (state == NULL ||
         goal == NULL ||
         *goal == '\0' ||
-        !openai_session_current_id(session)) {
+        !llm_session_current_id(session)) {
         return 0;
     }
 
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "exec", "RESUME", "agent", "started", goal
     );
-    openai_exec_context(state, goal);
+    llm_exec_context(state, goal);
     return 1;
 }
 
-void openai_exec_resume_cmd(agent_state *state,
+void llm_exec_resume_cmd(agent_state *state,
                             const char *goal)
 {
-    if (!openai_exec_resume(state, goal)) {
+    if (!llm_exec_resume(state, goal)) {
         (void)puts(
             "AGENT/EXEC/RESUME requires a current session and goal."
         );
     }
 }
 
-int openai_exec_fork(agent_state *state,
+int llm_exec_fork(agent_state *state,
                      const char *arguments)
 {
     const char *divider;
@@ -1126,11 +1126,11 @@ int openai_exec_fork(agent_state *state,
     char fork_args[256];
     char new_id[9];
     char name[128];
-    char goal[OPENAI_TRANSCRIPT_ARG];
+    char goal[LLM_TRANSCRIPT_ARG];
     size_t name_length;
 
     if (state == NULL || arguments == NULL ||
-        !openai_session_current_id(current)) {
+        !llm_session_current_id(current)) {
         return 0;
     }
 
@@ -1166,7 +1166,7 @@ int openai_exec_fork(agent_state *state,
         ++divider;
     }
 
-    openai_tx_clean(divider, goal, sizeof(goal));
+    llm_tx_clean(divider, goal, sizeof(goal));
 
     if (goal[0] == '\0') {
         return 0;
@@ -1177,52 +1177,52 @@ int openai_exec_fork(agent_state *state,
         "%s %s", current, name
     );
 
-    if (!openai_session_fork(fork_args, new_id)) {
+    if (!llm_session_fork(fork_args, new_id)) {
         return 0;
     }
 
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "exec", "FORK", "agent", "started", goal
     );
-    openai_exec_context(state, goal);
+    llm_exec_context(state, goal);
     return 1;
 }
 
-void openai_exec_fork_cmd(agent_state *state,
+void llm_exec_fork_cmd(agent_state *state,
                           const char *arguments)
 {
-    if (!openai_exec_fork(state, arguments)) {
+    if (!llm_exec_fork(state, arguments)) {
         (void)puts(
             "Usage: AGENT/EXEC/FORK <new-name> :: <goal>"
         );
     }
 }
 
-void openai_tx_note_exec(const char *name,
+void llm_tx_note_exec(const char *name,
                          const char *goal,
                          const char *status)
 {
-    (void)openai_tx_append(
+    (void)llm_tx_append(
         "exec", name, "agent", status, goal
     );
 }
 
-void openai_test_tx_path(const char *path)
+void llm_test_tx_path(const char *path)
 {
     if (path == NULL || *path == '\0') {
         (void)strcpy(
-            openai_transcript_path,
-            OPENAI_TRANSCRIPT_FILE
+            llm_transcript_path,
+            LLM_TRANSCRIPT_FILE
         );
         return;
     }
 
     (void)strncpy(
-        openai_transcript_path,
+        llm_transcript_path,
         path,
-        sizeof(openai_transcript_path) - 1U
+        sizeof(llm_transcript_path) - 1U
     );
-    openai_transcript_path[
-        sizeof(openai_transcript_path) - 1U
+    llm_transcript_path[
+        sizeof(llm_transcript_path) - 1U
     ] = '\0';
 }

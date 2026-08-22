@@ -1,10 +1,10 @@
 #include <string.h>
 
-#define openai_tool_run openai_tool_run_base
-#define openai_tool_run_cmd openai_tool_run_cmd_base
+#define llm_tool_run llm_tool_run_base
+#define llm_tool_run_cmd llm_tool_run_cmd_base
 #include "LLM_TRANSCRIPT_CORE.INC"
-#undef openai_tool_run
-#undef openai_tool_run_cmd
+#undef llm_tool_run
+#undef llm_tool_run_cmd
 
 #include "git_rms_restore.h"
 
@@ -113,7 +113,7 @@ static int m265_git_restore_tool(
     const char *path_text)
 {
     char answer[32];
-    char buffer[OPENAI_TRANSCRIPT_ARG];
+    char buffer[LLM_TRANSCRIPT_ARG];
     char *paths[M265_GIT_BATCH_MAX];
     unsigned int count;
     unsigned int index;
@@ -122,15 +122,15 @@ static int m265_git_restore_tool(
         return 0;
     }
 
-    if (openai_tx_policy_level() < OPENAI_TOOL_WORK) {
-        (void)openai_tx_append(
+    if (llm_tx_policy_level() < LLM_TOOL_WORK) {
+        (void)llm_tx_append(
             "tool", "GITRESTORE", "write", "denied", path_text
         );
         return 0;
     }
 
     if (!state->write_enabled) {
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", "GITRESTORE", "write", "write-gate", path_text
         );
         return 0;
@@ -151,7 +151,7 @@ static int m265_git_restore_tool(
     }
 
     for (index = 0U; index < count; ++index) {
-        if (!openai_tx_append(
+        if (!llm_tx_append(
                 "tool", "GITRESTORE", "write", "dispatched", paths[index])) {
             return 0;
         }
@@ -174,7 +174,7 @@ static int m265_git_restore_tool(
         !(answer[0] == 'y' || answer[0] == 'Y')) {
         (void)puts("Git restore declined.");
         for (index = 0U; index < count; ++index) {
-            (void)openai_tx_append(
+            (void)llm_tx_append(
                 "tool", "GITRESTORE", "write", "declined", paths[index]
             );
         }
@@ -188,7 +188,7 @@ static int m265_git_restore_tool(
                 "contents were not verified against HEAD.\n",
                 paths[index]
             );
-            (void)openai_tx_append(
+            (void)llm_tx_append(
                 "tool", "GITRESTORE", "write", "error", paths[index]
             );
             if (count > 1U) {
@@ -201,7 +201,7 @@ static int m265_git_restore_tool(
             return 1;
         }
 
-        (void)openai_tx_append(
+        (void)llm_tx_append(
             "tool", "GITRESTORE", "write", "applied", paths[index]
         );
 
@@ -225,27 +225,27 @@ static int m265_git_restore_tool(
     return 1;
 }
 
-int openai_tool_run(agent_state *state,
+int llm_tool_run(agent_state *state,
                     const char *arguments)
 {
     char name[32];
-    char rest[OPENAI_TRANSCRIPT_ARG];
+    char rest[LLM_TRANSCRIPT_ARG];
 
     if (state != NULL &&
-        openai_tx_split(arguments,
+        llm_tx_split(arguments,
                         name, sizeof(name),
                         rest, sizeof(rest)) &&
-        openai_tx_equal_ci(name, "GITRESTORE")) {
+        llm_tx_equal_ci(name, "GITRESTORE")) {
         return m265_git_restore_tool(state, rest);
     }
 
-    return openai_tool_run_base(state, arguments);
+    return llm_tool_run_base(state, arguments);
 }
 
-void openai_tool_run_cmd(agent_state *state,
+void llm_tool_run_cmd(agent_state *state,
                          const char *arguments)
 {
-    if (!openai_tool_run(state, arguments)) {
+    if (!llm_tool_run(state, arguments)) {
         (void)puts(
             "AGENT/TOOL/RUN refused or invalid. "
             "Use AGENT/TOOLS for supported capabilities."

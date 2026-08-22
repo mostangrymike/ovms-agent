@@ -10,7 +10,7 @@
     while (remove(target) == 0) {
     }
 
-    ok = openai_m135_shared_validation(
+    ok = llm_m135_shared_validation(
         ops,
         target);
 
@@ -19,7 +19,7 @@
     while (remove(target) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "dry run and execution share validation",
         ok,
         &passed_count,
@@ -39,7 +39,7 @@
     while (remove(target) == 0) {
     }
 
-    ok = openai_m135_prewrite_validation(
+    ok = llm_m135_prewrite_validation(
         ops,
         target);
 
@@ -48,7 +48,7 @@
     while (remove(target) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "all operations validate before modification",
         ok,
         &passed_count,
@@ -68,7 +68,7 @@
     while (remove(target) == 0) {
     }
 
-    ok = openai_m135_chain_deterministic(
+    ok = llm_m135_chain_deterministic(
         ops,
         target);
 
@@ -77,7 +77,7 @@
     while (remove(target) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "same-file staging is deterministic",
         ok,
         &passed_count,
@@ -97,7 +97,7 @@
     while (remove(target) == 0) {
     }
 
-    ok = openai_m135_rollback_all(
+    ok = llm_m135_rollback_all(
         ops,
         target);
 
@@ -106,7 +106,7 @@
     while (remove(target) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "rollback coverage includes every changed file",
         ok,
         &passed_count,

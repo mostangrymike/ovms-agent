@@ -1,4 +1,4 @@
-static int openai_m140_write_plan(
+static int llm_m140_write_plan(
     const char *path,
     const char *status)
 {
@@ -20,39 +20,39 @@ static int openai_m140_write_plan(
         return 0;
     }
 
-    return openai_plan_checksum_write(path);
+    return llm_plan_checksum_write(path);
 }
 
-int openai_m140_unapproved_reject(
+int llm_m140_unapproved_reject(
     const char *path)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
     return
-        openai_m140_write_plan(path, "active") &&
-        !openai_plan_approval_valid(path);
+        llm_m140_write_plan(path, "active") &&
+        !llm_plan_approval_valid(path);
 }
 
-int openai_m140_approved_accept(
+int llm_m140_approved_accept(
     const char *path)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
     return
-        openai_m140_write_plan(path, "active") &&
-        openai_plan_approve_file(path) &&
-        openai_plan_approval_valid(path);
+        llm_m140_write_plan(path, "active") &&
+        llm_plan_approve_file(path) &&
+        llm_plan_approval_valid(path);
 }
 
-int openai_m140_change_reject(
+int llm_m140_change_reject(
     const char *path)
 {
     FILE *file;
 
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    if (!openai_m140_write_plan(path, "active") ||
-        !openai_plan_approve_file(path)) {
+    if (!llm_m140_write_plan(path, "active") ||
+        !llm_plan_approve_file(path)) {
         return 0;
     }
 
@@ -67,71 +67,71 @@ int openai_m140_change_reject(
         return 0;
     }
 
-    return !openai_plan_approval_valid(path);
+    return !llm_plan_approval_valid(path);
 }
 
-int openai_m140_new_plan_clears(
+int llm_m140_new_plan_clears(
     const char *path)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    if (!openai_m140_write_plan(path, "active") ||
-        !openai_plan_approve_file(path)) {
+    if (!llm_m140_write_plan(path, "active") ||
+        !llm_plan_approve_file(path)) {
         return 0;
     }
 
-    openai_plan_approval_clear();
-    return !openai_plan_approved;
+    llm_plan_approval_clear();
+    return !llm_plan_approved;
 }
 
-int openai_m140_clear_clears(
+int llm_m140_clear_clears(
     const char *path)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    if (!openai_m140_write_plan(path, "active") ||
-        !openai_plan_approve_file(path)) {
+    if (!llm_m140_write_plan(path, "active") ||
+        !llm_plan_approve_file(path)) {
         return 0;
     }
 
-    if (!openai_plan_clear_files(path)) {
+    if (!llm_plan_clear_files(path)) {
         return 0;
     }
 
-    openai_plan_approval_clear();
-    return !openai_plan_approved;
+    llm_plan_approval_clear();
+    return !llm_plan_approved;
 }
 
-int openai_m140_consume_clears(void)
+int llm_m140_consume_clears(void)
 {
-    openai_plan_approved = 1;
-    openai_approved_hash = 1UL;
-    openai_plan_approval_clear();
+    llm_plan_approved = 1;
+    llm_approved_hash = 1UL;
+    llm_plan_approval_clear();
 
     return
-        !openai_plan_approved &&
-        openai_approved_hash == 0UL;
+        !llm_plan_approved &&
+        llm_approved_hash == 0UL;
 }
 
-int openai_m140_restart_unapproved(void)
+int llm_m140_restart_unapproved(void)
 {
-    openai_plan_approval_clear();
-    return !openai_plan_approved;
+    llm_plan_approval_clear();
+    return !llm_plan_approved;
 }
 
-int openai_m140_prewrite_guard(
+int llm_m140_prewrite_guard(
     const char *path)
 {
-    openai_plan_approval_clear();
+    llm_plan_approval_clear();
 
-    if (!openai_m140_write_plan(path, "active")) {
+    if (!llm_m140_write_plan(path, "active")) {
         return 0;
     }
 
-    if (openai_plan_approval_valid(path)) {
+    if (llm_plan_approval_valid(path)) {
         return 0;
     }
 
-    return openai_plan_approve_file(path) &&
-        openai_plan_approval_valid(path);
+    return llm_plan_approve_file(path) &&
+        llm_plan_approval_valid(path);
 }

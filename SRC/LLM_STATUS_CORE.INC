@@ -2,62 +2,62 @@
 #include "LLM_PROMPTS.H"
 #include "LLM_EXECUTE.H"
 
-const char *openai_workflow_name(int workflow)
+const char *llm_workflow_name(int workflow)
 {
     switch (workflow) {
-    case OPENAI_WORKFLOW_ASK:
+    case LLM_WORKFLOW_ASK:
         return "ASK";
-    case OPENAI_WORKFLOW_CHAT:
+    case LLM_WORKFLOW_CHAT:
         return "CHAT";
-    case OPENAI_WORKFLOW_REVIEW:
+    case LLM_WORKFLOW_REVIEW:
         return "REVIEW";
-    case OPENAI_WORKFLOW_AGENT:
+    case LLM_WORKFLOW_AGENT:
         return "AGENT";
-    case OPENAI_WORKFLOW_WRITE:
+    case LLM_WORKFLOW_WRITE:
         return "AGENT/WRITE";
-    case OPENAI_WORKFLOW_FIX:
+    case LLM_WORKFLOW_FIX:
         return "AGENT/FIX";
-    case OPENAI_WORKFLOW_BUILD:
+    case LLM_WORKFLOW_BUILD:
         return "AGENT/BUILD";
-    case OPENAI_WORKFLOW_RETRY:
+    case LLM_WORKFLOW_RETRY:
         return "AGENT/RETRY";
-    case OPENAI_WORKFLOW_SELFTEST:
+    case LLM_WORKFLOW_SELFTEST:
         return "AGENT/SELFTEST";
-    case OPENAI_WORKFLOW_VERIFY:
+    case LLM_WORKFLOW_VERIFY:
         return "AGENT/VERIFY";
-    case OPENAI_WORKFLOW_CREATE:
+    case LLM_WORKFLOW_CREATE:
         return "AGENT/CREATE";
-    case OPENAI_WORKFLOW_PLAN:
+    case LLM_WORKFLOW_PLAN:
         return "AGENT/PLAN";
-    case OPENAI_WORKFLOW_EXECUTE:
+    case LLM_WORKFLOW_EXECUTE:
         return "AGENT/EXECUTE";
     default:
         return "none";
     }
 }
 
-const char *openai_rollback_name(int rollback_state)
+const char *llm_rollback_name(int rollback_state)
 {
     switch (rollback_state) {
-    case OPENAI_ROLLBACK_NOT_NEEDED:
+    case LLM_ROLLBACK_NOT_NEEDED:
         return "not needed";
-    case OPENAI_ROLLBACK_SUCCEEDED:
+    case LLM_ROLLBACK_SUCCEEDED:
         return "succeeded";
-    case OPENAI_ROLLBACK_FAILED:
+    case LLM_ROLLBACK_FAILED:
         return "failed";
-    case OPENAI_ROLLBACK_DECLINED:
+    case LLM_ROLLBACK_DECLINED:
         return "declined";
     default:
         return "none recorded";
     }
 }
 
-void openai_status(const agent_state *state)
+void llm_status(const agent_state *state)
 {
     const char *model;
     const char *api_key;
 
-    openai_load_state();
+    llm_load_state();
 
     model = getenv("OVMS_AGENT_MODEL");
     api_key = getenv("OPENAI_API_KEY");
@@ -74,13 +74,13 @@ void openai_status(const agent_state *state)
     );
 
     (void)printf(
-        "OpenAI API key defined:   %s\n",
+        "Provider API key defined:   %s\n",
         api_key != NULL && *api_key != '\0' ?
             "yes" : "no"
     );
 
     (void)printf(
-        "OpenAI model:             %s\n",
+        "LLM model:             %s\n",
         model != NULL && *model != '\0' ?
             model : "<not defined>"
     );
@@ -93,21 +93,21 @@ void openai_status(const agent_state *state)
 
     (void)printf(
         "Last persisted workflow:  %s\n",
-        openai_persist_workflow(
-            openai_state_valid,
-            openai_saved_workflow)
+        llm_persist_workflow(
+            llm_state_valid,
+            llm_saved_workflow)
     );
 
-    if (!openai_state_valid) {
+    if (!llm_state_valid) {
         (void)puts(
             "Last persisted build:     unavailable"
         );
-    } else if (openai_saved_build_known) {
+    } else if (llm_saved_build_known) {
         (void)printf(
             "Last persisted build:     %s (status %d)\n",
-            (openai_saved_build_status & 1) != 0 ?
+            (llm_saved_build_status & 1) != 0 ?
                 "success" : "failure",
-            openai_saved_build_status
+            llm_saved_build_status
         );
     } else {
         (void)puts(
@@ -117,36 +117,36 @@ void openai_status(const agent_state *state)
 
     (void)printf(
         "Last persisted rollback:  %s\n",
-        openai_persist_rollback(
-            openai_state_valid,
-            openai_saved_rollback)
+        llm_persist_rollback(
+            llm_state_valid,
+            llm_saved_rollback)
     );
 
     (void)printf(
         "Persistent state file:    %s\n",
-        OPENAI_STATE_FILE
+        LLM_STATE_FILE
     );
 
     (void)printf(
         "Persistent state valid:   %s\n",
-        openai_state_valid ? "yes" : "no"
+        llm_state_valid ? "yes" : "no"
     );
 
     (void)printf(
         "Persistent state source:  %s\n",
-        openai_state_source_name(
-            openai_state_valid,
-            openai_state_recovered)
+        llm_state_source_name(
+            llm_state_valid,
+            llm_state_recovered)
     );
 
     (void)printf(
         "Last state save attempt: %s\n",
-        openai_state_save_name(
-            openai_state_save_known,
-            openai_state_save_succeeded)
+        llm_state_save_name(
+            llm_state_save_known,
+            llm_state_save_succeeded)
     );
 
-    openai_plan_approval_report();
+    llm_plan_approval_report();
     (void)puts("");
     (void)puts("Enabled modes:");
     (void)puts("  ASK, CHAT, CHAT/RESET, REVIEW");
@@ -166,7 +166,7 @@ void openai_status(const agent_state *state)
     (void)puts("  Failed supervised fixes may offer local rollback.");
 }
 
-static void openai_selftest_report(const char *name,
+static void llm_selftest_report(const char *name,
                                    int passed,
                                    unsigned int *passed_count,
                                    unsigned int *failed_count)
@@ -186,7 +186,7 @@ static void openai_selftest_report(const char *name,
 
 #include "LLM_SELFTEST_FILE_EXISTS.INC"
 
-unsigned int openai_run_selftest(agent_state *state)
+unsigned int llm_run_selftest(agent_state *state)
 {
     static const char output_json[] =
         "{"
@@ -221,9 +221,9 @@ unsigned int openai_run_selftest(agent_state *state)
     char *call_id;
     char *arguments;
     FILE *build_file;
-    const openai_tool_descriptor *read_descriptor;
-    const openai_tool_descriptor *replace_descriptor;
-    const openai_tool_descriptor *build_descriptor;
+    const llm_tool_descriptor *read_descriptor;
+    const llm_tool_descriptor *replace_descriptor;
+    const llm_tool_descriptor *build_descriptor;
     llm_file_cache_entry test_cache[LLM_AGENT_CACHE_SIZE];
     const char *cached_text;
     char *malformed_text;
@@ -237,7 +237,7 @@ unsigned int openai_run_selftest(agent_state *state)
     (void)puts("OVMS Agent non-destructive self-test");
     (void)puts("------------------------------------");
 
-    openai_selftest_report(
+    llm_selftest_report(
         "project state available",
         state != NULL &&
         state->project_root != NULL &&
@@ -246,76 +246,76 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "safe project path accepted",
         llm_path_is_safe("SRC/MAIN.C"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "parent traversal rejected",
         !llm_path_is_safe("../LOGIN.COM"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "device-qualified path rejected",
         !llm_path_is_safe("SYS$LOGIN:LOGIN.COM"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "API-key filename blocked",
         llm_path_is_sensitive("OPENAIKEY.TXT"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "header filename blocked",
         llm_path_is_sensitive("OVMS_AGENT_HEADERS.TXT"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "ordinary source not sensitive",
-        !llm_path_is_sensitive("SRC/OPENAI.C"),
+        !llm_path_is_sensitive("SRC/LLM.C"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "lowercase key filename blocked",
         llm_path_is_sensitive("config/server.key"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "object listing entry hidden",
-        llm_listing_entry_hidden("OPENAI_AGENT.OBJ"),
+        llm_listing_entry_hidden("LLM_AGENT.OBJ"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "backup listing entries hidden",
         llm_listing_entry_hidden(
-            "OPENAI_TOOLS.C_M251_14_BACKUP") &&
+            "LLM_TOOLS.C_M251_14_BACKUP") &&
         llm_listing_entry_hidden(
-            "OPENAI_STATUS_BEFORE_M96_REPAIR.C") &&
+            "LLM_STATUS_BEFORE_M96_REPAIR.C") &&
         llm_listing_entry_hidden("LEGACY.C.BAK") &&
         llm_listing_entry_hidden("LEGACY.C.OLD") &&
-        !llm_listing_entry_hidden("OPENAI_TOOLS.C"),
+        !llm_listing_entry_hidden("LLM_TOOLS.C"),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "truncated listing guidance present",
         strstr(llm_prompt_read_only(),
                "do not infer that an unlisted path is absent") != NULL,
@@ -323,7 +323,7 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "live source preference guidance present",
         strstr(llm_prompt_read_only(),
                "prefer live source over backup") != NULL &&
@@ -335,14 +335,14 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
-    read_descriptor = openai_tool_find("read_file");
-    replace_descriptor = openai_tool_find("replace_text");
-    build_descriptor = openai_tool_find("run_build");
+    read_descriptor = llm_tool_find("read_file");
+    replace_descriptor = llm_tool_find("replace_text");
+    build_descriptor = llm_tool_find("run_build");
 
-    openai_selftest_report(
+    llm_selftest_report(
         "read tool registry metadata",
         read_descriptor != NULL &&
-        read_descriptor->kind == OPENAI_TOOL_READ_FILE &&
+        read_descriptor->kind == LLM_TOOL_READ_FILE &&
         read_descriptor->allows_read &&
         !read_descriptor->allows_write &&
         !read_descriptor->requires_confirmation,
@@ -350,36 +350,36 @@ unsigned int openai_run_selftest(agent_state *state)
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "write tool registry metadata",
         replace_descriptor != NULL &&
-        replace_descriptor->kind == OPENAI_TOOL_REPLACE_TEXT &&
+        replace_descriptor->kind == LLM_TOOL_REPLACE_TEXT &&
         !replace_descriptor->allows_read &&
         replace_descriptor->allows_write &&
         replace_descriptor->requires_confirmation &&
-        openai_tool_is_replace(replace_descriptor),
+        llm_tool_is_replace(replace_descriptor),
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "build tool registry metadata",
         build_descriptor != NULL &&
-        build_descriptor->kind == OPENAI_TOOL_RUN_BUILD &&
+        build_descriptor->kind == LLM_TOOL_RUN_BUILD &&
         build_descriptor->requires_build,
         &passed_count,
         &failed_count
     );
 
-    openai_selftest_report(
+    llm_selftest_report(
         "unknown tool rejected",
-        openai_tool_find("not_a_real_tool") == NULL,
+        llm_tool_find("not_a_real_tool") == NULL,
         &passed_count,
         &failed_count
     );
 
     llm_cache_init(test_cache);
-    openai_selftest_report(
+    llm_selftest_report(
         "case-insensitive cache lookup",
         llm_cache_store(
             test_cache,
@@ -395,7 +395,7 @@ unsigned int openai_run_selftest(agent_state *state)
     llm_cache_free(test_cache);
 
     malformed_text = extract_output_text_from_json(malformed_json);
-    openai_selftest_report(
+    llm_selftest_report(
         "malformed JSON rejected",
         malformed_text == NULL,
         &passed_count,
@@ -404,7 +404,7 @@ unsigned int openai_run_selftest(agent_state *state)
     free(malformed_text);
 
     integer_value = 0L;
-    openai_selftest_report(
+    llm_selftest_report(
         "integer JSON extraction",
         extract_integer_argument(
             integer_arguments,
@@ -421,7 +421,7 @@ unsigned int openai_run_selftest(agent_state *state)
     decoded = value != NULL ?
         json_decode_string(value, NULL) : NULL;
 
-    openai_selftest_report(
+    llm_selftest_report(
         "output_text JSON extraction",
         decoded != NULL &&
         strcmp(decoded, "alpha\nbeta") == 0,
@@ -434,7 +434,7 @@ unsigned int openai_run_selftest(agent_state *state)
     call_id = NULL;
     arguments = NULL;
 
-    openai_selftest_report(
+    llm_selftest_report(
         "function-call JSON extraction",
         extract_function_call(
             function_json,
@@ -475,7 +475,7 @@ unsigned int openai_run_selftest(agent_state *state)
             &range_end
         );
 
-        openai_selftest_report(
+        llm_selftest_report(
             "ranged source read",
             range_output != NULL &&
             range_path != NULL &&
@@ -526,7 +526,7 @@ unsigned int openai_run_selftest(agent_state *state)
                 &large_display
             ) : NULL;
 
-        openai_selftest_report(
+        llm_selftest_report(
             "oversized read suggests ranged fallback",
             large_output != NULL &&
             strstr(large_output, "Whole-file read exceeds 65536 bytes") != NULL &&
@@ -545,7 +545,7 @@ unsigned int openai_run_selftest(agent_state *state)
 
     build_file = fopen("BUILD.COM", "r");
 
-    openai_selftest_report(
+    llm_selftest_report(
         "fixed BUILD.COM is readable",
         build_file != NULL,
         &passed_count,
@@ -657,8 +657,8 @@ unsigned int openai_run_selftest(agent_state *state)
         failed_count
     );
 
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         failed_count == 0U ?
             "selftest_pass" : "selftest_fail",
         (int)failed_count
@@ -676,36 +676,36 @@ unsigned int openai_run_selftest(agent_state *state)
     return failed_count;
 }
 
-void openai_selftest(agent_state *state)
+void llm_selftest(agent_state *state)
 {
-    openai_last_workflow = OPENAI_WORKFLOW_SELFTEST;
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_last_workflow = LLM_WORKFLOW_SELFTEST;
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
-    (void)openai_run_selftest(state);
+    (void)llm_run_selftest(state);
 }
 
-void openai_verify(agent_state *state)
+void llm_verify(agent_state *state)
 {
     unsigned int selftest_failures;
     char *build_output;
     int build_status;
     int build_passed;
 
-    openai_last_workflow = OPENAI_WORKFLOW_VERIFY;
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_last_workflow = LLM_WORKFLOW_VERIFY;
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
-    openai_last_rollback = OPENAI_ROLLBACK_NONE;
+    llm_last_rollback = LLM_ROLLBACK_NONE;
 
     (void)puts("OVMS Agent verification gate");
     (void)puts("============================");
 
-    selftest_failures = openai_run_selftest(state);
+    selftest_failures = llm_run_selftest(state);
 
     (void)puts("");
     (void)puts("Controlled build verification");
@@ -735,7 +735,7 @@ void openai_verify(agent_state *state)
 
     (void)puts("============================");
 
-    openai_log_event(
+    llm_log_event(
         "AGENT/VERIFY",
         selftest_failures == 0U && build_passed ?
             "verify_pass" : "verify_fail",
@@ -772,9 +772,9 @@ void llm_review_file(agent_state *state, const char *path)
     char *prompt;
     size_t prompt_size;
 
-    openai_last_workflow = OPENAI_WORKFLOW_REVIEW;
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_last_workflow = LLM_WORKFLOW_REVIEW;
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
@@ -791,7 +791,7 @@ void llm_review_file(agent_state *state, const char *path)
         return;
     }
 
-    source = openai_read_text_file(path);
+    source = llm_read_text_file(path);
 
     if (source == NULL) {
         return;
@@ -817,7 +817,7 @@ void llm_review_file(agent_state *state, const char *path)
     (void)strcat(prompt, separator);
     (void)strcat(prompt, source);
 
-    openai_send(state, prompt, 0);
+    llm_send(state, prompt, 0);
 
     free(prompt);
     free(source);
@@ -825,12 +825,12 @@ void llm_review_file(agent_state *state, const char *path)
 
 void llm_ask(agent_state *state, const char *prompt)
 {
-    openai_send(state, prompt, 0);
+    llm_send(state, prompt, 0);
 }
 
 void llm_chat(agent_state *state, const char *prompt)
 {
-    openai_send(state, prompt, 1);
+    llm_send(state, prompt, 1);
 }
 
 void llm_chat_reset(void)

@@ -7,7 +7,7 @@
 #define TEST_LOG "M210_REPAIR_HISTORY.LOG"
 
 /*
- * Link-only stubs required by OPENAI_PLAN.OBJ.
+ * Link-only stubs required by LLM_PLAN.OBJ.
  * The deterministic M210 observability test never uses interactive input.
  */
 int command_line_complete(const char *input,
@@ -32,7 +32,7 @@ int command_read_stream(FILE *stream,
 
 static void cleanup(void)
 {
-    openai_test_set_log_path(NULL);
+    llm_test_set_log_path(NULL);
     while (remove(TEST_LOG) == 0) {
     }
 }
@@ -42,25 +42,25 @@ int main(void)
     char record[1024];
 
     cleanup();
-    openai_test_set_log_path(TEST_LOG);
+    llm_test_set_log_path(TEST_LOG);
 
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         1U,
         0x1234ABCDUL,
         2,
-        OPENAI_ROLLBACK_SUCCEEDED,
+        LLM_ROLLBACK_SUCCEEDED,
         "rolled_back"
     );
 
-    openai_log_repair_attempt(
+    llm_log_repair_attempt(
         2U,
         0x89ABCDEFUL,
         1,
-        OPENAI_ROLLBACK_NONE,
+        LLM_ROLLBACK_NONE,
         "committed"
     );
 
-    if (!openai_last_repair_record(
+    if (!llm_last_repair_record(
             record,
             sizeof(record))) {
         (void)puts("M210 failed: no persisted repair record.");

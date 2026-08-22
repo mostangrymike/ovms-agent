@@ -6,12 +6,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m123_newest_preferred(path);
+    ok = llm_m123_newest_preferred(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "valid newest state preferred",
         ok,
         &passed_count,
@@ -27,12 +27,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m123_fallback_prior(path);
+    ok = llm_m123_fallback_prior(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid newest falls back to prior",
         ok,
         &passed_count,
@@ -48,12 +48,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m123_both_invalid(path);
+    ok = llm_m123_both_invalid(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "invalid prior version also rejected",
         ok,
         &passed_count,
@@ -69,12 +69,12 @@
     while (remove(path) == 0) {
     }
 
-    ok = openai_m123_read_only(path);
+    ok = llm_m123_read_only(path);
 
     while (remove(path) == 0) {
     }
 
-    openai_selftest_report(
+    llm_selftest_report(
         "recovery load does not modify versions",
         ok,
         &passed_count,

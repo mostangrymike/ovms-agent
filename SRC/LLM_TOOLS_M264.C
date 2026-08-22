@@ -27,7 +27,7 @@ static int m264_guard_text(const char *arguments)
         return 1;
     }
 
-    original = openai_read_text_file(path);
+    original = llm_read_text_file(path);
     if (original == NULL) {
         free(path);
         free(old_text);
@@ -78,7 +78,7 @@ static char *m264_lines_candidate(const char *arguments,
         return NULL;
     }
 
-    content = openai_read_text_file(path);
+    content = llm_read_text_file(path);
     if (content == NULL) {
         free(path);
         free(new_text);
@@ -152,7 +152,7 @@ static int m264_guard_candidate(const char *path,
     int safe;
 
     if (path == NULL || candidate == NULL) return 1;
-    original = openai_read_text_file(path);
+    original = llm_read_text_file(path);
     if (original == NULL) return 1;
     safe = cobol_edit_safe(path, original, candidate,
                            reason, sizeof(reason));
@@ -163,16 +163,16 @@ static int m264_guard_candidate(const char *path,
     return safe;
 }
 
-openai_replace_result execute_replace_text_tool(
+llm_replace_result execute_replace_text_tool(
     agent_state *state,
     const char *arguments,
     char **display_path)
 {
-    if (!m264_guard_text(arguments)) return OPENAI_REPLACE_ERROR;
+    if (!m264_guard_text(arguments)) return LLM_REPLACE_ERROR;
     return m263_rep_text(state, arguments, display_path);
 }
 
-openai_replace_result execute_replace_lines_tool(
+llm_replace_result execute_replace_lines_tool(
     agent_state *state,
     const char *arguments,
     char **display_path)
@@ -186,6 +186,6 @@ openai_replace_result execute_replace_lines_tool(
     safe = m264_guard_candidate(path, candidate);
     free(candidate);
     free(path);
-    if (!safe) return OPENAI_REPLACE_ERROR;
+    if (!safe) return LLM_REPLACE_ERROR;
     return m263_rep_lines(state, arguments, display_path);
 }

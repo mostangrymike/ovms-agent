@@ -50,19 +50,19 @@ void llm_agent_mode(agent_state *state,
     int write_attempted;
     llm_file_cache_entry cache[LLM_AGENT_CACHE_SIZE];
 
-    if (workflow == OPENAI_WORKFLOW_PLAN) {
-        openai_last_workflow = OPENAI_WORKFLOW_PLAN;
+    if (workflow == LLM_WORKFLOW_PLAN) {
+        llm_last_workflow = LLM_WORKFLOW_PLAN;
     } else if (build_after_write) {
-        openai_last_workflow = OPENAI_WORKFLOW_FIX;
-        openai_last_rollback = OPENAI_ROLLBACK_NONE;
+        llm_last_workflow = LLM_WORKFLOW_FIX;
+        llm_last_rollback = LLM_ROLLBACK_NONE;
     } else if (allow_write) {
-        openai_last_workflow = OPENAI_WORKFLOW_WRITE;
+        llm_last_workflow = LLM_WORKFLOW_WRITE;
     } else {
-        openai_last_workflow = OPENAI_WORKFLOW_AGENT;
+        llm_last_workflow = LLM_WORKFLOW_AGENT;
     }
 
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         "start",
         0
     );
@@ -77,7 +77,7 @@ void llm_agent_mode(agent_state *state,
     (void)printf("Project root: %s\n", state->project_root);
 
     if (goal == NULL || *goal == '\0') {
-        if (workflow == OPENAI_WORKFLOW_PLAN) {
+        if (workflow == LLM_WORKFLOW_PLAN) {
             (void)puts("Usage: AGENT/PLAN goal");
         } else if (build_after_write) {
             (void)puts("Usage: AGENT/FIX goal");
@@ -107,7 +107,7 @@ void llm_agent_mode(agent_state *state,
     }
 
     owned_instructions = NULL;
-    if (workflow == OPENAI_WORKFLOW_PLAN) {
+    if (workflow == LLM_WORKFLOW_PLAN) {
         instructions = llm_prompt_plan();
     } else if (allow_write) {
         owned_instructions = write_prompt_rules(llm_prompt_write());
@@ -124,8 +124,8 @@ void llm_agent_mode(agent_state *state,
     tool_output = NULL;
     call_id = NULL;
     write_attempted = 0;
-    openai_auto_begin(workflow);
-    turn_limit = openai_auto_turn_limit(workflow);
+    llm_auto_begin(workflow);
+    turn_limit = llm_auto_turn_limit(workflow);
     llm_cache_init(cache);
 
     if (build_after_write) {
@@ -139,12 +139,12 @@ void llm_agent_mode(agent_state *state,
     for (turn = 0U; turn < turn_limit; ++turn) {
         char *json;
 
-        openai_auto_note_turn();
+        llm_auto_note_turn();
         char *response_id;
         char *name;
         char *new_call_id;
         char *arguments;
-        const openai_tool_descriptor *descriptor;
+        const llm_tool_descriptor *descriptor;
 
         if (!write_agent_request_mode(model,
                                       instructions,
@@ -162,14 +162,14 @@ void llm_agent_mode(agent_state *state,
         tool_output = NULL;
 
         if (!perform_openai_request()) {
-            (void)puts("OpenAI request failed.");
+            (void)puts("LLM request failed.");
             break;
         }
 
-        json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+        json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
         if (json == NULL) {
-            (void)puts("Unable to read OpenAI response.");
+            (void)puts("Unable to read LLM response.");
             break;
         }
 
@@ -189,7 +189,7 @@ void llm_agent_mode(agent_state *state,
         free(previous_id);
         previous_id = response_id;
 
-        if (workflow == OPENAI_WORKFLOW_PLAN) {
+        if (workflow == LLM_WORKFLOW_PLAN) {
             char *plan_text;
 
             plan_text = extract_output_text_from_json(json);
@@ -198,7 +198,7 @@ void llm_agent_mode(agent_state *state,
                 (void)puts("");
                 (void)puts(plan_text);
 
-                if (openai_plan_save(goal, plan_text)) {
+                if (llm_plan_save(goal, plan_text)) {
                     (void)puts("");
                     (void)puts(
                         "Implementation plan saved to "
@@ -209,8 +209,8 @@ void llm_agent_mode(agent_state *state,
                     (void)puts("Unable to save implementation plan.");
                 }
 
-                openai_auto_finish("final");
-                openai_tx_loop_event("agent", "final");
+                llm_auto_finish("final");
+                llm_tx_loop_event("agent", "final");
                 free(plan_text);
                 free(json);
                 remove_temporary_files();
@@ -220,8 +220,8 @@ void llm_agent_mode(agent_state *state,
                 return;
             }
         } else if (display_output_text_from_json(json)) {
-            openai_auto_finish("final");
-            openai_tx_loop_event("agent", "final");
+            llm_auto_finish("final");
+            llm_tx_loop_event("agent", "final");
             free(json);
             remove_temporary_files();
             free(previous_id);
@@ -247,14 +247,14 @@ void llm_agent_mode(agent_state *state,
 
         free(json);
 
-        descriptor = openai_tool_find(name);
-        openai_auto_note_tool();
-        openai_tx_model_call(name, arguments);
+        descriptor = llm_tool_find(name);
+        llm_auto_note_tool();
+        llm_tx_model_call(name, arguments);
 
-        if (openai_tool_is_read(descriptor)) {
+        if (llm_tool_is_read(descriptor)) {
             char *raw_output;
 
-            raw_output = openai_tool_execute_read(
+            raw_output = llm_tool_execute_read(
                 descriptor,
                 arguments,
                 cache
@@ -276,7 +276,7 @@ void llm_agent_mode(agent_state *state,
 
             free(raw_output);
 
-            openai_tx_model_result(
+            llm_tx_model_result(
                 name,
                 tool_output != NULL ? "ok" : "error",
                 tool_output != NULL ?
@@ -288,19 +288,19 @@ void llm_agent_mode(agent_state *state,
             char patch_summary[2048];
             int patch_ok;
 
-            if (!openai_auto_allow_write()) {
+            if (!llm_auto_allow_write()) {
                 tool_output = llm_result_make(
                     name, "limit", "write", 0,
                     arguments,
                     "Autonomous write limit reached."
                 );
-                openai_tx_model_result(
+                llm_tx_model_result(
                     name, "limit",
                     tool_output != NULL ?
                         tool_output : "Autonomous write limit reached."
                 );
             } else {
-                patch_ok = openai_patch_apply_json(
+                patch_ok = llm_patch_apply_json(
                     arguments,
                     patch_summary,
                     sizeof(patch_summary)
@@ -314,9 +314,9 @@ void llm_agent_mode(agent_state *state,
                 if (patch_ok) {
                     llm_cache_free(cache);
                     llm_cache_init(cache);
-                    (void)openai_git_refresh(state);
-                    openai_log_event(
-                        openai_workflow_name(openai_last_workflow),
+                    (void)llm_git_refresh(state);
+                    llm_log_event(
+                        llm_workflow_name(llm_last_workflow),
                         "patch_applied",
                         1
                     );
@@ -325,15 +325,15 @@ void llm_agent_mode(agent_state *state,
                         arguments, patch_summary
                     );
                     if (tool_output == NULL) {
-                        tool_output = openai_duplicate_text(patch_summary);
+                        tool_output = llm_duplicate_text(patch_summary);
                     }
-                    openai_tx_model_result(
+                    llm_tx_model_result(
                         name, "applied",
                         tool_output != NULL ? tool_output : patch_summary
                     );
                 } else {
-                    openai_log_event(
-                        openai_workflow_name(openai_last_workflow),
+                    llm_log_event(
+                        llm_workflow_name(llm_last_workflow),
                         "patch_failed",
                         0
                     );
@@ -346,26 +346,26 @@ void llm_agent_mode(agent_state *state,
                             patch_summary, "structured_patch"
                         );
                     }
-                    openai_tx_model_result(
+                    llm_tx_model_result(
                         name, "error",
                         tool_output != NULL ? tool_output : patch_summary
                     );
                 }
             }
         } else if (allow_write &&
-                   openai_tool_is_replace(descriptor) &&
+                   llm_tool_is_replace(descriptor) &&
                    !build_after_write) {
             char *display_path;
-            openai_replace_result replace_result;
+            llm_replace_result replace_result;
             int use_lines;
 
-            if (!openai_auto_allow_write()) {
+            if (!llm_auto_allow_write()) {
                 tool_output = llm_result_make(
                     name, "limit", "write", 0,
                     arguments,
                     "Autonomous write limit reached."
                 );
-                openai_tx_model_result(
+                llm_tx_model_result(
                     name, "limit",
                     tool_output != NULL ?
                         tool_output : "Autonomous write limit reached."
@@ -373,7 +373,7 @@ void llm_agent_mode(agent_state *state,
             } else {
                 display_path = NULL;
                 use_lines =
-                    descriptor->kind == OPENAI_TOOL_REPLACE_LINES;
+                    descriptor->kind == LLM_TOOL_REPLACE_LINES;
 
                 replace_result = use_lines ?
                     execute_replace_lines_tool(
@@ -387,12 +387,12 @@ void llm_agent_mode(agent_state *state,
                     display_path != NULL ? display_path : ""
                 );
 
-                if (replace_result == OPENAI_REPLACE_APPLIED) {
+                if (replace_result == LLM_REPLACE_APPLIED) {
                     llm_cache_free(cache);
                     llm_cache_init(cache);
-                    (void)openai_git_refresh(state);
-                    openai_log_event(
-                        openai_workflow_name(openai_last_workflow),
+                    (void)llm_git_refresh(state);
+                    llm_log_event(
+                        llm_workflow_name(llm_last_workflow),
                         "patch_applied",
                         1
                     );
@@ -404,14 +404,14 @@ void llm_agent_mode(agent_state *state,
                         "needed, make another bounded patch only when "
                         "necessary, or return the final answer."
                     );
-                    openai_tx_model_result(
+                    llm_tx_model_result(
                         name, "applied",
                         tool_output != NULL ?
                             tool_output : "Patch applied successfully."
                     );
-                } else if (replace_result == OPENAI_REPLACE_DECLINED) {
-                    openai_log_event(
-                        openai_workflow_name(openai_last_workflow),
+                } else if (replace_result == LLM_REPLACE_DECLINED) {
+                    llm_log_event(
+                        llm_workflow_name(llm_last_workflow),
                         "patch_declined",
                         0
                     );
@@ -421,13 +421,13 @@ void llm_agent_mode(agent_state *state,
                         "Patch declined by local user; do not assume it "
                         "was applied."
                     );
-                    openai_tx_model_result(
+                    llm_tx_model_result(
                         name, "declined",
                         tool_output != NULL ? tool_output : "Patch declined."
                     );
                 } else {
-                    openai_log_event(
-                        openai_workflow_name(openai_last_workflow),
+                    llm_log_event(
+                        llm_workflow_name(llm_last_workflow),
                         "patch_failed",
                         0
                     );
@@ -435,7 +435,7 @@ void llm_agent_mode(agent_state *state,
                         name, "error", "write", 0,
                         arguments, "Patch failed."
                     );
-                    openai_tx_model_result(
+                    llm_tx_model_result(
                         name, "error",
                         tool_output != NULL ? tool_output : "Patch failed."
                     );
@@ -444,9 +444,9 @@ void llm_agent_mode(agent_state *state,
                 free(display_path);
             }
         } else if (allow_write &&
-                   openai_tool_is_replace(descriptor)) {
+                   llm_tool_is_replace(descriptor)) {
             char *display_path;
-            openai_replace_result replace_result;
+            llm_replace_result replace_result;
             int use_lines;
 
             if (write_attempted) {
@@ -463,7 +463,7 @@ void llm_agent_mode(agent_state *state,
             write_attempted = 1;
             display_path = NULL;
             use_lines =
-                descriptor->kind == OPENAI_TOOL_REPLACE_LINES;
+                descriptor->kind == LLM_TOOL_REPLACE_LINES;
             replace_result = use_lines ?
                 execute_replace_lines_tool(
                     state, arguments, &display_path) :
@@ -478,9 +478,9 @@ void llm_agent_mode(agent_state *state,
             free(arguments);
             free(new_call_id);
 
-            if (replace_result == OPENAI_REPLACE_APPLIED) {
-                openai_log_event(
-                    openai_workflow_name(openai_last_workflow),
+            if (replace_result == LLM_REPLACE_APPLIED) {
+                llm_log_event(
+                    llm_workflow_name(llm_last_workflow),
                     "patch_applied",
                     1
                 );
@@ -493,8 +493,8 @@ void llm_agent_mode(agent_state *state,
                     rollback_summary =
                         "Rollback status: not needed because the build "
                         "succeeded.";
-                    openai_last_rollback =
-                        OPENAI_ROLLBACK_NOT_NEEDED;
+                    llm_last_rollback =
+                        LLM_ROLLBACK_NOT_NEEDED;
 
                     (void)puts("Patch applied. Running controlled build...");
                     build_output = execute_run_build_tool(&build_status);
@@ -518,7 +518,7 @@ void llm_agent_mode(agent_state *state,
                             build_output = normalized_build;
                         }
 
-                        openai_tx_model_result(
+                        llm_tx_model_result(
                             "run_build",
                             (build_status & 1) != 0 ?
                                 "success" : "failure",
@@ -533,7 +533,7 @@ void llm_agent_mode(agent_state *state,
 
                         if (normalized_build != NULL) {
                             build_output = normalized_build;
-                            openai_tx_model_result(
+                            llm_tx_model_result(
                                 "run_build",
                                 (build_status & 1) != 0 ?
                                     "success" : "failure",
@@ -544,14 +544,14 @@ void llm_agent_mode(agent_state *state,
 
                     if ((build_status & 1) == 0 &&
                         display_path != NULL) {
-                        if (openai_confirm_restore(display_path)) {
-                            if (openai_restore_previous_version(
+                        if (llm_confirm_restore(display_path)) {
+                            if (llm_restore_previous_version(
                                     display_path)) {
-                                openai_last_rollback =
-                                    OPENAI_ROLLBACK_SUCCEEDED;
-                                openai_log_event(
-                                    openai_workflow_name(
-                                        openai_last_workflow),
+                                llm_last_rollback =
+                                    LLM_ROLLBACK_SUCCEEDED;
+                                llm_log_event(
+                                    llm_workflow_name(
+                                        llm_last_workflow),
                                     "rollback_succeeded",
                                     1
                                 );
@@ -565,11 +565,11 @@ void llm_agent_mode(agent_state *state,
                                     "are now the latest file version."
                                 );
                             } else {
-                                openai_last_rollback =
-                                    OPENAI_ROLLBACK_FAILED;
-                                openai_log_event(
-                                    openai_workflow_name(
-                                        openai_last_workflow),
+                                llm_last_rollback =
+                                    LLM_ROLLBACK_FAILED;
+                                llm_log_event(
+                                    llm_workflow_name(
+                                        llm_last_workflow),
                                     "rollback_failed",
                                     0
                                 );
@@ -582,11 +582,11 @@ void llm_agent_mode(agent_state *state,
                                 );
                             }
                         } else {
-                            openai_last_rollback =
-                                OPENAI_ROLLBACK_DECLINED;
-                            openai_log_event(
-                                openai_workflow_name(
-                                    openai_last_workflow),
+                            llm_last_rollback =
+                                LLM_ROLLBACK_DECLINED;
+                            llm_log_event(
+                                llm_workflow_name(
+                                    llm_last_workflow),
                                 "rollback_declined",
                                 0
                             );
@@ -632,7 +632,7 @@ void llm_agent_mode(agent_state *state,
                             (void)strcat(summary_prompt, build_output);
                             (void)strcat(summary_prompt, rollback_label);
                             (void)strcat(summary_prompt, rollback_summary);
-                            openai_send(state, summary_prompt, 0);
+                            llm_send(state, summary_prompt, 0);
                             free(summary_prompt);
                         } else {
                             (void)puts(
@@ -652,9 +652,9 @@ void llm_agent_mode(agent_state *state,
 
                 free(display_path);
                 display_path = NULL;
-            } else if (replace_result == OPENAI_REPLACE_DECLINED) {
-                openai_log_event(
-                    openai_workflow_name(openai_last_workflow),
+            } else if (replace_result == LLM_REPLACE_DECLINED) {
+                llm_log_event(
+                    llm_workflow_name(llm_last_workflow),
                     "patch_declined",
                     0
                 );
@@ -664,8 +664,8 @@ void llm_agent_mode(agent_state *state,
                     "Patch cancelled. Build not run. Agent complete." :
                     "Patch cancelled. Agent complete.");
             } else {
-                openai_log_event(
-                    openai_workflow_name(openai_last_workflow),
+                llm_log_event(
+                    llm_workflow_name(llm_last_workflow),
                     "patch_failed",
                     0
                 );
@@ -676,26 +676,26 @@ void llm_agent_mode(agent_state *state,
                     "Patch failed. Agent complete.");
             }
 
-            if (replace_result == OPENAI_REPLACE_APPLIED) {
-                openai_tx_model_result(
+            if (replace_result == LLM_REPLACE_APPLIED) {
+                llm_tx_model_result(
                     name, "applied",
                     "Supervised patch workflow completed."
                 );
-                openai_auto_finish("supervised");
-            } else if (replace_result == OPENAI_REPLACE_DECLINED) {
-                openai_tx_model_result(
+                llm_auto_finish("supervised");
+            } else if (replace_result == LLM_REPLACE_DECLINED) {
+                llm_tx_model_result(
                     name, "declined",
                     "Supervised patch was declined."
                 );
-                openai_auto_finish("declined");
+                llm_auto_finish("declined");
             } else {
-                openai_tx_model_result(
+                llm_tx_model_result(
                     name, "error",
                     "Supervised patch failed."
                 );
-                openai_auto_finish("error");
+                llm_auto_finish("error");
             }
-            openai_tx_loop_event("agent", "supervised");
+            llm_tx_loop_event("agent", "supervised");
             remove_temporary_files();
             free(previous_id);
             free(call_id);
@@ -713,7 +713,7 @@ void llm_agent_mode(agent_state *state,
                     "Unsupported tool requested", name
                 );
             }
-            openai_tx_model_result(
+            llm_tx_model_result(
                 name, "unsupported",
                 tool_output != NULL ?
                     tool_output : "Unsupported tool requested."
@@ -754,10 +754,10 @@ void llm_agent_mode(agent_state *state,
             tool_output = NULL;
 
             if (perform_openai_request()) {
-                json = read_entire_file(OPENAI_RESPONSE_FILE, NULL);
+                json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
                 if (json != NULL) {
-                    if (workflow == OPENAI_WORKFLOW_PLAN) {
+                    if (workflow == LLM_WORKFLOW_PLAN) {
                         char *plan_text;
 
                         plan_text = extract_output_text_from_json(json);
@@ -766,7 +766,7 @@ void llm_agent_mode(agent_state *state,
                             (void)puts("");
                             (void)puts(plan_text);
 
-                            if (openai_plan_save(goal, plan_text)) {
+                            if (llm_plan_save(goal, plan_text)) {
                                 (void)puts("");
                                 (void)puts(
                                     "Implementation plan saved to "
@@ -779,8 +779,8 @@ void llm_agent_mode(agent_state *state,
                                 );
                             }
 
-                            openai_auto_finish("final");
-                            openai_tx_loop_event("agent", "final");
+                            llm_auto_finish("final");
+                            llm_tx_loop_event("agent", "final");
                             free(plan_text);
                             free(json);
                             remove_temporary_files();
@@ -790,8 +790,8 @@ void llm_agent_mode(agent_state *state,
                             return;
                         }
                     } else if (display_output_text_from_json(json)) {
-                        openai_auto_finish("final");
-                        openai_tx_loop_event("agent", "final");
+                        llm_auto_finish("final");
+                        llm_tx_loop_event("agent", "final");
                         free(json);
                         remove_temporary_files();
                         free(previous_id);
@@ -815,10 +815,10 @@ void llm_agent_mode(agent_state *state,
         }
     }
 
-    openai_auto_finish(
+    llm_auto_finish(
         turn >= turn_limit ? "turn-limit" : "error"
     );
-    openai_tx_loop_event(
+    llm_tx_loop_event(
         "agent",
         turn >= turn_limit ? "turn-limit" : "error"
     );

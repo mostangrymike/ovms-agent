@@ -40,14 +40,14 @@ static int execute_plan_recover_files(
     backup_exists = execute_plan_file_exists(backup_path);
 
     if (plan_exists &&
-        openai_plan_checksum_valid(plan_path)) {
+        llm_plan_checksum_valid(plan_path)) {
         execute_remove_pair(new_path);
         execute_remove_pair(backup_path);
         return 1;
     }
 
     if (new_exists &&
-        openai_plan_checksum_valid(new_path)) {
+        llm_plan_checksum_valid(new_path)) {
         execute_remove_pair(plan_path);
 
         if (!execute_rename_pair(
@@ -61,7 +61,7 @@ static int execute_plan_recover_files(
     }
 
     if (backup_exists &&
-        openai_plan_checksum_valid(backup_path)) {
+        llm_plan_checksum_valid(backup_path)) {
         execute_remove_pair(plan_path);
 
         if (!execute_rename_pair(
@@ -82,13 +82,13 @@ static int execute_plan_recover_files(
 static int execute_plan_recover(void)
 {
     return execute_plan_recover_files(
-        OPENAI_PLAN_FILE,
+        LLM_PLAN_FILE,
         "OVMS_AGENT_PLAN_NEW.TXT",
         "OVMS_AGENT_PLAN_OLD.TXT");
 }
 
 
-int openai_plan_recover_paths(
+int llm_plan_recover_paths(
     const char *plan_path,
     const char *new_path,
     const char *backup_path)

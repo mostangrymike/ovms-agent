@@ -44,7 +44,7 @@ The Phase 5 roadmap also calls for resume, list-session, and abandon-session ope
 
 ## Existing persistent-session foundation
 
-`SRC/openai_session.c` already implements a durable session record containing:
+`SRC/llm_session.c` already implements a durable session record containing:
 
 - 8-character session ID,
 - archived state,
@@ -103,13 +103,13 @@ $STATUS == "%X00000001"
 
 ## M256.2 resumed-session approval safety
 
-`SRC/OPENAI_SESSION_M256.C` wraps the mature session implementation so a successful session resume clears saved-plan approval through `openai_plan_session_reset()`.
+`SRC/LLM_SESSION_M256.C` wraps the mature session implementation so a successful session resume clears saved-plan approval through `llm_plan_session_reset()`.
 
 The deterministic M256 test simulates stale in-process approval state before resume and verifies that resume leaves:
 
-- `openai_plan_approved == 0`,
-- `openai_approved_hash == 0`,
-- `openai_approval_invalidated == 0`.
+- `llm_plan_approved == 0`,
+- `llm_approved_hash == 0`,
+- `llm_approval_invalidated == 0`.
 
 This preserves the existing rule that approval is explicit and session-local: a resumed task may remember that work is pending, but it cannot silently reuse an old authorization.
 
@@ -125,7 +125,7 @@ $STATUS == "%X00000001"
 
 ## M256.3 active-plan checkpoint and stale-file refusal
 
-`SRC/OPENAI_CHECKPOINT.C`, included by the M256 session wrapper, persists a minimal resumable-plan checkpoint in `OVMS_AGENT_CHECKPOINTS.DAT` containing:
+`SRC/LLM_CHECKPOINT.C`, included by the M256 session wrapper, persists a minimal resumable-plan checkpoint in `OVMS_AGENT_CHECKPOINTS.DAT` containing:
 
 - persistent session ID,
 - saved-plan checksum,
@@ -197,8 +197,8 @@ OpenVMS V7.2 VAX / DEC C remains the target.
 
 M256 keeps helper functions `static` where possible. The wrapper aliases introduced for the mature session implementation are:
 
-- `openai_sess_resume_base` — 23 characters;
-- `openai_sess_resume_cmd_base` — 27 characters.
+- `llm_sess_resume_base` — 23 characters;
+- `llm_sess_resume_cmd_base` — 27 characters.
 
 Both remain below the DEC C/VAX 31-character external identifier limit. The checkpoint implementation and M256 test additions introduce no known production external identifier longer than 31 characters.
 

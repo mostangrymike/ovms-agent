@@ -3,7 +3,7 @@
 
 #include "llm_internal.h"
 
-/* OPENAI_PLAN.OBJ references the interactive command-input helpers that are
+/* LLM_PLAN.OBJ references the interactive command-input helpers that are
  * normally supplied by MAIN.C.  This standalone parser regression does not
  * exercise interactive input and cannot link MAIN.OBJ because it defines its
  * own main(), so provide inert test-local definitions. */
@@ -65,7 +65,7 @@ static int m252_check_plan(const char *path,
         return 0;
     }
 
-    actual = openai_exec_validate_ops_file(path);
+    actual = llm_exec_validate_ops_file(path);
     m252_remove_plan(path);
 
     return actual == expected;

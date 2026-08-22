@@ -83,7 +83,7 @@ int llm_context_evidence_text(const char *session,
     output[0] = '\0';
     used = 0U;
 
-    if (openai_session_result_last(
+    if (llm_session_result_last(
             session, last, sizeof(last))) {
         (void)llm_context_append(
             output, output_size, &used,
@@ -94,7 +94,7 @@ int llm_context_evidence_text(const char *session,
             output, output_size, &used, tail);
     }
 
-    if (openai_session_results_text(
+    if (llm_session_results_text(
             session, recent, sizeof(recent))) {
         (void)llm_context_append(
             output, output_size, &used,
@@ -131,8 +131,8 @@ int llm_context_build(const char *goal,
     output[0] = '\0';
     used = 0U;
 
-    if (!openai_session_current_id(session)) {
-        if (openai_lang_policy_text(
+    if (!llm_session_current_id(session)) {
+        if (llm_lang_policy_text(
                 lang_policy, sizeof(lang_policy))) {
             (void)llm_context_append(
                 output, output_size, &used, lang_policy);
@@ -144,12 +144,12 @@ int llm_context_build(const char *goal,
         );
     }
 
-    if (!openai_session_show_text(
+    if (!llm_session_show_text(
             session, meta, sizeof(meta))) {
         return 0;
     }
 
-    if (!openai_session_hist_text(
+    if (!llm_session_hist_text(
             session, history, sizeof(history))) {
         history[0] = '\0';
     }
@@ -165,10 +165,10 @@ int llm_context_build(const char *goal,
         output, output_size, &used, meta
     );
 
-    if (openai_session_parent(session, parent) &&
+    if (llm_session_parent(session, parent) &&
         strcmp(parent, "-") != 0 &&
         strlen(parent) == 8U &&
-        openai_session_hist_text(
+        llm_session_hist_text(
             parent, parent_history, sizeof(parent_history))) {
         (void)llm_context_append(
             output, output_size, &used,
@@ -220,7 +220,7 @@ int llm_context_build(const char *goal,
         );
     }
 
-    if (openai_lang_policy_text(
+    if (llm_lang_policy_text(
             lang_policy, sizeof(lang_policy))) {
         (void)llm_context_append(
             output, output_size, &used,
@@ -251,8 +251,8 @@ int llm_context_current(char *output,
     size_t used;
 
     if (output == NULL || output_size == 0U ||
-        !openai_session_current_id(session) ||
-        !openai_session_show_text(
+        !llm_session_current_id(session) ||
+        !llm_session_show_text(
             session, meta, sizeof(meta))) {
         return 0;
     }
@@ -285,7 +285,7 @@ int llm_context_current(char *output,
         }
     }
 
-    if (openai_session_hist_text(
+    if (llm_session_hist_text(
             session, history, sizeof(history))) {
         (void)llm_context_append(
             output, output_size, &used,

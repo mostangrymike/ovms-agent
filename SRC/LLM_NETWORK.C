@@ -109,7 +109,7 @@ int llm_net_allow_once(const char *domain)
     size_t length;
 
     if (domain == NULL || *domain == '\0' ||
-        strcmp(openai_approval_name(), "full") != 0) return 0;
+        strcmp(llm_approval_name(), "full") != 0) return 0;
     length = strlen(domain);
     if (length >= sizeof(m258_net_once) || strchr(domain, '/') != NULL ||
         strchr(domain, ':') != NULL || strchr(domain, '@') != NULL ||
@@ -132,7 +132,7 @@ int llm_net_check(const char *url, char *detail, size_t detail_size)
         written = snprintf(detail, detail_size,
             "Network policy refused invalid HTTP/SSE endpoint.");
         if (written >= 0 && (size_t)written < detail_size) {
-            openai_log_event("NETWORK", detail, 2);
+            llm_log_event("NETWORK", detail, 2);
         }
         return 0;
     }
@@ -158,7 +158,7 @@ int llm_net_check(const char *url, char *detail, size_t detail_size)
         "Network policy: host=%s decision=%s reason=%s",
         host, allowed ? "allow" : "deny", reason);
     if (written < 0 || (size_t)written >= detail_size) return 0;
-    openai_log_event("NETWORK", detail, allowed ? 1 : 2);
+    llm_log_event("NETWORK", detail, allowed ? 1 : 2);
     return allowed;
 }
 

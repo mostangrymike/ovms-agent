@@ -4,7 +4,7 @@
 
 #include "edit_txn.h"
 
-int openai_m252_move_exec(const char *path, int commit_change);
+int llm_m252_move_exec(const char *path, int commit_change);
 
 int command_line_complete(
     const char *input,
@@ -157,7 +157,7 @@ static int m252_me_rollback(void)
     }
 
     result =
-        openai_m252_move_exec(plan, 0) &&
+        llm_m252_move_exec(plan, 0) &&
         m252_me_read(src_ver, text, restored_spec) &&
         strcmp(restored_spec, original_spec) == 0 &&
         m252_me_absent(dst_ver);
@@ -191,7 +191,7 @@ static int m252_me_commit(void)
     }
 
     result =
-        openai_m252_move_exec(plan, 1) &&
+        llm_m252_move_exec(plan, 1) &&
         m252_me_absent(src_ver) &&
         m252_me_read(dst_ver, text, moved_spec) &&
         strcmp(moved_spec, original_spec) != 0;

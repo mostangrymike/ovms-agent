@@ -22,7 +22,7 @@ void llm_agent_mode(agent_state *state,
 void llm_selftest(agent_state *state);
 void llm_status(const agent_state *state);
 void llm_verify(agent_state *state);
-void openai_log_event(const char *workflow,
+void llm_log_event(const char *workflow,
                       const char *event,
                       int status);
 void llm_show_log(void);

@@ -25,7 +25,7 @@ int command_read_stream(FILE *stream,
     return 0;
 }
 
-void openai_test_ckpt_clear(void);
+void llm_test_ckpt_clear(void);
 
 static void remove_all(const char *path)
 {
@@ -47,9 +47,9 @@ static int write_text(const char *path, const char *text)
 
 static void cleanup(void)
 {
-    openai_test_session_paths(NULL, NULL);
-    openai_plan_session_reset();
-    openai_test_ckpt_clear();
+    llm_test_session_paths(NULL, NULL);
+    llm_plan_session_reset();
+    llm_test_ckpt_clear();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
     remove_all(TEST_ID);
@@ -65,10 +65,10 @@ int main(void)
     const char *plan_text;
 
     cleanup();
-    openai_test_session_paths(TEST_DATA, TEST_CUR);
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
 
-    if (!openai_session_new("m256 restart session", id) ||
-        !openai_session_note_goal("resume parser repair after restart") ||
+    if (!llm_session_new("m256 restart session", id) ||
+        !llm_session_note_goal("resume parser repair after restart") ||
         !write_text(TARGET, "before\n")) {
         (void)puts("M256 restart setup failed: session/goal/target fixture.");
         cleanup();
@@ -86,8 +86,8 @@ int main(void)
         "new_text=after\n"
         "END_OPERATION\n";
 
-    if (!openai_plan_save("resume parser repair after restart", plan_text) ||
-        !openai_session_resume(id)) {
+    if (!llm_plan_save("resume parser repair after restart", plan_text) ||
+        !llm_session_resume(id)) {
         (void)puts("M256 restart setup failed: plan/checkpoint binding.");
         cleanup();
         return EXIT_FAILURE;
@@ -101,7 +101,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    openai_test_session_paths(NULL, NULL);
+    llm_test_session_paths(NULL, NULL);
     (void)puts("M256 restart setup evidence passed.");
     return EXIT_SUCCESS;
 }

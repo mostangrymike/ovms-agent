@@ -59,7 +59,7 @@ The preserved base implementation:
 - supports explicit reload; and
 - composes loaded instructions ahead of the current request under a `PROJECT INSTRUCTIONS` section.
 
-`SRC/OPENAI_AGENT.C` calls `openai_instr_compose()` before project-map and Git-context composition, so the resulting instruction context reaches AGENT/PLAN, AGENT/WRITE, AGENT/FIX, and read-only AGENT workflows.
+`SRC/LLM_AGENT.C` calls `llm_instr_compose()` before project-map and Git-context composition, so the resulting instruction context reaches AGENT/PLAN, AGENT/WRITE, AGENT/FIX, and read-only AGENT workflows.
 
 ## M232 foundation evidence
 
@@ -76,7 +76,7 @@ M257.1 reran that foundation on the Phase 6 branch after a successful full `@BUI
 
 ## M257 implementation
 
-M257 preserves the proven root loader in `SRC/OPENAI_INSTRUCTIONS_BASE.C` and routes the existing lowercase `SRC/openai_instructions.c` build entry through `SRC/OPENAI_INSTRUCTIONS_M257.C`.
+M257 preserves the proven root loader in `SRC/LLM_INSTRUCTIONS_BASE.C` and routes the existing lowercase `SRC/llm_instructions.c` build entry through `SRC/LLM_INSTRUCTIONS_M257.C`.
 
 Directory-scoped discovery is additive. For safe project-relative paths found in the current goal, M257:
 
@@ -115,12 +115,12 @@ $STATUS == "%X00000001"
 
 ## M257.3 planning/write enforcement evidence
 
-`SRC/M257_CONTEXT_TEST.C` uses the real production `OPENAI_AGENT.C` entry path and intercepts only the final `openai_agent_mode()` boundary. No network/API call is required.
+`SRC/M257_CONTEXT_TEST.C` uses the real production `LLM_AGENT.C` entry path and intercepts only the final `llm_agent_mode()` boundary. No network/API call is required.
 
 The test requires:
 
-- `openai_agent_plan()` to reach the final boundary as `OPENAI_WORKFLOW_PLAN` with write disabled;
-- `openai_agent_write()` to reach the final boundary as `OPENAI_WORKFLOW_WRITE` with write enabled;
+- `llm_agent_plan()` to reach the final boundary as `LLM_WORKFLOW_PLAN` with write disabled;
+- `llm_agent_write()` to reach the final boundary as `LLM_WORKFLOW_WRITE` with write enabled;
 - both captured model goals to contain the root instruction, scoped instruction, precedence marker, and original project-relative request; and
 - root instruction text to precede scoped instruction text in both real workflow contexts.
 
@@ -160,4 +160,4 @@ This does not change CAP-025, CAP-026, CAP-027, or CP-020. Practical Codex parit
 
 OpenVMS V7.2 VAX / DEC C remains the target. M257 was audited against the 31-character external identifier limit.
 
-New externally visible base aliases introduced by the wrapper remain within the limit; scoped implementation helpers are `static`. The repository also avoids a case-distinct `OPENAI_INSTRUCTIONS.C` / `openai_instructions.c` collision: the existing lowercase source path is the canonical build entry.
+New externally visible base aliases introduced by the wrapper remain within the limit; scoped implementation helpers are `static`. The repository also avoids a case-distinct `LLM_INSTRUCTIONS.C` / `llm_instructions.c` collision: the existing lowercase source path is the canonical build entry.

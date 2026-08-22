@@ -131,7 +131,7 @@ int main(void)
     if (m257_calls != 1 ||
         m257_allow_write != 0 ||
         m257_build_after != 0 ||
-        m257_workflow != OPENAI_WORKFLOW_PLAN ||
+        m257_workflow != LLM_WORKFLOW_PLAN ||
         !context_ok(request)) {
         (void)puts("M257 context failed: PLAN did not receive scoped instructions.");
         cleanup();
@@ -145,7 +145,7 @@ int main(void)
     if (m257_calls != 1 ||
         m257_allow_write != 1 ||
         m257_build_after != 0 ||
-        m257_workflow != OPENAI_WORKFLOW_WRITE ||
+        m257_workflow != LLM_WORKFLOW_WRITE ||
         !context_ok(request)) {
         (void)puts("M257 context failed: WRITE did not receive scoped instructions.");
         cleanup();

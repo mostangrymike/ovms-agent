@@ -184,24 +184,24 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    if (strcmp(openai_approval_name(), "full") != 0) {
+    if (strcmp(llm_approval_name(), "full") != 0) {
         (void)snprintf(output, output_size,
                        "DCL command refused: full approval policy required.\n");
-        openai_tx_model_result("DCL", "refused", output);
+        llm_tx_model_result("DCL", "refused", output);
         return 0;
     }
 
     if (!state->write_enabled) {
         (void)snprintf(output, output_size,
                        "DCL command refused: write gate is disabled.\n");
-        openai_tx_model_result("DCL", "write-gate", output);
+        llm_tx_model_result("DCL", "write-gate", output);
         return 0;
     }
 
     if (!state->dcl_enabled) {
         (void)snprintf(output, output_size,
                        "DCL command refused: DCL gate is disabled.\n");
-        openai_tx_model_result("DCL", "dcl-gate", output);
+        llm_tx_model_result("DCL", "dcl-gate", output);
         return 0;
     }
 
@@ -239,7 +239,7 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    openai_tx_model_call("DCL", command);
+    llm_tx_model_call("DCL", command);
 
     written = snprintf(invoke, sizeof(invoke), "@%s", procedure_path);
     if (written < 0 || (size_t)written >= sizeof(invoke)) {
@@ -263,11 +263,11 @@ int command_dcl_exec(agent_state *state,
         ((*status_out & 1UL) != 0UL) ? "yes" : "no",
         output);
 
-    openai_tx_model_result(
+    llm_tx_model_result(
         "DCL",
         ((*status_out & 1UL) != 0UL) ? "success" : "failed",
         result_note);
-    openai_log_event("DCL", command, status);
+    llm_log_event("DCL", command, status);
 
     dcl_remove_versions(procedure_path);
     dcl_remove_versions(output_path);

@@ -1,4 +1,4 @@
-static int openai_m122_make_version_path(
+static int llm_m122_make_version_path(
     const char *path,
     const char *suffix,
     char *version_path,
@@ -27,7 +27,7 @@ static int openai_m122_make_version_path(
         (size_t)count < version_size;
 }
 
-static int openai_m122_load_status(
+static int llm_m122_load_status(
     const char *path,
     int *status_out)
 {
@@ -40,7 +40,7 @@ static int openai_m122_load_status(
         return 0;
     }
 
-    if (!openai_state_load_from(
+    if (!llm_state_load_from(
             path,
             &workflow,
             &build_known,
@@ -49,9 +49,9 @@ static int openai_m122_load_status(
         return 0;
     }
 
-    if (workflow != OPENAI_WORKFLOW_EXECUTE ||
+    if (workflow != LLM_WORKFLOW_EXECUTE ||
         build_known != 1 ||
-        rollback != OPENAI_ROLLBACK_SUCCEEDED) {
+        rollback != LLM_ROLLBACK_SUCCEEDED) {
         return 0;
     }
 
@@ -59,157 +59,157 @@ static int openai_m122_load_status(
     return 1;
 }
 
-int openai_m122_zero_is_newest(
+int llm_m122_zero_is_newest(
     const char *path)
 {
-    char version_path[OPENAI_STATE_PATH_SIZE];
+    char version_path[LLM_STATE_PATH_SIZE];
     int status;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m122_make_version_path(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m122_make_version_path(
             path,
             ";0",
             version_path,
             sizeof(version_path)) ||
-        !openai_m122_load_status(
+        !llm_m122_load_status(
             version_path,
             &status)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return status == 2;
 }
 
-int openai_m122_minus_one_prior(
+int llm_m122_minus_one_prior(
     const char *path)
 {
-    char version_path[OPENAI_STATE_PATH_SIZE];
+    char version_path[LLM_STATE_PATH_SIZE];
     int status;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m122_make_version_path(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m122_make_version_path(
             path,
             ";-1",
             version_path,
             sizeof(version_path)) ||
-        !openai_m122_load_status(
+        !llm_m122_load_status(
             version_path,
             &status)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return status == 1;
 }
 
-int openai_m122_missing_prior_fails(
+int llm_m122_missing_prior_fails(
     const char *path)
 {
-    char version_path[OPENAI_STATE_PATH_SIZE];
+    char version_path[LLM_STATE_PATH_SIZE];
     int status;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m122_make_version_path(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m122_make_version_path(
             path,
             ";-1",
             version_path,
             sizeof(version_path))) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    if (openai_m122_load_status(
+    if (llm_m122_load_status(
             version_path,
             &status)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return 1;
 }
 
-int openai_m122_probe_read_only(
+int llm_m122_probe_read_only(
     const char *path)
 {
-    char version_path[OPENAI_STATE_PATH_SIZE];
+    char version_path[LLM_STATE_PATH_SIZE];
     int newest_before;
     int newest_after;
     int prior_before;
     int prior_after;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m122_load_status(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m122_load_status(
             path,
             &newest_before) ||
-        !openai_m122_make_version_path(
+        !llm_m122_make_version_path(
             path,
             ";-1",
             version_path,
             sizeof(version_path)) ||
-        !openai_m122_load_status(
+        !llm_m122_load_status(
             version_path,
             &prior_before) ||
-        !openai_m122_load_status(
+        !llm_m122_load_status(
             path,
             &newest_after) ||
-        !openai_m122_load_status(
+        !llm_m122_load_status(
             version_path,
             &prior_after)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
     return
         newest_before == 2 &&

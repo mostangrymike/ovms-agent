@@ -3,14 +3,14 @@
 
 
 
-static openai_test_build_hook_fn openai_test_build_hook = NULL;
+static llm_test_build_hook_fn llm_test_build_hook = NULL;
 
-void openai_test_set_build_hook(openai_test_build_hook_fn hook)
+void llm_test_set_build_hook(llm_test_build_hook_fn hook)
 {
-    openai_test_build_hook = hook;
+    llm_test_build_hook = hook;
 }
 
-static int openai_write_complete_text_txn(
+static int llm_write_complete_text_txn(
     const char *path,
     const char *replacement_text)
 {
@@ -41,7 +41,7 @@ static int openai_write_complete_text_txn(
     return success;
 }
 
-char *openai_read_text_file(const char *path)
+char *llm_read_text_file(const char *path)
 {
     FILE *file;
     long length;
@@ -213,7 +213,7 @@ int llm_cache_store(llm_file_cache_entry *cache,
     return 1;
 }
 
-char *openai_duplicate_text(const char *text)
+char *llm_duplicate_text(const char *text)
 {
     char *copy;
 
@@ -263,7 +263,7 @@ char *execute_read_file_range_tool(
         );
     }
 
-    *display_path = openai_duplicate_text(path);
+    *display_path = llm_duplicate_text(path);
     *display_start = start_line;
     *display_end = end_line;
 
@@ -309,7 +309,7 @@ char *execute_read_file_range_tool(
         return error;
     }
 
-    output = malloc(OPENAI_RANGE_OUTPUT_LIMIT);
+    output = malloc(LLM_RANGE_OUTPUT_LIMIT);
 
     if (output == NULL) {
         (void)fclose(file);
@@ -338,7 +338,7 @@ char *execute_read_file_range_tool(
 
         written = snprintf(
             output + used,
-            OPENAI_RANGE_OUTPUT_LIMIT - used,
+            LLM_RANGE_OUTPUT_LIMIT - used,
             "%6lu  %s",
             line_number,
             line
@@ -346,10 +346,10 @@ char *execute_read_file_range_tool(
 
         if (written < 0 ||
             (size_t)written >=
-                OPENAI_RANGE_OUTPUT_LIMIT - used) {
+                LLM_RANGE_OUTPUT_LIMIT - used) {
             (void)snprintf(
                 output + used,
-                OPENAI_RANGE_OUTPUT_LIMIT - used,
+                LLM_RANGE_OUTPUT_LIMIT - used,
                 "[ranged read truncated]\n"
             );
             break;
@@ -359,7 +359,7 @@ char *execute_read_file_range_tool(
 
         if (used > 0U &&
             output[used - 1U] != '\n' &&
-            used + 1U < OPENAI_RANGE_OUTPUT_LIMIT) {
+            used + 1U < LLM_RANGE_OUTPUT_LIMIT) {
             output[used++] = '\n';
             output[used] = '\0';
         }
@@ -401,7 +401,7 @@ char *execute_read_file_tool(
         );
     }
 
-    *display_path = openai_duplicate_text(path);
+    *display_path = llm_duplicate_text(path);
 
     if (!llm_path_is_safe(path)) {
         output = make_tool_error(
@@ -416,7 +416,7 @@ char *execute_read_file_tool(
 
     if (cached != NULL) {
         *cache_hit = 1;
-        output = openai_duplicate_text(cached);
+        output = llm_duplicate_text(cached);
         free(path);
         return output;
     }
@@ -449,7 +449,7 @@ char *execute_read_file_tool(
         }
     }
 
-    output = openai_read_text_file(path);
+    output = llm_read_text_file(path);
 
     if (output == NULL) {
         output = make_tool_error("Unable to read file", path);
@@ -461,7 +461,7 @@ char *execute_read_file_tool(
     return output;
 }
 
-int openai_join_path(const char *parent,
+int llm_join_path(const char *parent,
                             const char *child,
                             char *output,
                             size_t output_size)
@@ -504,7 +504,7 @@ char *execute_list_directory_tool(const char *arguments,
     }
 
     target = *path == '\0' ? "." : path;
-    *display_path = openai_duplicate_text(target);
+    *display_path = llm_duplicate_text(target);
 
     if (strcmp(target, ".") != 0 &&
         !llm_path_is_safe(target)) {
@@ -524,7 +524,7 @@ char *execute_list_directory_tool(const char *arguments,
         return output;
     }
 
-    output = malloc(OPENAI_LIST_OUTPUT_LIMIT);
+    output = malloc(LLM_LIST_OUTPUT_LIMIT);
 
     if (output == NULL) {
         (void)closedir(directory);
@@ -552,7 +552,7 @@ char *execute_list_directory_tool(const char *arguments,
             continue;
         }
 
-        if (!openai_join_path(target,
+        if (!llm_join_path(target,
                               entry->d_name,
                               child_path,
                               sizeof(child_path))) {
@@ -567,15 +567,15 @@ char *execute_list_directory_tool(const char *arguments,
         }
 
         written = snprintf(output + used,
-                           OPENAI_LIST_OUTPUT_LIMIT - used,
+                           LLM_LIST_OUTPUT_LIMIT - used,
                            "%s%s\n",
                            entry->d_name,
                            is_directory ? "/" : "");
 
         if (written < 0 ||
-            (size_t)written >= OPENAI_LIST_OUTPUT_LIMIT - used) {
+            (size_t)written >= LLM_LIST_OUTPUT_LIMIT - used) {
             (void)snprintf(output + used,
-                           OPENAI_LIST_OUTPUT_LIMIT - used,
+                           LLM_LIST_OUTPUT_LIMIT - used,
                            "[directory listing truncated; incomplete result]\n");
             break;
         }
@@ -622,8 +622,8 @@ char *execute_search_file_tool(const char *arguments,
         );
     }
 
-    *display_path = openai_duplicate_text(path);
-    *display_pattern = openai_duplicate_text(pattern);
+    *display_path = llm_duplicate_text(path);
+    *display_pattern = llm_duplicate_text(pattern);
 
     if (!llm_path_is_safe(path)) {
         output = make_tool_error(
@@ -654,7 +654,7 @@ char *execute_search_file_tool(const char *arguments,
         return output;
     }
 
-    output = malloc(OPENAI_SEARCH_OUTPUT_LIMIT);
+    output = malloc(LLM_SEARCH_OUTPUT_LIMIT);
 
     if (output == NULL) {
         (void)fclose(file);
@@ -673,17 +673,17 @@ char *execute_search_file_tool(const char *arguments,
             int written;
 
             written = snprintf(output + used,
-                               OPENAI_SEARCH_OUTPUT_LIMIT - used,
+                               LLM_SEARCH_OUTPUT_LIMIT - used,
                                "%lu: %s",
                                line_number,
                                line);
 
             if (written < 0 ||
                 (size_t)written >=
-                    OPENAI_SEARCH_OUTPUT_LIMIT - used) {
+                    LLM_SEARCH_OUTPUT_LIMIT - used) {
                 (void)snprintf(
                     output + used,
-                    OPENAI_SEARCH_OUTPUT_LIMIT - used,
+                    LLM_SEARCH_OUTPUT_LIMIT - used,
                     "\n[search output truncated]\n"
                 );
                 break;
@@ -693,7 +693,7 @@ char *execute_search_file_tool(const char *arguments,
 
             if (used > 0U &&
                 output[used - 1U] != '\n' &&
-                used + 1U < OPENAI_SEARCH_OUTPUT_LIMIT) {
+                used + 1U < LLM_SEARCH_OUTPUT_LIMIT) {
                 output[used++] = '\n';
                 output[used] = '\0';
             }
@@ -715,7 +715,7 @@ char *execute_search_file_tool(const char *arguments,
     return output;
 }
 
-openai_create_result execute_create_file_tool(
+llm_create_result execute_create_file_tool(
     const char *arguments,
     char **display_path)
 {
@@ -733,10 +733,10 @@ openai_create_result execute_create_file_tool(
         free(path);
         free(content);
         (void)puts("create_file requires path and content.");
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
-    *display_path = openai_duplicate_text(path);
+    *display_path = llm_duplicate_text(path);
 
     if (!llm_path_is_safe(path)) {
         (void)printf(
@@ -745,7 +745,7 @@ openai_create_result execute_create_file_tool(
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     if (llm_path_is_sensitive(path)) {
@@ -755,7 +755,7 @@ openai_create_result execute_create_file_tool(
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     content_length = strlen(content);
@@ -766,7 +766,7 @@ openai_create_result execute_create_file_tool(
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     if (strstr(content, "```") != NULL) {
@@ -775,18 +775,18 @@ openai_create_result execute_create_file_tool(
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
-    if (content_length > OPENAI_CREATE_MAX_BYTES) {
+    if (content_length > LLM_CREATE_MAX_BYTES) {
         (void)printf(
             "Proposed file is too large (%lu bytes; limit %u).\n",
             (unsigned long)content_length,
-            (unsigned int)OPENAI_CREATE_MAX_BYTES
+            (unsigned int)LLM_CREATE_MAX_BYTES
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     existing = fopen(path, "r");
@@ -799,7 +799,7 @@ openai_create_result execute_create_file_tool(
         );
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     (void)printf("Create new file: %s\n", path);
@@ -822,30 +822,30 @@ openai_create_result execute_create_file_tool(
         (void)putchar('\n');
         free(path);
         free(content);
-        return OPENAI_CREATE_DECLINED;
+        return LLM_CREATE_DECLINED;
     }
 
     if (answer[0] != 'y' && answer[0] != 'Y') {
         (void)puts("File creation cancelled.");
         free(path);
         free(content);
-        return OPENAI_CREATE_DECLINED;
+        return LLM_CREATE_DECLINED;
     }
 
-    if (!openai_write_complete_text_txn(path, content)) {
+    if (!llm_write_complete_text_txn(path, content)) {
         (void)printf("Unable to create %s transactionally.\n", path);
         free(path);
         free(content);
-        return OPENAI_CREATE_ERROR;
+        return LLM_CREATE_ERROR;
     }
 
     (void)puts("File created.");
     free(path);
     free(content);
-    return OPENAI_CREATE_CREATED;
+    return LLM_CREATE_CREATED;
 }
 
-openai_replace_result execute_replace_lines_tool(
+llm_replace_result execute_replace_lines_tool(
     agent_state *state,
     const char *arguments,
     char **display_path)
@@ -878,23 +878,23 @@ openai_replace_result execute_replace_lines_tool(
         (void)puts(
             "replace_lines requires path, first_line, last_line, and new_text."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
-    *display_path = openai_duplicate_text(path);
+    *display_path = llm_duplicate_text(path);
 
     if (!llm_path_is_safe(path)) {
         (void)printf("Unsafe or invalid project-relative path: %s\n", path);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (llm_path_is_sensitive(path)) {
         (void)printf("Access denied for sensitive path: %s\n", path);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (first_line < 1L || last_line < first_line ||
@@ -902,18 +902,18 @@ openai_replace_result execute_replace_lines_tool(
         (void)puts("Invalid line range; maximum span is 2001 lines.");
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
-    if (strlen(new_text) > OPENAI_CREATE_MAX_BYTES) {
+    if (strlen(new_text) > LLM_CREATE_MAX_BYTES) {
         (void)printf(
             "Replacement text is too large (%lu bytes; limit %u).\n",
             (unsigned long)strlen(new_text),
-            (unsigned int)OPENAI_CREATE_MAX_BYTES
+            (unsigned int)LLM_CREATE_MAX_BYTES
         );
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     file = fopen(path, "rb");
@@ -921,7 +921,7 @@ openai_replace_result execute_replace_lines_tool(
         (void)printf("Unable to open %s: %s\n", path, strerror(errno));
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (fseek(file, 0L, SEEK_END) != 0 ||
@@ -931,7 +931,7 @@ openai_replace_result execute_replace_lines_tool(
         (void)fclose(file);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     content = malloc((size_t)file_length + 1U);
@@ -940,7 +940,7 @@ openai_replace_result execute_replace_lines_tool(
         (void)fclose(file);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     actual = fread(content, 1U, (size_t)file_length, file);
@@ -950,7 +950,7 @@ openai_replace_result execute_replace_lines_tool(
         free(content);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
     if (fclose(file) != 0) {
         (void)printf("Unable to close %s after reading: %s\n",
@@ -958,7 +958,7 @@ openai_replace_result execute_replace_lines_tool(
         free(content);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
     content[actual] = '\0';
 
@@ -976,7 +976,7 @@ openai_replace_result execute_replace_lines_tool(
         free(content);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     end_offset = start_offset;
@@ -995,7 +995,7 @@ openai_replace_result execute_replace_lines_tool(
         free(content);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     (void)printf("File: %s\n\n", path);
@@ -1021,7 +1021,7 @@ openai_replace_result execute_replace_lines_tool(
         free(content);
         free(path);
         free(new_text);
-        return OPENAI_REPLACE_DECLINED;
+        return LLM_REPLACE_DECLINED;
     }
 
     {
@@ -1044,7 +1044,7 @@ openai_replace_result execute_replace_lines_tool(
             free(content);
             free(path);
             free(new_text);
-            return OPENAI_REPLACE_ERROR;
+            return LLM_REPLACE_ERROR;
         }
 
         if (start_offset > 0U) {
@@ -1075,7 +1075,7 @@ openai_replace_result execute_replace_lines_tool(
 
         replacement[new_length] = '\0';
 
-        write_ok = openai_write_complete_text_txn(
+        write_ok = llm_write_complete_text_txn(
             path,
             replacement
         );
@@ -1091,14 +1091,14 @@ openai_replace_result execute_replace_lines_tool(
         (void)puts(
             "Unable to write transactional line-range patch."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     (void)puts("Patch applied. A new OpenVMS file version was created.");
-    return OPENAI_REPLACE_APPLIED;
+    return LLM_REPLACE_APPLIED;
 }
 
-openai_replace_result execute_replace_text_tool(
+llm_replace_result execute_replace_text_tool(
     agent_state *state,
     const char *arguments,
     char **display_path)
@@ -1132,10 +1132,10 @@ openai_replace_result execute_replace_text_tool(
         (void)puts(
             "replace_text requires path, old_text, and new_text."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
-    *display_path = openai_duplicate_text(path);
+    *display_path = llm_duplicate_text(path);
 
     if (!llm_path_is_safe(path)) {
         (void)printf(
@@ -1145,7 +1145,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (llm_path_is_sensitive(path)) {
@@ -1156,7 +1156,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (*old_text == '\0') {
@@ -1166,16 +1166,16 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
-    content = openai_read_text_file(path);
+    content = llm_read_text_file(path);
 
     if (content == NULL) {
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     match = strstr(content, old_text);
@@ -1188,7 +1188,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     second_match = strstr(
@@ -1204,7 +1204,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     (void)printf("File: %s\n\n", path);
@@ -1237,7 +1237,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_DECLINED;
+        return LLM_REPLACE_DECLINED;
     }
 
     prefix_length =
@@ -1264,7 +1264,7 @@ openai_replace_result execute_replace_text_tool(
         free(path);
         free(old_text);
         free(new_text);
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     if (prefix_length > 0U) {
@@ -1296,7 +1296,7 @@ openai_replace_result execute_replace_text_tool(
         '\0';
 
     applied =
-        openai_write_complete_text_txn(
+        llm_write_complete_text_txn(
             path,
             replacement
         );
@@ -1311,21 +1311,21 @@ openai_replace_result execute_replace_text_tool(
         (void)puts(
             "Unable to write transactional exact-text patch."
         );
-        return OPENAI_REPLACE_ERROR;
+        return LLM_REPLACE_ERROR;
     }
 
     (void)puts(
         "Patch applied. A new OpenVMS file version was created."
     );
-    return OPENAI_REPLACE_APPLIED;
+    return LLM_REPLACE_APPLIED;
 }
 
 char *execute_run_build_tool(int *build_status)
 {
     char command[256];
 
-    if (openai_test_build_hook != NULL) {
-        return openai_test_build_hook(build_status);
+    if (llm_test_build_hook != NULL) {
+        return llm_test_build_hook(build_status);
     }
     char *output;
     size_t length;
@@ -1333,34 +1333,34 @@ char *execute_run_build_tool(int *build_status)
     int written;
 
     if (build_status == NULL) {
-        return openai_duplicate_text("Build status pointer was NULL.");
+        return llm_duplicate_text("Build status pointer was NULL.");
     }
 
     /* Fixed command only; no user or model text is interpolated. */
     written = snprintf(command,
                        sizeof(command),
                        "@BUILD.COM/OUTPUT=%s",
-                       OPENAI_BUILD_LOG_FILE);
+                       LLM_BUILD_LOG_FILE);
 
     if (written < 0 || (size_t)written >= sizeof(command)) {
-        return openai_duplicate_text(
+        return llm_duplicate_text(
             "Unable to construct fixed BUILD.COM invocation."
         );
     }
 
-    (void)remove(OPENAI_BUILD_LOG_FILE);
+    (void)remove(LLM_BUILD_LOG_FILE);
     status = system(command);
     *build_status = status;
-    openai_last_build_known = 1;
-    openai_last_build_status = status;
+    llm_last_build_known = 1;
+    llm_last_build_status = status;
 
-    openai_log_event(
-        openai_workflow_name(openai_last_workflow),
+    llm_log_event(
+        llm_workflow_name(llm_last_workflow),
         (status & 1) != 0 ? "build_success" : "build_failure",
         status
     );
 
-    output = read_entire_file(OPENAI_BUILD_LOG_FILE, &length);
+    output = read_entire_file(LLM_BUILD_LOG_FILE, &length);
 
     if (output == NULL) {
         char fallback[256];
@@ -1372,11 +1372,11 @@ char *execute_run_build_tool(int *build_status)
             "could not be read.",
             status
         );
-        return openai_duplicate_text(fallback);
+        return llm_duplicate_text(fallback);
     }
 
-    if (length > OPENAI_BUILD_OUTPUT_LIMIT) {
-        output[OPENAI_BUILD_OUTPUT_LIMIT] = '\0';
+    if (length > LLM_BUILD_OUTPUT_LIMIT) {
+        output[LLM_BUILD_OUTPUT_LIMIT] = '\0';
     }
 
     {
@@ -1397,7 +1397,7 @@ char *execute_run_build_tool(int *build_status)
 
         if (result == NULL) {
             free(output);
-            return openai_duplicate_text(
+            return llm_duplicate_text(
                 "Insufficient memory to return build output."
             );
         }
@@ -1409,7 +1409,7 @@ char *execute_run_build_tool(int *build_status)
     }
 }
 
-int openai_confirm_restore(const char *path)
+int llm_confirm_restore(const char *path)
 {
     char answer[32];
 
@@ -1428,7 +1428,7 @@ int openai_confirm_restore(const char *path)
     return answer[0] == 'y' || answer[0] == 'Y';
 }
 
-int openai_restore_previous_version(const char *path)
+int llm_restore_previous_version(const char *path)
 {
     char previous_path[1024];
     char destination_path[1024];

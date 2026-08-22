@@ -1,4 +1,4 @@
-static int openai_m114_write_state(
+static int llm_m114_write_state(
     const char *path,
     int build_known,
     int build_status,
@@ -34,7 +34,7 @@ static int openai_m114_write_state(
         return 0;
     }
 
-    loaded = openai_state_load_from(
+    loaded = llm_state_load_from(
         path,
         &workflow,
         &loaded_known,
@@ -47,46 +47,46 @@ static int openai_m114_write_state(
 
     return
         loaded &&
-        workflow == OPENAI_WORKFLOW_EXECUTE &&
+        workflow == LLM_WORKFLOW_EXECUTE &&
         loaded_known == build_known &&
         loaded_status == build_status &&
-        rollback == OPENAI_ROLLBACK_SUCCEEDED;
+        rollback == LLM_ROLLBACK_SUCCEEDED;
 }
 
-int openai_m114_unknown_nonzero(
+int llm_m114_unknown_nonzero(
     const char *path)
 {
-    return openai_m114_write_state(
+    return llm_m114_write_state(
         path,
         0,
         2,
         0);
 }
 
-int openai_m114_unknown_zero(
+int llm_m114_unknown_zero(
     const char *path)
 {
-    return openai_m114_write_state(
+    return llm_m114_write_state(
         path,
         0,
         0,
         1);
 }
 
-int openai_m114_known_success(
+int llm_m114_known_success(
     const char *path)
 {
-    return openai_m114_write_state(
+    return llm_m114_write_state(
         path,
         1,
         1,
         1);
 }
 
-int openai_m114_known_failure(
+int llm_m114_known_failure(
     const char *path)
 {
-    return openai_m114_write_state(
+    return llm_m114_write_state(
         path,
         1,
         2,

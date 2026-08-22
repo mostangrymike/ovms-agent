@@ -1,4 +1,4 @@
-static int openai_m123_write_invalid(
+static int llm_m123_write_invalid(
     const char *path)
 {
     FILE *file;
@@ -23,7 +23,7 @@ static int openai_m123_write_invalid(
     return success;
 }
 
-static int openai_m123_load_status(
+static int llm_m123_load_status(
     const char *path,
     int *status_out)
 {
@@ -36,7 +36,7 @@ static int openai_m123_load_status(
         return 0;
     }
 
-    if (!openai_state_load_recovery(
+    if (!llm_state_load_recovery(
             path,
             &workflow,
             &build_known,
@@ -45,9 +45,9 @@ static int openai_m123_load_status(
         return 0;
     }
 
-    if (workflow != OPENAI_WORKFLOW_EXECUTE ||
+    if (workflow != LLM_WORKFLOW_EXECUTE ||
         build_known != 1 ||
-        rollback != OPENAI_ROLLBACK_SUCCEEDED) {
+        rollback != LLM_ROLLBACK_SUCCEEDED) {
         return 0;
     }
 
@@ -55,68 +55,68 @@ static int openai_m123_load_status(
     return 1;
 }
 
-int openai_m123_newest_preferred(
+int llm_m123_newest_preferred(
     const char *path)
 {
     int status;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m123_load_status(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m123_load_status(
             path,
             &status)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return status == 2;
 }
 
-int openai_m123_fallback_prior(
+int llm_m123_fallback_prior(
     const char *path)
 {
     int status;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_m123_write_invalid(path) ||
-        !openai_m123_load_status(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_m123_write_invalid(path) ||
+        !llm_m123_load_status(
             path,
             &status)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return status == 2;
 }
 
-int openai_m123_both_invalid(
+int llm_m123_both_invalid(
     const char *path)
 {
     int workflow;
@@ -124,32 +124,32 @@ int openai_m123_both_invalid(
     int build_status;
     int rollback;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_m123_write_invalid(path) ||
-        !openai_m123_write_invalid(path)) {
-        (void)openai_state_purge_all(path);
+    if (!llm_m123_write_invalid(path) ||
+        !llm_m123_write_invalid(path)) {
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    if (openai_state_load_recovery(
+    if (llm_state_load_recovery(
             path,
             &workflow,
             &build_known,
             &build_status,
             &rollback)) {
-        (void)openai_state_purge_all(path);
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
     return 1;
 }
 
-int openai_m123_read_only(
+int llm_m123_read_only(
     const char *path)
 {
-    char prior_path[OPENAI_STATE_PATH_SIZE];
+    char prior_path[LLM_STATE_PATH_SIZE];
     int count;
     int newest_before;
     int prior_before;
@@ -157,21 +157,21 @@ int openai_m123_read_only(
     int newest_after;
     int prior_after;
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
-    if (!openai_state_save_to(
+    if (!llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             1,
-            OPENAI_ROLLBACK_SUCCEEDED) ||
-        !openai_state_save_to(
+            LLM_ROLLBACK_SUCCEEDED) ||
+        !llm_state_save_to(
             path,
-            OPENAI_WORKFLOW_EXECUTE,
+            LLM_WORKFLOW_EXECUTE,
             1,
             2,
-            OPENAI_ROLLBACK_SUCCEEDED)) {
-        (void)openai_state_purge_all(path);
+            LLM_ROLLBACK_SUCCEEDED)) {
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
@@ -183,16 +183,16 @@ int openai_m123_read_only(
 
     if (count < 0 ||
         (size_t)count >= sizeof(prior_path) ||
-        !openai_m122_load_status(path, &newest_before) ||
-        !openai_m122_load_status(prior_path, &prior_before) ||
-        !openai_m123_load_status(path, &loaded) ||
-        !openai_m122_load_status(path, &newest_after) ||
-        !openai_m122_load_status(prior_path, &prior_after)) {
-        (void)openai_state_purge_all(path);
+        !llm_m122_load_status(path, &newest_before) ||
+        !llm_m122_load_status(prior_path, &prior_before) ||
+        !llm_m123_load_status(path, &loaded) ||
+        !llm_m122_load_status(path, &newest_after) ||
+        !llm_m122_load_status(prior_path, &prior_after)) {
+        (void)llm_state_purge_all(path);
         return 0;
     }
 
-    (void)openai_state_purge_all(path);
+    (void)llm_state_purge_all(path);
 
     return
         newest_before == 2 &&

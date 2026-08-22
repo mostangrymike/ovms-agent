@@ -159,7 +159,7 @@ int main(void)
         return 2;
     }
 
-    if (!openai_plan_save("GAP-009 scoped plan", scoped_plan)) {
+    if (!llm_plan_save("GAP-009 scoped plan", scoped_plan)) {
         (void)puts("M266: unable to save scoped GAP-009 plan.");
         ok = 0;
     }
@@ -174,7 +174,7 @@ int main(void)
     }
     free(text);
 
-    if (ok && !openai_plan_is_current(0)) {
+    if (ok && !llm_plan_is_current(0)) {
         (void)puts("M266: scoped plan is not current immediately after save.");
         ok = 0;
     }
@@ -191,14 +191,14 @@ int main(void)
         ok = 0;
     }
 
-    if (ok && openai_plan_is_current(0)) {
+    if (ok && llm_plan_is_current(0)) {
         (void)puts("M266: plan did not become stale when planned-new file appeared.");
         ok = 0;
     }
 
     gap009_cleanup();
 
-    if (ok && !openai_plan_save("GAP-009 zero scope", zero_plan)) {
+    if (ok && !llm_plan_save("GAP-009 zero scope", zero_plan)) {
         (void)puts("M266: unable to save zero-file plan.");
         ok = 0;
     }
@@ -210,14 +210,14 @@ int main(void)
     }
     free(text);
 
-    if (ok && !openai_plan_is_current(0)) {
+    if (ok && !llm_plan_is_current(0)) {
         (void)puts("M266: zero-file plan is not current after save.");
         ok = 0;
     }
 
     gap009_cleanup();
 
-    if (ok && openai_plan_save("GAP-009 unsafe scope", unsafe_plan)) {
+    if (ok && llm_plan_save("GAP-009 unsafe scope", unsafe_plan)) {
         (void)puts("M266: unsafe plan scope was accepted.");
         ok = 0;
     }
