@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
     "latest_vax_green_head": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
-    "current_github_head": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
-    "current_github_head_status": "VAX-green. Public umbrella filename is LLM.H and generic public OpenAI help wording is neutral. Basic AGENT/WRITE/PLAN/CREATE/FIX/BUILD/RETRY/MODE openai_agent* compatibility entrypoints, callers, declarations and wrapper aliases are retired. Physical VAX searches showed no retired basic agent names; full @BUILD passed with BUILD_STATUS=%X00000001.",
+    "current_github_head": "08c3886999c0cad81b277d7fd30b7bf26508f5f4",
+    "current_github_head_status": "Pending VAX gate. Repair entrypoint namespace candidate retires openai_agent_repair and the openai_repair_plan wrapper graph. Exact one-commit audit is 10 source/test files; asserted GitHub transformation found no survivors of either retired name. No log/state/tools/MCP/provider changes.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -145,8 +145,8 @@
       "openai_agent_repair": "Seven-occurrence repair entrypoint graph remains at caf68c0a and is the next bounded namespace candidate."
     },
     "next_work": [
-      "Migrate openai_agent_repair plus the openai_repair_plan wrapper graph as one bounded repair-entrypoint tranche, then VAX build.",
-      "Continue exact-head classification of remaining generic openai_/OPENAI_ families; preserve OPENAI_API_KEY and genuine OpenAI-compatible protocol/config semantics.",
+      "VAX-gate 08c38869 repair entrypoint namespace candidate.",
+      "After green, continue exact-head classification of remaining generic openai_/OPENAI_ families; preserve OPENAI_API_KEY and genuine OpenAI-compatible protocol/config semantics.",
       "Run final full VAX acceptance before closing issue #31."
     ],
     "accepted_at_043f26bd": {
@@ -176,6 +176,20 @@
       "modified_files": 18,
       "scope": "Retired basic AGENT/WRITE/PLAN/CREATE/FIX/BUILD/RETRY/MODE openai_agent* compatibility names and wrapper aliases; repair/log/state/tools/MCP/provider protocol left separate.",
       "issue_acceptance_comment": 5382393251
+    },
+    "pending_at_08c38869": {
+      "base": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
+      "head": "08c3886999c0cad81b277d7fd30b7bf26508f5f4",
+      "modified_files": 10,
+      "retired_names": [
+        "openai_agent_repair",
+        "openai_repair_plan"
+      ],
+      "survivor_audit": "no matches in SRC .C/.H/.INC on the GitHub candidate",
+      "provider_protocol_changes": 0,
+      "log_state_tools_mcp_changes": 0,
+      "issue_pending_comment": 5382412852,
+      "acceptance_needed": "Full VAX @BUILD plus BUILD_STATUS=%X00000001 on exact 08c38869 tree."
     }
   },
   "local_openvms_state": {
