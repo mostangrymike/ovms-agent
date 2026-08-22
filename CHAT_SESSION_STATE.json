@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T18:48:00-05:00",
+  "updated_at": "2026-08-21T19:07:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "6420958eb256a4db3ecd76e19027ea461e486c38",
-    "current_github_head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
-    "current_github_head_status": "Pending VAX gate. REQUEST header ownership tranche adds canonical LLM_REQUEST_BUILD.H, LLM_REQUEST_AGENT.H, and LLM_REQUEST_BASIC.H with declarations matching the legacy headers exactly apart from include guards, then converts the corresponding OPENAI_REQUEST_* headers to forwarding shims. No C bodies, symbols, build lists, or consumer include paths changed. Two initially mis-transcribed neutral declaration files were corrected before any legacy header pointed at them, so the incorrect drafts were never on a live include path.",
+    "latest_vax_green_head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+    "current_github_head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+    "current_github_head_status": "Pending VAX gate. Based on VAX-green ac0acde, seven small/medium production and regression consumers now include canonical LLM_REQUEST_* headers directly. The audited delta is exactly +9/-9 include-line substitutions across SRC/OPENAI_REQUEST.C, SRC/OPENAI_REQUEST_BUILD.C, SRC/OPENAI_REQUEST_AGENT.C, SRC/OPENAI_REQUEST_BASIC.C, SRC/m251_synth_test.c, SRC/M259_REQUEST_BASE_TEST.C, and SRC/M259_REQUEST_IMAGE_TEST.C. No function bodies, declarations, symbols, build lists, or runtime logic changed. SRC/LLM_INTERNAL_CORE.H remains the known live choke-point still including the three OPENAI_REQUEST_* shims, which remain present for this gate.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -66,7 +66,8 @@
       "internal_declarations_and_map_recovery": "cec271a7738995fa691fbc3c915684ac8799b175",
       "plan_filename_validation_migration": "bbf55cd77dddc0fc42c9aeb40927f06d0bf13f84",
       "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
-      "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38"
+      "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38",
+      "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -175,9 +176,11 @@
       "shim_deleted": "SRC/OPENAI_REPAIR.H",
       "new_external_identifiers": 0
     },
-    "pending_request_header_gate": {
+    "accepted_at_ac0acde": {
       "base": "6420958eb256a4db3ecd76e19027ea461e486c38",
       "head": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "files": [
         "SRC/LLM_REQUEST_BUILD.H",
         "SRC/LLM_REQUEST_AGENT.H",
@@ -191,7 +194,27 @@
       "c_body_changes": 0,
       "symbol_changes": 0,
       "build_list_changes": 0,
-      "issue_comment": 5376606729
+      "issue_comment": 5376657452
+    },
+    "pending_request_consumer_gate": {
+      "base": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
+      "head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+      "files": [
+        "SRC/OPENAI_REQUEST.C",
+        "SRC/OPENAI_REQUEST_BUILD.C",
+        "SRC/OPENAI_REQUEST_AGENT.C",
+        "SRC/OPENAI_REQUEST_BASIC.C",
+        "SRC/m251_synth_test.c",
+        "SRC/M259_REQUEST_BASE_TEST.C",
+        "SRC/M259_REQUEST_IMAGE_TEST.C"
+      ],
+      "change": "Drain direct production and request-focused regression includes from OPENAI_REQUEST_* compatibility headers to canonical LLM_REQUEST_* headers.",
+      "include_substitutions": 9,
+      "c_body_changes": 0,
+      "symbol_changes": 0,
+      "build_list_changes": 0,
+      "remaining_known_shim_consumer": "SRC/LLM_INTERNAL_CORE.H",
+      "issue_comment": 5376677756
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -233,8 +256,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate ac0acde request-header canonicalization with full @BUILD.",
-      "If green, promote ac0acde and then drain exact request-header consumers toward LLM_REQUEST_* before considering legacy shim deletion.",
+      "VAX-gate 82c309adae6ea077d16dc188e6dd2f819e25888c with full @BUILD after restoring the seven changed consumer files.",
+      "If green, promote 82c309a and then change the three request includes in SRC/LLM_INTERNAL_CORE.H using an exact whole-file audit before retiring OPENAI_REQUEST_* shims.",
       "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
