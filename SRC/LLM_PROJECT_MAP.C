@@ -8,106 +8,82 @@
  * source/header/test/build entries so useful repository context does not
  * depend on readdir() order.
  */
-#define openai_project_refresh       llm_project_refresh_base
-#define openai_project_map_text      llm_project_map_text_base
-#define openai_project_files_text    llm_project_files_text_base
-#define openai_project_src_text      llm_project_src_text_base
-#define openai_project_tests_text    llm_project_tests_text_base
-#define openai_project_build_text    llm_project_build_text_base
-#define openai_project_context       llm_project_context_base
-#define openai_project_compose       llm_project_compose_base
-#define openai_show_project_map      llm_show_project_map_base
-#define openai_show_project_ctx      llm_show_project_ctx_base
-#define openai_project_refresh_cmd   llm_project_refresh_cmd_base
-
 #include "LLM_PROJECT_MAP_CORE.INC"
-
-#undef openai_project_refresh
-#undef openai_project_map_text
-#undef openai_project_files_text
-#undef openai_project_src_text
-#undef openai_project_tests_text
-#undef openai_project_build_text
-#undef openai_project_context
-#undef openai_project_compose
-#undef openai_show_project_map
-#undef openai_show_project_ctx
-#undef openai_project_refresh_cmd
 
 static void llm_map_dec_kind(int kind)
 {
-    if (kind == OPENAI_MAP_SOURCE && openai_map_sources > 0U) {
-        --openai_map_sources;
-    } else if (kind == OPENAI_MAP_HEADER && openai_map_headers > 0U) {
-        --openai_map_headers;
-    } else if (kind == OPENAI_MAP_TEST && openai_map_tests > 0U) {
-        --openai_map_tests;
-    } else if (kind == OPENAI_MAP_BUILD && openai_map_builds > 0U) {
-        --openai_map_builds;
-    } else if (kind == OPENAI_MAP_OTHER && openai_map_others > 0U) {
-        --openai_map_others;
+    if (kind == LLM_MAP_SOURCE && llm_map_sources > 0U) {
+        --llm_map_sources;
+    } else if (kind == LLM_MAP_HEADER && llm_map_headers > 0U) {
+        --llm_map_headers;
+    } else if (kind == LLM_MAP_TEST && llm_map_tests > 0U) {
+        --llm_map_tests;
+    } else if (kind == LLM_MAP_BUILD && llm_map_builds > 0U) {
+        --llm_map_builds;
+    } else if (kind == LLM_MAP_OTHER && llm_map_others > 0U) {
+        --llm_map_others;
     }
 }
 
 static void llm_map_inc_kind(int kind)
 {
-    if (kind == OPENAI_MAP_SOURCE) {
-        ++openai_map_sources;
-    } else if (kind == OPENAI_MAP_HEADER) {
-        ++openai_map_headers;
-    } else if (kind == OPENAI_MAP_TEST) {
-        ++openai_map_tests;
-    } else if (kind == OPENAI_MAP_BUILD) {
-        ++openai_map_builds;
+    if (kind == LLM_MAP_SOURCE) {
+        ++llm_map_sources;
+    } else if (kind == LLM_MAP_HEADER) {
+        ++llm_map_headers;
+    } else if (kind == LLM_MAP_TEST) {
+        ++llm_map_tests;
+    } else if (kind == LLM_MAP_BUILD) {
+        ++llm_map_builds;
     } else {
-        ++openai_map_others;
+        ++llm_map_others;
     }
 }
 
 static void llm_map_priority_add(const char *path)
 {
-    char logical_path[OPENAI_MAP_PATH];
+    char logical_path[LLM_MAP_PATH];
     unsigned int index;
     unsigned int replace_index;
     int kind;
 
-    openai_map_base_path(path, logical_path, sizeof(logical_path));
+    llm_map_base_path(path, logical_path, sizeof(logical_path));
     if (logical_path[0] == '\0') return;
 
-    for (index = 0U; index < openai_map_count; ++index) {
-        if (openai_map_ci_equal(openai_map_files[index].path,
+    for (index = 0U; index < llm_map_count; ++index) {
+        if (llm_map_ci_equal(llm_map_files[index].path,
                                 logical_path)) {
             return;
         }
     }
 
-    kind = openai_map_kind(logical_path);
-    if (openai_map_count < OPENAI_MAP_MAX_FILES) {
-        openai_map_add(logical_path);
+    kind = llm_map_kind(logical_path);
+    if (llm_map_count < LLM_MAP_MAX_FILES) {
+        llm_map_add(logical_path);
         return;
     }
 
-    openai_map_truncated = 1;
-    if (kind == OPENAI_MAP_OTHER) return;
+    llm_map_truncated = 1;
+    if (kind == LLM_MAP_OTHER) return;
 
-    replace_index = OPENAI_MAP_MAX_FILES;
-    for (index = 0U; index < openai_map_count; ++index) {
-        if (openai_map_files[index].kind == OPENAI_MAP_OTHER) {
+    replace_index = LLM_MAP_MAX_FILES;
+    for (index = 0U; index < llm_map_count; ++index) {
+        if (llm_map_files[index].kind == LLM_MAP_OTHER) {
             replace_index = index;
             break;
         }
     }
 
-    if (replace_index >= openai_map_count) return;
+    if (replace_index >= llm_map_count) return;
 
-    llm_map_dec_kind(openai_map_files[replace_index].kind);
-    (void)strncpy(openai_map_files[replace_index].path,
+    llm_map_dec_kind(llm_map_files[replace_index].kind);
+    (void)strncpy(llm_map_files[replace_index].path,
                   logical_path,
-                  sizeof(openai_map_files[replace_index].path) - 1U);
-    openai_map_files[replace_index].path[
-        sizeof(openai_map_files[replace_index].path) - 1U
+                  sizeof(llm_map_files[replace_index].path) - 1U);
+    llm_map_files[replace_index].path[
+        sizeof(llm_map_files[replace_index].path) - 1U
     ] = '\0';
-    openai_map_files[replace_index].kind = kind;
+    llm_map_files[replace_index].kind = kind;
     llm_map_inc_kind(kind);
 }
 
@@ -117,27 +93,27 @@ static void llm_map_priority_walk(const char *path,
     DIR *directory;
     struct dirent *entry;
 
-    if (depth > OPENAI_MAP_DEPTH) return;
+    if (depth > LLM_MAP_DEPTH) return;
 
     directory = opendir(path);
     if (directory == NULL) return;
 
     while ((entry = readdir(directory)) != NULL) {
-        char child[OPENAI_MAP_PATH];
+        char child[LLM_MAP_PATH];
         DIR *candidate;
 
-        if (openai_map_hide(entry->d_name)) continue;
+        if (llm_map_hide(entry->d_name)) continue;
 
-        if (!openai_map_join(path, entry->d_name,
+        if (!llm_map_join(path, entry->d_name,
                              child, sizeof(child))) {
-            openai_map_truncated = 1;
+            llm_map_truncated = 1;
             continue;
         }
 
         candidate = opendir(child);
         if (candidate != NULL) {
             (void)closedir(candidate);
-            if (!openai_map_ci_contains(child, "BUILD")) {
+            if (!llm_map_ci_contains(child, "BUILD")) {
                 llm_map_priority_walk(child, depth + 1U);
             }
         } else {
@@ -171,7 +147,7 @@ int llm_project_refresh(const agent_state *state)
 
 static int llm_map_ensure_priority(const agent_state *state)
 {
-    if (!openai_map_loaded) return llm_project_refresh(state);
+    if (!llm_map_loaded) return llm_project_refresh(state);
     return 1;
 }
 
@@ -259,6 +235,6 @@ void llm_project_refresh_cmd(const agent_state *state)
     }
 
     (void)printf("Project map refreshed: %u files%s.\n",
-                 openai_map_count,
-                 openai_map_truncated ? " (truncated)" : "");
+                 llm_map_count,
+                 llm_map_truncated ? " (truncated)" : "");
 }
