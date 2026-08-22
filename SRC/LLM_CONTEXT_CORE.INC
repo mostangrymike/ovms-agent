@@ -272,7 +272,7 @@ int llm_context_current(char *output,
     {
         char instructions[4352];
 
-        if (openai_instr_show_text(
+        if (llm_instr_show_text(
                 NULL, instructions, sizeof(instructions))) {
             (void)llm_context_append(
                 output, output_size, &used,

@@ -25,9 +25,6 @@
 #define openai_patch_dry_cmd llm_patch_dry_cmd
 #define openai_patch_validate_cmd llm_patch_validate_cmd
 #define openai_patch_last_cmd llm_patch_last_cmd
-#define openai_show_instr_status llm_show_instr_status
-#define openai_show_instr llm_show_instr
-#define openai_instr_reload_cmd llm_instr_reload_cmd
 #define openai_show_git_status llm_show_git_status
 #define openai_show_git_diff llm_show_git_diff
 #define openai_show_git_changed llm_show_git_changed
@@ -39,9 +36,6 @@
 #undef openai_show_git_changed
 #undef openai_show_git_diff
 #undef openai_show_git_status
-#undef openai_instr_reload_cmd
-#undef openai_show_instr
-#undef openai_show_instr_status
 #undef openai_patch_last_cmd
 #undef openai_patch_validate_cmd
 #undef openai_patch_dry_cmd

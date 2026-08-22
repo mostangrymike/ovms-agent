@@ -780,19 +780,19 @@ void command_agent_context_show(agent_state *state, const char *arguments)
 void command_agent_instr_status(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_instr_status(state);
+    llm_show_instr_status(state);
 }
 
 void command_agent_instr_show(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_show_instr(state);
+    llm_show_instr(state);
 }
 
 void command_agent_instr_reload(agent_state *state, const char *arguments)
 {
     (void)arguments;
-    openai_instr_reload_cmd(state);
+    llm_instr_reload_cmd(state);
 }
 
 void command_agent_project_map(agent_state *state, const char *arguments)
