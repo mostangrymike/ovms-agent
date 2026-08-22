@@ -1,0 +1,123 @@
+name: M267 asserted local internals transform
+
+on:
+  push:
+    branches:
+      - m267-candidate-local-internals-2da
+
+permissions:
+  contents: write
+
+jobs:
+  transform:
+    if: github.event.head_commit.message != 'M267: migrate isolated LLM internals'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: m267-candidate-local-internals-2da
+          fetch-depth: 0
+      - name: Apply exact asserted transformation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+
+          expected = {
+              'openai_instr_make_path': ('SRC/LLM_INSTRUCTIONS_BASE.C', 2, 'llm_instr_make_path'),
+              'openai_instr_load': ('SRC/LLM_INSTRUCTIONS_BASE.C', 3, 'llm_instr_load'),
+              'OPENAI_INSTR_PATH': ('SRC/LLM_INSTRUCTIONS_BASE.C', 4, 'LLM_INSTR_PATH'),
+              'openai_instr_ensure': ('SRC/LLM_INSTRUCTIONS_BASE.C', 4, 'llm_instr_ensure'),
+              'openai_instr_truncated': ('SRC/LLM_INSTRUCTIONS_BASE.C', 5, 'llm_instr_truncated'),
+              'OPENAI_INSTR_FILE': ('SRC/LLM_INSTRUCTIONS_BASE.C', 6, 'LLM_INSTR_FILE'),
+              'openai_instr_bytes': ('SRC/LLM_INSTRUCTIONS_BASE.C', 8, 'llm_instr_bytes'),
+              'openai_instr_test_path': ('SRC/LLM_INSTRUCTIONS_BASE.C', 8, 'llm_instr_test_path'),
+              'openai_instr_file': ('SRC/LLM_INSTRUCTIONS_BASE.C', 11, 'llm_instr_file'),
+              'openai_instr_data': ('SRC/LLM_INSTRUCTIONS_BASE.C', 12, 'llm_instr_data'),
+              'openai_instr_state': ('SRC/LLM_INSTRUCTIONS_BASE.C', 12, 'llm_instr_state'),
+              'OPENAI_CONTEXT_MAX': ('SRC/LLM_CONTEXT_CORE.INC', 2, 'LLM_CONTEXT_MAX'),
+              'OPENAI_CONTEXT_PARENT': ('SRC/LLM_CONTEXT_CORE.INC', 2, 'LLM_CONTEXT_PARENT'),
+              'OPENAI_CONTEXT_RESULTS': ('SRC/LLM_CONTEXT_CORE.INC', 2, 'LLM_CONTEXT_RESULTS'),
+              'OPENAI_CONTEXT_META': ('SRC/LLM_CONTEXT_CORE.INC', 3, 'LLM_CONTEXT_META'),
+              'OPENAI_CONTEXT_PARENT_RES': ('SRC/LLM_CONTEXT_CORE.INC', 3, 'LLM_CONTEXT_PARENT_RES'),
+              'OPENAI_CONTEXT_TAIL': ('SRC/LLM_CONTEXT_CORE.INC', 3, 'LLM_CONTEXT_TAIL'),
+              'OPENAI_CONTEXT_HIST': ('SRC/LLM_CONTEXT_CORE.INC', 9, 'LLM_CONTEXT_HIST'),
+              'openai_map_old_version': ('SRC/LLM_PROJECT_MAP_CORE.INC', 1, 'llm_map_old_version'),
+              'openai_map_build_root': ('SRC/LLM_PROJECT_MAP_CORE.INC', 2, 'llm_map_build_root'),
+              'openai_map_ensure': ('SRC/LLM_PROJECT_MAP_CORE.INC', 2, 'llm_map_ensure'),
+              'openai_map_append': ('SRC/LLM_PROJECT_MAP_CORE.INC', 3, 'llm_map_append'),
+              'openai_map_entry': ('SRC/LLM_PROJECT_MAP_CORE.INC', 3, 'llm_map_entry'),
+              'OPENAI_MAP_TEXT': ('SRC/LLM_PROJECT_MAP_CORE.INC', 5, 'LLM_MAP_TEXT'),
+              'openai_map_walk': ('SRC/LLM_PROJECT_MAP_CORE.INC', 5, 'llm_map_walk'),
+              'openai_map_render': ('SRC/LLM_PROJECT_MAP_CORE.INC', 6, 'llm_map_render'),
+          }
+
+          tracked = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p]
+          cache = {}
+          def text(path):
+              if path not in cache:
+                  try:
+                      cache[path] = Path(path).read_text(encoding='utf-8')
+                  except (UnicodeDecodeError, OSError):
+                      cache[path] = None
+              return cache[path]
+
+          total = 0
+          for old, (target, count, new) in expected.items():
+              rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(old) + r'(?![A-Za-z0-9_])')
+              hits = []
+              seen = 0
+              for path in tracked:
+                  data = text(path)
+                  if data is None:
+                      continue
+                  n = len(rx.findall(data))
+                  if n:
+                      hits.append((path, n))
+                      seen += n
+              assert hits == [(target, count)], (old, hits, target, count)
+              assert seen == count
+              data = text(target)
+              replaced, n = rx.subn(new, data)
+              assert n == count, (old, n, count)
+              Path(target).write_text(replaced, encoding='utf-8')
+              cache[target] = replaced
+              total += n
+
+          assert total == 126, total
+
+          for old, (target, count, new) in expected.items():
+              old_rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(old) + r'(?![A-Za-z0-9_])')
+              new_rx = re.compile(r'(?<![A-Za-z0-9_])' + re.escape(new) + r'(?![A-Za-z0-9_])')
+              old_hits = 0
+              new_hits = []
+              for path in tracked:
+                  data = text(path)
+                  if data is None:
+                      continue
+                  old_hits += len(old_rx.findall(data))
+                  n = len(new_rx.findall(data))
+                  if n:
+                      new_hits.append((path, n))
+              assert old_hits == 0, (old, old_hits)
+              assert new_hits == [(target, count)], (new, new_hits, target, count)
+
+          changed = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          assert changed == [
+              'SRC/LLM_CONTEXT_CORE.INC',
+              'SRC/LLM_INSTRUCTIONS_BASE.C',
+              'SRC/LLM_PROJECT_MAP_CORE.INC',
+          ], changed
+          subprocess.check_call(['git','diff','--check'])
+          PY
+      - name: Remove helper workflow and publish candidate tree
+        shell: bash
+        run: |
+          rm .github/workflows/m267-transform-local-internals.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add SRC/LLM_CONTEXT_CORE.INC SRC/LLM_INSTRUCTIONS_BASE.C SRC/LLM_PROJECT_MAP_CORE.INC .github/workflows/m267-transform-local-internals.yml
+          git diff --cached --check
+          git commit -m 'M267: migrate isolated LLM internals'
+          git push origin HEAD:m267-candidate-local-internals-2da
