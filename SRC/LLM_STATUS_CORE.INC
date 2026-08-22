@@ -1,6 +1,6 @@
 #include "llm_internal.h"
 #include "LLM_PROMPTS.H"
-#include "openai_execute.h"
+#include "LLM_EXECUTE.H"
 
 const char *openai_workflow_name(int workflow)
 {
@@ -557,10 +557,10 @@ unsigned int openai_run_selftest(agent_state *state)
     }
     #include "openai_test_operation_count.inc"
     #include "openai_test_missing_end.inc"
-    #include "openai_test_bad_type.inc"
+    #include "LLM_TEST_BAD_TYPE.INC"
     #include "openai_test_dup_type.inc"
     #include "openai_test_dup_field_path.inc"
-    #include "openai_test_block_before_type.inc"
+    #include "LLM_TEST_BLOCK_BEFORE_TYPE.INC"
     #include "openai_test_path_before_type.inc"
     #include "openai_test_new_before_old.inc"
     #include "openai_test_path_after_old.inc"
@@ -578,7 +578,7 @@ unsigned int openai_run_selftest(agent_state *state)
     #include "openai_test_unexpected_field.inc"
     #include "openai_test_unexpected_toplevel.inc"
     #include "openai_test_valid_preamble.inc"
-    #include "openai_test_blank_between_ops.inc"
+    #include "LLM_TEST_BLANK_BETWEEN_OPS.INC"
     #include "openai_test_two_valid_ops.inc"
     #include "openai_test_m103.inc"
     #include "openai_test_m106.inc"
@@ -629,7 +629,7 @@ unsigned int openai_run_selftest(agent_state *state)
     #include "openai_test_m150b.inc"
     #include "openai_test_m150c.inc"
     #include "openai_test_m150d.inc"
-    #include "openai_test_block_before_path.inc"
+    #include "LLM_TEST_BLOCK_BEFORE_PATH.INC"
     #include "openai_test_multiline.inc"
     #include "openai_test_dup_path.inc"
     #include "openai_test_same_file_chain.inc"
@@ -648,7 +648,7 @@ unsigned int openai_run_selftest(agent_state *state)
     #include "openai_test_block_with_legacy_type.inc"
     #include "openai_test_block_mixed_legacy.inc"
     #include "openai_test_block_escaped_end.inc"
-    #include "openai_test_block_empty_new.inc"
+    #include "LLM_TEST_BLOCK_EMPTY_NEW.INC"
 
     (void)puts("------------------------------------");
     (void)printf(
