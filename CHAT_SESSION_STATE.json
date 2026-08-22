@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T17:03:00-05:00",
+  "updated_at": "2026-08-22T17:33:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -10,15 +10,23 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Complete M267 in as few user turns as possible; use one final repository-wide audited namespace gate rather than many small VAX gates.",
     "latest_vax_green_head": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-    "current_github_head": "312ebc45da69bc044d99b8a738f75a2080dc5993",
-    "current_github_head_status": "FINAL M267 candidate pending one VAX/OpenVMS 7.2 acceptance gate. Clean one-parent commit from VAX-green 6c0a1de4; aggregate tree was built and asserted on temporary audit branch then collapsed without helper-workflow history.",
+    "current_github_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+    "current_github_head_status": "FINAL M267 candidate correction pending VAX/OpenVMS 7.2 build. The repository-wide namespace state was physically verified clean at predecessor 312ebc45, but that build exposed one include-guard collision in LLM_PROMPTS.H. 7fcc678e fixes only that condition.",
     "pending_gate": {
-      "base": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-      "head": "312ebc45da69bc044d99b8a738f75a2080dc5993",
-      "scope": "Repository-wide final provider-neutral namespace migration across production, tests, fixtures, build procedures and historical parity references. Retire remaining generic openai_/OPENAI_ identifiers, exact compatibility shims and generic OpenAI wording; preserve only classified OpenAI compatibility/protocol/provenance occurrences.",
-      "issue_pending_comment": 5382839997,
+      "base": "312ebc45da69bc044d99b8a738f75a2080dc5993",
+      "head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+      "scope": "One-line correction in SRC/LLM_PROMPTS.H: replace accidentally unconditional `#if defined(LLM_PROMPTS_H) || defined(LLM_INTERNAL_H)` with `#if defined(LLM_INTERNAL_H)`. The final namespace migration itself remains unchanged.",
+      "files": ["SRC/LLM_PROMPTS.H"],
+      "issue_pending_comment": 5382942413,
       "vax_status": "required",
-      "expected_final_action_if_green": "Record final acceptance, close issue #31 completed, update durable state latest_vax_green_head to final head, and close temporary audit PR #41 without merge."
+      "expected_final_action_if_green": "Record final acceptance, close issue #31 completed, update durable state latest_vax_green_head to 7fcc678e, and close temporary audit PRs without merge."
+    },
+    "failed_final_gate_at_312ebc45": {
+      "namespace_searches": "all required generic namespace and generic OpenAI wording searches returned NOMATCHES after exact-case RMS recovery",
+      "build_status": "%X10B91262",
+      "failure": "LLM_GOAL_GUARD.INC parse/include cascade: size_t, FILE, NULL and llm_replace_result unavailable because LLM_PROMPTS.H accidentally tested its own always-defined include guard",
+      "root_cause": "mechanical collision mapped OPENAI_INTERNAL_H to LLM_PROMPTS_H in a compatibility condition",
+      "recovery": "7fcc678e changes the condition to LLM_INTERNAL_H only; direct changed-header audit found no equivalent self-guard error in other changed headers"
     },
     "accepted_families_recent": {
       "public_umbrella_filename_and_wording": "043f26bdb24c546ef2b9b23ed4d6805f2628ad96",
@@ -31,33 +39,18 @@
       "instructions_namespace_complete": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
       "broader_context_entrypoints": "6c0a1de416ed97e7edf0605685787f7cffd23f36"
     },
-    "accepted_at_6c0a1de4": {
-      "base": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
-      "head": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "physical_retired_search": "SEARCH/EXACT returned no matches for openai_context_text or openai_show_context",
-      "scope": "Completed deferred provider-neutral broader context entrypoints across four files / seven audited occurrences.",
-      "issue_acceptance_comment": 5382765141
-    },
     "final_github_audit": {
       "temporary_branch": "m267-final-audit-6c0",
       "temporary_pr": 41,
-      "audited_temp_head": "6cc4870c55d27bd9367c4aba81cfd5c7be424988",
       "audited_tree_sha": "0d9046339cf0234ae791467acac0a74a13c63ebf",
-      "clean_production_commit": "312ebc45da69bc044d99b8a738f75a2080dc5993",
-      "clean_parent": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-      "initial_legacy_tokens": 1030,
-      "initial_legacy_occurrences": 8986,
-      "initial_neutral_name_collisions": 128,
-      "initial_aliases": 138,
+      "clean_namespace_commit": "312ebc45da69bc044d99b8a738f75a2080dc5993",
+      "corrected_candidate": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
       "tracked_paths_containing_openai_after_migration": 0,
       "unjustified_prefixed_tokens_after_migration": 0,
       "exact_legacy_to_neutral_shims_after_migration": 0,
       "aggregate_changed_paths": 304,
       "generated_symbol_index": "OVMS_AGENT_SYMBOLS.DAT deleted from version control and added to .GITIGNORE; runtime already falls back to live source scan and REINDEX regenerates it.",
       "wrapper_rule": "Exact openai_x -> llm_x shims were removed; required wrapper indirection was retained as neutral llm_x -> llm_x_base mappings.",
-      "constants": "Workflow/rollback constants canonicalized in LLM_TYPES.H; LLM_WORKFLOW_EXECUTE=13 added there and duplicate legacy definitions removed from LLM_INTERNAL_CORE.H.",
       "intentional_openai_survivors": [
         "OPENAI_API_KEY / OPENAIKEY compatibility and sensitive-value handling",
         "OPENAI_TEST_HEADERS and OPENAI_MODELS.JSON legacy compatibility artifacts",
@@ -67,18 +60,15 @@
       ]
     },
     "important_recovery_history": {
-      "repair_header": "A prior deletion failed because LLM_REPAIR_CORE.INC still included the old repair header; recovered before acceptance.",
-      "request_headers": "A prior deletion missed a renamed current consumer; recovered before acceptance.",
-      "m233_bounded_map": "Filename-only fixture migration changed OpenVMS bounded directory ordering. Accepted recovery makes M233 self-contained with early-sorting synthetic fixtures while preserving the production 192-file ceiling.",
-      "rms_git_case_index": "OpenVMS Git index operations may case-fold explicit SRC paths into separate lowercase src/carrier paths and may read older RMS versions. Exact VAX-tested publication must use GitHub aggregate tree verification and exact blob identity.",
       "lowercase_src_audit": "GitHub contains both SRC and lowercase src. OpenVMS collapses them into one physical [.SRC] directory. M267 survivor audits must inspect both Git path families; native VAX SEARCH over [.SRC] remains authoritative for the physical tree.",
-      "github_actions_exact_publication": "Temporary branches may run exact asserted transformations, self-remove workflows, and contribute only verified trees to clean one-parent production commits.",
-      "gitrestore_limits": "GITRESTORE accepts literal safe paths only, comma-separated, maximum 32 paths; wildcard characters are rejected by the path guard.",
+      "final_restore_casefold": "The first final restore driver used VMS git diff output, which uppercased mixed-case Git paths. Exact lowercase Git spellings were then restored explicitly; generic namespace SEARCH became clean.",
+      "symbol_index_restore": "SRC/SYMBOL_INDEX.C failed RMS blob-size verification; its sole M267 comment token was patched locally to match GitHub, while generated OVMS_AGENT_SYMBOLS.DAT was deleted as intended.",
+      "goal_guard_self_guard": "Final sweep accidentally changed an OPENAI_INTERNAL_H compatibility test in LLM_PROMPTS.H into a test of LLM_PROMPTS_H itself, making LLM_GOAL_GUARD.INC unconditional. Corrected at 7fcc678e.",
       "lesson": "Never retire compatibility or namespace names from stale search alone; use exact branch-live GitHub audit plus physical VAX SEARCH/build acceptance."
     },
     "next_work": [
-      "Run the single final VAX/OpenVMS 7.2 restore/survivor/full-build acceptance gate for 312ebc45da69bc044d99b8a738f75a2080dc5993.",
-      "If green, close M267 issue #31 as completed and record 312ebc45 as latest VAX-green/final accepted head."
+      "Fetch/reset VAX to 7fcc678e1f6ecf2a783635fde1e595cb6f13a45c, RMS-restore SRC/LLM_PROMPTS.H only, verify the corrected conditional, and run full @BUILD.",
+      "If green, close M267 issue #31 as completed and record 7fcc678e as latest VAX-green/final accepted head."
     ]
   },
   "local_openvms_state": {
