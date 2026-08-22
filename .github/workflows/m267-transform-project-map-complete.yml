@@ -1,0 +1,173 @@
+name: M267 asserted project map completion
+
+on:
+  pull_request:
+    branches:
+      - m267-llm-naming
+
+permissions:
+  contents: write
+
+jobs:
+  transform:
+    if: github.event.pull_request.head.ref == 'm267-candidate-project-map-complete'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: m267-candidate-project-map-complete
+          fetch-depth: 0
+      - name: Apply exact asserted project-map namespace completion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+
+          map_files = ['SRC/LLM_PROJECT_MAP.C', 'SRC/LLM_PROJECT_MAP_CORE.INC']
+          internal = {
+            'OPENAI_MAP_BUILD': ('LLM_MAP_BUILD', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':6}),
+            'OPENAI_MAP_DEPTH': ('LLM_MAP_DEPTH', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':2}),
+            'OPENAI_MAP_HEADER': ('LLM_MAP_HEADER', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'OPENAI_MAP_MAX_FILES': ('LLM_MAP_MAX_FILES', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':5}),
+            'OPENAI_MAP_OTHER': ('LLM_MAP_OTHER', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'OPENAI_MAP_PATH': ('LLM_MAP_PATH', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':6}),
+            'OPENAI_MAP_SOURCE': ('LLM_MAP_SOURCE', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':5}),
+            'OPENAI_MAP_TEST': ('LLM_MAP_TEST', {'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':5}),
+            'openai_map_add': ('llm_map_add', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_base_path': ('llm_map_base_path', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':2}),
+            'openai_map_builds': ('llm_map_builds', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_ci_contains': ('llm_map_ci_contains', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':8}),
+            'openai_map_ci_equal': ('llm_map_ci_equal', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':8}),
+            'openai_map_count': ('llm_map_count', {'SRC/LLM_PROJECT_MAP.C':5,'SRC/LLM_PROJECT_MAP_CORE.INC':15}),
+            'openai_map_files': ('llm_map_files', {'SRC/LLM_PROJECT_MAP.C':8,'SRC/LLM_PROJECT_MAP_CORE.INC':9}),
+            'openai_map_headers': ('llm_map_headers', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_hide': ('llm_map_hide', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'openai_map_join': ('llm_map_join', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'openai_map_kind': ('llm_map_kind', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'openai_map_loaded': ('llm_map_loaded', {'SRC/LLM_PROJECT_MAP.C':1,'SRC/LLM_PROJECT_MAP_CORE.INC':3}),
+            'openai_map_others': ('llm_map_others', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_sources': ('llm_map_sources', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_tests': ('llm_map_tests', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':4}),
+            'openai_map_truncated': ('llm_map_truncated', {'SRC/LLM_PROJECT_MAP.C':3,'SRC/LLM_PROJECT_MAP_CORE.INC':8}),
+          }
+          public = {
+            'openai_project_refresh':'llm_project_refresh',
+            'openai_project_map_text':'llm_project_map_text',
+            'openai_project_files_text':'llm_project_files_text',
+            'openai_project_src_text':'llm_project_src_text',
+            'openai_project_tests_text':'llm_project_tests_text',
+            'openai_project_build_text':'llm_project_build_text',
+            'openai_project_context':'llm_project_context',
+            'openai_project_compose':'llm_project_compose',
+            'openai_show_project_map':'llm_show_project_map',
+            'openai_show_project_ctx':'llm_show_project_ctx',
+            'openai_project_refresh_cmd':'llm_project_refresh_cmd',
+          }
+          expected_public = {
+            'openai_project_build_text': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':2},
+            'openai_project_compose': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':1},
+            'openai_project_context': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':2},
+            'openai_project_files_text': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':1},
+            'openai_project_map_text': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':4},
+            'openai_project_refresh': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':3},
+            'openai_project_refresh_cmd': {'SRC/COMMAND_AGENT.C':1,'SRC/COMMAND_AGENT_M259.C':2,'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':1},
+            'openai_project_src_text': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':2},
+            'openai_project_tests_text': {'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':2},
+            'openai_show_project_ctx': {'SRC/COMMAND_AGENT.C':1,'SRC/COMMAND_AGENT_M259.C':2,'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':1},
+            'openai_show_project_map': {'SRC/COMMAND_AGENT.C':5,'SRC/COMMAND_AGENT_M259.C':2,'SRC/LLM_INTERNAL_CORE.H':1,'SRC/LLM_PROJECT_MAP.C':2,'SRC/LLM_PROJECT_MAP_CORE.INC':1},
+          }
+
+          tracked = [p for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p and not p.startswith('.github/')]
+          cache = {}
+          def get(path):
+            if path not in cache:
+              cache[path] = Path(path).read_text(encoding='utf-8')
+            return cache[path]
+          def put(path, data):
+            Path(path).write_text(data, encoding='utf-8')
+            cache[path] = data
+          def occurrences(token):
+            rx = re.compile(r'(?<![A-Za-z0-9_])'+re.escape(token)+r'(?![A-Za-z0-9_])')
+            out = {}
+            for p in tracked:
+              try: data = get(p)
+              except (UnicodeDecodeError, OSError): continue
+              n = len(rx.findall(data))
+              if n: out[p]=n
+            return out, rx
+
+          for old,(new,expected) in internal.items():
+            hits,rx = occurrences(old)
+            assert hits == expected, (old,hits,expected)
+            for p in expected:
+              data,n = rx.subn(new,get(p))
+              assert n == expected[p], (old,p,n,expected[p])
+              put(p,data)
+
+          for old,expected in expected_public.items():
+            hits,_ = occurrences(old)
+            assert hits == expected, (old,hits,expected)
+
+          core='SRC/LLM_PROJECT_MAP_CORE.INC'
+          data=get(core)
+          for old,new in public.items():
+            rx=re.compile(r'(?<![A-Za-z0-9_])'+re.escape(old)+r'(?![A-Za-z0-9_])')
+            data,n=rx.subn(new+'_base',data)
+            assert n == expected_public[old].get(core,0), (old,'core',n)
+          put(core,data)
+
+          hdr='SRC/LLM_INTERNAL_CORE.H'
+          data=get(hdr)
+          for old,new in public.items():
+            rx=re.compile(r'(?<![A-Za-z0-9_])'+re.escape(old)+r'(?![A-Za-z0-9_])')
+            data,n=rx.subn(new,data)
+            assert n == expected_public[old].get(hdr,0), (old,'header',n)
+          put(hdr,data)
+
+          cmd='SRC/COMMAND_AGENT.C'
+          data=get(cmd)
+          for old in ['openai_show_project_map','openai_show_project_ctx','openai_project_refresh_cmd']:
+            new=public[old]
+            rx=re.compile(r'(?<![A-Za-z0-9_])'+re.escape(old)+r'(?![A-Za-z0-9_])')
+            data,n=rx.subn(new,data)
+            assert n == expected_public[old].get(cmd,0), (old,'command',n)
+          put(cmd,data)
+
+          wrap='SRC/LLM_PROJECT_MAP.C'
+          data=get(wrap)
+          for old,new in public.items():
+            define=re.compile(r'^#define\s+'+re.escape(old)+r'\s+'+re.escape(new)+r'_base\s*\n',re.M)
+            data,n=define.subn('',data); assert n==1,(old,'define',n)
+            undef=re.compile(r'^#undef\s+'+re.escape(old)+r'\s*\n',re.M)
+            data,n=undef.subn('',data); assert n==1,(old,'undef',n)
+          put(wrap,data)
+
+          cmdwrap='SRC/COMMAND_AGENT_M259.C'
+          data=get(cmdwrap)
+          for old in ['openai_show_project_map','openai_show_project_ctx','openai_project_refresh_cmd']:
+            new=public[old]
+            define=re.compile(r'^#define\s+'+re.escape(old)+r'\s+'+re.escape(new)+r'\s*\n',re.M)
+            data,n=define.subn('',data); assert n==1,(old,'cmddefine',n)
+            undef=re.compile(r'^#undef\s+'+re.escape(old)+r'\s*\n',re.M)
+            data,n=undef.subn('',data); assert n==1,(old,'cmdundef',n)
+          put(cmdwrap,data)
+
+          for old in list(internal)+list(public):
+            hits,_=occurrences(old)
+            assert not hits,(old,hits)
+
+          changed=subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          assert changed == ['SRC/COMMAND_AGENT.C','SRC/COMMAND_AGENT_M259.C','SRC/LLM_INTERNAL_CORE.H','SRC/LLM_PROJECT_MAP.C','SRC/LLM_PROJECT_MAP_CORE.INC'], changed
+          subprocess.check_call(['git','diff','--check'])
+          PY
+      - name: Remove helper workflow and publish candidate tree
+        shell: bash
+        run: |
+          rm .github/workflows/m267-transform-project-map-complete.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add SRC/COMMAND_AGENT.C SRC/COMMAND_AGENT_M259.C SRC/LLM_INTERNAL_CORE.H SRC/LLM_PROJECT_MAP.C SRC/LLM_PROJECT_MAP_CORE.INC .github/workflows/m267-transform-project-map-complete.yml
+          git diff --cached --check
+          git commit -m 'M267: complete project-map namespace migration'
+          git push origin HEAD:m267-candidate-project-map-complete
