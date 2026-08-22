@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_request_agent.h"
+#include "LLM_REQUEST_AGENT.H"
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_AGENT_CTX.H"
 #include "LLM_JSON_PARSE.H"
