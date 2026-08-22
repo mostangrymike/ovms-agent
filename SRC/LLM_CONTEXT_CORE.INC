@@ -1,12 +1,12 @@
 #include "llm_internal.h"
 
-#define OPENAI_CONTEXT_MAX 8192U
-#define OPENAI_CONTEXT_META 2048U
-#define OPENAI_CONTEXT_HIST 32768U
-#define OPENAI_CONTEXT_TAIL 2400U
-#define OPENAI_CONTEXT_PARENT 1800U
-#define OPENAI_CONTEXT_RESULTS 1800U
-#define OPENAI_CONTEXT_PARENT_RES 1200U
+#define LLM_CONTEXT_MAX 8192U
+#define LLM_CONTEXT_META 2048U
+#define LLM_CONTEXT_HIST 32768U
+#define LLM_CONTEXT_TAIL 2400U
+#define LLM_CONTEXT_PARENT 1800U
+#define LLM_CONTEXT_RESULTS 1800U
+#define LLM_CONTEXT_PARENT_RES 1200U
 
 static int openai_context_append(char *output,
                                  size_t output_size,
@@ -70,8 +70,8 @@ int openai_context_evidence_text(const char *session,
                                  char *output,
                                  size_t output_size)
 {
-    char recent[OPENAI_CONTEXT_HIST];
-    char last[OPENAI_CONTEXT_HIST];
+    char recent[LLM_CONTEXT_HIST];
+    char last[LLM_CONTEXT_HIST];
     const char *tail;
     size_t used;
 
@@ -89,7 +89,7 @@ int openai_context_evidence_text(const char *session,
             output, output_size, &used,
             "LATEST NORMALIZED RESULT\n");
         tail = openai_context_tail(
-            last, OPENAI_CONTEXT_PARENT_RES);
+            last, LLM_CONTEXT_PARENT_RES);
         (void)openai_context_append(
             output, output_size, &used, tail);
     }
@@ -100,7 +100,7 @@ int openai_context_evidence_text(const char *session,
             output, output_size, &used,
             "RECENT NORMALIZED RESULTS\n");
         tail = openai_context_tail(
-            recent, OPENAI_CONTEXT_RESULTS);
+            recent, LLM_CONTEXT_RESULTS);
         (void)openai_context_append(
             output, output_size, &used, tail);
     }
@@ -114,11 +114,11 @@ int openai_context_build(const char *goal,
 {
     char session[9];
     char parent[9];
-    char meta[OPENAI_CONTEXT_META];
-    char history[OPENAI_CONTEXT_HIST];
-    char parent_history[OPENAI_CONTEXT_HIST];
-    char results[OPENAI_CONTEXT_HIST];
-    char parent_results[OPENAI_CONTEXT_HIST];
+    char meta[LLM_CONTEXT_META];
+    char history[LLM_CONTEXT_HIST];
+    char parent_history[LLM_CONTEXT_HIST];
+    char results[LLM_CONTEXT_HIST];
+    char parent_results[LLM_CONTEXT_HIST];
     char lang_policy[4096];
     const char *tail;
     size_t used;
@@ -175,7 +175,7 @@ int openai_context_build(const char *goal,
             "\nPARENT SESSION RECENT TRANSCRIPT\n"
         );
         tail = openai_context_tail(
-            parent_history, OPENAI_CONTEXT_PARENT
+            parent_history, LLM_CONTEXT_PARENT
         );
         (void)openai_context_append(
             output, output_size, &used, tail
@@ -188,7 +188,7 @@ int openai_context_build(const char *goal,
                 "\nPARENT SESSION PRIORITIZED TOOL EVIDENCE\n"
             );
             tail = openai_context_tail(
-                parent_results, OPENAI_CONTEXT_PARENT_RES
+                parent_results, LLM_CONTEXT_PARENT_RES
             );
             (void)openai_context_append(
                 output, output_size, &used, tail
@@ -202,7 +202,7 @@ int openai_context_build(const char *goal,
             "\nCURRENT SESSION RECENT TRANSCRIPT\n"
         );
         tail = openai_context_tail(
-            history, OPENAI_CONTEXT_TAIL
+            history, LLM_CONTEXT_TAIL
         );
         (void)openai_context_append(
             output, output_size, &used, tail
@@ -244,9 +244,9 @@ int openai_context_current(char *output,
                            size_t output_size)
 {
     char session[9];
-    char meta[OPENAI_CONTEXT_META];
-    char history[OPENAI_CONTEXT_HIST];
-    char results[OPENAI_CONTEXT_HIST];
+    char meta[LLM_CONTEXT_META];
+    char history[LLM_CONTEXT_HIST];
+    char results[LLM_CONTEXT_HIST];
     const char *tail;
     size_t used;
 
@@ -292,7 +292,7 @@ int openai_context_current(char *output,
             "\nRecent transcript:\n"
         );
         tail = openai_context_tail(
-            history, OPENAI_CONTEXT_TAIL
+            history, LLM_CONTEXT_TAIL
         );
         (void)openai_context_append(
             output, output_size, &used, tail
@@ -315,7 +315,7 @@ int openai_context_current(char *output,
 
 void openai_show_context_current(void)
 {
-    char output[OPENAI_CONTEXT_MAX];
+    char output[LLM_CONTEXT_MAX];
 
     if (!openai_context_current(
             output, sizeof(output))) {

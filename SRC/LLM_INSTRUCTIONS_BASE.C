@@ -1,18 +1,18 @@
 #include "llm_internal.h"
 
-#define OPENAI_INSTR_FILE "OVMS_AGENT_INSTRUCTIONS.TXT"
+#define LLM_INSTR_FILE "OVMS_AGENT_INSTRUCTIONS.TXT"
 #define OPENAI_INSTR_MAX 4096U
-#define OPENAI_INSTR_PATH 256U
+#define LLM_INSTR_PATH 256U
 #define OPENAI_INSTR_PROMPT 12288U
 
-static char openai_instr_data[OPENAI_INSTR_MAX];
-static char openai_instr_file[OPENAI_INSTR_PATH];
-static char openai_instr_test_path[OPENAI_INSTR_PATH];
-static size_t openai_instr_bytes = 0U;
-static int openai_instr_state = 0;
-static int openai_instr_truncated = 0;
+static char llm_instr_data[OPENAI_INSTR_MAX];
+static char llm_instr_file[LLM_INSTR_PATH];
+static char llm_instr_test_path[LLM_INSTR_PATH];
+static size_t llm_instr_bytes = 0U;
+static int llm_instr_state = 0;
+static int llm_instr_truncated = 0;
 
-static int openai_instr_make_path(const agent_state *state,
+static int llm_instr_make_path(const agent_state *state,
                                   char *output,
                                   size_t output_size)
 {
@@ -24,9 +24,9 @@ static int openai_instr_make_path(const agent_state *state,
         return 0;
     }
 
-    if (openai_instr_test_path[0] != '\0') {
+    if (llm_instr_test_path[0] != '\0') {
         (void)strncpy(
-            output, openai_instr_test_path, output_size - 1U
+            output, llm_instr_test_path, output_size - 1U
         );
         output[output_size - 1U] = '\0';
         return 1;
@@ -37,7 +37,7 @@ static int openai_instr_make_path(const agent_state *state,
     if (root == NULL || *root == '\0' ||
         strcmp(root, ".") == 0) {
         (void)strncpy(
-            output, OPENAI_INSTR_FILE, output_size - 1U
+            output, LLM_INSTR_FILE, output_size - 1U
         );
         output[output_size - 1U] = '\0';
         return 1;
@@ -50,106 +50,106 @@ static int openai_instr_make_path(const agent_state *state,
         root[length - 1U] == ':') {
         written = snprintf(
             output, output_size, "%s%s",
-            root, OPENAI_INSTR_FILE
+            root, LLM_INSTR_FILE
         );
     } else if (root[length - 1U] == '/') {
         written = snprintf(
             output, output_size, "%s%s",
-            root, OPENAI_INSTR_FILE
+            root, LLM_INSTR_FILE
         );
     } else {
         written = snprintf(
             output, output_size, "%s/%s",
-            root, OPENAI_INSTR_FILE
+            root, LLM_INSTR_FILE
         );
     }
 
     return written >= 0 && (size_t)written < output_size;
 }
 
-static int openai_instr_load(const agent_state *state)
+static int llm_instr_load(const agent_state *state)
 {
     FILE *file;
-    char path[OPENAI_INSTR_PATH];
+    char path[LLM_INSTR_PATH];
     size_t used;
     int ch;
 
-    openai_instr_data[0] = '\0';
-    openai_instr_bytes = 0U;
-    openai_instr_truncated = 0;
+    llm_instr_data[0] = '\0';
+    llm_instr_bytes = 0U;
+    llm_instr_truncated = 0;
 
-    if (!openai_instr_make_path(
+    if (!llm_instr_make_path(
             state, path, sizeof(path))) {
-        openai_instr_state = -1;
-        openai_instr_file[0] = '\0';
+        llm_instr_state = -1;
+        llm_instr_file[0] = '\0';
         return 0;
     }
 
     (void)strncpy(
-        openai_instr_file, path,
-        sizeof(openai_instr_file) - 1U
+        llm_instr_file, path,
+        sizeof(llm_instr_file) - 1U
     );
-    openai_instr_file[
-        sizeof(openai_instr_file) - 1U
+    llm_instr_file[
+        sizeof(llm_instr_file) - 1U
     ] = '\0';
 
     file = fopen(path, "r");
 
     if (file == NULL) {
-        openai_instr_state = 1;
+        llm_instr_state = 1;
         return 1;
     }
 
     used = 0U;
 
     while ((ch = fgetc(file)) != EOF) {
-        if (used + 1U < sizeof(openai_instr_data)) {
+        if (used + 1U < sizeof(llm_instr_data)) {
             if (ch == '\r') {
                 continue;
             }
-            openai_instr_data[used++] = (char)ch;
+            llm_instr_data[used++] = (char)ch;
         } else {
-            openai_instr_truncated = 1;
+            llm_instr_truncated = 1;
         }
     }
 
     if (ferror(file)) {
         (void)fclose(file);
-        openai_instr_state = -1;
-        openai_instr_data[0] = '\0';
-        openai_instr_bytes = 0U;
+        llm_instr_state = -1;
+        llm_instr_data[0] = '\0';
+        llm_instr_bytes = 0U;
         return 0;
     }
 
     (void)fclose(file);
 
     while (used > 0U &&
-           (openai_instr_data[used - 1U] == '\n' ||
-            openai_instr_data[used - 1U] == ' ' ||
-            openai_instr_data[used - 1U] == '\t')) {
+           (llm_instr_data[used - 1U] == '\n' ||
+            llm_instr_data[used - 1U] == ' ' ||
+            llm_instr_data[used - 1U] == '\t')) {
         --used;
     }
 
-    openai_instr_data[used] = '\0';
-    openai_instr_bytes = used;
-    openai_instr_state = 2;
+    llm_instr_data[used] = '\0';
+    llm_instr_bytes = used;
+    llm_instr_state = 2;
 
     return 1;
 }
 
-static int openai_instr_ensure(const agent_state *state)
+static int llm_instr_ensure(const agent_state *state)
 {
-    if (openai_instr_state == 0) {
-        return openai_instr_load(state);
+    if (llm_instr_state == 0) {
+        return llm_instr_load(state);
     }
 
-    return openai_instr_state >= 1;
+    return llm_instr_state >= 1;
 }
 
 int openai_instr_reload(const agent_state *state)
 {
-    openai_instr_state = 0;
-    return openai_instr_load(state);
+    llm_instr_state = 0;
+    return llm_instr_load(state);
 }
 
 int openai_instr_compose(const agent_state *state,
@@ -164,12 +164,12 @@ int openai_instr_compose(const agent_state *state,
         return 0;
     }
 
-    if (!openai_instr_ensure(state)) {
+    if (!llm_instr_ensure(state)) {
         return 0;
     }
 
-    if (openai_instr_state != 2 ||
-        openai_instr_bytes == 0U) {
+    if (llm_instr_state != 2 ||
+        llm_instr_bytes == 0U) {
         written = snprintf(
             output, output_size, "%s", goal
         );
@@ -185,7 +185,7 @@ int openai_instr_compose(const agent_state *state,
         "CURRENT REQUEST\n"
         "---------------\n"
         "%s",
-        openai_instr_data,
+        llm_instr_data,
         goal
     );
 
@@ -204,9 +204,9 @@ int openai_instr_status_text(const agent_state *state,
         return 0;
     }
 
-    if (!openai_instr_ensure(state)) {
+    if (!llm_instr_ensure(state)) {
         status = "error";
-    } else if (openai_instr_state == 2) {
+    } else if (llm_instr_state == 2) {
         status = "loaded";
     } else {
         status = "not found";
@@ -221,11 +221,11 @@ int openai_instr_status_text(const agent_state *state,
         "Bytes:     %lu\n"
         "Truncated: %s\n"
         "Limit:     %u bytes\n",
-        openai_instr_file[0] != '\0' ?
-            openai_instr_file : "(unresolved)",
+        llm_instr_file[0] != '\0' ?
+            llm_instr_file : "(unresolved)",
         status,
-        (unsigned long)openai_instr_bytes,
-        openai_instr_truncated ? "yes" : "no",
+        (unsigned long)llm_instr_bytes,
+        llm_instr_truncated ? "yes" : "no",
         (unsigned int)(OPENAI_INSTR_MAX - 1U)
     );
 
@@ -243,18 +243,18 @@ int openai_instr_show_text(const agent_state *state,
         return 0;
     }
 
-    if (!openai_instr_ensure(state)) {
+    if (!llm_instr_ensure(state)) {
         return 0;
     }
 
-    if (openai_instr_state != 2 ||
-        openai_instr_bytes == 0U) {
+    if (llm_instr_state != 2 ||
+        llm_instr_bytes == 0U) {
         written = snprintf(
             output, output_size,
             "No project instructions are loaded.\n"
             "Expected filespec: %s\n",
-            openai_instr_file[0] != '\0' ?
-                openai_instr_file : OPENAI_INSTR_FILE
+            llm_instr_file[0] != '\0' ?
+                llm_instr_file : LLM_INSTR_FILE
         );
 
         return written >= 0 &&
@@ -266,7 +266,7 @@ int openai_instr_show_text(const agent_state *state,
         "OVMS Agent project instructions\n"
         "-------------------------------\n"
         "%s\n",
-        openai_instr_data
+        llm_instr_data
     );
 
     return written >= 0 &&
@@ -311,23 +311,23 @@ void openai_instr_reload_cmd(const agent_state *state)
 
 void openai_test_instr_path(const char *path)
 {
-    openai_instr_state = 0;
-    openai_instr_data[0] = '\0';
-    openai_instr_file[0] = '\0';
-    openai_instr_bytes = 0U;
-    openai_instr_truncated = 0;
+    llm_instr_state = 0;
+    llm_instr_data[0] = '\0';
+    llm_instr_file[0] = '\0';
+    llm_instr_bytes = 0U;
+    llm_instr_truncated = 0;
 
     if (path == NULL || *path == '\0') {
-        openai_instr_test_path[0] = '\0';
+        llm_instr_test_path[0] = '\0';
         return;
     }
 
     (void)strncpy(
-        openai_instr_test_path,
+        llm_instr_test_path,
         path,
-        sizeof(openai_instr_test_path) - 1U
+        sizeof(llm_instr_test_path) - 1U
     );
-    openai_instr_test_path[
-        sizeof(openai_instr_test_path) - 1U
+    llm_instr_test_path[
+        sizeof(llm_instr_test_path) - 1U
     ] = '\0';
 }
