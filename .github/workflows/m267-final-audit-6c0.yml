@@ -1,0 +1,71 @@
+name: M267 final namespace collision audit
+
+on:
+  pull_request:
+    branches: [m267-llm-naming]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Audit all remaining legacy OpenAI names
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import collections, pathlib, re, subprocess
+          files = subprocess.check_output(['git','ls-files'], text=True).splitlines()
+          code_ext = {'.c','.h','.inc','.com','.opt','.dat'}
+          code = [f for f in files if (f.startswith('SRC/') or f.startswith('src/') or pathlib.Path(f).suffix.lower() in code_ext)]
+          token_re = re.compile(r'\b(?:openai_[A-Za-z0-9_]+|OPENAI_[A-Za-z0-9_]+)\b')
+          ident_re = re.compile(r'\b[A-Za-z_][A-Za-z0-9_]*\b')
+          legacy = collections.Counter(); legacy_paths = collections.defaultdict(collections.Counter)
+          all_ids = collections.Counter(); id_paths = collections.defaultdict(collections.Counter)
+          literals=[]; aliases=[]
+          for name in code:
+              p=pathlib.Path(name)
+              try: text=p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError,OSError): continue
+              for tok in token_re.findall(text):
+                  legacy[tok]+=1; legacy_paths[tok][name]+=1
+              for tok in ident_re.findall(text):
+                  all_ids[tok]+=1; id_paths[tok][name]+=1
+              for n,line in enumerate(text.splitlines(),1):
+                  if 'OpenAI' in line or 'OPENAI' in line or 'openai' in line:
+                      if len(literals)<500:
+                          literals.append((name,n,line.strip()))
+                  m=re.match(r'\s*#\s*define\s+((?:openai_|OPENAI_)[A-Za-z0-9_]+)\s+((?:llm_|LLM_)[A-Za-z0-9_]+)\b',line)
+                  if m: aliases.append((name,n,m.group(1),m.group(2)))
+                  m=re.match(r'\s*#\s*define\s+((?:llm_|LLM_)[A-Za-z0-9_]+)\s+((?:openai_|OPENAI_)[A-Za-z0-9_]+)\b',line)
+                  if m: aliases.append((name,n,m.group(1),m.group(2)))
+          def target(tok):
+              return ('llm_'+tok[7:]) if tok.startswith('openai_') else ('LLM_'+tok[7:])
+          collisions=[]
+          for tok in sorted(legacy,key=lambda s:(s.lower(),s)):
+              t=target(tok)
+              if all_ids[t]:
+                  collisions.append((tok,t,legacy[tok],all_ids[t],dict(legacy_paths[tok]),dict(id_paths[t])))
+          print('FINAL_AUDIT_SUMMARY')
+          print(f'CODE_FILES={len(code)} LEGACY_TOKENS={len(legacy)} LEGACY_OCCURRENCES={sum(legacy.values())} COLLISIONS={len(collisions)} ALIASES={len(aliases)} LITERAL_LINES_CAPPED={len(literals)}')
+          print('COLLISIONS_BEGIN')
+          for tok,t,lc,tc,lp,tp in collisions:
+              print(f'{tok}|{t}|OLD={lc}|NEW={tc}|OLDPATHS={lp}|NEWPATHS={tp}')
+          print('COLLISIONS_END')
+          print('ALIASES_BEGIN')
+          for row in aliases: print('|'.join(map(str,row)))
+          print('ALIASES_END')
+          print('PROVIDERISH_BEGIN')
+          for tok in sorted(legacy,key=lambda s:(s.lower(),s)):
+              if any(k in tok for k in ('API','MODEL','HEADER','REQUEST','RESPONSE','TRANSPORT','PROVIDER')):
+                  print(f'{tok}|{legacy[tok]}|{dict(legacy_paths[tok])}')
+          print('PROVIDERISH_END')
+          print('LITERALS_BEGIN')
+          for name,n,line in literals: print(f'{name}:{n}:{line}')
+          print('LITERALS_END')
+          PY
