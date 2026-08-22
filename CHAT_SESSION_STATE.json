@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-21T19:19:00-05:00",
+  "updated_at": "2026-08-22T08:58:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
     "latest_vax_green_head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-    "current_github_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
-    "current_github_head_status": "Pending VAX gate. Final REQUEST header retirement based on VAX-green 82c309a: SRC/LLM_INTERNAL_CORE.H has exactly +3/-3 include-name substitutions from the three OPENAI_REQUEST_* compatibility headers to canonical LLM_REQUEST_* headers, then SRC/OPENAI_REQUEST_BUILD.H, SRC/OPENAI_REQUEST_AGENT.H, and SRC/OPENAI_REQUEST_BASIC.H are deleted. Net repository file delta -3. No C bodies, declarations, symbols, build lists, or runtime logic changed. Exact-branch survivor audit found no remaining live consumer outside the already-drained set; stale OPENAI_INTERNAL.H and OPENAI_AGENT_LOOP_M259_CORE.C search candidates do not exist on the branch.",
+    "current_github_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+    "current_github_head_status": "Pending corrected VAX recovery gate. b035ae5 failed with %CC-F-NOINCLFILEF for openai_request_agent.h because live SRC/LLM_AGENT_LOOP_M259_CORE.C still included the retired compatibility header. Head 25949acc changes that one missed include to LLM_REQUEST_AGENT.H while keeping the three OPENAI_REQUEST_* shims deleted. Expanded exact-current-tree audit checked the active M259 wrappers/tests and CREATE/RETRY/agent entry paths. Aggregate delta from VAX-green 82c309a is two include-only modifications (+4/-4 total) plus three seven-line shim deletions, net repository file delta -3; no function bodies, declarations, symbols, or build lists changed.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -217,23 +217,28 @@
       "build_list_changes": 0,
       "issue_comment": 5376725469
     },
-    "pending_request_header_retirement_gate": {
+    "request_header_retirement_recovery": {
       "base": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
-      "core_file": "SRC/LLM_INTERNAL_CORE.H",
-      "core_delta": "+3/-3 include substitutions only",
-      "deleted_shims": [
-        "SRC/OPENAI_REQUEST_BUILD.H",
-        "SRC/OPENAI_REQUEST_AGENT.H",
-        "SRC/OPENAI_REQUEST_BASIC.H"
+      "failed_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
+      "failed_build_status": "%X10B91264",
+      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_request_agent.h",
+      "failure_root_cause": "SRC/LLM_AGENT_LOOP_M259_CORE.C still included the retired OPENAI_REQUEST_AGENT.H compatibility header; stale code-search results did not expose the current renamed M259 core path.",
+      "corrected_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "corrected_files": [
+        "SRC/LLM_INTERNAL_CORE.H",
+        "SRC/LLM_AGENT_LOOP_M259_CORE.C",
+        "SRC/OPENAI_REQUEST_BUILD.H (deleted)",
+        "SRC/OPENAI_REQUEST_AGENT.H (deleted)",
+        "SRC/OPENAI_REQUEST_BASIC.H (deleted)"
       ],
+      "include_substitutions": 4,
       "net_repository_file_delta": -3,
       "c_body_changes": 0,
       "declaration_changes": 0,
       "symbol_changes": 0,
       "build_list_changes": 0,
-      "survivor_audit": "No remaining exact branch-live request-header consumers found; stale OPENAI_INTERNAL.H and OPENAI_AGENT_LOOP_M259_CORE.C search candidates are absent.",
-      "issue_comment": 5376737899
+      "expanded_audit": "Current recursive branch tree plus exact fetches checked LLM_AGENT_LOOP_M259.C, COMMAND_AGENT_M259.C, OPENAI_REQ_IMAGE_M259.C, M259_AGENT_IMAGE_TEST.C, M259_IMAGE_INGEST_TEST.C, M259_LIVE_FIXTURE.C, LLM_AGENT_M259.C, LLM_AGENT.C, LLM_BUILD.C/CORE, LLM_CREATE_CORE.INC, LLM_RETRY_CORE.C, and LLM_INTERNAL.H/CORE. No additional direct retired request-header includes found.",
+      "issue_comment": 5380797153
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -275,8 +280,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate b035ae5a4ea12952ca4de4701d9aee335af9f965: restore SRC/LLM_INTERNAL_CORE.H, physically delete all RMS versions of the three retired OPENAI_REQUEST_* headers, run full @BUILD, and print BUILD_STATUS.",
-      "If green, promote b035ae5 as REQUEST header retirement complete and continue survivor classification for remaining generic OpenAI filenames/namespaces.",
+      "VAX-gate corrected head 25949acc18bc618fdfd4efa6095ecfb8ea1b9229 with full @BUILD. Restore SRC/LLM_INTERNAL_CORE.H and SRC/LLM_AGENT_LOOP_M259_CORE.C, keep all RMS versions of the three retired OPENAI_REQUEST_* headers deleted, and print BUILD_STATUS.",
+      "If green, promote 25949acc as REQUEST header retirement complete and continue survivor classification for remaining generic OpenAI filenames/namespaces.",
       "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
