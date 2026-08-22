@@ -1,46 +1,186 @@
-name: M267 exact instructions survivor audit
+name: M267 asserted instructions completion
 
 on:
   pull_request:
     branches: [m267-llm-naming]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  audit:
+  transform:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: m267-audit-instructions-bad47
           fetch-depth: 0
-      - name: Enumerate exact instruction namespace survivors
+      - name: Apply exact asserted instructions namespace completion
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import collections, pathlib, re, subprocess
+
+          expected = {
+              'OPENAI_INSTR_MAX': {'SRC/LLM_INSTRUCTIONS_BASE.C': 4, 'SRC/LLM_INSTRUCTIONS_M257.C': 2},
+              'OPENAI_INSTR_PROMPT': {'SRC/LLM_INSTRUCTIONS_BASE.C': 1, 'SRC/LLM_INSTRUCTIONS_M257.C': 1},
+              'openai_instr_compose': {'SRC/LLM_INSTRUCTIONS_BASE.C': 1, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_instr_reload': {'SRC/LLM_INSTRUCTIONS_BASE.C': 2, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_instr_reload_cmd': {'SRC/COMMAND_AGENT.C': 1, 'SRC/COMMAND_AGENT_M259.C': 2, 'SRC/LLM_INSTRUCTIONS_BASE.C': 1, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_instr_show_text': {'SRC/LLM_CONTEXT.C': 2, 'SRC/LLM_CONTEXT_CORE.INC': 1, 'SRC/LLM_INSTRUCTIONS_BASE.C': 2, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_instr_status_text': {'SRC/LLM_INSTRUCTIONS_BASE.C': 2, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_show_instr': {'SRC/COMMAND_AGENT.C': 1, 'SRC/COMMAND_AGENT_M259.C': 2, 'SRC/LLM_INSTRUCTIONS_BASE.C': 1, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_show_instr_status': {'SRC/COMMAND_AGENT.C': 1, 'SRC/COMMAND_AGENT_M259.C': 2, 'SRC/LLM_INSTRUCTIONS_BASE.C': 2, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+              'openai_test_instr_path': {'SRC/LLM_INSTRUCTIONS_BASE.C': 1, 'SRC/LLM_INSTRUCTIONS_M257.C': 2, 'SRC/LLM_INTERNAL.H': 3, 'SRC/LLM_INTERNAL_CORE.H': 1},
+          }
           token_re = re.compile(r'\b(?:openai_instr_[A-Za-z0-9_]*|openai_show_instr[A-Za-z0-9_]*|openai_test_instr[A-Za-z0-9_]*|OPENAI_INSTR[A-Za-z0-9_]*)\b')
           files = subprocess.check_output(['git','ls-files'], text=True).splitlines()
-          counts = collections.Counter()
-          paths = collections.defaultdict(collections.Counter)
+          found = collections.defaultdict(collections.Counter)
           for name in files:
               if not (name.startswith('SRC/') or name.startswith('src/')):
                   continue
-              p = pathlib.Path(name)
               try:
-                  text = p.read_text(encoding='utf-8')
+                  text = pathlib.Path(name).read_text(encoding='utf-8')
               except (UnicodeDecodeError, OSError):
                   continue
               for token in token_re.findall(text):
-                  counts[token] += 1
-                  paths[token][name] += 1
-          print('M267_INSTRUCTIONS_SURVIVORS_BEGIN')
-          total = 0
-          for token in sorted(counts):
-              total += counts[token]
-              detail = ','.join(f'{p}:{n}' for p,n in sorted(paths[token].items()))
-              print(f'{token}|{counts[token]}|{detail}')
-          print(f'TOTAL|{total}|TOKENS|{len(counts)}')
-          print('M267_INSTRUCTIONS_SURVIVORS_END')
+                  found[token][name] += 1
+          found = {k: dict(v) for k,v in found.items()}
+          if found != expected:
+              raise SystemExit(f'instruction survivor graph drifted\nEXPECTED={expected}\nFOUND={found}')
+
+          def read(path):
+              return pathlib.Path(path).read_text(encoding='utf-8')
+          def write(path, text):
+              pathlib.Path(path).write_text(text, encoding='utf-8')
+          def replace_tokens(path, mapping):
+              text = read(path)
+              for old in sorted(mapping, key=len, reverse=True):
+                  text = re.sub(r'\b' + re.escape(old) + r'\b', mapping[old], text)
+              write(path, text)
+
+          replace_tokens('SRC/LLM_INSTRUCTIONS_BASE.C', {
+              'OPENAI_INSTR_MAX': 'LLM_INSTR_MAX',
+              'OPENAI_INSTR_PROMPT': 'LLM_INSTR_PROMPT',
+              'openai_instr_reload': 'llm_instr_reload_base',
+              'openai_instr_compose': 'llm_instr_compose_base',
+              'openai_instr_status_text': 'llm_instr_status_text_base',
+              'openai_instr_show_text': 'llm_instr_show_text_base',
+              'openai_show_instr_status': 'llm_show_instr_status_base',
+              'openai_show_instr': 'llm_show_instr_base',
+              'openai_instr_reload_cmd': 'llm_instr_reload_cmd_base',
+              'openai_test_instr_path': 'llm_test_instr_path_base',
+          })
+          replace_tokens('SRC/LLM_INSTRUCTIONS_M257.C', {
+              'OPENAI_INSTR_MAX': 'LLM_INSTR_MAX',
+              'OPENAI_INSTR_PROMPT': 'LLM_INSTR_PROMPT',
+          })
+          replace_tokens('SRC/LLM_INTERNAL_CORE.H', {
+              'openai_instr_reload': 'llm_instr_reload',
+              'openai_instr_compose': 'llm_instr_compose',
+              'openai_instr_status_text': 'llm_instr_status_text',
+              'openai_instr_show_text': 'llm_instr_show_text',
+              'openai_show_instr_status': 'llm_show_instr_status',
+              'openai_show_instr': 'llm_show_instr',
+              'openai_instr_reload_cmd': 'llm_instr_reload_cmd',
+              'openai_test_instr_path': 'llm_test_instr_path',
+          })
+          replace_tokens('SRC/COMMAND_AGENT.C', {
+              'openai_show_instr_status': 'llm_show_instr_status',
+              'openai_show_instr': 'llm_show_instr',
+              'openai_instr_reload_cmd': 'llm_instr_reload_cmd',
+          })
+          replace_tokens('SRC/LLM_CONTEXT_CORE.INC', {'openai_instr_show_text': 'llm_instr_show_text'})
+
+          p = 'SRC/COMMAND_AGENT_M259.C'
+          lines = read(p).splitlines(True)
+          remove = {
+              '#define openai_show_instr_status llm_show_instr_status\n',
+              '#define openai_show_instr llm_show_instr\n',
+              '#define openai_instr_reload_cmd llm_instr_reload_cmd\n',
+              '#undef openai_instr_reload_cmd\n',
+              '#undef openai_show_instr\n',
+              '#undef openai_show_instr_status\n',
+          }
+          if collections.Counter(line for line in lines if line in remove) != collections.Counter(remove):
+              raise SystemExit(f'{p}: wrapper line set drifted')
+          write(p, ''.join(line for line in lines if line not in remove))
+
+          p = 'SRC/LLM_CONTEXT.C'
+          lines = read(p).splitlines(True)
+          remove = {'#define openai_instr_show_text llm_instr_show_text\n', '#undef openai_instr_show_text\n'}
+          if collections.Counter(line for line in lines if line in remove) != collections.Counter(remove):
+              raise SystemExit(f'{p}: wrapper line set drifted')
+          write(p, ''.join(line for line in lines if line not in remove))
+
+          p = 'SRC/LLM_INSTRUCTIONS_M257.C'
+          lines = read(p).splitlines(True)
+          remove = {
+              '#define openai_instr_reload llm_instr_reload_base\n',
+              '#define openai_instr_compose llm_instr_compose_base\n',
+              '#define openai_instr_status_text llm_instr_status_text_base\n',
+              '#define openai_instr_show_text llm_instr_show_text_base\n',
+              '#define openai_show_instr_status llm_show_instr_status_base\n',
+              '#define openai_show_instr llm_show_instr_base\n',
+              '#define openai_instr_reload_cmd llm_instr_reload_cmd_base\n',
+              '#define openai_test_instr_path llm_test_instr_path_base\n',
+              '#undef openai_instr_reload\n',
+              '#undef openai_instr_compose\n',
+              '#undef openai_instr_status_text\n',
+              '#undef openai_instr_show_text\n',
+              '#undef openai_show_instr_status\n',
+              '#undef openai_show_instr\n',
+              '#undef openai_instr_reload_cmd\n',
+              '#undef openai_test_instr_path\n',
+          }
+          if collections.Counter(line for line in lines if line in remove) != collections.Counter(remove):
+              raise SystemExit(f'{p}: M257 wrapper line set drifted')
+          write(p, ''.join(line for line in lines if line not in remove))
+
+          p = 'SRC/LLM_INTERNAL.H'
+          text = read(p)
+          a = text.index('#ifndef openai_instr_reload\n')
+          b = text.index('#ifndef openai_git_refresh\n')
+          text = text[:a] + text[b:]
+          a = text.index('#ifdef LLM_INT_U_TEST_INSTR_PATH\n')
+          b = text.rfind('#endif\n')
+          if b <= a:
+              raise SystemExit('LLM_INTERNAL.H final guard not found')
+          text = text[:a] + text[b:]
+          write(p, text)
+
+          remain = collections.Counter()
+          for name in subprocess.check_output(['git','ls-files'], text=True).splitlines():
+              if not (name.startswith('SRC/') or name.startswith('src/')):
+                  continue
+              try:
+                  text = pathlib.Path(name).read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              remain.update(token_re.findall(text))
+          if remain:
+              raise SystemExit(f'legacy instruction names remain: {dict(remain)}')
+
+          expected_changed = {
+              'SRC/COMMAND_AGENT.C', 'SRC/COMMAND_AGENT_M259.C',
+              'SRC/LLM_CONTEXT.C', 'SRC/LLM_CONTEXT_CORE.INC',
+              'SRC/LLM_INSTRUCTIONS_BASE.C', 'SRC/LLM_INSTRUCTIONS_M257.C',
+              'SRC/LLM_INTERNAL.H', 'SRC/LLM_INTERNAL_CORE.H'
+          }
+          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
+          if changed != expected_changed:
+              raise SystemExit(f'unexpected source delta: {sorted(changed)}')
+          print('M267_INSTRUCTIONS_TRANSFORM_OK')
+          print('FILES=8 TOKENS=10 OLD_OCCURRENCES=80')
           PY
+      - name: Remove helper workflow and publish candidate tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/m267-audit-instructions.yml
+          git add SRC/COMMAND_AGENT.C SRC/COMMAND_AGENT_M259.C SRC/LLM_CONTEXT.C SRC/LLM_CONTEXT_CORE.INC SRC/LLM_INSTRUCTIONS_BASE.C SRC/LLM_INSTRUCTIONS_M257.C SRC/LLM_INTERNAL.H SRC/LLM_INTERNAL_CORE.H
+          git commit -m 'M267: complete instructions namespace migration'
+          git push origin HEAD:m267-audit-instructions-bad47
