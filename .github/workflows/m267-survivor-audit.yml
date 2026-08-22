@@ -18,7 +18,7 @@ jobs:
       - name: Enumerate exact OpenAI namespace survivors
         shell: bash
         run: |
-          python3 - <<'PY'
+          python3 - <<'PY' > M267_SURVIVOR_AUDIT.txt
           import pathlib, re, subprocess, collections
 
           files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
@@ -60,3 +60,9 @@ jobs:
               print(f'{token}\t{path}:{lineno}\t{line}')
           print('M267_SOURCE_OCCURRENCES_END')
           PY
+          cat M267_SURVIVOR_AUDIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m267-survivor-audit
+          path: M267_SURVIVOR_AUDIT.txt
+          if-no-files-found: error
