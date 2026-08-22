@@ -1690,7 +1690,7 @@ void openai_exec_context(agent_state *state,
         }
 
         openai_tx_note_exec("CONTEXT", goal, "started");
-        openai_agent(state, model_goal);
+        llm_agent(state, model_goal);
         return;
     }
 
@@ -1709,7 +1709,7 @@ void openai_exec_context(agent_state *state,
 
     openai_tx_note_exec("CONTEXT", goal, "started");
 
-    openai_agent_write(state, model_goal);
+    llm_agent_write(state, model_goal);
 }
 
 void openai_exec_goal(agent_state *state, const char *goal)
@@ -1731,7 +1731,7 @@ void openai_exec_goal(agent_state *state, const char *goal)
             return;
         }
         openai_tx_note_exec("EXEC", goal, "started");
-        openai_agent(state, goal);
+        llm_agent(state, goal);
         return;
     }
 
@@ -1750,7 +1750,7 @@ void openai_exec_goal(agent_state *state, const char *goal)
 
     openai_tx_note_exec("EXEC", goal, "started");
 
-    openai_agent_write(state, goal);
+    llm_agent_write(state, goal);
 }
 
 void openai_exec_dry(agent_state *state, const char *goal)
@@ -1768,7 +1768,7 @@ void openai_exec_dry(agent_state *state, const char *goal)
     }
 
     openai_tx_note_exec("DRY", goal, "started");
-    openai_agent_plan(state, goal);
+    llm_agent_plan(state, goal);
 }
 
 void openai_test_reset_approval(void)

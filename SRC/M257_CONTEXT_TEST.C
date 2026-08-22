@@ -9,9 +9,9 @@ void m257_capture_mode(agent_state *state,
                        int build_after_write,
                        int workflow);
 
-#define openai_agent_mode m257_capture_mode
+#define llm_agent_mode m257_capture_mode
 #include "LLM_AGENT.C"
-#undef openai_agent_mode
+#undef llm_agent_mode
 
 #define ROOT_FILE "M257_CTX_ROOT.TXT"
 #define SCOPE_FILE "TEST/OVMS_AGENT_INSTRUCTIONS.TXT"

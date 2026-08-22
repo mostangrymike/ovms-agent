@@ -259,13 +259,13 @@ openai_replace_result execute_replace_lines_tool(
 char *execute_run_build_tool(int *build_status);
 int openai_confirm_restore(const char *path);
 int openai_restore_previous_version(const char *path);
-void openai_agent_mode(agent_state *state,
+void llm_agent_mode(agent_state *state,
                        const char *goal,
                        int allow_write,
                        int build_after_write,
                        int workflow);
-void openai_agent(agent_state *state, const char *goal);
-void openai_agent_plan(agent_state *state, const char *goal);
+void llm_agent(agent_state *state, const char *goal);
+void llm_agent_plan(agent_state *state, const char *goal);
 void openai_plan_execute_dry(agent_state *state);
 void openai_plan_execute(agent_state *state);
 int openai_exec_validate_ops_file(const char *path);
@@ -412,11 +412,11 @@ int openai_m137_success_cleanup(const char *plan_path, const char *new_path, con
 int openai_m137_failure_restore(const char *plan_path, const char *new_path, const char *backup_path);
 int openai_m137_consumed_rejected(const char *plan_path);
 int openai_m137_artifact_recovery(const char *plan_path, const char *new_path, const char *backup_path);
-void openai_agent_write(agent_state *state, const char *goal);
-void openai_agent_fix(agent_state *state, const char *goal);
-void openai_agent_create(agent_state *state, const char *goal);
-void openai_agent_build(agent_state *state, const char *goal);
-void openai_agent_retry(agent_state *state, const char *goal);
+void llm_agent_write(agent_state *state, const char *goal);
+void llm_agent_fix(agent_state *state, const char *goal);
+void llm_agent_create(agent_state *state, const char *goal);
+void llm_agent_build(agent_state *state, const char *goal);
+void llm_agent_retry(agent_state *state, const char *goal);
 void openai_agent_repair(agent_state *state, const char *goal);
 void openai_test_set_repair_plan(const char *plan_text,
                                  int auto_approve);

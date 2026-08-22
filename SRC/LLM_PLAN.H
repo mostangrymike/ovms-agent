@@ -13,7 +13,6 @@ void llm_plan_validate(void);
 void openai_plan_clear(void);
 
 /* Temporary M267 source compatibility for remaining live consumers. */
-#define openai_agent_plan llm_agent_plan
 #define openai_plan_is_current llm_plan_is_current
 #define openai_plan_validate llm_plan_validate
 

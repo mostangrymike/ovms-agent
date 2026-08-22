@@ -33,7 +33,7 @@ static char *create_prompt_rules(const char *base)
     return combined;
 }
 
-void openai_agent_create(agent_state *state, const char *goal)
+void llm_agent_create(agent_state *state, const char *goal)
 {
     const char *instructions;
     char *owned_instructions;

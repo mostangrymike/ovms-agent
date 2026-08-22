@@ -69,7 +69,6 @@ int llm_test_agent_image_req(const char *model,
     return result;
 }
 
-#define openai_agent_mode llm_agent_mode
 #define openai_auto_begin llm_auto_begin
 #define openai_auto_turn_limit llm_auto_turn_limit
 #define openai_auto_note_turn llm_auto_note_turn
@@ -115,4 +114,3 @@ int llm_test_agent_image_req(const char *model,
 #undef openai_auto_note_turn
 #undef openai_auto_turn_limit
 #undef openai_auto_begin
-#undef openai_agent_mode

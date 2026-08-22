@@ -452,7 +452,7 @@ void command_agent_patch_last(agent_state *state, const char *arguments)
 void command_agent_plan(agent_state *state,
                         const char *arguments)
 {
-    openai_agent_plan(state, arguments);
+    llm_agent_plan(state, arguments);
 }
 
 void command_agent_plan_show(agent_state *state,
@@ -1114,7 +1114,7 @@ void command_agent_create(agent_state *state,
 
                           const char *arguments)
 {
-    openai_agent_create(state, arguments);
+    llm_agent_create(state, arguments);
 }
 
 void command_agent_state(agent_state *state,
@@ -1196,31 +1196,31 @@ void command_agent_selftest(agent_state *state,
 void command_agent_retry(agent_state *state,
                          const char *arguments)
 {
-    openai_agent_retry(state, arguments);
+    llm_agent_retry(state, arguments);
 }
 
 void command_agent_fix(agent_state *state,
                        const char *arguments)
 {
-    openai_agent_fix(state, arguments);
+    llm_agent_fix(state, arguments);
 }
 
 void command_agent_build(agent_state *state,
                          const char *arguments)
 {
-    openai_agent_build(state, arguments);
+    llm_agent_build(state, arguments);
 }
 
 void command_agent_write(agent_state *state,
                          const char *arguments)
 {
-    openai_agent_write(state, arguments);
+    llm_agent_write(state, arguments);
 }
 
 void command_agent(agent_state *state,
                    const char *arguments)
 {
-    openai_agent(state, arguments);
+    llm_agent(state, arguments);
 }
 
 void command_chat(agent_state *state,

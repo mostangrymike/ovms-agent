@@ -35,7 +35,7 @@ static void llm_agent_instr(agent_state *state,
         return;
     }
 
-    openai_agent_mode(
+    llm_agent_mode(
         state,
         model_goal,
         allow_write,

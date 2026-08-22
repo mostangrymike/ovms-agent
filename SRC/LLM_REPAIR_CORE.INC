@@ -329,7 +329,7 @@ void openai_repair_plan(agent_state *state)
         }
 
         /* Call agent planner which will save the returned plan itself */
-        openai_agent_plan(state, prompt);
+        llm_agent_plan(state, prompt);
     }
 
     fclose(src);

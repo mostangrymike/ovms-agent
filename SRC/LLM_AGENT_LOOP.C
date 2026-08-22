@@ -32,7 +32,7 @@ static char *write_prompt_rules(const char *base)
     return combined;
 }
 
-void openai_agent_mode(agent_state *state,
+void llm_agent_mode(agent_state *state,
                        const char *goal,
                        int allow_write,
                        int build_after_write,

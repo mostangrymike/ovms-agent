@@ -8,12 +8,6 @@
 
 #define command_register_agent command_register_agent_base
 #define openai_show_github m262_show_github
-#define openai_agent llm_agent
-#define openai_agent_write llm_agent_write
-#define openai_agent_create llm_agent_create
-#define openai_agent_fix llm_agent_fix
-#define openai_agent_retry llm_agent_retry
-#define openai_agent_build llm_agent_build
 #define openai_repair_plan llm_repair_plan
 #define openai_selftest llm_selftest
 #define openai_status llm_status
@@ -75,12 +69,6 @@
 #undef openai_status
 #undef openai_selftest
 #undef openai_repair_plan
-#undef openai_agent_build
-#undef openai_agent_retry
-#undef openai_agent_fix
-#undef openai_agent_create
-#undef openai_agent_write
-#undef openai_agent
 #undef openai_show_github
 #undef command_register_agent
 

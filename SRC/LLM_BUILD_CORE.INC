@@ -4,7 +4,7 @@
 
 #include "llm_internal.h"
 
-void openai_agent_build(agent_state *state, const char *goal)
+void llm_agent_build(agent_state *state, const char *goal)
 {
     static const char instructions[] =
         "You are a careful OpenVMS build analyst. Use the fixed run_build "

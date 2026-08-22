@@ -384,7 +384,7 @@ char *openai_build_retry_prompt(const char *goal,
     return prompt;
 }
 
-void openai_agent_retry(agent_state *state, const char *goal)
+void llm_agent_retry(agent_state *state, const char *goal)
 {
     static const char introduction[] =
         "The current project build has just failed. This is a fresh "
@@ -473,7 +473,7 @@ void openai_agent_retry(agent_state *state, const char *goal)
      * A retry remains one patch and one post-patch controlled build. The
      * existing supervised mode enforces local confirmation and rollback.
      */
-    openai_agent_mode(state, combined_goal, 1, 1, OPENAI_WORKFLOW_FIX);
+    llm_agent_mode(state, combined_goal, 1, 1, OPENAI_WORKFLOW_FIX);
 
     free(combined_goal);
     free(build_output);
@@ -613,7 +613,7 @@ void openai_agent_repair(agent_state *state, const char *goal)
                 );
             }
         } else {
-            openai_agent_plan(state, combined_goal);
+            llm_agent_plan(state, combined_goal);
         }
 
         free(combined_goal);

@@ -7,9 +7,7 @@
 int llm_agent_image_set(const char *path);
 void llm_agent_image_clear(void);
 
-#define openai_agent_mode llm_agent_mode
 #include "LLM_AGENT.C"
-#undef openai_agent_mode
 
 int llm_image_log(const char *image_path,
                   const char *outcome,
