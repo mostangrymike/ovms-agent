@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T11:50:00-05:00",
+  "updated_at": "2026-08-22T12:01:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -19,8 +19,8 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
     "latest_vax_green_head": "4a582e4754016623d91acd9a6d6bc5777d657a13",
-    "current_github_head": "4a582e4754016623d91acd9a6d6bc5777d657a13",
-    "current_github_head_status": "VAX-green. Exact effective RMS tree passed full @BUILD with all regressions and BUILD_STATUS=%X00000001. Five canonical log/state include substitutions are accepted and OPENAI_LOG.H/OPENAI_STATE.H are retired. Publication case-folding intermediates 0a059e43 and 2234b85 are fully canceled by corrective head 4a582e47; aggregate compare from prior green 9b7ab01 contains only the five intended paths.",
+    "current_github_head": "043f26bdb24c546ef2b9b23ed4d6805f2628ad96",
+    "current_github_head_status": "Pending VAX gate. Public umbrella filename migrated from SRC/OPENAI.H to SRC/LLM.H using exact VAX-edited carrier blobs; COMMAND_AGENT.C and LLM_INTERNAL_CORE.H now include LLM.H; four generic command-help OpenAI strings now refer to the configured LLM. Aggregate compare from green 4a582e47 is clean and contains only those logical changes. Full @BUILD was omitted before carrier publication, so this head is not yet green.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -120,25 +120,39 @@
       "publication_recovery": "Intermediate 0a059e43 added lowercase src carriers due OpenVMS Git case folding; connector mistake 2234b85 added stray empty file 'nonexistent'. Corrective 4a582e47 cancels both. Aggregate 9b7ab01..4a582e47 contains only the intended five paths and exact VAX-tested blobs.",
       "issue_acceptance_comment": 5381504330
     },
+    "pending_at_043f26bd": {
+      "base": "4a582e4754016623d91acd9a6d6bc5777d657a13",
+      "head": "043f26bdb24c546ef2b9b23ed4d6805f2628ad96",
+      "vax_carrier_commit": "7d71c50d6ab91905a47bd1280de601eb03ef64e2",
+      "vax_carrier_blobs": {
+        "SRC/COMMAND_AGENT.C": "1a687b0f947fc24feb94d9c0e4eedf43d67dc4b4",
+        "SRC/LLM_INTERNAL_CORE.H": "3d6b7c216a75edf8820c134ef38991cb13dcc83e",
+        "SRC/LLM.H": "60260bb859f9e11a7d3ec055054d5a492c0fe11d"
+      },
+      "aggregate_compare": "COMMAND_AGENT.C +5/-5; OPENAI.H -> LLM.H +2/-2; LLM_INTERNAL_CORE.H +1/-1; no other paths.",
+      "runtime_symbol_changes": 0,
+      "provider_protocol_changes": 0,
+      "config_semantics_changes": 0,
+      "issue_pending_comment": 5381566963,
+      "acceptance_needed": "Full VAX @BUILD plus BUILD_STATUS=%X00000001 on exact 043f26bd tree."
+    },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
       "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
       "m233_bounded_map": "Filename-only fixture migration changed OpenVMS bounded directory ordering. Accepted recovery aec96b9a makes M233 self-contained with early-sorting synthetic fixtures while preserving the production 192-file ceiling.",
-      "rms_git_case_index": "OpenVMS Git index operations may case-fold explicit SRC paths into separate lowercase src paths and may read older RMS versions. For exact VAX-tested publication, use GitHub aggregate tree verification and exact blob identity rather than trusting normal git add/update-index path handling.",
+      "rms_git_case_index": "OpenVMS Git index operations may case-fold explicit SRC paths into separate lowercase src/carrier paths and may read older RMS versions. For exact VAX-tested publication, use GitHub aggregate tree verification and exact blob identity rather than trusting normal git add/update-index path handling.",
       "durable_state_tool_result_sha": "Recovered exact TOOL_RESULT checkpoint: 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
       "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches plus physical VAX SEARCH/build acceptance. Filename-only migrations can change bounded filesystem traversal order even at zero net file count."
     },
     "deferred": {
-      "OPENAI.H": "Sole remaining SRC/OPENAI* filename. Substantive mixed public umbrella; migrate filename separately from legacy openai_* compatibility symbols.",
+      "legacy_public_symbols": "SRC/LLM.H still deliberately exposes openai_ask/openai_chat/openai_chat_reset/openai_chat_active/openai_review_file/openai_log_event plus temporary openai_agent/openai_agent_write compatibility macros. Migrate only as coherent complete graphs.",
       "openai_log_event": "High-fanout legacy ABI; migrate only with complete caller graph.",
       "openai_state_save": "Runtime namespace remains mature; migrate only as a complete graph.",
-      "openai_agent": "Temporary public compatibility macro remains in OPENAI.H; drain remaining live consumers before removal.",
-      "openai_agent_write": "Temporary public compatibility macro remains in OPENAI.H; drain remaining live consumers before removal."
+      "openai_agent": "Temporary public compatibility macro remains in LLM.H; drain remaining live consumers before removal.",
+      "openai_agent_write": "Temporary public compatibility macro remains in LLM.H; drain remaining live consumers before removal."
     },
     "next_work": [
-      "Migrate sole remaining generic production filename SRC/OPENAI.H to a neutral LLM public umbrella, updating exact current consumers and canonicalizing its include guard while preserving legacy compatibility symbols.",
-      "Neutralize clearly generic user-facing OpenAI wording in command help where execution already targets the configured provider.",
-      "Audit stale BUILD.COM/self-test filename strings and generated/docs references after the public-header migration.",
+      "After 043f26bd is VAX-green, audit stale BUILD.COM/self-test filename strings and generated/docs references.",
       "Classify and migrate remaining generic openai_/OPENAI_ namespaces only in complete coherent caller/declaration graphs; preserve genuine OpenAI protocol/config/API-key compatibility semantics.",
       "Run final full VAX acceptance before closing issue #31."
     ]
