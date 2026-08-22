@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T10:00:00-05:00",
+  "updated_at": "2026-08-22T10:16:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
+    "latest_vax_green_head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
     "current_github_head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-    "current_github_head_status": "Pending VAX gate. Self-test helper plus M103/M106 nested fixture filename tranche; exact compare from cf0a324 is filename/include-only with net file count 0. Issue #31 pending comment 5381074192.",
+    "current_github_head_status": "VAX-green. Full @BUILD passed all regressions with BUILD_STATUS=%X00000001 after restoring the LLM self-test fixture paths and physically deleting all RMS versions of the 16 retired OpenAI fixture paths. Issue #31 acceptance comment 5381113705.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -58,7 +58,8 @@
       "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
       "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
       "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
-      "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273"
+      "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
+      "selftest_nested_fixture_filename_migration": "877fb69eafe493e9c1221db66c6b07ff1a9a641f"
     },
     "accepted_at_d1ac52cd": {
       "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
@@ -84,10 +85,11 @@
       "build_list_changes": 0,
       "issue_acceptance_comment": 5380990487
     },
-    "pending_fixture_filename_gate": {
+    "accepted_at_877fb69": {
       "base": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
       "head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-      "scope": "self-test helper plus M103/M106 nested fixture filenames",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "old_paths_retired": 16,
       "llm_paths_added": 16,
       "net_repository_file_delta": 0,
@@ -97,7 +99,7 @@
       "declaration_changes": 0,
       "external_symbol_changes": 0,
       "build_list_changes": 0,
-      "issue_pending_comment": 5381074192
+      "issue_acceptance_comment": 5381113705
     },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
@@ -113,10 +115,10 @@
       "OPENAI_STATE.H": "Known live consumers remain; do not retire yet."
     },
     "next_work": [
-      "Run the full VAX @BUILD gate for 877fb69e after restoring the changed/new tracked fixture files and physically deleting the 16 retired OPENAI fixture RMS paths.",
-      "If green, continue migrating the remaining direct OPENAI_TEST_* fixtures from LLM_STATUS_CORE.INC in coherent zero-net-file batches.",
+      "Migrate the remaining direct OPENAI_TEST_* parser/dry/block fixtures from LLM_STATUS_CORE.INC in a coherent zero-net-file tranche.",
+      "Audit milestone fixture M107-M150 internal include graphs before renaming those hubs.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until broader live consumers are drained.",
-      "Audit stale BUILD.COM/self-test filename strings such as OPENAI_TOOLS.C after functional filename migrations.",
+      "Audit OPENAI.H and stale BUILD.COM/self-test filename strings after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
       "Finish survivor classification and final full VAX acceptance before closing issue #31."
     ]
