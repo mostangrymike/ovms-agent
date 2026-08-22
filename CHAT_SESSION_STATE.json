@@ -1,41 +1,34 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T16:21:00-05:00",
+  "updated_at": "2026-08-22T16:25:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
-  "accepted_milestones": {
-    "M260": "final parity/reconcile",
-    "M261": "VAX portability/VMSBBS hardening",
-    "M262": "provider-neutral/install/release/GitHub profile reconciliation",
-    "M263": "GAP-006 RMS-aware Git context",
-    "M264": "GAP-007 COBOL structural bounded-edit guard",
-    "M265": "GAP-008 RMS-aware guarded Git restore",
-    "M266": "GAP-009 saved plan file-scope metadata"
-  },
   "m267": {
     "issue": 31,
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "c6680209a460a75f23bb8bba9cb372759556245a",
-    "current_github_head": "bad47c2c6308ac943404af63b3284243756ce857",
-    "current_github_head_status": "Pending VAX gate. Clean one-parent CONTEXT namespace completion commit from VAX-green c6680209; exact GitHub assertion verified six legacy names across 67 occurrences and seven source files, removed obsolete wrapper macro pairs, and left the separate agent-context openai_context_text/openai_show_context family untouched.",
+    "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, exact-head audited, and buildable.",
+    "latest_vax_green_head": "bad47c2c6308ac943404af63b3284243756ce857",
+    "current_github_head": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
+    "current_github_head_status": "Pending VAX gate. Clean one-parent INSTRUCTIONS namespace completion commit from VAX-green bad47c2c. Exact GitHub audit/assertion verified 10 legacy names, exactly 80 occurrences, eight source files, zero selected survivors, and clean aggregate diff.",
     "pending_gate": {
-      "base": "c6680209a460a75f23bb8bba9cb372759556245a",
-      "head": "bad47c2c6308ac943404af63b3284243756ce857",
-      "scope": "Complete the evidence/current CONTEXT namespace: openai_context_append, openai_context_tail, openai_context_evidence_text, openai_context_build, openai_context_current, openai_show_context_current -> llm_*; retire corresponding compile-time wrapper pairs.",
+      "base": "bad47c2c6308ac943404af63b3284243756ce857",
+      "head": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
+      "scope": "Complete INSTRUCTIONS namespace: retire OPENAI_INSTR_MAX/OPENAI_INSTR_PROMPT and eight openai instruction APIs; make mature M232 base functions explicit llm_*_base symbols; canonicalize public declarations/callers; remove M257, COMMAND_AGENT_M259, LLM_CONTEXT and LLM_INTERNAL.H compatibility wrapper indirection.",
       "files": [
         "SRC/COMMAND_AGENT.C",
         "SRC/COMMAND_AGENT_M259.C",
         "SRC/LLM_CONTEXT.C",
         "SRC/LLM_CONTEXT_CORE.INC",
-        "SRC/LLM_INTERNAL_CORE.H",
-        "SRC/LLM_PARITY_CORE.INC",
-        "SRC/LLM_PARITY_M258.C"
+        "SRC/LLM_INSTRUCTIONS_BASE.C",
+        "SRC/LLM_INSTRUCTIONS_M257.C",
+        "SRC/LLM_INTERNAL.H",
+        "SRC/LLM_INTERNAL_CORE.H"
       ],
-      "asserted_old_occurrences": 67,
-      "issue_pending_comment": 5382658785,
+      "asserted_old_tokens": 10,
+      "asserted_old_occurrences": 80,
+      "issue_pending_comment": 5382706855,
       "vax_status": "required"
     },
     "accepted_families": {
@@ -72,7 +65,7 @@
       "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38",
       "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
       "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-      "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb61841f67b6",
       "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
       "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
       "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
@@ -85,63 +78,17 @@
       "repair_entrypoint_namespace": "a07e9829410ae96a7dff372d8592e05fd832fac8",
       "public_service_entrypoints": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
       "isolated_local_internals": "ce4c007c1f55dad7336892bfbfbd9323b098befb",
-      "project_map_namespace_complete": "c6680209a460a75f23bb8bba9cb372759556245a"
+      "project_map_namespace_complete": "c6680209a460a75f23bb8bba9cb372759556245a",
+      "context_namespace_complete": "bad47c2c6308ac943404af63b3284243756ce857"
     },
-    "accepted_at_877fb69": {
-      "old_paths_retired": 15,
-      "llm_paths_added": 15,
-      "net_repository_file_delta": 0,
-      "full_build_status": "%X00000001",
-      "issue_acceptance_comment": 5381113705
-    },
-    "accepted_at_4a582e47": {
-      "full_build_status": "%X00000001",
-      "scope": "Retired OPENAI_LOG.H and OPENAI_STATE.H forwarding shims after five consumer include substitutions.",
-      "issue_acceptance_comment": 5381504330
-    },
-    "accepted_at_043f26bd": {
-      "full_build_status": "%X00000001",
-      "scope": "Renamed substantive OPENAI.H umbrella to LLM.H, updated direct consumers and generic user-visible OpenAI wording; no runtime symbol/protocol/config changes."
-    },
-    "accepted_at_caf68c0a": {
-      "full_build_status": "%X00000001",
-      "scope": "Retired basic AGENT/WRITE/PLAN/CREATE/FIX/BUILD/RETRY/MODE openai_agent compatibility names and wrapper aliases; repair/log/state/tools/MCP/provider protocol left separate.",
-      "issue_acceptance_comment": 5382393251
-    },
-    "accepted_at_a07e9829": {
-      "base": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
-      "head": "a07e9829410ae96a7dff372d8592e05fd832fac8",
+    "accepted_at_bad47c2c": {
+      "base": "c6680209a460a75f23bb8bba9cb372759556245a",
+      "head": "bad47c2c6308ac943404af63b3284243756ce857",
       "full_build_status": "%X00000001",
       "full_regressions": "all passed",
-      "physical_retired_search": "no matches for openai_agent_repair or openai_repair_plan",
-      "scope": "Retired repair entrypoint openai_agent_repair and repair-plan openai_repair_plan graph. Corrective a07e9829 additionally renamed the link-only stub in tracked lowercase src/command_grep_test.c.",
-      "issue_acceptance_comment": 5382470377
-    },
-    "accepted_at_2daba3ce": {
-      "base": "a07e9829410ae96a7dff372d8592e05fd832fac8",
-      "head": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "physical_retired_search": "no matches for openai_ask, openai_chat, openai_chat_reset, openai_chat_active, or openai_review_file; no OpenAI conversation reset wording",
-      "scope": "Renamed the five provider-neutral public ASK/CHAT/CHAT RESET/CHAT ACTIVE/REVIEW service entrypoints to llm_* and changed only the generic conversation-reset message; underlying transport/provider compatibility remained unchanged.",
-      "issue_acceptance_comment": 5382532247
-    },
-    "accepted_at_ce4c007c": {
-      "base": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
-      "head": "ce4c007c1f55dad7336892bfbfbd9323b098befb",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "scope": "Renamed 26 provider-neutral isolated instructions/context/project-map internals across three files; native verification used SEARCH/EXACT for OPENAI_CONTEXT_TAIL because SEARCH/NOEXACT also matched the separate openai_context_tail function.",
-      "issue_acceptance_comment": 5382594793
-    },
-    "accepted_at_c6680209": {
-      "base": "ce4c007c1f55dad7336892bfbfbd9323b098befb",
-      "head": "c6680209a460a75f23bb8bba9cb372759556245a",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "physical_retired_search": "no matches for openai_map_, openai_project_, or openai_show_project_",
-      "scope": "Completed PROJECT_MAP namespace including LLM_MAP_* constants, llm_map_* state/helpers, llm_project_* entrypoints and removal of project-map compile-time wrapper indirection.",
-      "issue_acceptance_comment": 5382638128
+      "physical_retired_search": "SEARCH/EXACT returned no matches for openai_context_append, openai_context_tail, openai_context_evidence_text, openai_context_build, openai_context_current, or openai_show_context_current",
+      "scope": "Completed evidence/current CONTEXT namespace while intentionally leaving the separate openai_context_text/openai_show_context family untouched.",
+      "issue_acceptance_comment": 5382680826
     },
     "important_recovery_history": {
       "repair_header": "A prior deletion failed because LLM_REPAIR_CORE.INC still included the old repair header; recovered before acceptance.",
@@ -149,21 +96,21 @@
       "m233_bounded_map": "Filename-only fixture migration changed OpenVMS bounded directory ordering. Accepted recovery makes M233 self-contained with early-sorting synthetic fixtures while preserving the production 192-file ceiling.",
       "rms_git_case_index": "OpenVMS Git index operations may case-fold explicit SRC paths into separate lowercase src/carrier paths and may read older RMS versions. Exact VAX-tested publication must use GitHub aggregate tree verification and exact blob identity.",
       "lowercase_src_audit": "GitHub contains both SRC and lowercase src. OpenVMS collapses them into one physical [.SRC] directory. M267 survivor audits must inspect both Git path families; native VAX SEARCH over [.SRC] remains authoritative for the physical tree.",
-      "github_actions_exact_publication": "For large/multi-file GitHub publication, a temporary branch may run an exact asserted transformation, self-remove the workflow, then contribute only its verified tree to a clean one-parent commit on m267-llm-naming.",
       "case_insensitive_search_false_positive": "OpenVMS SEARCH/NOEXACT is case-insensitive. A requested uppercase macro token can match a lowercase function with the same letters; use SEARCH/EXACT when identifier case distinguishes the intended audit target.",
+      "github_actions_exact_publication": "For large/multi-file GitHub publication, a temporary branch may run an exact asserted transformation, self-remove the workflow, then contribute only its verified tree to a clean one-parent commit on m267-llm-naming.",
       "lesson": "Never retire compatibility or namespace names from stale search alone; use exact branch-live GitHub audit plus physical VAX SEARCH/build acceptance."
     },
     "deferred": {
       "openai_log_event": "High-fanout generic legacy ABI; migrate only with complete caller/declaration/test graph.",
       "openai_state_save_and_state_core": "Remaining generic state namespace requires a coherent complete graph.",
       "openai_log_core": "LLM_LOG.C still contains extensive generic openai_* repair/history/query/report/test namespace families; migrate in bounded complete graphs.",
-      "openai_context_text_and_show_context": "Separate broader agent-context API; intentionally excluded from the current evidence/current CONTEXT gate.",
+      "openai_context_text_and_show_context": "Separate broader agent-context API; intentionally excluded from the completed evidence/current CONTEXT family.",
       "OPENAI_API_KEY": "Preserve when it represents OpenAI-compatible provider configuration compatibility."
     },
     "next_work": [
-      "Run the VAX/OpenVMS 7.2 physical SEARCH and full @BUILD acceptance gate for bad47c2c6308ac943404af63b3284243756ce857.",
-      "If green, promote bad47c2c as latest VAX-green and complete CONTEXT family in issue #31 and durable state.",
-      "Continue with the exact INSTRUCTIONS shim-retirement graph before taking larger state/log/tool families.",
+      "Run the VAX/OpenVMS 7.2 physical SEARCH and full @BUILD acceptance gate for cb0164b1e117722bd234de63f58d8fb452a0a0ad.",
+      "If green, promote cb0164b1 as latest VAX-green and complete INSTRUCTIONS namespace in issue #31 and durable state.",
+      "Resume exact survivor audit and choose the next bounded graph; keep high-fanout LOG/STATE deferred until complete caller graphs are established.",
       "Run final full VAX acceptance before closing issue #31."
     ]
   },
@@ -171,5 +118,12 @@
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
     "login_note": "A fresh login may inherit stale OVMS_AGENT_ROOT=SYS$SYSDEVICE:[MIKE.OVMS_AGENT]; if GIT_RESTORE refuses the checkout, DEASSIGN/PROCESS OVMS_AGENT_ROOT before continuing.",
     "sync_pattern": "git -c credential.helper= fetch -v --progress origin; git reset --mixed --no-refresh origin/m267-llm-naming; use short verified GIT_RESTORE.COM batches; physically remove obsolete RMS files when required; @BUILD for acceptance"
-  }
+  },
+  "standing_rules": [
+    "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
+    "Continue autonomously; pause only for a required VAX compile/build gate or genuinely required user input.",
+    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
+    "Use native OpenVMS SEARCH over physical [.SRC] for final consumer/survivor verification.",
+    "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity."
+  ]
 }
