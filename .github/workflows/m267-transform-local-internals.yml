@@ -1,17 +1,16 @@
 name: M267 asserted local internals transform
-# second push after workflow indexing
 
 on:
-  push:
+  pull_request:
     branches:
-      - m267-candidate-local-internals-2da
+      - m267-llm-naming
 
 permissions:
   contents: write
 
 jobs:
   transform:
-    if: github.event.head_commit.message != 'M267: migrate isolated LLM internals'
+    if: github.event.pull_request.head.ref == 'm267-candidate-local-internals-2da'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
