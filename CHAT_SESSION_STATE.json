@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T11:12:00-05:00",
+  "updated_at": "2026-08-22T11:50:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
-    "current_github_head": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
-    "current_github_head_status": "VAX-green. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001. Accepts 47 zero-content milestone fixture renames to LLM_TEST_M107.INC through LLM_TEST_M150D.INC, exactly 47 LLM_STATUS_CORE.INC include substitutions, zero net file delta, and physical retirement of all old RMS fixture names. Issue #31 acceptance comment 5381356664.",
+    "latest_vax_green_head": "4a582e4754016623d91acd9a6d6bc5777d657a13",
+    "current_github_head": "4a582e4754016623d91acd9a6d6bc5777d657a13",
+    "current_github_head_status": "VAX-green. Exact effective RMS tree passed full @BUILD with all regressions and BUILD_STATUS=%X00000001. Five canonical log/state include substitutions are accepted and OPENAI_LOG.H/OPENAI_STATE.H are retired. Publication case-folding intermediates 0a059e43 and 2234b85 are fully canceled by corrective head 4a582e47; aggregate compare from prior green 9b7ab01 contains only the five intended paths.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -61,40 +61,16 @@
       "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
       "selftest_nested_fixture_filename_migration": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
       "direct_fixture_filename_migration_and_m233_stabilization": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
-      "milestone_fixture_filename_migration": "9b7ab01b3eed670d3efe52bfc275157749ce28ce"
-    },
-    "accepted_at_d1ac52cd": {
-      "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
-      "head": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "zero_content_state_renames": 27,
-      "state_core_include_substitutions": 26,
-      "net_repository_file_delta": 0,
-      "issue_acceptance_comment": 5380935749
-    },
-    "accepted_at_cf0a3244": {
-      "base": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
-      "head": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
-      "full_build_status": "%X00000001",
-      "full_regressions": "all passed",
-      "include_substitutions": 11,
-      "modified_consumers": ["SRC/LLM_STATUS_CORE.INC", "SRC/LLM_INTERNAL_CORE.H", "SRC/COMMAND_AGENT.C"],
-      "removed_files": ["SRC/OPENAI_PLAN.H", "SRC/OPENAI_EXECUTE.H", "SRC/OPENAI_RESPONSE.H", "SRC/OPENAI_TEST_BAD_TYPE.INC", "SRC/OPENAI_TEST_BLANK_BETWEEN_OPS.INC", "SRC/OPENAI_TEST_BLOCK_BEFORE_PATH.INC", "SRC/OPENAI_TEST_BLOCK_BEFORE_TYPE.INC", "SRC/OPENAI_TEST_BLOCK_EMPTY_NEW.INC"],
-      "net_repository_file_delta": -8,
-      "c_body_changes": 0,
-      "declaration_changes": 0,
-      "runtime_symbol_changes": 0,
-      "build_list_changes": 0,
-      "issue_acceptance_comment": 5380990487
+      "milestone_fixture_filename_migration": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
+      "log_state_header_shim_retirement": "4a582e4754016623d91acd9a6d6bc5777d657a13"
     },
     "accepted_at_877fb69": {
       "base": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
       "head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
       "full_build_status": "%X00000001",
       "full_regressions": "all passed",
-      "old_paths_retired": 16,
-      "llm_paths_added": 16,
+      "old_paths_retired": 15,
+      "llm_paths_added": 15,
       "net_repository_file_delta": 0,
       "status_core_include_substitutions": 3,
       "hub_include_substitutions": 12,
@@ -112,12 +88,7 @@
       "zero_content_fixture_renames": 40,
       "status_core_include_substitutions": 40,
       "net_repository_file_delta": 0,
-      "failed_intermediate_heads": ["dbba7837fc852e4b80da142d9533de01876f1377", "1437f71e881db1299585eaeffa85aa8e5a4d8141"],
-      "m233_recovery": "M233 test now uses early-sorting synthetic COB/CBL/CPY and TEST C fixtures so classification assertions do not depend on OpenVMS directory order near the 192-file map ceiling; production project-map code/capacity unchanged.",
-      "runtime_production_body_changes": 0,
-      "declaration_changes": 0,
-      "external_symbol_changes": 0,
-      "build_list_changes": 0,
+      "m233_recovery": "Early-sorting synthetic classification fixtures make M233 independent of VAX directory ordering near the 192-file project-map ceiling; production project-map code/capacity unchanged.",
       "issue_acceptance_comment": 5381262518
     },
     "accepted_at_9b7ab01": {
@@ -130,37 +101,46 @@
       "net_repository_file_delta": 0,
       "old_family": "OPENAI_TEST_M107.INC..OPENAI_TEST_M148.INC, lowercase openai_test_m149.inc, OPENAI_TEST_M150.INC/M150B/M150C/M150D",
       "new_family": "LLM_TEST_M107.INC..LLM_TEST_M150D.INC",
-      "nested_include_edges": 0,
-      "fixture_body_changes": 0,
-      "selftest_order_changes": 0,
-      "production_body_changes": 0,
-      "declaration_changes": 0,
-      "external_symbol_changes": 0,
-      "build_list_changes": 0,
-      "issue_pending_comment": 5381325429,
       "issue_acceptance_comment": 5381356664
+    },
+    "accepted_at_4a582e47": {
+      "base": "9b7ab01b3eed670d3efe52bfc275157749ce28ce",
+      "head": "4a582e4754016623d91acd9a6d6bc5777d657a13",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "include_substitutions": 5,
+      "modified_consumers": ["SRC/COMMAND_AGENT.C", "SRC/LLM_INTERNAL_CORE.H", "SRC/LLM_LOG.C"],
+      "removed_files": ["SRC/OPENAI_LOG.H", "SRC/OPENAI_STATE.H"],
+      "net_repository_file_delta": -2,
+      "vax_tested_blobs": {
+        "SRC/COMMAND_AGENT.C": "09f36cbc2ac7de09c451d6246bfd49fe55c6258a",
+        "SRC/LLM_INTERNAL_CORE.H": "4ac8246610bee0e3babd59086344ae0d00df5dc5",
+        "SRC/LLM_LOG.C": "e85af3f48aaaf202db1979cf61207af10fd25c9d"
+      },
+      "publication_recovery": "Intermediate 0a059e43 added lowercase src carriers due OpenVMS Git case folding; connector mistake 2234b85 added stray empty file 'nonexistent'. Corrective 4a582e47 cancels both. Aggregate 9b7ab01..4a582e47 contains only the intended five paths and exact VAX-tested blobs.",
+      "issue_acceptance_comment": 5381504330
     },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
       "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
-      "m233_bounded_map": "dbba7837 failed at project-map classification after 40 LLM fixture renames changed VAX directory ordering; 1437f71 then reached test classification and showed M233_PROJECT_TEST.C itself could also be truncated. Accepted recovery aec96b9a makes the M233 test self-contained with early-sorting synthetic classification fixtures while preserving the production 192-file ceiling.",
-      "durable_state_tool_result_sha": "Recovered exact accepted TOOL_RESULT checkpoint from durable state commit ce04ced266da829176f8244b3d71fcc5134455d8: 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
-      "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches and patch inspection. Filename-only migrations can also change bounded filesystem traversal order on OpenVMS even at zero net file count."
+      "m233_bounded_map": "Filename-only fixture migration changed OpenVMS bounded directory ordering. Accepted recovery aec96b9a makes M233 self-contained with early-sorting synthetic fixtures while preserving the production 192-file ceiling.",
+      "rms_git_case_index": "OpenVMS Git index operations may case-fold explicit SRC paths into separate lowercase src paths and may read older RMS versions. For exact VAX-tested publication, use GitHub aggregate tree verification and exact blob identity rather than trusting normal git add/update-index path handling.",
+      "durable_state_tool_result_sha": "Recovered exact TOOL_RESULT checkpoint: 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
+      "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches plus physical VAX SEARCH/build acceptance. Filename-only migrations can change bounded filesystem traversal order even at zero net file count."
     },
     "deferred": {
+      "OPENAI.H": "Sole remaining SRC/OPENAI* filename. Substantive mixed public umbrella; migrate filename separately from legacy openai_* compatibility symbols.",
       "openai_log_event": "High-fanout legacy ABI; migrate only with complete caller graph.",
-      "openai_state_save": "Runtime namespace remains mature and is intentionally unchanged by filename work.",
-      "openai_agent": "Additional mature consumers remain outside the command wrapper.",
-      "openai_agent_write": "Additional mature consumers remain outside the command wrapper.",
-      "OPENAI_LOG.H": "Pure forwarding shim to LLM_LOG.H; retire after exact-current consumer drain.",
-      "OPENAI_STATE.H": "Pure forwarding shim to LLM_STATE.H; retire after exact-current consumer drain."
+      "openai_state_save": "Runtime namespace remains mature; migrate only as a complete graph.",
+      "openai_agent": "Temporary public compatibility macro remains in OPENAI.H; drain remaining live consumers before removal.",
+      "openai_agent_write": "Temporary public compatibility macro remains in OPENAI.H; drain remaining live consumers before removal."
     },
     "next_work": [
-      "Audit and drain every exact-current include of OPENAI_LOG.H and OPENAI_STATE.H to the canonical LLM headers, then retire the two pure forwarding shims as one bounded negative-file-count gate.",
-      "Treat substantive OPENAI.H separately: migrate its filename/public umbrella only after exact consumer audit, preserving genuine OpenAI compatibility and deferring high-fanout namespace changes to coherent graphs.",
-      "Audit stale BUILD.COM/self-test filename strings and user-visible generic OpenAI wording after the header filename migration.",
-      "Keep openai_log_event deferred until its complete caller graph is prepared.",
-      "Finish remaining generic namespace survivor classification and final full VAX acceptance before closing issue #31."
+      "Migrate sole remaining generic production filename SRC/OPENAI.H to a neutral LLM public umbrella, updating exact current consumers and canonicalizing its include guard while preserving legacy compatibility symbols.",
+      "Neutralize clearly generic user-facing OpenAI wording in command help where execution already targets the configured provider.",
+      "Audit stale BUILD.COM/self-test filename strings and generated/docs references after the public-header migration.",
+      "Classify and migrate remaining generic openai_/OPENAI_ namespaces only in complete coherent caller/declaration graphs; preserve genuine OpenAI protocol/config/API-key compatibility semantics.",
+      "Run final full VAX acceptance before closing issue #31."
     ]
   },
   "local_openvms_state": {
