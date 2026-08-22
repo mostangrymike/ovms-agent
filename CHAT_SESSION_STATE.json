@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T08:58:00-05:00",
+  "updated_at": "2026-08-22T09:09:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,9 +18,9 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate: accumulate large coherent audited families, keep each gate buildable and bounded, and use narrow gates only for recovery when necessary.",
-    "latest_vax_green_head": "82c309adae6ea077d16dc188e6dd2f819e25888c",
-    "current_github_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
-    "current_github_head_status": "Pending corrected VAX recovery gate. b035ae5 failed with %CC-F-NOINCLFILEF for openai_request_agent.h because live SRC/LLM_AGENT_LOOP_M259_CORE.C still included the retired compatibility header. Head 25949acc changes that one missed include to LLM_REQUEST_AGENT.H while keeping the three OPENAI_REQUEST_* shims deleted. Expanded exact-current-tree audit checked the active M259 wrappers/tests and CREATE/RETRY/agent entry paths. Aggregate delta from VAX-green 82c309a is two include-only modifications (+4/-4 total) plus three seven-line shim deletions, net repository file delta -3; no function bodies, declarations, symbols, or build lists changed.",
+    "latest_vax_green_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+    "current_github_head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+    "current_github_head_status": "Pending VAX gate based on green 25949acc. Five generic request implementation C filenames are zero-content renamed to LLM_REQUEST*.C and all five associated build object artifacts are renamed to LLM_REQUEST*.OBJ. BUILD_LLM_MODULES.COM has exactly five source-name and five object-name substitutions; LLM_MODULES.OPT has five object-name substitutions; BUILD_M259.COM has three OPENAI_REQUEST_BASIC.OBJ to LLM_REQUEST_BASIC.OBJ substitutions. Git compare detects all five C files as 100% renames with zero content changes. Net repository file delta 0; no C bodies, declarations, runtime symbols, or API behavior changed. Full @BUILD plus focused @BUILD_M259 required for acceptance.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
@@ -68,7 +68,8 @@
       "m148_m150_validation_filename_migration": "e6bb03364640d3d6c7dd1d0d59f7b31c459936d8",
       "repair_header_retirement": "6420958eb256a4db3ecd76e19027ea461e486c38",
       "request_header_canonicalization": "ac0acde190dc6cf1a37d39c2ed23fb61841f67b6",
-      "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c"
+      "request_header_consumer_drain": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+      "request_header_retirement": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229"
     },
     "accepted_at_b20edf3": {
       "production_parent": "e2c48c2972f52f0fc87454d22f5c309a190cb156",
@@ -224,6 +225,10 @@
       "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_request_agent.h",
       "failure_root_cause": "SRC/LLM_AGENT_LOOP_M259_CORE.C still included the retired OPENAI_REQUEST_AGENT.H compatibility header; stale code-search results did not expose the current renamed M259 core path.",
       "corrected_head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "accepted": true,
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "acceptance_issue_comment": 5380837189,
       "corrected_files": [
         "SRC/LLM_INTERNAL_CORE.H",
         "SRC/LLM_AGENT_LOOP_M259_CORE.C",
@@ -239,6 +244,50 @@
       "build_list_changes": 0,
       "expanded_audit": "Current recursive branch tree plus exact fetches checked LLM_AGENT_LOOP_M259.C, COMMAND_AGENT_M259.C, OPENAI_REQ_IMAGE_M259.C, M259_AGENT_IMAGE_TEST.C, M259_IMAGE_INGEST_TEST.C, M259_LIVE_FIXTURE.C, LLM_AGENT_M259.C, LLM_AGENT.C, LLM_BUILD.C/CORE, LLM_CREATE_CORE.INC, LLM_RETRY_CORE.C, and LLM_INTERNAL.H/CORE. No additional direct retired request-header includes found.",
       "issue_comment": 5380797153
+    },
+    "accepted_at_25949acc": {
+      "base": "82c309adae6ea077d16dc188e6dd2f819e25888c",
+      "failed_head": "b035ae5a4ea12952ca4de4701d9aee335af9f965",
+      "failed_build_status": "%X10B91264",
+      "failure_signal": "%CC-F-NOINCLFILEF: Cannot find file openai_request_agent.h",
+      "head": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
+      "include_only_deltas": [
+        "SRC/LLM_INTERNAL_CORE.H: three OPENAI_REQUEST_* includes -> LLM_REQUEST_*",
+        "SRC/LLM_AGENT_LOOP_M259_CORE.C: openai_request_agent.h -> LLM_REQUEST_AGENT.H"
+      ],
+      "deleted_shims": [
+        "SRC/OPENAI_REQUEST_BUILD.H",
+        "SRC/OPENAI_REQUEST_AGENT.H",
+        "SRC/OPENAI_REQUEST_BASIC.H"
+      ],
+      "net_repository_file_delta": -3,
+      "c_body_changes": 0,
+      "declaration_changes": 0,
+      "symbol_changes": 0,
+      "build_list_changes": 0,
+      "issue_comment": 5380837189
+    },
+    "pending_request_implementation_filename_gate": {
+      "base": "25949acc18bc618fdfd4efa6095ecfb8ea1b9229",
+      "head": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
+      "renames": [
+        "SRC/OPENAI_REQUEST.C -> SRC/LLM_REQUEST.C",
+        "SRC/OPENAI_REQUEST_BASIC.C -> SRC/LLM_REQUEST_BASIC.C",
+        "SRC/OPENAI_REQUEST_AGENT.C -> SRC/LLM_REQUEST_AGENT.C",
+        "SRC/OPENAI_REQUEST_BUILD.C -> SRC/LLM_REQUEST_BUILD.C",
+        "SRC/OPENAI_REQ_IMAGE_M259.C -> SRC/LLM_REQUEST_IMAGE_M259.C"
+      ],
+      "source_content_changes": 0,
+      "build_llm_module_substitutions": 10,
+      "llm_modules_opt_substitutions": 5,
+      "build_m259_substitutions": 3,
+      "net_repository_file_delta": 0,
+      "c_body_changes": 0,
+      "declaration_changes": 0,
+      "symbol_changes": 0,
+      "issue_comment": 5380847497
     },
     "phase2_recovery_history": {
       "base": "b20edf3e76c9c3a202e49492fc1daabb2016c9bf",
@@ -280,8 +329,8 @@
       "details": "GIT_RMS_MAX_TEXT bounded at 262144U; rebuilt GIT_RESTORE restored and verified 114534-byte LLM_LOG.C."
     },
     "next_work": [
-      "VAX-gate corrected head 25949acc18bc618fdfd4efa6095ecfb8ea1b9229 with full @BUILD. Restore SRC/LLM_INTERNAL_CORE.H and SRC/LLM_AGENT_LOOP_M259_CORE.C, keep all RMS versions of the three retired OPENAI_REQUEST_* headers deleted, and print BUILD_STATUS.",
-      "If green, promote 25949acc as REQUEST header retirement complete and continue survivor classification for remaining generic OpenAI filenames/namespaces.",
+      "VAX-gate ccbabd50e4ca714a0f662af10bb6186181e88a3c from green 25949acc: restore BUILD_LLM_MODULES.COM, LLM_MODULES.OPT, BUILD_M259.COM and the five new LLM_REQUEST*.C paths; physically delete all RMS versions of the five retired OPENAI request implementation C paths; run full @BUILD and print BUILD_STATUS; then run focused @BUILD_M259 and print M259_STATUS.",
+      "If green, promote ccbabd50 as request implementation filename/object-artifact migration complete and continue exact survivor classification.",
       "Keep PLAN/EXECUTE/STATE forwarding-header deletion deferred until exact consumer paths are fully drained; LLM_LOG.C is a known direct legacy LOG/STATE header consumer.",
       "Migrate STATE validation filenames as a coherent later family; do not retire openai_state_save until all mature consumers are drained.",
       "Audit stale build/self-test filename strings such as the BUILD.COM OPENAI_TOOLS.C diagnostic after functional filename migrations.",
