@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T10:36:00-05:00",
+  "updated_at": "2026-08-22T10:51:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on m267-llm-naming",
@@ -18,14 +18,14 @@
     "branch": "m267-llm-naming",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "workflow_preference": "Maximize work per VAX gate while keeping each migration coherent, audited and buildable.",
-    "latest_vax_green_head": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-    "current_github_head": "1437f71e881db1299585eaeffa85aa8e5a4d8141",
-    "current_github_head_status": "Forward recovery pending VAX. dbba7837 failed only in regression M233_PROJECT_TEST.EXE with `M233 failed: project map.` Exact cause is the bounded 192-file SRC walk: 40 OPENAI_* -> LLM_* fixture renames sort ahead of M233_SAMPLE.* on VAX and can truncate the temporary classification samples from the map. Recovery 1437f71 changes only three M233 fixture path literals to SRC/000_M233_SAMPLE.{COB,CBL,CPY}; production map capacity and behavior are unchanged. Issue #31 failure/recovery comment 5381209853.",
+    "latest_vax_green_head": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
+    "current_github_head": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
+    "current_github_head_status": "VAX-green. Full @BUILD passed with all regressions and BUILD_STATUS=%X00000001. Accepts 40 zero-content direct OPENAI_TEST_* -> LLM_TEST_* fixture renames, 40 LLM_STATUS_CORE.INC include substitutions, and M233 test-only stabilization for deterministic classification under the unchanged 192-file project-map limit. Issue #31 acceptance comment 5381262518.",
     "accepted_families": {
       "path": "db8ab863e51929e1add63a68f3658e769aeeeee0",
       "cache": "45c095e78c357f4a3f1a9c206c9f9c249a35acdc",
       "build_artifact": "9bd4dca88cf21f268273ff020a1bc54751f13432",
-      "tool_result": "3cb9c95efa7c28952ca4de4701d9aee335af9f965",
+      "tool_result": "3cb9c95efa7c2896f5eb5bda01144ce17a92dda6",
       "tool_schema": "a146c196d7d5f867668aed9fd809f27263288001",
       "prompts": "a3cb3e44a71ab8e3039b4bafcf30550b5bfb557f",
       "goal_guard": "a155a3678e25460427ce6bb1db576db1c590b266",
@@ -59,7 +59,8 @@
       "request_implementation_filename_artifact": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
       "state_validation_filename_migration": "d1ac52cd33fac76fffecb19c99651b94fc4466a6",
       "plan_execute_response_and_test_shim_retirement": "cf0a324489ca558e8b7f0829bd45a0f723fee273",
-      "selftest_nested_fixture_filename_migration": "877fb69eafe493e9c1221db66c6b07ff1a9a641f"
+      "selftest_nested_fixture_filename_migration": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
+      "direct_fixture_filename_migration_and_m233_stabilization": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1"
     },
     "accepted_at_d1ac52cd": {
       "base": "ccbabd50e4ca714a0f662af10bb6186181e88a3c",
@@ -68,6 +69,7 @@
       "full_regressions": "all passed",
       "zero_content_state_renames": 27,
       "state_core_include_substitutions": 26,
+      "net_repository_file_delta": 0,
       "issue_acceptance_comment": 5380935749
     },
     "accepted_at_cf0a3244": {
@@ -101,28 +103,27 @@
       "build_list_changes": 0,
       "issue_acceptance_comment": 5381113705
     },
-    "pending_direct_fixture_filename_gate": {
+    "accepted_at_aec96b9a": {
       "base": "877fb69eafe493e9c1221db66c6b07ff1a9a641f",
-      "failed_head": "dbba7837fc852e4b80da142d9533de01876f1377",
-      "recovery_head": "1437f71e881db1299585eaeffa85aa8e5a4d8141",
+      "head": "aec96b9aa8ea4ee380fa9226832f48b7a395acc1",
+      "full_build_status": "%X00000001",
+      "full_regressions": "all passed",
       "zero_content_fixture_renames": 40,
       "status_core_include_substitutions": 40,
       "net_repository_file_delta": 0,
-      "failed_vax_gate": "M233_PROJECT_TEST.EXE: M233 failed: project map",
-      "root_cause": "The project map intentionally caps at 192 files and walks SRC first. On VAX the OPENAI_* to LLM_* rename shifts 40 fixture names ahead of M233_SAMPLE.*, allowing the temporary M233 COB/CBL/CPY fixtures to fall beyond the bounded map even though repository file count is unchanged.",
-      "recovery_change": "m233_project_test.c changes only M233_COB/M233_CBL/M233_CPY to SRC/000_M233_SAMPLE.{COB,CBL,CPY}; +3/-3, no production logic change.",
-      "runtime_body_changes": 0,
+      "failed_intermediate_heads": ["dbba7837fc852e4b80da142d9533de01876f1377", "1437f71e881db1299585eaeffa85aa8e5a4d8141"],
+      "m233_recovery": "M233 test now uses early-sorting synthetic COB/CBL/CPY and TEST C fixtures so classification assertions do not depend on OpenVMS directory order near the 192-file map ceiling; production project-map code/capacity unchanged.",
+      "runtime_production_body_changes": 0,
       "declaration_changes": 0,
       "external_symbol_changes": 0,
       "build_list_changes": 0,
-      "issue_initial_pending_comment": 5381149529,
-      "issue_failure_recovery_comment": 5381209853,
-      "status": "pending full VAX @BUILD at recovery head 1437f71e"
+      "issue_acceptance_comment": 5381262518
     },
     "important_recovery_history": {
       "repair_header": "650e77e failed because LLM_REPAIR_CORE.INC still included openai_repair.h; recovered at 6420958.",
       "request_headers": "b035ae5 failed because LLM_AGENT_LOOP_M259_CORE.C still included openai_request_agent.h; recovered at 25949acc.",
-      "m233_bounded_map": "dbba7837 failed because 40 LLM fixture renames reordered bounded SRC traversal and M233_SAMPLE.* fell beyond the 192-file project-map ceiling; forward recovery 1437f71 prefixes only the three M233 sample paths with 000_ so classification remains tested without changing production capacity.",
+      "m233_bounded_map": "dbba7837 failed at project-map classification after 40 LLM fixture renames changed VAX directory ordering; 1437f71 then reached test classification and showed M233_PROJECT_TEST.C itself could also be truncated. Accepted recovery aec96b9a makes the M233 test self-contained with early-sorting synthetic classification fixtures while preserving the production 192-file ceiling.",
+      "durable_state_tool_result_sha": "Recovered exact accepted TOOL_RESULT checkpoint from durable state commit ce04ced266da829176f8244b3d71fcc5134455d8: 3cb9c95efa7c2896f5eb5bda01144ce17a92dda6.",
       "lesson": "Never retire a compatibility file from stale search alone; use exact branch-live fetches and patch inspection. Filename-only migrations can also change bounded filesystem traversal order on OpenVMS even at zero net file count."
     },
     "deferred": {
@@ -134,8 +135,8 @@
       "OPENAI_STATE.H": "Known live consumers remain; do not retire yet."
     },
     "next_work": [
-      "Run the full VAX @BUILD gate for recovery head 1437f71e; if green, promote the 40 direct fixture filename migration plus M233 test-order stabilization.",
-      "Then migrate M107-M150 milestone fixture filenames as the final test-filename tranche, auditing internal include graphs and preserving self-test order.",
+      "Migrate the remaining M107-M150 milestone OPENAI_TEST_* fixture filenames to LLM_TEST_* as the final test-fixture filename tranche, preserving exact contents and self-test order and auditing nested include edges.",
+      "Keep M233 deterministic under the unchanged 192-file project-map ceiling when evaluating filename-order effects.",
       "Keep OPENAI_LOG.H and OPENAI_STATE.H deferred until broader live consumers are drained.",
       "Audit OPENAI.H and stale BUILD.COM/self-test filename strings after functional filename migrations.",
       "Keep openai_log_event deferred until its complete caller graph is prepared.",
@@ -144,6 +145,7 @@
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
+    "login_note": "A fresh login may inherit stale OVMS_AGENT_ROOT=SYS$SYSDEVICE:[MIKE.OVMS_AGENT]; if GIT_RESTORE refuses the checkout, DEASSIGN/PROCESS OVMS_AGENT_ROOT before continuing.",
     "sync_pattern": "git -c credential.helper= fetch -v --progress origin; git reset --mixed --no-refresh origin/m267-llm-naming; use short verified GIT_RESTORE.COM batches; physically remove obsolete RMS files when required; @BUILD for acceptance"
   }
 }
