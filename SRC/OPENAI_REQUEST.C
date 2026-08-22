@@ -1,9 +1,9 @@
 #include "llm_internal.h"
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_TRANSPORT.H"
-#include "openai_request_build.h"
-#include "openai_request_agent.h"
-#include "openai_request_basic.h"
+#include "LLM_REQUEST_BUILD.H"
+#include "LLM_REQUEST_AGENT.H"
+#include "LLM_REQUEST_BASIC.H"
 #include "llm_config.h"
 
 void openai_send(agent_state *state,
