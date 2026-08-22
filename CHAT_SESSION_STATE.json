@@ -1,18 +1,27 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T17:36:00-05:00",
+  "updated_at": "2026-08-22T17:40:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
-  "rules_file": "RULES.md on m267-llm-naming",
+  "rules_file": "RULES.md on main",
   "m267": {
     "issue": 31,
     "issue_state": "closed",
     "issue_state_reason": "completed",
     "branch": "m267-llm-naming",
-    "status": "COMPLETE",
+    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "latest_vax_green_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
     "final_accepted_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+    "main_promotion": {
+      "main_before": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
+      "main_after": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+      "accepted_source_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+      "accepted_tree_sha": "52014bb1cd1c5f99c681efeecd03e4b3ec4b3e23",
+      "promotion_method": "Created one clean milestone commit with current M266 main as sole parent and the exact VAX-accepted M267 tree, then fast-forwarded main without force.",
+      "tree_identity_verified": true,
+      "vax_rebuild_after_promotion": "not required because promoted tree SHA is byte-identical to the VAX-accepted M267 tree"
+    },
     "final_namespace_sweep_commit": "312ebc45da69bc044d99b8a738f75a2080dc5993",
     "final_namespace_sweep_parent": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
     "final_fix": {
@@ -71,13 +80,15 @@
       "publication": "Use GitHub asserted temporary transformations and clean one-parent commits; use VAX only for RMS/DEC C/runtime acceptance."
     },
     "next_work": [
-      "M267 is complete. Do not reopen namespace work unless a regression is discovered.",
-      "Next conceptual milestone is M268: provider-neutral Claude-Code-like autonomous loop (understand, plan, act, observe, diagnose, retry, verify, done) with READONLY/WORKSPACE/BUILD/FULL modes."
+      "M267 is complete and promoted to main. Do not reopen namespace work unless a regression is discovered.",
+      "Start M268 from main commit 8fe79efca76c91217d5f496900da44e9e99d97ac.",
+      "M268 concept: provider-neutral Claude-Code-like autonomous loop (understand, plan, act, observe, diagnose, retry, verify, done) with READONLY/WORKSPACE/BUILD/FULL modes."
     ]
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
-    "accepted_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+    "accepted_m267_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+    "promoted_main_head": "8fe79efca76c91217d5f496900da44e9e99d97ac",
     "build_status": "%X00000001"
   },
   "standing_rules": [
