@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
-#include "openai_request_basic.h"
+#include "LLM_REQUEST_BASIC.H"
 
 static void remove_all(const char *path)
 {
