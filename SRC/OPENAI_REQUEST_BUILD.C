@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "llm_internal.h"
-#include "openai_request_build.h"
+#include "LLM_REQUEST_BUILD.H"
 #include "LLM_TOOL_SCHEMA.H"
 
 int write_build_initial_request(
