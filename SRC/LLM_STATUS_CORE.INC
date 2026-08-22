@@ -184,7 +184,7 @@ static void openai_selftest_report(const char *name,
     }
 }
 
-#include "openai_selftest_file_exists.inc"
+#include "LLM_SELFTEST_FILE_EXISTS.INC"
 
 unsigned int openai_run_selftest(agent_state *state)
 {
@@ -580,8 +580,8 @@ unsigned int openai_run_selftest(agent_state *state)
     #include "openai_test_valid_preamble.inc"
     #include "LLM_TEST_BLANK_BETWEEN_OPS.INC"
     #include "openai_test_two_valid_ops.inc"
-    #include "openai_test_m103.inc"
-    #include "openai_test_m106.inc"
+    #include "LLM_TEST_M103.INC"
+    #include "LLM_TEST_M106.INC"
     #include "openai_test_m107.inc"
     #include "openai_test_m108.inc"
     #include "openai_test_m109.inc"
