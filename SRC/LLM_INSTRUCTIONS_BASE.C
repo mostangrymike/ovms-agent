@@ -1,11 +1,11 @@
 #include "llm_internal.h"
 
 #define LLM_INSTR_FILE "OVMS_AGENT_INSTRUCTIONS.TXT"
-#define OPENAI_INSTR_MAX 4096U
+#define LLM_INSTR_MAX 4096U
 #define LLM_INSTR_PATH 256U
-#define OPENAI_INSTR_PROMPT 12288U
+#define LLM_INSTR_PROMPT 12288U
 
-static char llm_instr_data[OPENAI_INSTR_MAX];
+static char llm_instr_data[LLM_INSTR_MAX];
 static char llm_instr_file[LLM_INSTR_PATH];
 static char llm_instr_test_path[LLM_INSTR_PATH];
 static size_t llm_instr_bytes = 0U;
@@ -146,13 +146,13 @@ static int llm_instr_ensure(const agent_state *state)
     return llm_instr_state >= 1;
 }
 
-int openai_instr_reload(const agent_state *state)
+int llm_instr_reload_base(const agent_state *state)
 {
     llm_instr_state = 0;
     return llm_instr_load(state);
 }
 
-int openai_instr_compose(const agent_state *state,
+int llm_instr_compose_base(const agent_state *state,
                          const char *goal,
                          char *output,
                          size_t output_size)
@@ -193,7 +193,7 @@ int openai_instr_compose(const agent_state *state,
            (size_t)written < output_size;
 }
 
-int openai_instr_status_text(const agent_state *state,
+int llm_instr_status_text_base(const agent_state *state,
                              char *output,
                              size_t output_size)
 {
@@ -226,14 +226,14 @@ int openai_instr_status_text(const agent_state *state,
         status,
         (unsigned long)llm_instr_bytes,
         llm_instr_truncated ? "yes" : "no",
-        (unsigned int)(OPENAI_INSTR_MAX - 1U)
+        (unsigned int)(LLM_INSTR_MAX - 1U)
     );
 
     return written >= 0 &&
            (size_t)written < output_size;
 }
 
-int openai_instr_show_text(const agent_state *state,
+int llm_instr_show_text_base(const agent_state *state,
                            char *output,
                            size_t output_size)
 {
@@ -273,11 +273,11 @@ int openai_instr_show_text(const agent_state *state,
            (size_t)written < output_size;
 }
 
-void openai_show_instr_status(const agent_state *state)
+void llm_show_instr_status_base(const agent_state *state)
 {
     char output[1024];
 
-    if (!openai_instr_status_text(
+    if (!llm_instr_status_text_base(
             state, output, sizeof(output))) {
         (void)puts("Unable to show project instruction status.");
         return;
@@ -286,11 +286,11 @@ void openai_show_instr_status(const agent_state *state)
     (void)fputs(output, stdout);
 }
 
-void openai_show_instr(const agent_state *state)
+void llm_show_instr_base(const agent_state *state)
 {
-    char output[OPENAI_INSTR_MAX + 256U];
+    char output[LLM_INSTR_MAX + 256U];
 
-    if (!openai_instr_show_text(
+    if (!llm_instr_show_text_base(
             state, output, sizeof(output))) {
         (void)puts("Unable to show project instructions.");
         return;
@@ -299,17 +299,17 @@ void openai_show_instr(const agent_state *state)
     (void)fputs(output, stdout);
 }
 
-void openai_instr_reload_cmd(const agent_state *state)
+void llm_instr_reload_cmd_base(const agent_state *state)
 {
-    if (!openai_instr_reload(state)) {
+    if (!llm_instr_reload_base(state)) {
         (void)puts("Project instruction reload failed.");
         return;
     }
 
-    openai_show_instr_status(state);
+    llm_show_instr_status_base(state);
 }
 
-void openai_test_instr_path(const char *path)
+void llm_test_instr_path_base(const char *path)
 {
     llm_instr_state = 0;
     llm_instr_data[0] = '\0';

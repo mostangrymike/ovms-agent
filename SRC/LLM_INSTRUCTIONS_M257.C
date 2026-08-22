@@ -6,23 +6,7 @@
  * Scoped files are applied from broad to specific; later scopes override
  * conflicting earlier guidance.
  */
-#define openai_instr_reload llm_instr_reload_base
-#define openai_instr_compose llm_instr_compose_base
-#define openai_instr_status_text llm_instr_status_text_base
-#define openai_instr_show_text llm_instr_show_text_base
-#define openai_show_instr_status llm_show_instr_status_base
-#define openai_show_instr llm_show_instr_base
-#define openai_instr_reload_cmd llm_instr_reload_cmd_base
-#define openai_test_instr_path llm_test_instr_path_base
 #include "LLM_INSTRUCTIONS.C"
-#undef openai_instr_reload
-#undef openai_instr_compose
-#undef openai_instr_status_text
-#undef openai_instr_show_text
-#undef openai_show_instr_status
-#undef openai_show_instr
-#undef openai_instr_reload_cmd
-#undef openai_test_instr_path
 
 #define M257_SCOPE_MAX 8U
 #define M257_SCOPE_PATH 256U
@@ -310,7 +294,7 @@ int llm_instr_compose(const agent_state *state,
                       char *output,
                       size_t output_size)
 {
-    char base[OPENAI_INSTR_PROMPT];
+    char base[LLM_INSTR_PROMPT];
     int written;
 
     if (!llm_instr_compose_base(state, goal, base, sizeof(base)) ||
@@ -352,7 +336,7 @@ int llm_instr_show_text(const agent_state *state,
                         char *output,
                         size_t output_size)
 {
-    char base[OPENAI_INSTR_MAX + 256U];
+    char base[LLM_INSTR_MAX + 256U];
     int written;
 
     if (!llm_instr_show_text_base(state, base, sizeof(base))) return 0;
@@ -373,7 +357,7 @@ void llm_show_instr_status(const agent_state *state)
 
 void llm_show_instr(const agent_state *state)
 {
-    char output[OPENAI_INSTR_MAX + M257_SCOPE_DATA + 512U];
+    char output[LLM_INSTR_MAX + M257_SCOPE_DATA + 512U];
     if (!llm_instr_show_text(state, output, sizeof(output))) {
         (void)puts("Unable to show project instructions.");
         return;
