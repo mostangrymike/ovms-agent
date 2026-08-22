@@ -58,7 +58,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    if (!openai_context_text(&state, output, sizeof(output)) ||
+    if (!llm_context_text(&state, output, sizeof(output)) ||
         strstr(output, "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]") == NULL ||
         strstr(output, "Write gate:        enabled") == NULL ||
         strstr(output, "DCL gate:          disabled") == NULL ||

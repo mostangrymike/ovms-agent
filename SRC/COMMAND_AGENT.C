@@ -540,7 +540,7 @@ void command_agent_approval_reset(agent_state *state, const char *arguments)
 
 void command_agent_context(agent_state *state, const char *arguments)
 {
-    (void)arguments; openai_show_context(state);
+    (void)arguments; llm_show_context(state);
 }
 
 void command_agent_exec_goal(agent_state *state, const char *arguments)

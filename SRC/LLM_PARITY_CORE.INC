@@ -428,7 +428,7 @@ void openai_reset_approval(void)
     (void)puts("Session approval policy reset.");
 }
 
-int openai_context_text(const agent_state *state,
+int llm_context_text(const agent_state *state,
                         char *output,
                         size_t output_size)
 {
@@ -467,11 +467,11 @@ int openai_context_text(const agent_state *state,
     return written >= 0 && (size_t)written < output_size;
 }
 
-void openai_show_context(const agent_state *state)
+void llm_show_context(const agent_state *state)
 {
     char output[4096];
 
-    if (!openai_context_text(state, output, sizeof(output))) {
+    if (!llm_context_text(state, output, sizeof(output))) {
         (void)puts("Unable to build agent context.");
         return;
     }
