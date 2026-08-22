@@ -93,7 +93,7 @@ void llm_agent_mode(agent_state *state,
     model = getenv("OVMS_AGENT_MODEL");
 
     if (api_key == NULL || *api_key == '\0') {
-        (void)puts("OPENAI_API_KEY is not defined.");
+        (void)puts("Provider API key is not defined.");
         return;
     }
 
