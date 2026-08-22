@@ -65,7 +65,7 @@ int display_clean_response(void)
 
         if (decoded != NULL) {
             (void)puts("");
-            (void)printf("OpenAI API error: %s\n", decoded);
+            (void)printf("Provider API error: %s\n", decoded);
             free(decoded);
             free(json);
             return 1;
@@ -114,7 +114,7 @@ int display_api_error_from_json(const char *json)
         return 0;
     }
 
-    (void)printf("OpenAI API error: %s\n", decoded);
+    (void)printf("Provider API error: %s\n", decoded);
     free(decoded);
     return 1;
 }

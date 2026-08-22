@@ -132,7 +132,7 @@ A controlled fixture generator creates `M259_LIVE.PNG` as a 2x2 solid-red RGB PN
 The first fixture revision produced a malformed 77-byte PNG and the live API correctly rejected it with:
 
 ```text
-OpenAI API error: The image data you provided does not represent a valid image.
+Provider API error: The image data you provided does not represent a valid image.
 ```
 
 That run is fixture-failure evidence only and is not counted as image-input acceptance.
