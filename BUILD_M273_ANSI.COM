@@ -1,5 +1,5 @@
 $!===========================================================
-$! BUILD_M273_ANSI.COM - ANSI presentation module regressions
+$! BUILD_M273_ANSI.COM - M273 presentation/stream regressions
 $!===========================================================
 $ SET NOON
 $ FINAL_STATUS = 1
@@ -48,11 +48,14 @@ $ IF .NOT. $STATUS THEN GOTO FAIL
 $ M273TEST VERIFY [.BUILD]M273_OVERRIDE.TXT
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ WRITE SYS$OUTPUT "M273 ANSI presentation regressions passed."
+$ @BUILD_M273_STREAM
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
+$ WRITE SYS$OUTPUT "M273 presentation/stream regressions passed."
 $ EXIT 1
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
 $ FAIL_DONE:
-$ WRITE SYS$ERROR "M273 ANSI presentation regression failed."
+$ WRITE SYS$ERROR "M273 presentation/stream regression failed."
 $ EXIT 'FINAL_STATUS'
