@@ -14,6 +14,9 @@
 #define MAIN_FAILURE_STATUS 0x10000002U
 #define MAIN_ONESHOT_OUTPUT 8192U
 
+void m273_cmd_set_gitdiff(int (*callback)(void));
+void m273_retry_set_gitdiff(int (*callback)(void));
+
 static const char *main_multiline_prefix(char *input)
 {
     size_t length;
@@ -261,6 +264,8 @@ int main(void)
     int final_status;
 
     ansi_term_init();
+    m273_cmd_set_gitdiff(ansi_term_git_diff);
+    m273_retry_set_gitdiff(ansi_term_git_diff);
 
     one_shot = getenv("OVMS_AGENT_ONESHOT");
     result_mode = getenv("OVMS_AGENT_RESULT_MODE");
@@ -279,6 +284,7 @@ int main(void)
     while (agent_is_running(&state)) {
         const char *multiline_prefix;
 
+        ansi_term_status_clear();
         command_prompt();
 
         read_status = command_read_stream(
@@ -331,6 +337,7 @@ int main(void)
         command_execute(&state, input);
     }
 
+    ansi_term_status_clear();
     agent_shutdown(&state);
     return EXIT_SUCCESS;
 }
