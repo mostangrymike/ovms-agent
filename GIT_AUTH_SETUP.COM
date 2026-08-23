@@ -1,5 +1,5 @@
 $!===========================================================
-$! GIT_AUTH_SETUP.COM - Install OVMS Agent Git credential helper
+$! GIT_AUTH_SETUP.COM - Install OVMS Agent Git auth wrapper
 $!===========================================================
 $ SET NOON
 $
@@ -47,34 +47,30 @@ SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
 $
-$! Remove the flaky credential-store helper and reset any inherited
-$! helper list before installing the bounded OVMS Agent helper.
+$! Global credential-helper behavior is unreliable on the VAX Git port.
+$! Clear the earlier experiment. GITAUTH below supplies the helper explicitly
+$! for each invocation, matching the previously proven authenticated path.
 $ git config --global --unset-all credential.helper
-$ git config --global --add credential.helper ""
-$ IF .NOT. $STATUS THEN GOTO FAIL
-$ git config --global --add credential.helper -
-"!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE"
-$ IF .NOT. $STATUS THEN GOTO FAIL
-$ git config --global credential.useHttpPath true
-$ IF .NOT. $STATUS THEN GOTO FAIL
+$ git config --global --unset credential.useHttpPath
+$
+$ GITAUTH :== GIT "-c" "credential.helper=" "-c" -
+"credential.helper=!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE" "-c" -
+"credential.useHttpPath=true"
 $
 $ MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE --check
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
 $ WRITE SYS$OUTPUT "Git credential helper installed successfully."
+$ WRITE SYS$OUTPUT "DCL wrapper command defined: GITAUTH"
 $ WRITE SYS$OUTPUT -
-"Normal GitHub git commands should now use the active OVMS Agent profile."
-$ IF F$SEARCH("SYS$LOGIN:.git-credentials;*") .NES. ""
-$ THEN
-$     WRITE SYS$OUTPUT -
-"Note: a legacy .git-credentials file exists but is no longer configured."
-$     WRITE SYS$OUTPUT "Do not TYPE that file; it may contain credentials."
-$ ENDIF
+"Use GITAUTH instead of GIT for authenticated GitHub network commands."
+$ WRITE SYS$OUTPUT -
+"The wrapper supplies the active OVMS Agent GitHub profile automatically."
 $ GOTO FINISH
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
-$ WRITE SYS$ERROR "Unable to install OVMS Agent Git credential helper."
+$ WRITE SYS$ERROR "Unable to install OVMS Agent Git auth wrapper."
 $
 $ FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
