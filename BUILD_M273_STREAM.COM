@@ -35,16 +35,50 @@ $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$! Exercise the same default C RTL popen record behavior used by the
-$! canonical launcher. The parser itself must tolerate a missing empty
-$! SSE separator record; no DECC$ pipe feature logical is required.
-$ RUN [.BUILD]M273_STREAM_TEST
+$! Build a child command procedure for an actual incremental-delivery
+$! check. It emits one line, waits, creates a sentinel, then emits a
+$! second line. The parent test must receive the first line before the
+$! sentinel exists; eventual delivery after child completion is a fail.
+$ IF F$SEARCH("[.BUILD]M273_STREAM_CHILD.COM;*") .NES. "" -
+     THEN DELETE/NOLOG [.BUILD]M273_STREAM_CHILD.COM;*
+$ IF F$SEARCH("[.BUILD]M273_STREAM_CHILD.DONE;*") .NES. "" -
+     THEN DELETE/NOLOG [.BUILD]M273_STREAM_CHILD.DONE;*
+$ OPEN/WRITE M273_CHILD [.BUILD]M273_STREAM_CHILD.COM
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$ WRITE M273_CHILD "$ WRITE SYS$OUTPUT ""M273_PIPE_FIRST"""
+$ WRITE M273_CHILD "$ WAIT 00:00:03"
+$ WRITE M273_CHILD "$ OPEN/WRITE DONE [.BUILD]M273_STREAM_CHILD.DONE"
+$ WRITE M273_CHILD "$ WRITE DONE ""DONE"""
+$ WRITE M273_CHILD "$ CLOSE DONE"
+$ WRITE M273_CHILD "$ WRITE SYS$OUTPUT ""M273_PIPE_SECOND"""
+$ WRITE M273_CHILD "$ EXIT 1"
+$ CLOSE M273_CHILD
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ WRITE SYS$OUTPUT "M273 SSE/popen regressions passed."
+$! The live OVMS Agent launcher scopes the same feature to its image.
+$! DECC$STREAM_PIPE selects UNIX-compatible stream I/O instead of the
+$! legacy OpenVMS record-mode pipe path. Keep it /USER so this focused
+$! regression does not alter the caller's process/system environment.
+$ DEFINE/USER DECC$STREAM_PIPE ENABLE
+$ RUN [.BUILD]M273_STREAM_TEST
+$ M273_TEST_STATUS = $STATUS
+$
+$ IF F$SEARCH("[.BUILD]M273_STREAM_CHILD.COM;*") .NES. "" -
+     THEN DELETE/NOLOG [.BUILD]M273_STREAM_CHILD.COM;*
+$ IF F$SEARCH("[.BUILD]M273_STREAM_CHILD.DONE;*") .NES. "" -
+     THEN DELETE/NOLOG [.BUILD]M273_STREAM_CHILD.DONE;*
+$
+$ IF .NOT. M273_TEST_STATUS
+$ THEN
+$     FINAL_STATUS = M273_TEST_STATUS
+$     GOTO FAIL_DONE
+$ ENDIF
+$
+$ WRITE SYS$OUTPUT "M273 SSE/incremental-popen regressions passed."
 $ EXIT 1
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
+$ FAIL_DONE:
 $ WRITE SYS$ERROR "M273 SSE/popen regression failed."
 $ EXIT 'FINAL_STATUS'
