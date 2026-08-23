@@ -80,4 +80,14 @@ $ CC/OBJECT=[.BUILD]MOVE_TEST.OBJ -
      /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
      [.SRC]MOVE_TEST.C
 $ IF .NOT. $STATUS THEN EXIT $STATUS
+$
+$! M268 compiles the standalone AUTOPILOT controller here after the mature
+$! LLM modules have been built.  It is linked through LLM_MODULES.OPT, not
+$! COMMAND_MODULES.OPT, so focused command/retry link surfaces stay unchanged.
+$ CC/OBJECT=[.BUILD]LLM_AUTOPILOT.OBJ -
+     /STANDARD=RELAXED_ANSI89 -
+     /INCLUDE=([.SRC]) -
+     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+     [.SRC]LLM_AUTOPILOT.C
+$ IF .NOT. $STATUS THEN EXIT $STATUS
 $ EXIT 1

@@ -15,6 +15,8 @@
 void llm_agent_image(agent_state *state,
                      const char *image_path,
                      const char *goal);
+void llm_agent_autopilot(agent_state *state,
+                         const char *goal);
 
 static void m259_command_image(agent_state *state,
                                const char *arguments)
@@ -42,17 +44,31 @@ static void m259_command_image(agent_state *state,
     llm_agent_image(state, image_path, cursor);
 }
 
-static const command_entry m259_image_command[] = {
+static void m268_command_autopilot(agent_state *state,
+                                   const char *arguments)
+{
+    if (arguments == NULL || *arguments == '\0') {
+        (void)puts("Usage: AGENT/AUTOPILOT goal");
+        return;
+    }
+
+    llm_agent_autopilot(state, arguments);
+}
+
+static const command_entry m259_extra_commands[] = {
     { "AGENT/IMAGE",
       "Run read-only agent with local image context: AGENT/IMAGE image-path goal",
-      m259_command_image }
+      m259_command_image },
+    { "AGENT/AUTOPILOT",
+      "Run bounded local build/repair/rebuild loop: AGENT/AUTOPILOT goal",
+      m268_command_autopilot }
 };
 
 void command_register_agent(void)
 {
     command_register_agent_base();
     (void)command_registry_add(
-        m259_image_command,
-        sizeof(m259_image_command) / sizeof(m259_image_command[0])
+        m259_extra_commands,
+        sizeof(m259_extra_commands) / sizeof(m259_extra_commands[0])
     );
 }

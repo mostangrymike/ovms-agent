@@ -158,6 +158,16 @@ This file records durable operating rules learned during development of OVMS Age
 
 - GAP-010 was explicitly discarded and must not be revived unless the user later explicitly requests it.
 
+## 15. M268 AUTOPILOT Safety Floor
+
+- `AGENT/AUTOPILOT` may automate only the existing local workspace repair/build path; it must reuse existing guarded planning, transactional write, rollback, goal-guard, build, history, and export primitives rather than creating a parallel writer or execution surface.
+- The `AUTOPILOT` approval tier may auto-approve local workspace writes and controlled rebuilds only while the bounded AUTOPILOT controller is running.
+- `AUTOPILOT` must **never** satisfy a `FULL` approval check. PUSH, GitHub writes, MCP/external operations, arbitrary DCL, and every other operation already gated at `FULL` remain manual and unavailable to AUTOPILOT. This is a hard floor, not a configurable default.
+- `FULL` approval does not implicitly enable AUTOPILOT and must not be treated as a more automatic AUTOPILOT tier.
+- One AUTOPILOT invocation must consume one cumulative `AGENT/AUTO/LIMITS` turn/write budget across all nested planning and repair iterations; nested workflows must not reset that outer ceiling.
+- AUTOPILOT must always stop in an explicit terminal state: `CLEAN_BUILD`, `RETRY_BUDGET_EXHAUSTED`, or `GOAL_GUARD_REJECTED`.
+- Every AUTOPILOT stop must produce a local human-review artifact containing exact repair candidates/edits, final working-tree diff, build evidence, and repair history. No later PUSH is implied or authorized by AUTOPILOT completion.
+
 ---
 
 When a conflict appears between this file and a newer explicit user instruction, the newer explicit instruction wins. Update this file to reflect the new standing rule once the correction is established.

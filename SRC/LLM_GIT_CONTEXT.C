@@ -136,7 +136,7 @@ static int m263_git_head_copy(const char *path)
     if (fprintf(command,
             "$ SET NOON\n"
             "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
-            "$ GIT \"show\" \"HEAD:%s\"\n"
+            "$ GIT \"cat-file\" \"-p\" \"HEAD:%s\"\n"
             "$ EXIT 1\n",
             M263_GIT_HEAD_TMP, path) < 0 ||
         fclose(command) != 0) {
