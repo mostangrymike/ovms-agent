@@ -6,6 +6,7 @@
 #include "agent.h"
 #include "command.h"
 #include "command_internal.h"
+#include "ANSI_TERM.H"
 
 #include "command_input_m149.inc"
 #include "command_input_m251.inc"
@@ -258,6 +259,8 @@ int main(void)
     const char *result_mode;
     int read_status;
     int final_status;
+
+    ansi_term_init();
 
     one_shot = getenv("OVMS_AGENT_ONESHOT");
     result_mode = getenv("OVMS_AGENT_RESULT_MODE");
