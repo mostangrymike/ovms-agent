@@ -54,9 +54,10 @@ static void capture_text(const char *text)
     }
 }
 
-static int write_fixture(void)
+static int write_fixture(int blank_separators)
 {
     FILE *file;
+    const char *separator;
     int success;
 
     remove_all_versions(M273_SSE_FIXTURE);
@@ -65,13 +66,17 @@ static int write_fixture(void)
         return 0;
     }
 
+    separator = blank_separators ? "\n\n" : "\n";
+
     success =
         fputs("event: response.output_text.delta\n", file) != EOF &&
         fputs("data: {\"type\":\"response.output_text.delta\","
-              "\"delta\":\"Hello \"}\n\n", file) != EOF &&
+              "\"delta\":\"Hello \"}", file) != EOF &&
+        fputs(separator, file) != EOF &&
         fputs("event: response.output_text.delta\n", file) != EOF &&
         fputs("data: {\"type\":\"response.output_text.delta\","
-              "\"delta\":\"world\"}\n\n", file) != EOF &&
+              "\"delta\":\"world\"}", file) != EOF &&
+        fputs(separator, file) != EOF &&
         fputs("event: response.completed\n", file) != EOF &&
         fputs("data: {\"type\":\"response.completed\","
               "\"response\":{\"id\":\"resp_m273\","
@@ -80,8 +85,9 @@ static int write_fixture(void)
               "\"content\":[{\"type\":\"output_text\","
               "\"text\":\"Hello world\"}]}],"
               "\"usage\":{\"input_tokens\":1,"
-              "\"output_tokens\":2,\"total_tokens\":3}}}\n\n",
-              file) != EOF;
+              "\"output_tokens\":2,\"total_tokens\":3}}}",
+              file) != EOF &&
+        fputs(separator, file) != EOF;
 
     if (fclose(file) != 0) {
         success = 0;
@@ -90,7 +96,7 @@ static int write_fixture(void)
     return success;
 }
 
-static int test_parser(void)
+static int test_parser_case(int blank_separators)
 {
     FILE *input;
     char *json;
@@ -102,7 +108,7 @@ static int test_parser(void)
     streamed_text[0] = '\0';
     remove_all_versions(M273_SSE_RESPONSE);
 
-    if (!write_fixture()) {
+    if (!write_fixture(blank_separators)) {
         return 0;
     }
 
@@ -180,7 +186,10 @@ int main(void)
 {
     int result;
 
-    result = test_parser() && test_popen();
+    result =
+        test_parser_case(1) &&
+        test_parser_case(0) &&
+        test_popen();
 
     remove_all_versions(M273_SSE_FIXTURE);
     remove_all_versions(M273_SSE_RESPONSE);
@@ -193,6 +202,8 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    (void)puts("M273 SSE parser and popen regressions passed.");
+    (void)puts(
+        "M273 SSE parser, record-boundary, and popen regressions passed."
+    );
     return EXIT_SUCCESS;
 }
