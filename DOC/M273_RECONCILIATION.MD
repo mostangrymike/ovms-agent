@@ -12,7 +12,9 @@ ANSI emission is therefore centralized in `SRC/ANSI_TERM.C`. Callers should requ
 
 ## Plain-output safety rule
 
-ANSI output is opt-in by positive capability detection, not opt-out by assumption. `ANSI_TERM` asks OpenVMS for `SYS$OUTPUT` device information and enables ANSI only when the device is an attached output-capable terminal. Redirected files, pipes/mailboxes, batch output, and other non-terminal devices remain plain.
+ANSI output is opt-in by positive capability detection, not opt-out by assumption. `ANSI_TERM` asks OpenVMS for the `DVI$_DEVCLASS` of `SYS$OUTPUT` and enables ANSI only when OpenVMS identifies it as `DC$_TERM`. This follows the documented OpenVMS test for distinguishing a terminal from redirected/non-terminal output. Redirected files, pipes/mailboxes, batch output, and other non-terminal devices remain plain.
+
+An earlier M273 candidate additionally gated terminal output on `DEV$M_ODV` and `DEV$M_DET`. VAX probing showed that this was too restrictive for the live interactive environment, so those extra characteristic gates were removed rather than teaching the presentation layer a platform-specific false negative.
 
 `OVMS_AGENT_PLAIN` and `OVMS_AGENT_NOCOLOR` are explicit logical-name escape hatches. If either is defined, plain mode wins before terminal detection is consulted.
 
