@@ -114,6 +114,13 @@ void ansi_term_write(const char *text)
     }
 }
 
+void ansi_term_write_n(const char *text, size_t length)
+{
+    if (text != NULL && length != 0U) {
+        (void)fwrite(text, 1U, length, stdout);
+    }
+}
+
 void ansi_term_printf(const char *format, ...)
 {
     va_list arguments;
@@ -138,31 +145,59 @@ void ansi_term_flush(void)
     (void)fflush(stdout);
 }
 
-void ansi_term_diff(int kind, const char *text)
+static const char *ansi_diff_style(int kind)
 {
-    const char *style;
+    if (kind == ANSI_DIFF_ADD) {
+        return "\033[32m";
+    }
 
-    if (text == NULL) {
+    if (kind == ANSI_DIFF_DELETE) {
+        return "\033[31m";
+    }
+
+    return "\033[2m";
+}
+
+void ansi_term_diff_n(int kind, const char *text, size_t length)
+{
+    if (text == NULL || length == 0U) {
         return;
     }
 
     ansi_term_ensure();
 
     if (!ansi_enabled) {
-        (void)fputs(text, stdout);
+        (void)fwrite(text, 1U, length, stdout);
         return;
     }
 
-    style = "\033[2m";
-    if (kind == ANSI_DIFF_ADD) {
-        style = "\033[32m";
-    } else if (kind == ANSI_DIFF_DELETE) {
-        style = "\033[31m";
+    (void)fputs(ansi_diff_style(kind), stdout);
+    (void)fwrite(text, 1U, length, stdout);
+    (void)fputs("\033[0m", stdout);
+}
+
+void ansi_term_diff(int kind, const char *text)
+{
+    if (text != NULL) {
+        ansi_term_diff_n(kind, text, strlen(text));
+    }
+}
+
+int ansi_term_git_diff(void)
+{
+    const char *command;
+
+    ansi_term_ensure();
+
+    if (ansi_enabled) {
+        command =
+            "git -c color.diff.old=red -c color.diff.new=green "
+            "-c color.diff.context=dim diff --color=always --";
+    } else {
+        command = "git diff --no-color --";
     }
 
-    (void)fputs(style, stdout);
-    (void)fputs(text, stdout);
-    (void)fputs("\033[0m", stdout);
+    return system(command);
 }
 
 void ansi_term_status(const char *text)
@@ -179,6 +214,24 @@ void ansi_term_status(const char *text)
     }
     (void)fputs("\033[0m", stdout);
     (void)fflush(stdout);
+}
+
+void ansi_term_status_turn(unsigned int turn, unsigned int limit)
+{
+    char text[96];
+
+    if (limit == 0U) {
+        return;
+    }
+
+    (void)snprintf(
+        text,
+        sizeof(text),
+        "turn %u/%u",
+        turn,
+        limit
+    );
+    ansi_term_status(text);
 }
 
 void ansi_term_status_clear(void)
