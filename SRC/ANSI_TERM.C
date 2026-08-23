@@ -10,6 +10,8 @@
 
 #include "ANSI_TERM.H"
 
+#define ANSI_GIT_DIFF_FILE "OVMS_AGENT_ANSI_DIFF.TMP"
+
 typedef struct ansi_dvi_item {
     unsigned short length;
     unsigned short code;
@@ -190,21 +192,74 @@ void ansi_term_diff(int kind, const char *text)
     }
 }
 
+static void ansi_remove_all_versions(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    while (remove(path) == 0) {
+        /* Remove OpenVMS file versions newest first. */
+    }
+}
+
+static int ansi_git_diff_kind(const char *line)
+{
+    if (line == NULL) {
+        return ANSI_DIFF_CONTEXT;
+    }
+
+    if (line[0] == '+' && strncmp(line, "+++", 3U) != 0) {
+        return ANSI_DIFF_ADD;
+    }
+
+    if (line[0] == '-' && strncmp(line, "---", 3U) != 0) {
+        return ANSI_DIFF_DELETE;
+    }
+
+    return ANSI_DIFF_CONTEXT;
+}
+
 int ansi_term_git_diff(void)
 {
-    const char *command;
+    FILE *file;
+    char line[2048];
+    int status;
 
     ansi_term_ensure();
 
-    if (ansi_enabled) {
-        command =
-            "git -c color.diff.old=red -c color.diff.new=green "
-            "-c color.diff.context=dim diff --color=always --";
-    } else {
-        command = "git diff --no-color --";
+    if (!ansi_enabled) {
+        return system("git diff --");
     }
 
-    return system(command);
+    ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
+
+    status = system(
+        "git diff --no-color --output=OVMS_AGENT_ANSI_DIFF.TMP --"
+    );
+
+    if ((status & 1) == 0) {
+        ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
+        return status;
+    }
+
+    file = fopen(ANSI_GIT_DIFF_FILE, "r");
+    if (file == NULL) {
+        ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ansi_term_diff(ansi_git_diff_kind(line), line);
+    }
+
+    if (ferror(file) || fclose(file) != 0) {
+        ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
+        return 0;
+    }
+
+    ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
+    return status;
 }
 
 void ansi_term_status(const char *text)
