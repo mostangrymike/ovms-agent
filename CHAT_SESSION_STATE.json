@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T17:40:00-05:00",
+  "updated_at": "2026-08-22T22:05:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -84,6 +84,33 @@
       "Start M268 from main commit 8fe79efca76c91217d5f496900da44e9e99d97ac.",
       "M268 concept: provider-neutral Claude-Code-like autonomous loop (understand, plan, act, observe, diagnose, retry, verify, done) with READONLY/WORKSPACE/BUILD/FULL modes."
     ]
+  },
+  "m268": {
+    "issue": 42,
+    "issue_state": "open",
+    "branch": "m268-autopilot",
+    "status": "IMPLEMENTED_AWAITING_VAX_ACCEPTANCE",
+    "baseline_main": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+    "github_head": "9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b",
+    "latest_vax_green_head": null,
+    "goal": "Add bounded AGENT/AUTOPILOT orchestration over the existing local repair/build loop with scoped local auto-approval and an immutable FULL safety floor.",
+    "implemented": [
+      "AGENT/AUTOPILOT command registration on live COMMAND_AGENT_M259 facade",
+      "AGENT/APPROVAL/SET autopilot overlay backed by mature WORKSPACE authority, never FULL",
+      "cumulative AGENT/AUTO/LIMITS outer turn/write accounting with atomic multi-write reservation",
+      "existing controlled build, deterministic planning, saved-plan execution, transactional rollback, goal guard, Git diff, repair history and export reuse",
+      "explicit CLEAN_BUILD, RETRY_BUDGET_EXHAUSTED and GOAL_GUARD_REJECTED terminal states",
+      "OVMS_AGENT_AUTOPILOT_REVIEW.TXT with exact candidate plans, final diff, build evidence, repair history and Push performed: no",
+      "focused M268 regression covering real GitHub PUSH/service, MCP, network-exception and arbitrary-DCL FULL gates; modern replace_block goal guard; budgets; all terminal finalizers; and review export"
+    ],
+    "acceptance_pending": [
+      "Materialize exact GitHub head 9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b on VAX with RMS-aware GITRESTORE",
+      "Run full @BUILD and require odd success status",
+      "Run @M268_AUTOPILOT_TEST and require odd success status",
+      "Perform runtime command/policy smoke and then an initial clean-build AUTOPILOT smoke if provider credentials are configured",
+      "Only after VAX acceptance update latest_vax_green_head, issue #42, and promotion state"
+    ],
+    "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
