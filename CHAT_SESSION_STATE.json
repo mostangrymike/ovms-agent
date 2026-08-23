@@ -1,15 +1,15 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T10:06:00-05:00",
+  "updated_at": "2026-08-23T10:16:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
-    "latest_code_milestone": "M269",
-    "latest_code_milestone_commit": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
-    "latest_code_milestone_tree": "c48c7ae576a9fb90cbf8e583aceb35cce7002d20",
-    "note": "M269 is the exact VAX-accepted GitHub CHECK preflight fix promoted fast-forward to main."
+    "head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+    "latest_code_milestone": "M270",
+    "latest_code_milestone_commit": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+    "latest_code_milestone_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
+    "note": "M270 is the exact VAX-accepted path/case normalization promoted fast-forward to main."
   },
   "m268": {
     "issue": 42,
@@ -21,6 +21,7 @@
   },
   "m269": {
     "issue": 44,
+    "issue_state": "closed",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "branch": "m269-github-preflight",
     "accepted_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
@@ -34,27 +35,61 @@
       "parse_style": "EXTENDED",
       "dcl_tknovf": "not reproduced"
     },
-    "tag": "pending ref-only creation"
+    "tag": "verification pending"
+  },
+  "m270": {
+    "issue": 45,
+    "issue_state": "closed",
+    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
+    "branch": "m270-src-case-normalization",
+    "accepted_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+    "accepted_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
+    "main_promotion": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+    "changes": [
+      "src/command_grep_test.c -> SRC/COMMAND_GREP_TEST.C",
+      "src/project_grep_test.c -> SRC/PROJECT_GREP_TEST.C"
+    ],
+    "content_changes": "none; GitHub reports 0 additions and 0 deletions",
+    "lowercase_src_directory": "absent on accepted branch/main tree",
+    "final_vax_acceptance": {
+      "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M270_TEST]",
+      "git_status": "clean",
+      "uppercase_files_present": true,
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed"
+    },
+    "tag": "pending ref-only creation/verification"
   },
   "repository_hygiene": {
-    "status": "COMPLETE_WITH_M269_RETENTION_FOLLOWUP",
+    "status": "COMPLETE_WITH_MILESTONE_REF_FOLLOWUP",
     "milestone_tags": {
-      "existing_range": "m251 through m268",
-      "m269": "pending ref-only creation"
+      "existing_confirmed_range_before_new_work": "m251 through m268",
+      "m269": "verification pending",
+      "m270": "pending ref-only creation/verification"
     },
     "branch_retention": {
-      "target_completed_milestone_branches": ["m268-autopilot", "m269-github-preflight"],
-      "m267_branch": "eligible for ref-only pruning after m269 tag creation/verification"
+      "m267_branch": "absent on GitHub (verified 404)",
+      "currently_present_completed_branches": [
+        "m268-autopilot",
+        "m269-github-preflight",
+        "m270-src-case-normalization"
+      ],
+      "target_completed_milestone_branches": [
+        "m269-github-preflight",
+        "m270-src-case-normalization"
+      ],
+      "m268_branch": "eligible for ref-only pruning after required milestone tags are verified"
     },
     "security_note": "The previously exposed GitHub PAT was replaced. Never record credential values in durable state."
   },
   "local_openvms_state": {
     "authoritative_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN]",
-    "authoritative_checkout_head_before_m269_refresh": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
+    "authoritative_checkout_last_verified_head": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
     "m269_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M269_TEST]",
     "m269_acceptance_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
-    "m269_acceptance_build_status": "%X00000001",
-    "m269_live_check": "OpenVMS Git network preflight ready; SHARE enabled; DCL parse style EXTENDED",
+    "m270_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M270_TEST]",
+    "m270_acceptance_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+    "m270_acceptance_build_status": "%X00000001",
     "github_profile": "ovms-agent configured with masked replacement credential"
   },
   "retired_external_project_cleanup": {
@@ -72,12 +107,13 @@
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
     "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
     "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely.",
+    "Repository filenames should be uppercase by default unless a concrete external/tooling blocker requires lowercase.",
     "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches."
   ],
   "next_work": [
-    "Create and verify lightweight tag m269 at f3f871e2b4080f2c70ad14b2ab1b49b3354f257a using a ref-only operation.",
-    "Prune completed branch m267-llm-naming after tag/accepted-state verification so retained completed branches are m268 and m269.",
-    "Refresh SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] to the accepted M269 main head without using unsafe native RMS checkout/reset behavior, then remove the disposable M269 acceptance checkout.",
+    "Create/verify lightweight milestone tags m269 and m270 using ref-only operations; do not expose credentials.",
+    "After tags are verified, prune completed branch m268-autopilot so retained completed milestone branches are m269 and m270.",
+    "Consolidate the VAX back to one authoritative SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] shallow main checkout at f70a5792dc16a6b8ff15890f1921e8ada4ed3656 and verify a green full build before removing disposable M269/M270 acceptance checkouts.",
     "Start the next development milestone from current main."
   ]
 }
