@@ -5,7 +5,6 @@
 
 #include <dcdef.h>
 #include <descrip.h>
-#include <devdef.h>
 #include <dvidef.h>
 #include <starlet.h>
 
@@ -37,28 +36,19 @@ static int ansi_logical_defined(const char *name)
 static int ansi_output_is_terminal(void)
 {
     unsigned int device_class;
-    unsigned int device_char;
     unsigned short class_length;
-    unsigned short char_length;
     unsigned long status;
-    ansi_dvi_item items[3];
+    ansi_dvi_item items[2];
     $DESCRIPTOR(output_name, "SYS$OUTPUT");
 
     device_class = 0U;
-    device_char = 0U;
     class_length = 0U;
-    char_length = 0U;
     (void)memset(items, 0, sizeof(items));
 
     items[0].length = (unsigned short)sizeof(device_class);
     items[0].code = DVI$_DEVCLASS;
     items[0].buffer = &device_class;
     items[0].return_length = &class_length;
-
-    items[1].length = (unsigned short)sizeof(device_char);
-    items[1].code = DVI$_DEVCHAR;
-    items[1].buffer = &device_char;
-    items[1].return_length = &char_length;
 
     status = sys$getdviw(
         0,
@@ -75,19 +65,7 @@ static int ansi_output_is_terminal(void)
         return 0;
     }
 
-    if (device_class != (unsigned int)DC$_TERM) {
-        return 0;
-    }
-
-    if ((device_char & (unsigned int)DEV$M_ODV) == 0U) {
-        return 0;
-    }
-
-    if ((device_char & (unsigned int)DEV$M_DET) != 0U) {
-        return 0;
-    }
-
-    return 1;
+    return device_class == (unsigned int)DC$_TERM;
 }
 
 void ansi_term_init(void)
