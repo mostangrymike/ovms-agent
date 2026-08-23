@@ -32,6 +32,8 @@ The production integration keeps presentation decisions out of mutation/control-
 - AGENT/PATCH adds an interactive-only colored structured-patch preview after the existing validator succeeds; plain mode adds no preview bytes;
 - saved-plan/approval stdout routes through a presentation wrapper without changing approval text or yes/no semantics.
 
+The first integrated VAX interactive check found an OpenVMS Git compatibility issue in the initial colored-diff implementation: a Git invocation using `-c color.diff...` and `--color=always` returned success but emitted no diff even though `git status --short` showed a modified file. M273 therefore no longer depends on Git to emit ANSI. In interactive mode, `ANSI_TERM` asks Git for an ordinary `--no-color` diff in a temporary file, classifies added/deleted/context lines itself, emits SGR locally, and removes all temporary OpenVMS file versions. Plain mode deliberately keeps the pre-M273 `git diff --` command unchanged.
+
 ## Status and metrics boundary
 
 The interactive agent loop can show the current turn against the active `AGENT/AUTO/LIMITS` ceiling while a provider request is in flight. The line is erased before response/tool output and is a no-op in plain mode.
@@ -49,8 +51,8 @@ This dependency is intentionally recorded here so future work does not simulate 
 ## M273 sequencing
 
 1. VAX-validate the isolated ANSI module and plain-output invariants. **Accepted.**
-2. Wire the module and focused no-ESC regressions into the canonical build.
+2. Wire the module and focused no-ESC regressions into the canonical build. **Accepted by full VAX build at integration checkpoint `0c1aabb3...`.**
 3. Route diff/approval, assistant-response, and turn-status presentation without changing write/approval semantics.
-4. Run a fresh full VAX build and interactive presentation checks on the integrated branch.
+4. Re-run the interactive Git diff/status/color checks after the local diff-rendering compatibility fix.
 5. Treat SSE/provider streaming as the networking sub-slice, with its own transport acceptance, before enabling incremental terminal display.
 6. Reconcile the token/cost request only after real usage-accounting data exists; never synthesize cost from unavailable metrics.
