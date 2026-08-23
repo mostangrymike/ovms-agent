@@ -1,21 +1,22 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T10:16:00-05:00",
+  "updated_at": "2026-08-23T10:41:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
-    "latest_code_milestone": "M270",
-    "latest_code_milestone_commit": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
-    "latest_code_milestone_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
-    "note": "M270 is the exact VAX-accepted path/case normalization promoted fast-forward to main."
+    "head": "8bd5125a5b40ed284a42db2422fc2758a12188e5",
+    "latest_code_milestone": "M271",
+    "latest_code_milestone_commit": "9cbb2569036a1ffd977331e4614540c50a76e7f4",
+    "latest_code_milestone_tree": "05264cf8cae2e3066cad97bca537d8d49a01a6e9",
+    "note": "M271 exact VAX-tested code was promoted fast-forward to main at 9cbb2569; current main is one documentation-only RULES.md commit later at 8bd5125a."
   },
   "m268": {
     "issue": 42,
     "issue_state": "closed",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "branch": "m268-autopilot",
+    "branch_state": "pruned from GitHub",
     "main_promotion": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
     "tag": "m268"
   },
@@ -35,7 +36,7 @@
       "parse_style": "EXTENDED",
       "dcl_tknovf": "not reproduced"
     },
-    "tag": "verification pending"
+    "tag": "m269 verified at accepted head"
   },
   "m270": {
     "issue": 45,
@@ -60,25 +61,55 @@
     },
     "tag": "pending ref-only creation/verification"
   },
+  "m271": {
+    "issue": 46,
+    "issue_state": "closed",
+    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
+    "branch": "m271-git-auth-helper",
+    "accepted_head": "9cbb2569036a1ffd977331e4614540c50a76e7f4",
+    "accepted_tree": "05264cf8cae2e3066cad97bca537d8d49a01a6e9",
+    "main_promotion": "9cbb2569036a1ffd977331e4614540c50a76e7f4",
+    "changes": [
+      "restore SRC/GH_ASKPASS.C bounded Git credential helper",
+      "add GIT_AUTH_SETUP.COM to compile/install the helper and configure Git globally"
+    ],
+    "final_vax_acceptance": {
+      "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M271_TEST]",
+      "setup_status": "%X00000001",
+      "helper_check": "profile=ovms-agent user=configured token=configured",
+      "credential_helper": "!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE",
+      "credential_use_http_path": true,
+      "fetch_1_status": "%X0035A401",
+      "fetch_2_status": "%X0035A401",
+      "fetch_prompts": "none",
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed",
+      "push_dry_run_status": "%X0035A401",
+      "push_prompts": "none"
+    },
+    "tag": "pending ref-only creation/verification"
+  },
   "repository_hygiene": {
     "status": "COMPLETE_WITH_MILESTONE_REF_FOLLOWUP",
     "milestone_tags": {
       "existing_confirmed_range_before_new_work": "m251 through m268",
-      "m269": "verification pending",
-      "m270": "pending ref-only creation/verification"
+      "m269": "verified at f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
+      "m270": "pending ref-only creation/verification",
+      "m271": "pending ref-only creation/verification"
     },
     "branch_retention": {
-      "m267_branch": "absent on GitHub (verified 404)",
+      "m267_branch": "absent on GitHub",
+      "m268_branch": "pruned from GitHub",
       "currently_present_completed_branches": [
-        "m268-autopilot",
         "m269-github-preflight",
-        "m270-src-case-normalization"
+        "m270-src-case-normalization",
+        "m271-git-auth-helper"
       ],
       "target_completed_milestone_branches": [
-        "m269-github-preflight",
-        "m270-src-case-normalization"
+        "m270-src-case-normalization",
+        "m271-git-auth-helper"
       ],
-      "m268_branch": "eligible for ref-only pruning after required milestone tags are verified"
+      "m269_branch": "eligible for pruning after m270 and m271 permanent tags are verified"
     },
     "security_note": "The previously exposed GitHub PAT was replaced. Never record credential values in durable state."
   },
@@ -89,8 +120,12 @@
     "m269_acceptance_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
     "m270_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M270_TEST]",
     "m270_acceptance_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
-    "m270_acceptance_build_status": "%X00000001",
-    "github_profile": "ovms-agent configured with masked replacement credential"
+    "m271_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M271_TEST]",
+    "m271_acceptance_head": "9cbb2569036a1ffd977331e4614540c50a76e7f4",
+    "m271_acceptance_build_status": "%X00000001",
+    "github_profile": "ovms-agent configured with masked replacement credential",
+    "git_auth_helper": "SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE installed and accepted",
+    "raw_git_auth": "normal fetch and dry-run push use active OVMS Agent GitHub profile without prompting"
   },
   "retired_external_project_cleanup": {
     "status": "COMPLETE_FOR_LIVE_CONTENT_AND_VAX",
@@ -108,12 +143,15 @@
     "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
     "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely.",
     "Repository filenames should be uppercase by default unless a concrete external/tooling blocker requires lowercase.",
+    "Use the installed OVMS Agent Git credential helper for normal VAX HTTPS Git operations; do not routinely disable it with -c credential.helper= and do not use credential.helper=store as the standing solution.",
+    "Treat odd OpenVMS Git status values as success when no authentication/network error occurred; M271 observed %X0035A401 for accepted prompt-free fetch and dry-run push.",
     "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches."
   ],
   "next_work": [
-    "Create/verify lightweight milestone tags m269 and m270 using ref-only operations; do not expose credentials.",
-    "After tags are verified, prune completed branch m268-autopilot so retained completed milestone branches are m269 and m270.",
-    "Consolidate the VAX back to one authoritative SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] shallow main checkout at f70a5792dc16a6b8ff15890f1921e8ada4ed3656 and verify a green full build before removing disposable M269/M270 acceptance checkouts.",
-    "Start the next development milestone from current main."
+    "Create/verify lightweight milestone tags m270 and m271 using normal prompt-free Git commands; m269 is already verified.",
+    "After m270 and m271 tags are verified, prune completed branch m269-github-preflight so retained completed milestone branches are m270 and m271.",
+    "Consolidate the VAX back to one authoritative SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] shallow main checkout at current main 8bd5125a5b40ed284a42db2422fc2758a12188e5 and verify a green full build before removing disposable M269/M270/M271 acceptance checkouts.",
+    "Use ordinary Git commands with the installed credential helper; do not add -c credential.helper= except deliberate bootstrap/recovery bypasses.",
+    "Start the next development milestone from current main after repository/VAX housekeeping is complete."
   ]
 }
