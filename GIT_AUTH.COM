@@ -1,5 +1,5 @@
 $!===========================================================
-$! GIT_AUTH.COM - Enable OVMS Agent Git askpass authentication
+$! GIT_AUTH.COM - Enable OVMS Agent authenticated Git wrapper
 $!===========================================================
 $ SET NOON
 $
@@ -9,20 +9,15 @@ $     WRITE SYS$ERROR "GIT symbol is not defined. Run the Git setup first."
 $     EXIT %X00000002
 $ ENDIF
 $
-$ IF F$SEARCH("SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE;*") .EQS. ""
+$ IF F$SEARCH("SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE;*") .EQS. ""
 $ THEN
-$     WRITE SYS$ERROR "OVMS Agent Git askpass executable is not installed."
+$     WRITE SYS$ERROR "OVMS Agent authenticated Git wrapper is not installed."
 $     EXIT %X00000002
 $ ENDIF
 $
-$! Git performs its own PATH lookup before execve(), so VAXC$PATH is not
-$! consulted here. Give Git a path containing '/' so it skips that lookup.
-$! The OpenVMS C RTL translates sys$login/FILE to SYS$LOGIN:FILE.
-$ DEFINE/PROCESS GIT_ASKPASS "sys$login/OVMS_AGENT_GH_ASKPASS.EXE"
-$ DEFINE/PROCESS GIT_TERMINAL_PROMPT "0"
-$
-$! Explicitly suppress credential-helper use for authenticated network calls.
-$! Username/password prompts are answered by GIT_ASKPASS instead.
-$ GITAUTH :== 'GIT' "-c" "credential.helper="
+$! The wrapper creates the same short-lived repository-scoped extraHeader
+$! authentication config used by guarded AGENT/GITHUB network operations.
+$! No credential value is placed in this DCL symbol or Git command line.
+$ GITAUTH :== $SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE
 $
 $ EXIT %X00000001
