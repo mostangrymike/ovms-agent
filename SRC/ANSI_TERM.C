@@ -22,6 +22,7 @@ typedef struct ansi_dvi_item {
 static int ansi_initialized = 0;
 static int ansi_enabled = 0;
 static int ansi_forced_plain = 0;
+static int ansi_status_active = 0;
 
 static int ansi_logical_defined(const char *name)
 {
@@ -77,6 +78,7 @@ void ansi_term_init(void)
         ansi_logical_defined("OVMS_AGENT_NOCOLOR");
 
     ansi_enabled = 0;
+    ansi_status_active = 0;
 
     if (!ansi_forced_plain) {
         ansi_enabled = ansi_output_is_terminal();
@@ -145,6 +147,12 @@ void ansi_term_printf(const char *format, ...)
 
 void ansi_term_stream(const char *text)
 {
+    ansi_term_ensure();
+
+    if (ansi_status_active) {
+        ansi_term_status_clear();
+    }
+
     ansi_term_write(text);
     (void)fflush(stdout);
 }
@@ -281,6 +289,7 @@ void ansi_term_status(const char *text)
     }
     (void)fputs("\033[0m", stdout);
     (void)fflush(stdout);
+    ansi_status_active = 1;
 }
 
 void ansi_term_status_turn(unsigned int turn, unsigned int limit)
@@ -305,10 +314,11 @@ void ansi_term_status_clear(void)
 {
     ansi_term_ensure();
 
-    if (!ansi_enabled) {
+    if (!ansi_enabled || !ansi_status_active) {
         return;
     }
 
     (void)fputs("\r\033[2K", stdout);
     (void)fflush(stdout);
+    ansi_status_active = 0;
 }
