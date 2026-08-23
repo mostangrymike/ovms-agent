@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,38 @@ static void gh_cred_copy(char *output,
         (void)memcpy(output, value, length);
     }
     output[length] = '\0';
+}
+
+static int gh_text_has(const char *text, const char *needle)
+{
+    size_t text_len;
+    size_t needle_len;
+    size_t i;
+    size_t j;
+
+    if (text == NULL || needle == NULL || *needle == '\0') {
+        return 0;
+    }
+
+    text_len = strlen(text);
+    needle_len = strlen(needle);
+    if (needle_len > text_len) {
+        return 0;
+    }
+
+    for (i = 0U; i + needle_len <= text_len; ++i) {
+        for (j = 0U; j < needle_len; ++j) {
+            if (tolower((unsigned char)text[i + j]) !=
+                tolower((unsigned char)needle[j])) {
+                break;
+            }
+        }
+        if (j == needle_len) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 static void gh_cred_read(char *protocol,
@@ -109,6 +142,26 @@ static int gh_cred_ready(const gh_profile *profile)
            profile->token[0] != '\0';
 }
 
+static int gh_askpass(const gh_profile *profile, const char *prompt)
+{
+    if (!gh_cred_ready(profile) || prompt == NULL ||
+        !gh_text_has(prompt, "github.com")) {
+        return EXIT_FAILURE;
+    }
+
+    if (gh_text_has(prompt, "username")) {
+        (void)puts(profile->user);
+        return EXIT_SUCCESS;
+    }
+
+    if (gh_text_has(prompt, "password")) {
+        (void)puts(profile->token);
+        return EXIT_SUCCESS;
+    }
+
+    return EXIT_FAILURE;
+}
+
 int main(int argc, char **argv)
 {
     const gh_profile *profile;
@@ -120,14 +173,21 @@ int main(int argc, char **argv)
 
     if (argc == 2 && strcmp(argv[1], "--check") == 0) {
         if (!gh_cred_ready(profile)) {
-            (void)puts("GitHub credential helper: active profile is incomplete.");
+            (void)puts("GitHub auth helper: active profile is incomplete.");
             return EXIT_FAILURE;
         }
 
         (void)printf(
-            "GitHub credential helper ready: profile=%s user=configured token=configured\n",
+            "GitHub auth helper ready: profile=%s user=configured token=configured\n",
             profile->name);
         return EXIT_SUCCESS;
+    }
+
+    if (argc == 2 &&
+        strcmp(argv[1], "get") != 0 &&
+        strcmp(argv[1], "store") != 0 &&
+        strcmp(argv[1], "erase") != 0) {
+        return gh_askpass(profile, argv[1]);
     }
 
     if (argc != 2) {
