@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T09:33:00-05:00",
+  "updated_at": "2026-08-23T09:34:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -80,11 +80,22 @@
     "m267_backup_status": "%X10000001",
     "m267_backup_list_status": "%X10000001",
     "old_tree_cleanup": {
-      "OVMS_AGENT_M267_FRESH": "removed",
-      "OVMS-AGENT": "contents removed; empty parent directory remains",
-      "OVMS_AGENT": "contents removed; empty parent directory remains",
-      "OVMS_AGENT_M261": "contents removed; empty parent directory remains"
+      "OVMS-AGENT": "removed",
+      "OVMS_AGENT": "removed",
+      "OVMS_AGENT_M261": "removed",
+      "OVMS_AGENT_M267_FRESH": "removed"
     },
+    "verified_home_directories": [
+      "GAP005",
+      "hsperfdata_MIKE",
+      "M264_GAP007_VMSBBS",
+      "M264_GAP007_VMSBBS_GIT",
+      "M264_GAP007_VMSBBS_GIT2",
+      "M264_GAP007_VMSBBS_GIT3",
+      "OVMS_AGENT_MAIN",
+      "OVMS_OLD_ARCHIVE",
+      "VMSBBS"
+    ],
     "do_not_touch": [
       "SYS$SYSDEVICE:[MIKE.VMSBBS]",
       "SYS$SYSDEVICE:[MIKE.M264_GAP007_VMSBBS*]",
@@ -101,7 +112,6 @@
     "Keep main and chat-session-state permanently, keep the active milestone branch, and retain only the two most recently completed milestone development branches; tag canonical promoted milestone commits before pruning older branches."
   ],
   "next_work": [
-    "Delete the three empty parent directories SYS$SYSDEVICE:[MIKE]OVMS-AGENT.DIR;1, OVMS_AGENT.DIR;1, and OVMS_AGENT_M261.DIR;1, then verify SYS$LOGIN directory listing.",
     "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] as the authoritative VAX checkout for future work.",
     "Start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
   ]
