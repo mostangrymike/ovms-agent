@@ -1,9 +1,16 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T22:33:00-05:00",
+  "updated_at": "2026-08-22T22:38:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
+  "current_main": {
+    "head": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "latest_code_milestone": "M268",
+    "latest_code_milestone_commit": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
+    "latest_code_milestone_tree": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
+    "note": "cc50cba0 is a governance-only RULES.md commit documenting branch retention; M268 code remains the accepted 79e03c0 tree."
+  },
   "m267": {
     "issue": 31,
     "issue_state": "closed",
@@ -13,77 +20,10 @@
     "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
     "latest_vax_green_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
     "final_accepted_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-    "main_promotion": {
-      "main_before": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
-      "main_after": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-      "accepted_source_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-      "accepted_tree_sha": "52014bb1cd1c5f99c681efeecd03e4b3ec4b3e23",
-      "promotion_method": "Created one clean milestone commit with current M266 main as sole parent and the exact VAX-accepted M267 tree, then fast-forwarded main without force.",
-      "tree_identity_verified": true,
-      "vax_rebuild_after_promotion": "not required because promoted tree SHA is byte-identical to the VAX-accepted M267 tree"
-    },
-    "final_namespace_sweep_commit": "312ebc45da69bc044d99b8a738f75a2080dc5993",
-    "final_namespace_sweep_parent": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-    "final_fix": {
-      "commit": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-      "file": "SRC/LLM_PROMPTS.H",
-      "cause": "Mechanical final-prefix migration changed a compatibility include condition into the header's own guard, causing LLM_GOAL_GUARD.INC to be included outside LLM_INTERNAL_H context.",
-      "correction": "Gate LLM_GOAL_GUARD.INC only on defined(LLM_INTERNAL_H)."
-    },
-    "final_vax_acceptance": {
-      "head_verified": true,
-      "rms_restore_verified": true,
-      "generic_namespace_searches": "clean",
-      "generic_user_visible_openai_wording": "clean",
-      "intentional_survivors": [
-        "OPENAI_API_KEY / OPENAIKEY compatibility and sensitive-value handling",
-        "OPENAI_TEST_HEADERS and OPENAI_MODELS.JSON legacy compatibility artifacts",
-        "perform_openai_request for the specifically OpenAI-compatible wire protocol",
-        "actual OpenAI entity/provenance references",
-        "M267 governance/history text"
-      ],
-      "full_regressions": "all passed",
-      "build_status": "%X00000001",
-      "final_acceptance_comment": 5382955592
-    },
-    "accepted_families": {
-      "public_umbrella_filename_and_wording": "043f26bdb24c546ef2b9b23ed4d6805f2628ad96",
-      "basic_agent_namespace_compat_retirement": "caf68c0a2e53053fdf148ff75563f6891b83e45f",
-      "repair_entrypoint_namespace": "a07e9829410ae96a7dff372d8592e05fd832fac8",
-      "public_service_entrypoints": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
-      "isolated_local_internals": "ce4c007c1f55dad7336892bfbfbd9323b098befb",
-      "project_map_namespace_complete": "c6680209a460a75f23bb8bba9cb372759556245a",
-      "context_namespace_complete": "bad47c2c6308ac943404af63b3284243756ce857",
-      "instructions_namespace_complete": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
-      "broader_context_entrypoints": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
-      "final_repository_wide_namespace": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c"
-    },
-    "final_github_audit": {
-      "temporary_pr": 41,
-      "temporary_pr_state": "closed_unmerged",
-      "audited_tree_sha": "0d9046339cf0234ae791467acac0a74a13c63ebf",
-      "initial_legacy_tokens": 1030,
-      "initial_legacy_occurrences": 8986,
-      "initial_neutral_name_collisions": 128,
-      "initial_aliases": 138,
-      "tracked_paths_containing_openai_after_migration": 0,
-      "unjustified_prefixed_tokens_after_migration": 0,
-      "exact_legacy_to_neutral_shims_after_migration": 0,
-      "aggregate_changed_paths": 304,
-      "generated_symbol_index": "OVMS_AGENT_SYMBOLS.DAT removed from version control and ignored; runtime falls back to live source scan and REINDEX regenerates it."
-    },
-    "important_recovery_lessons": {
-      "lowercase_src": "GitHub has SRC and lowercase src paths; OpenVMS collapses them physically. Exact GitHub path case is required by GITRESTORE for tracked mixed-case paths.",
-      "bulk_restore": "Do not generate restore path lists on VMS from git diff because VMS case folding can destroy Git path identity. Use exact GitHub path spellings.",
-      "symbol_index_restore": "SRC/SYMBOL_INDEX.C exposed a Git/RMS verification edge case; only its single comment spelling needed local neutralization.",
-      "self_guard_collision": "Mechanical namespace replacement can collide with an existing LLM include guard; audit conditional preprocessor expressions after broad migrations.",
-      "publication": "Use GitHub asserted temporary transformations and clean one-parent commits; use VAX only for RMS/DEC C/runtime acceptance."
-    },
-    "next_work": [
-      "M267 is complete and promoted to main. Do not reopen namespace work unless a regression is discovered.",
-      "M268 is complete and promoted to main commit 79e03c0ab08ba73693083e070800a5a6ed6cdb3e.",
-      "Use current main as the baseline for the next milestone."
-    ]
+    "accepted_tree_sha": "52014bb1cd1c5f99c681efeecd03e4b3ec4b3e23",
+    "main_promotion": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+    "final_build_status": "%X00000001",
+    "retention": "keep as one of the two most recently completed milestone development branches"
   },
   "m268": {
     "issue": 42,
@@ -92,102 +32,129 @@
     "branch": "m268-autopilot",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "baseline_main": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "github_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-    "latest_vax_green_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
     "final_accepted_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
     "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
+    "main_promotion": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
     "goal": "Add bounded AGENT/AUTOPILOT orchestration over the existing local repair/build loop with scoped local auto-approval and an immutable FULL safety floor.",
-    "implemented": [
-      "AGENT/AUTOPILOT command registration on live COMMAND_AGENT_M259 facade",
-      "AGENT/APPROVAL/SET autopilot overlay backed by mature WORKSPACE authority, never FULL",
-      "cumulative AGENT/AUTO/LIMITS outer turn/write accounting with atomic multi-write reservation",
-      "existing controlled build, deterministic planning, saved-plan execution, transactional rollback, goal guard, Git diff, repair history and export reuse",
-      "explicit CLEAN_BUILD, RETRY_BUDGET_EXHAUSTED and GOAL_GUARD_REJECTED terminal states",
-      "OVMS_AGENT_AUTOPILOT_REVIEW.TXT with exact candidate plans, final diff, build evidence, repair history and Push performed: no",
-      "focused M268 regression covering real GitHub PUSH/service, MCP, network-exception and arbitrary-DCL FULL gates; modern replace_block goal guard; budgets; all terminal finalizers; and review export",
-      "AUTOPILOT moved into standalone LLM_AUTOPILOT.OBJ so legacy focused tests linking only LLM_RETRY.OBJ retain the mature retry dependency surface",
-      "RMS-aware review diff collector uses git cat-file -p HEAD:path rather than git show so root-level files are captured correctly on OpenVMS"
-    ],
-    "failed_vax_attempt": {
-      "head": "9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b",
-      "result": "BUILD_FAILED_M251_LINK_SURFACE",
-      "build_status": 2,
-      "cause": "M268 AUTOPILOT was included in LLM_RETRY.OBJ, so M251_REPAIR_GOAL_TEST inherited unrelated approval/auto/build/repair/Git dependencies and failed with undefined symbols.",
-      "correction": "Restore LLM_RETRY.C to the mature thin facade; compile SRC/LLM_AUTOPILOT.C separately and list LLM_AUTOPILOT.OBJ only in LLM_MODULES.OPT.",
-      "fix_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
-      "issue_comment": 5383963033
-    },
-    "intermediate_vax_acceptance": {
-      "head": "7af5490f188d9320d03cbefbd98a72aff6400028",
-      "full_regressions": "all passed",
-      "build_status": "%X00000001",
-      "focused_test_status": "%X00000001",
-      "issue_comment": 5383973911
-    },
-    "final_review_fix": {
-      "head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-      "file": "SRC/LLM_GIT_CONTEXT.C",
-      "cause": "git show HEAD:M268_AUTOPILOT_TEST.COM failed on OpenVMS during review-diff capture and created a false whole-file added diff.",
-      "correction": "Use the already-proven OpenVMS-safe git cat-file -p HEAD:path capture used by guarded RMS restore.",
-      "root_file_diff_after_fix": "M268_AUTOPILOT_TEST.COM reports (no difference)",
-      "fatal_search_after_fix": "no strings matched"
-    },
     "final_vax_acceptance": {
-      "head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-      "head_verified": true,
-      "rms_restore_verified": true,
-      "full_regressions": "all passed",
       "build_status": "%X00000001",
       "focused_test_status": "%X00000001",
-      "focused_test_result": "M268 AUTOPILOT policy, FULL gates, limits, terminals, and review test passed.",
-      "terminal_states_exercised": [
-        "CLEAN_BUILD",
-        "RETRY_BUDGET_EXHAUSTED",
-        "GOAL_GUARD_REJECTED"
-      ],
-      "runtime_smoke": {
-        "provider": "requesty (openai/gpt-5)",
-        "full_does_not_enable_autopilot": true,
-        "autopilot_terminal": "CLEAN_BUILD",
-        "repair_candidates_applied": 0,
-        "write_actions": 0,
-        "push_performed": "no",
-        "review_root_file_diff": "no difference",
-        "review_fatal_output": "none"
-      },
-      "final_acceptance_comment": 5384016362
+      "runtime_terminal": "CLEAN_BUILD",
+      "repair_candidates_applied": 0,
+      "write_actions": 0,
+      "push_performed": "no",
+      "review_root_file_diff": "no difference",
+      "review_fatal_output": "none"
     },
-    "main_promotion": {
-      "main_before": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-      "main_after": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
-      "accepted_source_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-      "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
-      "promotion_method": "Created one clean milestone commit with accepted M267 main as sole parent and the exact VAX/runtime-accepted M268 tree, then fast-forwarded main without force.",
-      "tree_identity_verified": true,
-      "vax_rebuild_after_promotion": "not required because promoted tree SHA is byte-identical to the final VAX/runtime-accepted M268 tree"
-    },
-    "acceptance_pending": [],
     "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT.",
-    "next_work": [
-      "M268 is complete and promoted. Do not reopen AUTOPILOT safety-floor work unless a regression is discovered.",
-      "Start the next milestone from main commit 79e03c0ab08ba73693083e070800a5a6ed6cdb3e."
-    ]
+    "retention": "keep as one of the two most recently completed milestone development branches"
+  },
+  "repository_hygiene": {
+    "issue": 43,
+    "status": "TAG_AND_REF_PRUNE_PENDING",
+    "rules_commit": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "policy": {
+      "permanent_branches": ["main", "chat-session-state"],
+      "active_milestone_branches": 1,
+      "completed_milestone_branches_to_keep": 2,
+      "keep_now": ["main", "chat-session-state", "m267-llm-naming", "m268-autopilot"],
+      "tag_pattern": "mNNN",
+      "tag_target": "canonical promoted main commit",
+      "delete_temporary_branches_after_use": true,
+      "never_delete_unique_unpromoted_work": true
+    },
+    "canonical_milestone_tag_targets": {
+      "m251": "93091f3908070cf9f541d9407cd7d7e793e9ff9e",
+      "m252": "0efa5bdf2858284cf1cf94521fdedca16a1cab77",
+      "m253": "91447df4d20557110eb7ec0360a0655e6aacc1da",
+      "m254": "55b3dc500bd7a041c624f3312a0f4badff0133b7",
+      "m255": "36808aae500c70d6c24af0a69283e809c42ecede",
+      "m256": "5ead574e1cfdf672fd66fde8caf7ce7e9fbb7203",
+      "m257": "ccc2a6b7d7f305ffa7f2563ffdae71465d9a3baf",
+      "m258": "8f1d1f396091377dff50505716de1dd1adcb1f07",
+      "m259": "55243d87a87322798e4377f21be99e71e5563b68",
+      "m260": "4f7ba771ae607dce2137bf1bfd1a4370f8ce3e3b",
+      "m261": "34a7a9c4d11c0f5bfc88f21edadeb0fd9d7eb373",
+      "m262": "9b657d8704fa54904b204fb7464a4af1b18b3e37",
+      "m263": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
+      "m264": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92",
+      "m265": "31461b480133db4ad86f5449c943dec2c8589047",
+      "m266": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
+      "m267": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+      "m268": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
+    },
+    "inventory": {
+      "branches_discovered": 48,
+      "branches_to_keep": 4,
+      "branches_to_delete": 44,
+      "delete": [
+        "m251-hardening",
+        "m252-file-delete",
+        "m252-file-move",
+        "m252-file-rename",
+        "m252-llm-provider",
+        "m253-parity-reconcile",
+        "m253-vmsbbs-gaps",
+        "m254-execution-modes",
+        "m255-iterative-repair",
+        "m256-session-resumption",
+        "m257-project-instructions",
+        "m258-network-external-tools",
+        "m259-image-input",
+        "m260-final-parity",
+        "m260-final-reconcile",
+        "m261-vax-portability",
+        "m261-vmsbbs-hardening",
+        "m262-install-release",
+        "m262-provider-neutral",
+        "m263-gap006-rms-git",
+        "m263-vms-diagnostics",
+        "m264-gap007-cobol-structure",
+        "m265-rms-record-restore-fix",
+        "m267-audit-core-shims-ce4",
+        "m267-audit-instructions-bad47",
+        "m267-audit-survivors",
+        "m267-audit-survivors-a07",
+        "m267-audit-survivors-cb016",
+        "m267-candidate-context-complete",
+        "m267-candidate-instructions-complete",
+        "m267-candidate-local-internals-2da",
+        "m267-candidate-project-map-complete",
+        "m267-candidate-service-entrypoints",
+        "m267-final-audit-6c0",
+        "m267-fix-command-grep-repair",
+        "m267-publish-agent-ns",
+        "m267-publish-repair-entrypoints",
+        "m267-selfguard-audit",
+        "m267-state-08c",
+        "m267-state-caf68",
+        "m267-state-stage",
+        "m267-vax-carrier-public-header",
+        "m268-promotion-staging",
+        "gap008-rms-git-restore"
+      ]
+    },
+    "execution_note": "Connected GitHub capability does not expose tag creation or branch-ref deletion. Finish with ref-only native Git pushes; this does not stage or materialize RMS worktree files. Verify existing remote tags before creating or deleting branches."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
-    "accepted_m267_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-    "m267_promoted_main_head": "8fe79efca76c91217d5f496900da44e9e99d97ac",
     "m268_last_materialized_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
     "m268_last_build_status": "%X00000001",
     "m268_focused_test_status": "%X00000001",
     "m268_runtime_terminal": "CLEAN_BUILD",
-    "promoted_main_head": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
+    "latest_code_promoted_main_head": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
+    "current_main_head": "cc50cba0febc3b0b12b0c491337b393a46b20c07"
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
     "Continue autonomously; pause only for a required VAX compile/build gate or genuinely required user input.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
     "Use native OpenVMS SEARCH over physical [.SRC] for final consumer/survivor verification.",
-    "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity."
+    "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
+    "Keep main and chat-session-state permanently, keep the active milestone branch, and retain only the two most recently completed milestone development branches; tag canonical promoted milestone commits before pruning older branches."
+  ],
+  "next_work": [
+    "Complete issue #43 by auditing existing remote milestone tags, creating any missing m251 through m268 tags on the recorded canonical main commits, deleting the 44 recorded historical/helper branches, and verifying only the four retained branches remain.",
+    "After repository hygiene is complete, start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
   ]
 }
