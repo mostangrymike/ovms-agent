@@ -1,5 +1,5 @@
 $!===========================================================
-$! GIT_AUTH_SETUP.COM - Install OVMS Agent Git auth wrapper
+$! GIT_AUTH_SETUP.COM - Install OVMS Agent Git askpass support
 $!===========================================================
 $ SET NOON
 $
@@ -12,7 +12,7 @@ $
 $ SET DEFAULT 'PROJECT_DIR'
 $ SET PROCESS/PARSE_STYLE=EXTENDED
 $
-$ WRITE SYS$OUTPUT "Installing OVMS Agent Git credential helper..."
+$ WRITE SYS$OUTPUT "Installing OVMS Agent Git askpass helper..."
 $
 $ IF F$SEARCH("[]BUILD.DIR;*") .EQS. ""
 $ THEN
@@ -47,32 +47,32 @@ SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
 $
-$! Global credential-helper behavior is unreliable on the VAX Git port.
-$! Clear the earlier experiment. GITAUTH below supplies the helper explicitly
-$! for each invocation, matching the previously proven authenticated path.
+$ COPY/NOLOG []GIT_AUTH.COM SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
+$
+$! Remove earlier credential-helper experiments. Authentication now uses
+$! Git's askpass prompt path, which does not require a helper shell command.
 $ git config --global --unset-all credential.helper
 $ git config --global --unset credential.useHttpPath
 $
-$! Capture the real GIT foreign-command image and preserve quotes around the
-$! helper value so DCL passes "!MCR SYS$LOGIN:..." as one Git -c argument.
-$ GITAUTH :== 'GIT' "-c" "credential.helper=" "-c" -
-"""credential.helper=!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE""" "-c" -
-"credential.useHttpPath=true"
+$ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
+$ IF .NOT. $STATUS THEN GOTO FAIL
 $
 $ MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE --check
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ WRITE SYS$OUTPUT "Git credential helper installed successfully."
+$ WRITE SYS$OUTPUT "Git askpass helper installed successfully."
 $ WRITE SYS$OUTPUT "DCL wrapper command defined: GITAUTH"
 $ WRITE SYS$OUTPUT -
-"Use GITAUTH instead of GIT for authenticated GitHub network commands."
+"Use GITAUTH for authenticated GitHub network commands on this VAX."
 $ WRITE SYS$OUTPUT -
-"The wrapper supplies the active OVMS Agent GitHub profile automatically."
+"For future logins, run @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM after Git setup."
 $ GOTO FINISH
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
-$ WRITE SYS$ERROR "Unable to install OVMS Agent Git auth wrapper."
+$ WRITE SYS$ERROR "Unable to install OVMS Agent Git askpass support."
 $
 $ FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
