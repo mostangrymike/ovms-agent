@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T09:19:00-05:00",
+  "updated_at": "2026-08-23T09:33:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -37,9 +37,7 @@
       "runtime_terminal": "CLEAN_BUILD",
       "repair_candidates_applied": 0,
       "write_actions": 0,
-      "push_performed": "no",
-      "review_root_file_diff": "no difference",
-      "review_fatal_output": "none"
+      "push_performed": "no"
     },
     "retention": "keep as one of the two most recently completed milestone development branches"
   },
@@ -47,77 +45,64 @@
     "issue": 43,
     "status": "COMPLETE",
     "rules_commit": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
-    "policy": {
-      "permanent_branches": [
-        "main",
-        "chat-session-state"
-      ],
-      "active_milestone_branches": 1,
-      "completed_milestone_branches_to_keep": 2,
-      "tag_pattern": "mNNN",
-      "tag_target": "canonical promoted main commit",
-      "delete_temporary_branches_after_use": true,
-      "never_delete_unique_unpromoted_work": true
-    },
     "milestone_tags": {
       "range": "m251 through m268",
       "count": 18,
-      "verified_remote": true,
-      "targets": {
-        "m251": "93091f3908070cf9f541d9407cd7d7e793e9ff9e",
-        "m252": "0efa5bdf2858284cf1cf94521fdedca16a1cab77",
-        "m253": "91447df4d20557110eb7ec0360a0655e6aacc1da",
-        "m254": "55b3dc500bd7a041c624f3312a0f4badff0133b7",
-        "m255": "36808aae500c70d6c24af0a69283e809c42ecede",
-        "m256": "5ead574e1cfdf672fd66fde8caf7ce7e9fbb7203",
-        "m257": "ccc2a6b7d7f305ffa7f2563ffdae71465d9a3baf",
-        "m258": "8f1d1f396091377dff50505716de1dd1adcb1f07",
-        "m259": "55243d87a87322798e4377f21be99e71e5563b68",
-        "m260": "4f7ba771ae607dce2137bf1bfd1a4370f8ce3e3b",
-        "m261": "34a7a9c4d11c0f5bfc88f21edadeb0fd9d7eb373",
-        "m262": "9b657d8704fa54904b204fb7464a4af1b18b3e37",
-        "m263": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
-        "m264": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92",
-        "m265": "31461b480133db4ad86f5449c943dec2c8589047",
-        "m266": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
-        "m267": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-        "m268": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
-      }
+      "verified_remote": true
     },
     "branch_cleanup": {
       "actual_branches_before": 49,
       "branches_deleted": 45,
       "branches_retained": 4,
-      "retained": [
-        "main",
-        "chat-session-state",
-        "m267-llm-naming",
-        "m268-autopilot"
-      ],
-      "verified_remote_heads": true,
-      "inventory_correction": "Earlier GitHub branch search reported 48 and missed gap009-plan-file-count. Final ls-remote exposed the extra branch; it was verified as safely represented by canonical M266 history and deleted, making the actual starting total 49."
+      "retained": ["main", "chat-session-state", "m267-llm-naming", "m268-autopilot"],
+      "verified_remote_heads": true
     },
     "security_note": "A GitHub PAT was accidentally exposed in terminal transcript during cleanup. Treat that token as compromised; revoke it and use a replacement. Never record the token value in durable state."
   },
   "local_openvms_state": {
-    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
-    "m268_last_materialized_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-    "m268_last_build_status": "%X00000001",
-    "m268_focused_test_status": "%X00000001",
-    "m268_runtime_terminal": "CLEAN_BUILD",
-    "latest_code_promoted_main_head": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
-    "current_main_head": "cc50cba0febc3b0b12b0c491337b393a46b20c07"
+    "authoritative_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN]",
+    "branch": "main",
+    "head": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "working_tree_status": "clean",
+    "fresh_clone_build_status": "%X00000001",
+    "fresh_clone_regressions": "All regression tests passed",
+    "archive_directory": "SYS$SYSDEVICE:[MIKE.OVMS_OLD_ARCHIVE]",
+    "archive_contents": [
+      "OVMS_AGENT_M253_GAP001.PATCH",
+      "OVMS_AGENT_V0_3_0.ZIP",
+      "OVMS_AGENT_TRACKED.DIFF",
+      "M261_M264_GAP007.COB",
+      "M261_M267_INCLUDE.PATCH",
+      "M261_TRACKED.DIFF",
+      "M267_FRESH.BCK",
+      "M267_FRESH.LIS"
+    ],
+    "m267_backup_status": "%X10000001",
+    "m267_backup_list_status": "%X10000001",
+    "old_tree_cleanup": {
+      "OVMS_AGENT_M267_FRESH": "removed",
+      "OVMS-AGENT": "contents removed; empty parent directory remains",
+      "OVMS_AGENT": "contents removed; empty parent directory remains",
+      "OVMS_AGENT_M261": "contents removed; empty parent directory remains"
+    },
+    "do_not_touch": [
+      "SYS$SYSDEVICE:[MIKE.VMSBBS]",
+      "SYS$SYSDEVICE:[MIKE.M264_GAP007_VMSBBS*]",
+      "SYS$SYSDEVICE:[MIKE.GAP005]",
+      "SYS$SYSDEVICE:[MIKE.hsperfdata_MIKE]"
+    ]
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
     "Continue autonomously; pause only for a required VAX compile/build gate or genuinely required user input.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
-    "Use native OpenVMS SEARCH over physical [.SRC] for final consumer/survivor verification.",
     "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
+    "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely.",
     "Keep main and chat-session-state permanently, keep the active milestone branch, and retain only the two most recently completed milestone development branches; tag canonical promoted milestone commits before pruning older branches."
   ],
   "next_work": [
-    "Repository hygiene issue #43 is complete; do not recreate deleted historical/helper branches unless unique recovery work is explicitly required.",
+    "Delete the three empty parent directories SYS$SYSDEVICE:[MIKE]OVMS-AGENT.DIR;1, OVMS_AGENT.DIR;1, and OVMS_AGENT_M261.DIR;1, then verify SYS$LOGIN directory listing.",
+    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] as the authoritative VAX checkout for future work.",
     "Start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
   ]
 }
