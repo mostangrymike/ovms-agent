@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T22:19:00-05:00",
+  "updated_at": "2026-08-22T22:33:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -81,18 +81,21 @@
     },
     "next_work": [
       "M267 is complete and promoted to main. Do not reopen namespace work unless a regression is discovered.",
-      "M268 continues from main commit 8fe79efca76c91217d5f496900da44e9e99d97ac on branch m268-autopilot.",
-      "Do not alter the accepted M267 main tree until M268 runtime smoke is complete and publication is ready."
+      "M268 is complete and promoted to main commit 79e03c0ab08ba73693083e070800a5a6ed6cdb3e.",
+      "Use current main as the baseline for the next milestone."
     ]
   },
   "m268": {
     "issue": 42,
-    "issue_state": "open",
+    "issue_state": "closed",
+    "issue_state_reason": "completed",
     "branch": "m268-autopilot",
-    "status": "VAX_GREEN_RUNTIME_SMOKE_PENDING",
+    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "baseline_main": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "github_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
-    "latest_vax_green_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
+    "github_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
+    "latest_vax_green_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
+    "final_accepted_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
+    "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
     "goal": "Add bounded AGENT/AUTOPILOT orchestration over the existing local repair/build loop with scoped local auto-approval and an immutable FULL safety floor.",
     "implemented": [
       "AGENT/AUTOPILOT command registration on live COMMAND_AGENT_M259 facade",
@@ -102,7 +105,8 @@
       "explicit CLEAN_BUILD, RETRY_BUDGET_EXHAUSTED and GOAL_GUARD_REJECTED terminal states",
       "OVMS_AGENT_AUTOPILOT_REVIEW.TXT with exact candidate plans, final diff, build evidence, repair history and Push performed: no",
       "focused M268 regression covering real GitHub PUSH/service, MCP, network-exception and arbitrary-DCL FULL gates; modern replace_block goal guard; budgets; all terminal finalizers; and review export",
-      "AUTOPILOT moved into standalone LLM_AUTOPILOT.OBJ so legacy focused tests linking only LLM_RETRY.OBJ retain the mature retry dependency surface"
+      "AUTOPILOT moved into standalone LLM_AUTOPILOT.OBJ so legacy focused tests linking only LLM_RETRY.OBJ retain the mature retry dependency surface",
+      "RMS-aware review diff collector uses git cat-file -p HEAD:path rather than git show so root-level files are captured correctly on OpenVMS"
     ],
     "failed_vax_attempt": {
       "head": "9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b",
@@ -113,8 +117,23 @@
       "fix_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
       "issue_comment": 5383963033
     },
-    "vax_acceptance": {
+    "intermediate_vax_acceptance": {
       "head": "7af5490f188d9320d03cbefbd98a72aff6400028",
+      "full_regressions": "all passed",
+      "build_status": "%X00000001",
+      "focused_test_status": "%X00000001",
+      "issue_comment": 5383973911
+    },
+    "final_review_fix": {
+      "head": "0ae2155bf876e3bce419210a6559d2a66d091534",
+      "file": "SRC/LLM_GIT_CONTEXT.C",
+      "cause": "git show HEAD:M268_AUTOPILOT_TEST.COM failed on OpenVMS during review-diff capture and created a false whole-file added diff.",
+      "correction": "Use the already-proven OpenVMS-safe git cat-file -p HEAD:path capture used by guarded RMS restore.",
+      "root_file_diff_after_fix": "M268_AUTOPILOT_TEST.COM reports (no difference)",
+      "fatal_search_after_fix": "no strings matched"
+    },
+    "final_vax_acceptance": {
+      "head": "0ae2155bf876e3bce419210a6559d2a66d091534",
       "head_verified": true,
       "rms_restore_verified": true,
       "full_regressions": "all passed",
@@ -126,24 +145,43 @@
         "RETRY_BUDGET_EXHAUSTED",
         "GOAL_GUARD_REJECTED"
       ],
-      "issue_comment": 5383973911
+      "runtime_smoke": {
+        "provider": "requesty (openai/gpt-5)",
+        "full_does_not_enable_autopilot": true,
+        "autopilot_terminal": "CLEAN_BUILD",
+        "repair_candidates_applied": 0,
+        "write_actions": 0,
+        "push_performed": "no",
+        "review_root_file_diff": "no difference",
+        "review_fatal_output": "none"
+      },
+      "final_acceptance_comment": 5384016362
     },
-    "acceptance_pending": [
-      "Perform runtime command/policy smoke on the VAX-built image",
-      "Run an initial clean-build AGENT/AUTOPILOT smoke using the configured Requesty provider",
-      "Inspect the resulting OVMS_AGENT_AUTOPILOT_REVIEW.TXT",
-      "After runtime smoke, publish the exact VAX-accepted tree and close issue #42"
-    ],
-    "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT."
+    "main_promotion": {
+      "main_before": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+      "main_after": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
+      "accepted_source_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
+      "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
+      "promotion_method": "Created one clean milestone commit with accepted M267 main as sole parent and the exact VAX/runtime-accepted M268 tree, then fast-forwarded main without force.",
+      "tree_identity_verified": true,
+      "vax_rebuild_after_promotion": "not required because promoted tree SHA is byte-identical to the final VAX/runtime-accepted M268 tree"
+    },
+    "acceptance_pending": [],
+    "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT.",
+    "next_work": [
+      "M268 is complete and promoted. Do not reopen AUTOPILOT safety-floor work unless a regression is discovered.",
+      "Start the next milestone from main commit 79e03c0ab08ba73693083e070800a5a6ed6cdb3e."
+    ]
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
     "accepted_m267_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-    "promoted_main_head": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "m268_last_materialized_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
+    "m267_promoted_main_head": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+    "m268_last_materialized_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
     "m268_last_build_status": "%X00000001",
     "m268_focused_test_status": "%X00000001",
-    "m267_build_status": "%X00000001"
+    "m268_runtime_terminal": "CLEAN_BUILD",
+    "promoted_main_head": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
