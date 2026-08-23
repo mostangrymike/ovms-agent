@@ -168,6 +168,16 @@ This file records durable operating rules learned during development of OVMS Age
 - AUTOPILOT must always stop in an explicit terminal state: `CLEAN_BUILD`, `RETRY_BUDGET_EXHAUSTED`, or `GOAL_GUARD_REJECTED`.
 - Every AUTOPILOT stop must produce a local human-review artifact containing exact repair candidates/edits, final working-tree diff, build evidence, and repair history. No later PUSH is implied or authorized by AUTOPILOT completion.
 
+## 16. Milestone Branch Retention
+
+- Keep `main` and `chat-session-state` permanently.
+- Keep the active milestone development branch while work is in progress.
+- After promotion, keep only the **two most recently completed milestone development branches** for convenient inspection; older completed milestone branches should be pruned.
+- Create a permanent lightweight tag `mNNN` on each milestone's canonical promoted `main` commit before its development branch becomes eligible for deletion.
+- Temporary audit, candidate, carrier, state, reconciliation-helper, and promotion-staging branches should be deleted once their purpose is complete and the accepted/promotion SHAs are recorded durably.
+- Never delete a branch that contains unique unpromoted work. Before pruning, verify the milestone is accepted, its issue is closed/completed when applicable, the accepted tree is represented on `main`, and the important SHAs are recorded in durable state.
+- Ref-only tag creation and remote branch deletion do not materialize or stage OpenVMS worktree files and therefore do not use the risky RMS checkout/index path; do not combine branch pruning with VAX source staging or publication.
+
 ---
 
 When a conflict appears between this file and a newer explicit user instruction, the newer explicit instruction wins. Update this file to reflect the new standing rule once the correction is established.
