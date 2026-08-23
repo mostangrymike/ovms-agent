@@ -1,23 +1,36 @@
+#include <stdio.h>
+
 #include "project.h"
-#include "ANSI_TERM.H"
+
+static int (*m273_retry_gitdiff_fn)(void) = NULL;
+
+void m273_retry_set_gitdiff(int (*callback)(void))
+{
+    m273_retry_gitdiff_fn = callback;
+}
 
 static void m273_repair_git_diff(const agent_state *state)
 {
     int status;
 
-    if (state == NULL ||
-        state->project_root == NULL ||
-        *state->project_root == '\0') {
-        ansi_term_puts("OVMS_AGENT_ROOT is not defined.");
+    if (m273_retry_gitdiff_fn == NULL) {
+        project_git_diff(state);
         return;
     }
 
-    ansi_term_puts("Git diff:");
-    ansi_term_puts("");
+    if (state == NULL ||
+        state->project_root == NULL ||
+        *state->project_root == '\0') {
+        (void)puts("OVMS_AGENT_ROOT is not defined.");
+        return;
+    }
 
-    status = ansi_term_git_diff();
+    (void)puts("Git diff:");
+    (void)puts("");
+
+    status = m273_retry_gitdiff_fn();
     if ((status & 1) == 0) {
-        ansi_term_printf(
+        (void)printf(
             "Git diff failed with OpenVMS status %d.\n",
             status
         );
