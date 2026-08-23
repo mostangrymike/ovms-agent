@@ -1,5 +1,5 @@
 $!===========================================================
-$! GIT_AUTH_SETUP.COM - Install OVMS Agent Git askpass support
+$! GIT_AUTH_SETUP.COM - Install authenticated Git wrapper
 $!===========================================================
 $ SET NOON
 $
@@ -12,7 +12,7 @@ $
 $ SET DEFAULT 'PROJECT_DIR'
 $ SET PROCESS/PARSE_STYLE=EXTENDED
 $
-$ WRITE SYS$OUTPUT "Installing OVMS Agent Git askpass helper..."
+$ WRITE SYS$OUTPUT "Installing OVMS Agent authenticated Git wrapper..."
 $
 $ IF F$SEARCH("[]BUILD.DIR;*") .EQS. ""
 $ THEN
@@ -20,59 +20,59 @@ $     CREATE/DIRECTORY [.BUILD]
 $     IF .NOT. $STATUS THEN GOTO FAIL
 $ ENDIF
 $
-$ CC/OBJECT=[.BUILD]GH_ASKPASS.OBJ -
+$ CC/OBJECT=[.BUILD]GH_GIT_WRAP.OBJ -
 /STANDARD=C99 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
 /INCLUDE_DIRECTORY=([.SRC]) -
-[.SRC]GH_ASKPASS.C
+[.SRC]GH_GIT_WRAP.C
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ CC/OBJECT=[.BUILD]GH_CONFIG_HELPER.OBJ -
+$ CC/OBJECT=[.BUILD]GH_CONFIG_WRAP.OBJ -
 /STANDARD=C99 -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
 /INCLUDE_DIRECTORY=([.SRC]) -
 [.SRC]GH_CONFIG.C
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ LINK/EXECUTABLE=[.BUILD]OVMS_AGENT_GH_ASKPASS.EXE -
-[.BUILD]GH_ASKPASS.OBJ, -
-[.BUILD]GH_CONFIG_HELPER.OBJ
+$ LINK/EXECUTABLE=[.BUILD]OVMS_AGENT_GIT_AUTH.EXE -
+[.BUILD]GH_GIT_WRAP.OBJ, -
+[.BUILD]GH_CONFIG_WRAP.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ MCR [.BUILD]OVMS_AGENT_GH_ASKPASS.EXE --check
+$ MCR [.BUILD]OVMS_AGENT_GIT_AUTH.EXE --check
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ COPY/NOLOG [.BUILD]OVMS_AGENT_GH_ASKPASS.EXE -
-SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
+$ COPY/NOLOG [.BUILD]OVMS_AGENT_GIT_AUTH.EXE -
+SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE
 $ IF .NOT. $STATUS THEN GOTO FAIL
-$ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE
+$ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE
 $
 $ COPY/NOLOG []GIT_AUTH.COM SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $ PURGE/NOLOG/KEEP=1 SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 $
-$! Remove earlier credential-helper experiments. Authentication now uses
-$! Git's askpass prompt path, which does not require a helper shell command.
+$! Remove the earlier global credential-helper experiment.  GITAUTH carries
+$! authentication only through its short-lived repository-scoped config.
 $ git config --global --unset-all credential.helper
 $ git config --global --unset credential.useHttpPath
 $
 $ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE --check
+$ MCR SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE --check
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ WRITE SYS$OUTPUT "Git askpass helper installed successfully."
+$ WRITE SYS$OUTPUT "Authenticated Git wrapper installed successfully."
 $ WRITE SYS$OUTPUT "DCL wrapper command defined: GITAUTH"
 $ WRITE SYS$OUTPUT -
-"Use GITAUTH for authenticated GitHub network commands on this VAX."
+"Use GITAUTH for GitHub network commands that need the active saved profile."
 $ WRITE SYS$OUTPUT -
 "For future logins, run @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM after Git setup."
 $ GOTO FINISH
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
-$ WRITE SYS$ERROR "Unable to install OVMS Agent Git askpass support."
+$ WRITE SYS$ERROR "Unable to install OVMS Agent authenticated Git wrapper."
 $
 $ FINISH:
 $ SET DEFAULT 'SAVED_DEFAULT'
