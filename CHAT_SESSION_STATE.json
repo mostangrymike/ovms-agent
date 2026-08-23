@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T22:14:00-05:00",
+  "updated_at": "2026-08-22T22:19:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -53,7 +53,7 @@
       "public_service_entrypoints": "2daba3cec95f92e17ff22e94d8764ff28b3c4054",
       "isolated_local_internals": "ce4c007c1f55dad7336892bfbfbd9323b098befb",
       "project_map_namespace_complete": "c6680209a460a75f23bb8bba9cb372759556245a",
-      "context_namespace_complete": "bad47c2c6308ac943404af63f58d8fb452a0a0ad",
+      "context_namespace_complete": "bad47c2c6308ac943404af63b3284243756ce857",
       "instructions_namespace_complete": "cb0164b1e117722bd234de63f58d8fb452a0a0ad",
       "broader_context_entrypoints": "6c0a1de416ed97e7edf0605685787f7cffd23f36",
       "final_repository_wide_namespace": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c"
@@ -82,17 +82,17 @@
     "next_work": [
       "M267 is complete and promoted to main. Do not reopen namespace work unless a regression is discovered.",
       "M268 continues from main commit 8fe79efca76c91217d5f496900da44e9e99d97ac on branch m268-autopilot.",
-      "Do not alter the accepted M267 main tree while M268 is under VAX acceptance."
+      "Do not alter the accepted M267 main tree until M268 runtime smoke is complete and publication is ready."
     ]
   },
   "m268": {
     "issue": 42,
     "issue_state": "open",
     "branch": "m268-autopilot",
-    "status": "VAX_FIX_READY_RETEST_PENDING",
+    "status": "VAX_GREEN_RUNTIME_SMOKE_PENDING",
     "baseline_main": "8fe79efca76c91217d5f496900da44e9e99d97ac",
     "github_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
-    "latest_vax_green_head": null,
+    "latest_vax_green_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
     "goal": "Add bounded AGENT/AUTOPILOT orchestration over the existing local repair/build loop with scoped local auto-approval and an immutable FULL safety floor.",
     "implemented": [
       "AGENT/AUTOPILOT command registration on live COMMAND_AGENT_M259 facade",
@@ -104,7 +104,7 @@
       "focused M268 regression covering real GitHub PUSH/service, MCP, network-exception and arbitrary-DCL FULL gates; modern replace_block goal guard; budgets; all terminal finalizers; and review export",
       "AUTOPILOT moved into standalone LLM_AUTOPILOT.OBJ so legacy focused tests linking only LLM_RETRY.OBJ retain the mature retry dependency surface"
     ],
-    "last_vax_attempt": {
+    "failed_vax_attempt": {
       "head": "9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b",
       "result": "BUILD_FAILED_M251_LINK_SURFACE",
       "build_status": 2,
@@ -113,12 +113,26 @@
       "fix_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
       "issue_comment": 5383963033
     },
+    "vax_acceptance": {
+      "head": "7af5490f188d9320d03cbefbd98a72aff6400028",
+      "head_verified": true,
+      "rms_restore_verified": true,
+      "full_regressions": "all passed",
+      "build_status": "%X00000001",
+      "focused_test_status": "%X00000001",
+      "focused_test_result": "M268 AUTOPILOT policy, FULL gates, limits, terminals, and review test passed.",
+      "terminal_states_exercised": [
+        "CLEAN_BUILD",
+        "RETRY_BUDGET_EXHAUSTED",
+        "GOAL_GUARD_REJECTED"
+      ],
+      "issue_comment": 5383973911
+    },
     "acceptance_pending": [
-      "Fetch and RMS-restore the four-file delta from GitHub head 7af5490f188d9320d03cbefbd98a72aff6400028: BUILD_COMMAND_MODULES.COM, LLM_MODULES.OPT, SRC/LLM_AUTOPILOT.C, SRC/LLM_RETRY.C",
-      "Run full @BUILD and require odd success status",
-      "Run @M268_AUTOPILOT_TEST and require odd success status",
-      "Perform runtime command/policy smoke and then an initial clean-build AUTOPILOT smoke if provider credentials are configured",
-      "Only after VAX acceptance update latest_vax_green_head, issue #42, and promotion state"
+      "Perform runtime command/policy smoke on the VAX-built image",
+      "Run an initial clean-build AGENT/AUTOPILOT smoke using the configured Requesty provider",
+      "Inspect the resulting OVMS_AGENT_AUTOPILOT_REVIEW.TXT",
+      "After runtime smoke, publish the exact VAX-accepted tree and close issue #42"
     ],
     "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT."
   },
@@ -126,8 +140,9 @@
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
     "accepted_m267_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
     "promoted_main_head": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "m268_last_materialized_head": "9b6ce4bcbcaf0d0eeace9710a37a35f1f733058b",
-    "m268_last_build_status": 2,
+    "m268_last_materialized_head": "7af5490f188d9320d03cbefbd98a72aff6400028",
+    "m268_last_build_status": "%X00000001",
+    "m268_focused_test_status": "%X00000001",
     "m267_build_status": "%X00000001"
   },
   "standing_rules": [
