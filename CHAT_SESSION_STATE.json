@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T09:35:00-05:00",
+  "updated_at": "2026-08-23T09:52:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -9,7 +9,7 @@
     "latest_code_milestone": "M268",
     "latest_code_milestone_commit": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
     "latest_code_milestone_tree": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
-    "note": "Current main includes repository-hygiene and retired external-project metadata cleanup after the accepted M268 code tree."
+    "note": "Current main includes repository hygiene and retired external-project metadata cleanup after the accepted M268 code tree."
   },
   "m267": {
     "issue": 31,
@@ -49,18 +49,26 @@
   },
   "local_openvms_state": {
     "authoritative_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN]",
+    "clone_mode": "depth-1 single-branch main no-tags",
     "branch": "main",
-    "last_verified_head_before_metadata_cleanup": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "head": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
     "working_tree_status": "clean",
-    "fresh_clone_build_status": "%X00000001",
-    "fresh_clone_regressions": "All regression tests passed"
+    "build_status": "%X00000001",
+    "regressions": "All regression tests passed",
+    "local_history_name_search": "no matches",
+    "local_tag_count": 0,
+    "working_tree_name_search": "no matches",
+    "home_directory_state": ["hsperfdata_MIKE", "OVMS_AGENT_MAIN"],
+    "login_text_search": "no matches; absent LIS/LOG/MD wildcard classes produced expected FNF warnings"
   },
   "retired_external_project_cleanup": {
-    "requested": "2026-08-23",
-    "github_live_repository_text": "scrubbed on main and retained milestone branch tips",
-    "github_tracker_text": "in progress",
-    "vax_files_and_directories": "pending local deletion and verification",
-    "history_note": "Old Git commit objects and immutable service audit/event history may retain historical text unless repository history is rewritten."
+    "status": "LIVE_PURGE_COMPLETE",
+    "github_separate_repository": "deleted; repository lookup returns 404 Not Found",
+    "github_live_repository_text": "scrubbed from main and retained milestone branch tips",
+    "github_tracker_text": "scrubbed from editable issue and pull-request title/body metadata; post-cleanup searches return no matches",
+    "vax_files_and_directories": "removed",
+    "vax_git_history": "old full-history clone removed and replaced by depth-1 main-only no-tags clone",
+    "history_note": "Historical commit objects and immutable service audit/event metadata inside the surviving repository may retain old text unless repository history is rewritten or the repository is replaced."
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
@@ -70,8 +78,8 @@
     "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely."
   ],
   "next_work": [
-    "Complete retired external-project cleanup from editable GitHub tracker metadata and the VAX filesystem.",
-    "Refresh SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] from current main using the established guarded RMS-aware workflow before future development.",
-    "Start the next development milestone from the then-current main head."
+    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] as the authoritative VAX checkout for future work.",
+    "If a literal forensic purge of surviving GitHub repository history is required, replace/recreate the repository from a clean current snapshot; this is destructive to existing commit/tag/issue/PR history.",
+    "Start the next development milestone from current main head c5453ec4dd9c07b0ea029b9b85c2e844872451b8."
   ]
 }
