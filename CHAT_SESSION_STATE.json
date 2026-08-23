@@ -1,23 +1,15 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T09:52:00-05:00",
+  "updated_at": "2026-08-23T10:06:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
-    "latest_code_milestone": "M268",
-    "latest_code_milestone_commit": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
-    "latest_code_milestone_tree": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
-    "note": "Current main includes repository hygiene and retired external-project metadata cleanup after the accepted M268 code tree."
-  },
-  "m267": {
-    "issue": 31,
-    "issue_state": "closed",
-    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
-    "branch": "m267-llm-naming",
-    "main_promotion": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "tag": "m267"
+    "head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
+    "latest_code_milestone": "M269",
+    "latest_code_milestone_commit": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
+    "latest_code_milestone_tree": "c48c7ae576a9fb90cbf8e583aceb35cce7002d20",
+    "note": "M269 is the exact VAX-accepted GitHub CHECK preflight fix promoted fast-forward to main."
   },
   "m268": {
     "issue": 42,
@@ -25,61 +17,67 @@
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "branch": "m268-autopilot",
     "main_promotion": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
-    "tag": "m268",
+    "tag": "m268"
+  },
+  "m269": {
+    "issue": 44,
+    "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
+    "branch": "m269-github-preflight",
+    "accepted_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
+    "accepted_tree": "c48c7ae576a9fb90cbf8e583aceb35cce7002d20",
+    "main_promotion": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
     "final_vax_acceptance": {
       "build_status": "%X00000001",
-      "focused_test_status": "%X00000001",
-      "runtime_terminal": "CLEAN_BUILD"
-    }
+      "regressions": "All regression tests passed",
+      "github_check": "success",
+      "share": "enabled",
+      "parse_style": "EXTENDED",
+      "dcl_tknovf": "not reproduced"
+    },
+    "tag": "pending ref-only creation"
   },
   "repository_hygiene": {
-    "issue": 43,
-    "status": "COMPLETE",
+    "status": "COMPLETE_WITH_M269_RETENTION_FOLLOWUP",
     "milestone_tags": {
-      "range": "m251 through m268",
-      "count": 18,
-      "verified_remote": true
+      "existing_range": "m251 through m268",
+      "m269": "pending ref-only creation"
     },
-    "branch_cleanup": {
-      "branches_retained": 4,
-      "retained": ["main", "chat-session-state", "m267-llm-naming", "m268-autopilot"],
-      "verified_remote_heads": true
+    "branch_retention": {
+      "target_completed_milestone_branches": ["m268-autopilot", "m269-github-preflight"],
+      "m267_branch": "eligible for ref-only pruning after m269 tag creation/verification"
     },
-    "security_note": "A GitHub PAT was accidentally exposed in terminal transcript during cleanup. Treat that token as compromised; revoke it and use a replacement. Never record the token value in durable state."
+    "security_note": "The previously exposed GitHub PAT was replaced. Never record credential values in durable state."
   },
   "local_openvms_state": {
     "authoritative_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN]",
-    "clone_mode": "depth-1 single-branch main no-tags",
-    "branch": "main",
-    "head": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
-    "working_tree_status": "clean",
-    "build_status": "%X00000001",
-    "regressions": "All regression tests passed",
-    "local_history_name_search": "no matches",
-    "local_tag_count": 0,
-    "working_tree_name_search": "no matches",
-    "home_directory_state": ["hsperfdata_MIKE", "OVMS_AGENT_MAIN"],
-    "login_text_search": "no matches; absent LIS/LOG/MD wildcard classes produced expected FNF warnings"
+    "authoritative_checkout_head_before_m269_refresh": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
+    "m269_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M269_TEST]",
+    "m269_acceptance_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
+    "m269_acceptance_build_status": "%X00000001",
+    "m269_live_check": "OpenVMS Git network preflight ready; SHARE enabled; DCL parse style EXTENDED",
+    "github_profile": "ovms-agent configured with masked replacement credential"
   },
   "retired_external_project_cleanup": {
-    "status": "LIVE_PURGE_COMPLETE",
-    "github_separate_repository": "deleted; repository lookup returns 404 Not Found",
-    "github_live_repository_text": "scrubbed from main and retained milestone branch tips",
-    "github_tracker_text": "scrubbed from editable issue and pull-request title/body metadata; post-cleanup searches return no matches",
-    "vax_files_and_directories": "removed",
-    "vax_git_history": "old full-history clone removed and replaced by depth-1 main-only no-tags clone",
-    "history_note": "Historical commit objects and immutable service audit/event metadata inside the surviving repository may retain old text unless repository history is rewritten or the repository is replaced."
+    "status": "COMPLETE_FOR_LIVE_CONTENT_AND_VAX",
+    "separate_repository": "deleted and verified 404",
+    "github_live_repository_text": "scrubbed",
+    "github_tracker_text": "scrubbed from editable issue/PR fields",
+    "vax_files_and_directories": "deleted and verified",
+    "vax_text_search": "no matches",
+    "history_note": "Historical Git objects or immutable service audit metadata in the surviving ovms-agent repository may retain old text unless repository history is destructively replaced."
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
     "Continue autonomously; pause only for a required VAX compile/build gate or genuinely required user input.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
     "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
-    "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely."
+    "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely.",
+    "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches."
   ],
   "next_work": [
-    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] as the authoritative VAX checkout for future work.",
-    "If a literal forensic purge of surviving GitHub repository history is required, replace/recreate the repository from a clean current snapshot; this is destructive to existing commit/tag/issue/PR history.",
-    "Start the next development milestone from current main head c5453ec4dd9c07b0ea029b9b85c2e844872451b8."
+    "Create and verify lightweight tag m269 at f3f871e2b4080f2c70ad14b2ab1b49b3354f257a using a ref-only operation.",
+    "Prune completed branch m267-llm-naming after tag/accepted-state verification so retained completed branches are m268 and m269.",
+    "Refresh SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] to the accepted M269 main head without using unsafe native RMS checkout/reset behavior, then remove the disposable M269 acceptance checkout.",
+    "Start the next development milestone from current main."
   ]
 }
