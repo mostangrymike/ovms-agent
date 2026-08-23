@@ -1,8 +1,29 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "ANSI_TERM.H"
+
+static int arg_equal_ci(const char *left, const char *right)
+{
+    unsigned char a;
+    unsigned char b;
+
+    if (left == NULL || right == NULL) {
+        return 0;
+    }
+
+    while (*left != '\0' && *right != '\0') {
+        a = (unsigned char)toupper((unsigned char)*left++);
+        b = (unsigned char)toupper((unsigned char)*right++);
+        if (a != b) {
+            return 0;
+        }
+    }
+
+    return *left == '\0' && *right == '\0';
+}
 
 static int verify_no_escape(const char *path)
 {
@@ -44,7 +65,7 @@ int main(int argc, char **argv)
 {
     int enabled;
 
-    if (argc == 3 && strcmp(argv[1], "VERIFY") == 0) {
+    if (argc == 3 && arg_equal_ci(argv[1], "VERIFY")) {
         if (!verify_no_escape(argv[2])) {
             (void)fprintf(stderr,
                 "M273 ANSI regression failed: ESC byte found or capture unreadable.\n");
@@ -56,7 +77,7 @@ int main(int argc, char **argv)
     ansi_term_init();
     enabled = ansi_term_enabled();
 
-    if (argc == 2 && strcmp(argv[1], "PROBE") == 0) {
+    if (argc == 2 && arg_equal_ci(argv[1], "PROBE")) {
         (void)printf(
             "ANSI terminal probe: enabled=%d forced_plain=%d\n",
             enabled,
@@ -67,7 +88,7 @@ int main(int argc, char **argv)
 
     emit_fixture();
 
-    if (argc == 2 && strcmp(argv[1], "OVERRIDE") == 0) {
+    if (argc == 2 && arg_equal_ci(argv[1], "OVERRIDE")) {
         if (!ansi_term_plain_forced() || enabled) {
             (void)fprintf(stderr,
                 "M273 ANSI regression failed: plain override was not authoritative.\n");
@@ -76,7 +97,7 @@ int main(int argc, char **argv)
         return EXIT_SUCCESS;
     }
 
-    if (argc == 2 && strcmp(argv[1], "REDIRECT") == 0) {
+    if (argc == 2 && arg_equal_ci(argv[1], "REDIRECT")) {
         if (enabled) {
             (void)fprintf(stderr,
                 "M273 ANSI regression failed: redirected SYS$OUTPUT was treated as a terminal.\n");
