@@ -35,8 +35,8 @@ OpenVMS acceptance on 2026-08-18:
 OpenVMS acceptance on 2026-08-18:
 
 - `@BUILD` passed with all regression tests after the GitHub reconciliation.
-- In the OVMS Agent checkout, a saved VMSBBS profile was refused because the checkout origin did not match the profile repository.
-- In the matching VMSBBS checkout, `AGENT/GITHUB/CHECK` passed and `AGENT/GITHUB/FETCH` completed successfully without an interactive credential prompt.
+- A saved profile for another repository was refused in the OVMS Agent checkout because the checkout origin did not match the profile repository.
+- In a matching external checkout, `AGENT/GITHUB/CHECK` passed and `AGENT/GITHUB/FETCH` completed successfully without an interactive credential prompt.
 
 ## Canonical preservation
 
