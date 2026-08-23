@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-22T22:38:00-05:00",
+  "updated_at": "2026-08-23T09:19:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -14,28 +14,23 @@
   "m267": {
     "issue": 31,
     "issue_state": "closed",
-    "issue_state_reason": "completed",
-    "branch": "m267-llm-naming",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
-    "goal": "Eradicate generic OpenAI filenames and namespaces in favor of LLM while preserving genuinely OpenAI-specific protocol/config/compatibility semantics and Requesty/OpenAI-compatible support.",
-    "latest_vax_green_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
+    "branch": "m267-llm-naming",
     "final_accepted_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
     "accepted_tree_sha": "52014bb1cd1c5f99c681efeecd03e4b3ec4b3e23",
     "main_promotion": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "final_build_status": "%X00000001",
+    "tag": "m267",
     "retention": "keep as one of the two most recently completed milestone development branches"
   },
   "m268": {
     "issue": 42,
     "issue_state": "closed",
-    "issue_state_reason": "completed",
-    "branch": "m268-autopilot",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
-    "baseline_main": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+    "branch": "m268-autopilot",
     "final_accepted_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
     "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
     "main_promotion": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
-    "goal": "Add bounded AGENT/AUTOPILOT orchestration over the existing local repair/build loop with scoped local auto-approval and an immutable FULL safety floor.",
+    "tag": "m268",
     "final_vax_acceptance": {
       "build_status": "%X00000001",
       "focused_test_status": "%X00000001",
@@ -46,95 +41,63 @@
       "review_root_file_diff": "no difference",
       "review_fatal_output": "none"
     },
-    "safety_floor": "AUTOPILOT may auto-approve only local workspace writes and controlled rebuilds inside the bounded controller. PUSH, GitHub writes, MCP/external operations, arbitrary DCL and every existing FULL-gated action remain manual. FULL does not enable AUTOPILOT.",
     "retention": "keep as one of the two most recently completed milestone development branches"
   },
   "repository_hygiene": {
     "issue": 43,
-    "status": "TAG_AND_REF_PRUNE_PENDING",
+    "status": "COMPLETE",
     "rules_commit": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
     "policy": {
-      "permanent_branches": ["main", "chat-session-state"],
+      "permanent_branches": [
+        "main",
+        "chat-session-state"
+      ],
       "active_milestone_branches": 1,
       "completed_milestone_branches_to_keep": 2,
-      "keep_now": ["main", "chat-session-state", "m267-llm-naming", "m268-autopilot"],
       "tag_pattern": "mNNN",
       "tag_target": "canonical promoted main commit",
       "delete_temporary_branches_after_use": true,
       "never_delete_unique_unpromoted_work": true
     },
-    "canonical_milestone_tag_targets": {
-      "m251": "93091f3908070cf9f541d9407cd7d7e793e9ff9e",
-      "m252": "0efa5bdf2858284cf1cf94521fdedca16a1cab77",
-      "m253": "91447df4d20557110eb7ec0360a0655e6aacc1da",
-      "m254": "55b3dc500bd7a041c624f3312a0f4badff0133b7",
-      "m255": "36808aae500c70d6c24af0a69283e809c42ecede",
-      "m256": "5ead574e1cfdf672fd66fde8caf7ce7e9fbb7203",
-      "m257": "ccc2a6b7d7f305ffa7f2563ffdae71465d9a3baf",
-      "m258": "8f1d1f396091377dff50505716de1dd1adcb1f07",
-      "m259": "55243d87a87322798e4377f21be99e71e5563b68",
-      "m260": "4f7ba771ae607dce2137bf1bfd1a4370f8ce3e3b",
-      "m261": "34a7a9c4d11c0f5bfc88f21edadeb0fd9d7eb373",
-      "m262": "9b657d8704fa54904b204fb7464a4af1b18b3e37",
-      "m263": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
-      "m264": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92",
-      "m265": "31461b480133db4ad86f5449c943dec2c8589047",
-      "m266": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
-      "m267": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-      "m268": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
+    "milestone_tags": {
+      "range": "m251 through m268",
+      "count": 18,
+      "verified_remote": true,
+      "targets": {
+        "m251": "93091f3908070cf9f541d9407cd7d7e793e9ff9e",
+        "m252": "0efa5bdf2858284cf1cf94521fdedca16a1cab77",
+        "m253": "91447df4d20557110eb7ec0360a0655e6aacc1da",
+        "m254": "55b3dc500bd7a041c624f3312a0f4badff0133b7",
+        "m255": "36808aae500c70d6c24af0a69283e809c42ecede",
+        "m256": "5ead574e1cfdf672fd66fde8caf7ce7e9fbb7203",
+        "m257": "ccc2a6b7d7f305ffa7f2563ffdae71465d9a3baf",
+        "m258": "8f1d1f396091377dff50505716de1dd1adcb1f07",
+        "m259": "55243d87a87322798e4377f21be99e71e5563b68",
+        "m260": "4f7ba771ae607dce2137bf1bfd1a4370f8ce3e3b",
+        "m261": "34a7a9c4d11c0f5bfc88f21edadeb0fd9d7eb373",
+        "m262": "9b657d8704fa54904b204fb7464a4af1b18b3e37",
+        "m263": "8698484df3e8e80d4bfd073039c9ea4029a4e076",
+        "m264": "f9c026ebe4e7ab86a034c818e16d18cfb17e6a92",
+        "m265": "31461b480133db4ad86f5449c943dec2c8589047",
+        "m266": "677a00e1724e328f4e7d94ac576bdb0a6e4be787",
+        "m267": "8fe79efca76c91217d5f496900da44e9e99d97ac",
+        "m268": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e"
+      }
     },
-    "inventory": {
-      "branches_discovered": 48,
-      "branches_to_keep": 4,
-      "branches_to_delete": 44,
-      "delete": [
-        "m251-hardening",
-        "m252-file-delete",
-        "m252-file-move",
-        "m252-file-rename",
-        "m252-llm-provider",
-        "m253-parity-reconcile",
-        "m253-vmsbbs-gaps",
-        "m254-execution-modes",
-        "m255-iterative-repair",
-        "m256-session-resumption",
-        "m257-project-instructions",
-        "m258-network-external-tools",
-        "m259-image-input",
-        "m260-final-parity",
-        "m260-final-reconcile",
-        "m261-vax-portability",
-        "m261-vmsbbs-hardening",
-        "m262-install-release",
-        "m262-provider-neutral",
-        "m263-gap006-rms-git",
-        "m263-vms-diagnostics",
-        "m264-gap007-cobol-structure",
-        "m265-rms-record-restore-fix",
-        "m267-audit-core-shims-ce4",
-        "m267-audit-instructions-bad47",
-        "m267-audit-survivors",
-        "m267-audit-survivors-a07",
-        "m267-audit-survivors-cb016",
-        "m267-candidate-context-complete",
-        "m267-candidate-instructions-complete",
-        "m267-candidate-local-internals-2da",
-        "m267-candidate-project-map-complete",
-        "m267-candidate-service-entrypoints",
-        "m267-final-audit-6c0",
-        "m267-fix-command-grep-repair",
-        "m267-publish-agent-ns",
-        "m267-publish-repair-entrypoints",
-        "m267-selfguard-audit",
-        "m267-state-08c",
-        "m267-state-caf68",
-        "m267-state-stage",
-        "m267-vax-carrier-public-header",
-        "m268-promotion-staging",
-        "gap008-rms-git-restore"
-      ]
+    "branch_cleanup": {
+      "actual_branches_before": 49,
+      "branches_deleted": 45,
+      "branches_retained": 4,
+      "retained": [
+        "main",
+        "chat-session-state",
+        "m267-llm-naming",
+        "m268-autopilot"
+      ],
+      "verified_remote_heads": true,
+      "inventory_correction": "Earlier GitHub branch search reported 48 and missed gap009-plan-file-count. Final ls-remote exposed the extra branch; it was verified as safely represented by canonical M266 history and deleted, making the actual starting total 49."
     },
-    "execution_note": "Connected GitHub capability does not expose tag creation or branch-ref deletion. Finish with ref-only native Git pushes; this does not stage or materialize RMS worktree files. Verify existing remote tags before creating or deleting branches."
+    "security_note": "A GitHub PAT was accidentally exposed in terminal transcript during cleanup. Treat that token as compromised; revoke it and use a replacement. Never record the token value in durable state."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M267_FRESH]",
@@ -154,7 +117,7 @@
     "Keep main and chat-session-state permanently, keep the active milestone branch, and retain only the two most recently completed milestone development branches; tag canonical promoted milestone commits before pruning older branches."
   ],
   "next_work": [
-    "Complete issue #43 by auditing existing remote milestone tags, creating any missing m251 through m268 tags on the recorded canonical main commits, deleting the 44 recorded historical/helper branches, and verifying only the four retained branches remain.",
-    "After repository hygiene is complete, start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
+    "Repository hygiene issue #43 is complete; do not recreate deleted historical/helper branches unless unique recovery work is explicitly required.",
+    "Start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
   ]
 }
