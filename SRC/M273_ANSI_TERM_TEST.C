@@ -55,6 +55,16 @@ int main(int argc, char **argv)
 
     ansi_term_init();
     enabled = ansi_term_enabled();
+
+    if (argc == 2 && strcmp(argv[1], "PROBE") == 0) {
+        (void)printf(
+            "ANSI terminal probe: enabled=%d forced_plain=%d\n",
+            enabled,
+            ansi_term_plain_forced()
+        );
+        return EXIT_SUCCESS;
+    }
+
     emit_fixture();
 
     if (argc == 2 && strcmp(argv[1], "OVERRIDE") == 0) {
@@ -76,6 +86,6 @@ int main(int argc, char **argv)
     }
 
     (void)fprintf(stderr,
-        "Usage: M273_ANSI_TERM_TEST REDIRECT | OVERRIDE | VERIFY capture-file\n");
+        "Usage: M273_ANSI_TERM_TEST PROBE | REDIRECT | OVERRIDE | VERIFY capture-file\n");
     return EXIT_FAILURE;
 }
