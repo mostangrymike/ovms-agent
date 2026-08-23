@@ -1,12 +1,19 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_SSE.H"
 #include "LLM_TRANSPORT.H"
 #include "llm_config.h"
 
 #define M262_RESPONSE_URL_MAX 640U
+#define M273_STREAM_REQ "OVMS_AGENT_STREAM_REQ.TMP"
+
+static llm_stream_cb m273_stream_output = NULL;
+static int m273_last_streamed = 0;
+static int m273_stream_last_nl = 1;
 
 static int m262_response_url(const char *base,
                              char *output,
@@ -69,6 +76,171 @@ static int m262_url_valid(const char *url)
     return 1;
 }
 
+void llm_transport_set_stream(llm_stream_cb callback)
+{
+    m273_stream_output = callback;
+}
+
+int llm_transport_streamed(void)
+{
+    return m273_last_streamed;
+}
+
+static void m273_remove_all(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    while (remove(path) == 0) {
+        /* Remove OpenVMS file versions newest first. */
+    }
+}
+
+static void m273_emit_text(const char *text)
+{
+    size_t length;
+
+    if (text == NULL || *text == '\0') {
+        return;
+    }
+
+    length = strlen(text);
+    m273_last_streamed = 1;
+    m273_stream_last_nl = text[length - 1U] == '\n';
+
+    if (m273_stream_output != NULL) {
+        m273_stream_output(text);
+    }
+}
+
+static int m273_make_stream_req(void)
+{
+    FILE *input;
+    FILE *output;
+    char *data;
+    long length;
+    size_t actual;
+    size_t end;
+    int success;
+
+    input = fopen(LLM_REQUEST_FILE, "r");
+    if (input == NULL) {
+        return 0;
+    }
+
+    if (fseek(input, 0L, SEEK_END) != 0) {
+        (void)fclose(input);
+        return 0;
+    }
+
+    length = ftell(input);
+    if (length < 0L ||
+        fseek(input, 0L, SEEK_SET) != 0) {
+        (void)fclose(input);
+        return 0;
+    }
+
+    data = (char *)malloc((size_t)length + 1U);
+    if (data == NULL) {
+        (void)fclose(input);
+        return 0;
+    }
+
+    actual = fread(data, 1U, (size_t)length, input);
+    success = !ferror(input) && fclose(input) == 0;
+    if (!success) {
+        free(data);
+        return 0;
+    }
+
+    data[actual] = '\0';
+    end = actual;
+
+    while (end > 0U &&
+           isspace((unsigned char)data[end - 1U])) {
+        --end;
+    }
+
+    if (end == 0U || data[end - 1U] != '}') {
+        free(data);
+        return 0;
+    }
+
+    m273_remove_all(M273_STREAM_REQ);
+    output = fopen(M273_STREAM_REQ, "w");
+    if (output == NULL) {
+        free(data);
+        return 0;
+    }
+
+    success =
+        fwrite(data, 1U, end - 1U, output) == end - 1U &&
+        fputs(",\"stream\":true}\n", output) != EOF;
+
+    if (fclose(output) != 0) {
+        success = 0;
+    }
+
+    free(data);
+    return success;
+}
+
+static int m273_stream_request(const char *url)
+{
+    static const char prefix[] =
+        "curl --silent --show-error --no-buffer "
+        "--header @" LLM_HEADERS_FILE " "
+        "--data-binary @" M273_STREAM_REQ " ";
+    FILE *pipe_stream;
+    char command[1024];
+    size_t needed;
+    int parsed;
+    int emitted;
+    int close_status;
+
+    if (!m273_make_stream_req()) {
+        return -1;
+    }
+
+    needed = strlen(prefix) + strlen(url) + 1U;
+    if (needed > sizeof(command)) {
+        m273_remove_all(M273_STREAM_REQ);
+        return -1;
+    }
+
+    (void)strcpy(command, prefix);
+    (void)strcat(command, url);
+
+    (void)fflush(NULL);
+    pipe_stream = popen(command, "r");
+    if (pipe_stream == NULL) {
+        m273_remove_all(M273_STREAM_REQ);
+        return -1;
+    }
+
+    (void)setvbuf(pipe_stream, NULL, _IONBF, 0);
+    emitted = 0;
+    parsed = llm_sse_parse(
+        pipe_stream,
+        m273_emit_text,
+        LLM_RESPONSE_FILE,
+        &emitted
+    );
+
+    close_status = pclose(pipe_stream);
+    m273_remove_all(M273_STREAM_REQ);
+
+    if (m273_last_streamed &&
+        !m273_stream_last_nl &&
+        m273_stream_output != NULL) {
+        m273_stream_output("\n");
+        m273_stream_last_nl = 1;
+    }
+
+    return parsed && close_status != -1 ? 1 : 0;
+}
+
 int write_headers(const char *api_key)
 {
     FILE *file;
@@ -108,6 +280,7 @@ void remove_temporary_files(void)
 {
     (void)remove(LLM_REQUEST_FILE);
     (void)remove(LLM_HEADERS_FILE);
+    m273_remove_all(M273_STREAM_REQ);
 }
 
 int perform_openai_request(void)
@@ -123,6 +296,9 @@ int perform_openai_request(void)
     size_t needed;
     int status;
 
+    m273_last_streamed = 0;
+    m273_stream_last_nl = 1;
+
     base = llm_api_url();
     if (base == NULL || *base == '\0') {
         (void)puts(
@@ -136,6 +312,13 @@ int perform_openai_request(void)
         !m262_response_url(base, url, sizeof(url))) {
         (void)puts("Configured AI provider service address is invalid.");
         return 0;
+    }
+
+    if (m273_stream_output != NULL) {
+        status = m273_stream_request(url);
+        if (status >= 0) {
+            return status;
+        }
     }
 
     needed = strlen(prefix) + strlen(url) + 1U;
