@@ -1,10 +1,129 @@
+#include <stdarg.h>
+
+#include "llm_internal.h"
+#include "ANSI_TERM.H"
 #include "cobol_guard.h"
 
+static int m273_tools_diff_kind = -1;
+
+static int m273_tools_puts(const char *text)
+{
+    if (text != NULL && strcmp(text, "Current:") == 0) {
+        ansi_term_puts(text);
+        m273_tools_diff_kind = ANSI_DIFF_DELETE;
+        return 0;
+    }
+
+    if (text != NULL && strcmp(text, "\nProposed:") == 0) {
+        ansi_term_puts(text);
+        m273_tools_diff_kind = ANSI_DIFF_ADD;
+        return 0;
+    }
+
+    m273_tools_diff_kind = -1;
+    ansi_term_puts(text);
+    return 0;
+}
+
+static int m273_tools_printf(const char *format, ...)
+{
+    va_list arguments;
+
+    m273_tools_diff_kind = -1;
+    va_start(arguments, format);
+    ansi_term_vprintf(format, arguments);
+    va_end(arguments);
+    return 0;
+}
+
+static int m273_tools_fputs(const char *text, FILE *stream)
+{
+    if (stream != stdout) {
+        return fputs(text, stream);
+    }
+
+    if (m273_tools_diff_kind >= 0) {
+        ansi_term_diff(m273_tools_diff_kind, text);
+    } else {
+        ansi_term_write(text);
+    }
+
+    return 0;
+}
+
+static size_t m273_tools_fwrite(const void *buffer,
+                                size_t size,
+                                size_t count,
+                                FILE *stream)
+{
+    size_t length;
+
+    if (stream != stdout) {
+        return fwrite(buffer, size, count, stream);
+    }
+
+    if (buffer == NULL || size == 0U || count == 0U) {
+        return count;
+    }
+
+    if (size > ((size_t)-1) / count) {
+        return 0U;
+    }
+
+    length = size * count;
+    if (m273_tools_diff_kind >= 0) {
+        ansi_term_diff_n(
+            m273_tools_diff_kind,
+            (const char *)buffer,
+            length
+        );
+    } else {
+        ansi_term_write_n((const char *)buffer, length);
+    }
+
+    return count;
+}
+
+static int m273_tools_putchar(int character)
+{
+    char text[1];
+
+    text[0] = (char)character;
+    if (m273_tools_diff_kind >= 0) {
+        ansi_term_diff_n(m273_tools_diff_kind, text, 1U);
+    } else {
+        ansi_term_write_n(text, 1U);
+    }
+    return character;
+}
+
+static int m273_tools_fflush(FILE *stream)
+{
+    if (stream == stdout) {
+        ansi_term_flush();
+        return 0;
+    }
+
+    return fflush(stream);
+}
+
+#define puts m273_tools_puts
+#define printf m273_tools_printf
+#define fputs m273_tools_fputs
+#define fwrite m273_tools_fwrite
+#define putchar m273_tools_putchar
+#define fflush m273_tools_fflush
 #define execute_replace_text_tool m263_rep_text
 #define execute_replace_lines_tool m263_rep_lines
 #include "LLM_TOOLS_CORE.C"
 #undef execute_replace_text_tool
 #undef execute_replace_lines_tool
+#undef fflush
+#undef putchar
+#undef fwrite
+#undef fputs
+#undef printf
+#undef puts
 
 static int m264_guard_text(const char *arguments)
 {
