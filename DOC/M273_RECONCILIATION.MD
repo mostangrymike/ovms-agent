@@ -44,7 +44,7 @@ The pre-M273 `AGENT/METRICS` implementation does not collect provider input toke
 
 The original provider transport invokes `curl` with `--output LLM_RESPONSE_FILE` through `system()`, so the parent waits for a complete response before parsing it. Merely printing that completed response in chunks would not be streaming and is intentionally rejected.
 
-M273 adds a separate incremental path while preserving that original blocking path as the default/fallback contract:
+M273 adds a separate incremental path while preserving that original blocking path as the compatibility contract:
 
 1. Streaming is considered only when `ANSI_TERM` has positively identified a real interactive terminal. Non-terminal/plain sessions continue through the original blocking request path.
 2. `OVMS_AGENT_NOSTREAM` independently disables streaming without disabling ANSI colors or the status line.
@@ -53,7 +53,13 @@ M273 adds a separate incremental path while preserving that original blocking pa
 5. `SRC/LLM_SSE.C` parses SSE records. `response.output_text.delta` text is JSON-decoded and passed to `ansi_term_stream()` immediately.
 6. `response.completed`, `response.failed`, or `response.incomplete` supplies a nested final `response` object. The parser writes that object back as the ordinary `LLM_RESPONSE_FILE`, preserving all existing response-id, tool-call, context, and final-response parsers.
 7. If a provider returns ordinary JSON instead of SSE, the parser stores that JSON as the completed response without inventing incremental text.
-8. If the streaming subprocess cannot be started, the request falls back to the original blocking path. After an actual network stream has started, parse/protocol failure does not silently resend the request.
+8. If streaming cannot start, or ends unrecognized before any assistant delta has been displayed, the transport retries through the original blocking path. Once assistant text has actually streamed, it never silently resends the request because that could duplicate a provider action.
+
+The first live Requesty gate exposed an OpenVMS-specific transport issue rather than a provider event mismatch. `OVMS_AGENT_NOSTREAM` proved the pre-M273 blocking request still worked. A raw body-only diagnostic then showed Requesty returning the expected Responses SSE family (`response.created`, `response.in_progress`, `response.output_item.added`, `response.content_part.added`, `response.output_text.delta`, and later stream records), but `TYPE` showed every character as a separate OpenVMS record. This explained why the parser saw no `event:` or `data:` line.
+
+OpenVMS C RTL `popen()` defaults to CR/LF record carriage control. With `curl --no-buffer`, small child writes can become small mailbox records, and record-mode translation can inject newline boundaries into the byte stream. The documented compatibility feature `DECC$POPEN_NO_CRLF_REC_ATTR=ENABLE` prevents that CR/LF record attribute. M273 scopes this feature with `DEFINE/USER` immediately before the canonical `RUN` in `OVMS_AGENT.COM`, so only the OVMS Agent image activation is affected and the user's surrounding process/system settings remain unchanged. The focused streaming regression is launched with the same setting.
+
+`OVMS_AGENT_STREAM_DEBUG` is a temporary diagnostic escape hatch while live provider acceptance is in progress. When defined, it writes only bytes read from curl stdout to `OVMS_AGENT_STREAM_RAW.TMP`; it does not write the Authorization header, API key, or request body.
 
 AGENT/PLAN intentionally remains completed-response presentation in M273 because its final response text is also persisted as the plan artifact. Other ordinary response/final-answer paths suppress their completed-text print when deltas were already displayed, preventing duplicate assistant output.
 
@@ -65,5 +71,5 @@ A focused M273 regression feeds synthetic `response.output_text.delta` and `resp
 2. Wire the module and focused no-ESC regressions into the canonical build. **Accepted.**
 3. Route diff/approval, assistant-response, and turn-status presentation without changing write/approval semantics. **Accepted.**
 4. Validate the live interactive Git diff, patch preview, and persistent status line. **Accepted at `8fea9feb...`.**
-5. Add real SSE/provider streaming behind interactive detection, keep the blocking path intact, and VAX-validate the SSE parser plus DEC C `popen()` and live provider behavior. **In progress.**
+5. Add real SSE/provider streaming behind interactive detection, keep the blocking path intact, and VAX-validate the SSE parser plus DEC C `popen()` and live provider behavior. **In progress; OpenVMS popen record-framing defect identified and corrected in launcher candidate.**
 6. Reconcile real provider usage into token metrics after transport acceptance; never synthesize unavailable monetary cost.
