@@ -26,5 +26,11 @@ $ ELSE
 $     DEFINE/USER SYS$INPUT SYS$COMMAND
 $ ENDIF
 
+$! M273: OpenVMS popen() defaults to CR/LF record carriage control.
+$! curl --no-buffer may write SSE in small mailbox records; record-mode
+$! translation can then inject newlines between bytes and destroy event
+$! framing.  Scope the documented UNIX-compatible popen behavior to only
+$! this image activation so the surrounding process/system is unchanged.
+$ DEFINE/USER DECC$POPEN_NO_CRLF_REC_ATTR "ENABLE"
 $ RUN 'IMAGE'
 $ EXIT $STATUS
