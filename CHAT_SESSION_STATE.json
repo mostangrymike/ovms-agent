@@ -1,58 +1,46 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T09:34:00-05:00",
+  "updated_at": "2026-08-23T09:35:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "head": "c5453ec4dd9c07b0ea029b9b85c2e844872451b8",
     "latest_code_milestone": "M268",
     "latest_code_milestone_commit": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
     "latest_code_milestone_tree": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
-    "note": "cc50cba0 is a governance-only RULES.md commit documenting branch retention; M268 code remains the accepted 79e03c0 tree."
+    "note": "Current main includes repository-hygiene and retired external-project metadata cleanup after the accepted M268 code tree."
   },
   "m267": {
     "issue": 31,
     "issue_state": "closed",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "branch": "m267-llm-naming",
-    "final_accepted_head": "7fcc678e1f6ecf2a783635fde1e595cb6f13a45c",
-    "accepted_tree_sha": "52014bb1cd1c5f99c681efeecd03e4b3ec4b3e23",
     "main_promotion": "8fe79efca76c91217d5f496900da44e9e99d97ac",
-    "tag": "m267",
-    "retention": "keep as one of the two most recently completed milestone development branches"
+    "tag": "m267"
   },
   "m268": {
     "issue": 42,
     "issue_state": "closed",
     "status": "COMPLETE_AND_PROMOTED_TO_MAIN",
     "branch": "m268-autopilot",
-    "final_accepted_head": "0ae2155bf876e3bce419210a6559d2a66d091534",
-    "accepted_tree_sha": "38ca13a8941e3ce7ba9db124803a73ef0c68234a",
     "main_promotion": "79e03c0ab08ba73693083e070800a5a6ed6cdb3e",
     "tag": "m268",
     "final_vax_acceptance": {
       "build_status": "%X00000001",
       "focused_test_status": "%X00000001",
-      "runtime_terminal": "CLEAN_BUILD",
-      "repair_candidates_applied": 0,
-      "write_actions": 0,
-      "push_performed": "no"
-    },
-    "retention": "keep as one of the two most recently completed milestone development branches"
+      "runtime_terminal": "CLEAN_BUILD"
+    }
   },
   "repository_hygiene": {
     "issue": 43,
     "status": "COMPLETE",
-    "rules_commit": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
     "milestone_tags": {
       "range": "m251 through m268",
       "count": 18,
       "verified_remote": true
     },
     "branch_cleanup": {
-      "actual_branches_before": 49,
-      "branches_deleted": 45,
       "branches_retained": 4,
       "retained": ["main", "chat-session-state", "m267-llm-naming", "m268-autopilot"],
       "verified_remote_heads": true
@@ -62,57 +50,28 @@
   "local_openvms_state": {
     "authoritative_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN]",
     "branch": "main",
-    "head": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
+    "last_verified_head_before_metadata_cleanup": "cc50cba0febc3b0b12b0c491337b393a46b20c07",
     "working_tree_status": "clean",
     "fresh_clone_build_status": "%X00000001",
-    "fresh_clone_regressions": "All regression tests passed",
-    "archive_directory": "SYS$SYSDEVICE:[MIKE.OVMS_OLD_ARCHIVE]",
-    "archive_contents": [
-      "OVMS_AGENT_M253_GAP001.PATCH",
-      "OVMS_AGENT_V0_3_0.ZIP",
-      "OVMS_AGENT_TRACKED.DIFF",
-      "M261_M264_GAP007.COB",
-      "M261_M267_INCLUDE.PATCH",
-      "M261_TRACKED.DIFF",
-      "M267_FRESH.BCK",
-      "M267_FRESH.LIS"
-    ],
-    "m267_backup_status": "%X10000001",
-    "m267_backup_list_status": "%X10000001",
-    "old_tree_cleanup": {
-      "OVMS-AGENT": "removed",
-      "OVMS_AGENT": "removed",
-      "OVMS_AGENT_M261": "removed",
-      "OVMS_AGENT_M267_FRESH": "removed"
-    },
-    "verified_home_directories": [
-      "GAP005",
-      "hsperfdata_MIKE",
-      "M264_GAP007_VMSBBS",
-      "M264_GAP007_VMSBBS_GIT",
-      "M264_GAP007_VMSBBS_GIT2",
-      "M264_GAP007_VMSBBS_GIT3",
-      "OVMS_AGENT_MAIN",
-      "OVMS_OLD_ARCHIVE",
-      "VMSBBS"
-    ],
-    "do_not_touch": [
-      "SYS$SYSDEVICE:[MIKE.VMSBBS]",
-      "SYS$SYSDEVICE:[MIKE.M264_GAP007_VMSBBS*]",
-      "SYS$SYSDEVICE:[MIKE.GAP005]",
-      "SYS$SYSDEVICE:[MIKE.hsperfdata_MIKE]"
-    ]
+    "fresh_clone_regressions": "All regression tests passed"
+  },
+  "retired_external_project_cleanup": {
+    "requested": "2026-08-23",
+    "github_live_repository_text": "scrubbed on main and retained milestone branch tips",
+    "github_tracker_text": "in progress",
+    "vax_files_and_directories": "pending local deletion and verification",
+    "history_note": "Old Git commit objects and immutable service audit/event history may retain historical text unless repository history is rewritten."
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
     "Continue autonomously; pause only for a required VAX compile/build gate or genuinely required user input.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
     "Do not use VAX git add/commit/push for exact tested source publication because RMS/case behavior can corrupt path/blob identity.",
-    "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely.",
-    "Keep main and chat-session-state permanently, keep the active milestone branch, and retain only the two most recently completed milestone development branches; tag canonical promoted milestone commits before pruning older branches."
+    "Use guarded RMS-aware restore for changed tracked files when branch updates must be materialized safely."
   ],
   "next_work": [
-    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] as the authoritative VAX checkout for future work.",
-    "Start the next development milestone from current main commit cc50cba0febc3b0b12b0c491337b393a46b20c07."
+    "Complete retired external-project cleanup from editable GitHub tracker metadata and the VAX filesystem.",
+    "Refresh SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] from current main using the established guarded RMS-aware workflow before future development.",
+    "Start the next development milestone from the then-current main head."
   ]
 }
