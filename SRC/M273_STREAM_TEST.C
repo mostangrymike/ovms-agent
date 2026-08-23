@@ -7,6 +7,8 @@
 
 #define M273_SSE_FIXTURE "[.BUILD]M273_SSE_FIXTURE.TXT"
 #define M273_SSE_RESPONSE "[.BUILD]M273_SSE_RESPONSE.TXT"
+#define M273_PIPE_CHILD "@[.BUILD]M273_STREAM_CHILD.COM"
+#define M273_PIPE_SENTINEL "[.BUILD]M273_STREAM_CHILD.DONE"
 
 static char streamed_text[256];
 
@@ -25,6 +27,24 @@ static void remove_all_versions(const char *path)
     while (remove(path) == 0) {
         /* Remove OpenVMS file versions newest first. */
     }
+}
+
+static int file_exists(const char *path)
+{
+    FILE *file;
+    int result;
+
+    if (path == NULL) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    result = fclose(file) == 0;
+    return result;
 }
 
 static void capture_text(const char *text)
@@ -157,29 +177,58 @@ static int test_popen(void)
     FILE *pipe_stream;
     char line[256];
     int close_status;
-    int found;
+    int found_first;
+    int found_second;
+    int delivered_early;
+    int sentinel_after;
 
+    remove_all_versions(M273_PIPE_SENTINEL);
     (void)fflush(NULL);
 
-    pipe_stream = popen(
-        "WRITE SYS$OUTPUT \"M273_PIPE_OK\"",
-        "r"
-    );
+    pipe_stream = popen(M273_PIPE_CHILD, "r");
     if (pipe_stream == NULL) {
         return 0;
     }
 
     (void)setvbuf(pipe_stream, NULL, _IONBF, 0);
-    found = 0;
+    found_first = 0;
+
+    while (!found_first &&
+           fgets(line, sizeof(line), pipe_stream) != NULL) {
+        if (strstr(line, "M273_PIPE_FIRST") != NULL) {
+            found_first = 1;
+        }
+    }
+
+    if (!found_first) {
+        (void)pclose(pipe_stream);
+        remove_all_versions(M273_PIPE_SENTINEL);
+        return 0;
+    }
+
+    /*
+     * The child creates the sentinel only after a deliberate WAIT.
+     * If the first line is not readable until the child has already
+     * advanced past that WAIT, this is eventual delivery, not stream
+     * delivery, and the regression must fail.
+     */
+    delivered_early = !file_exists(M273_PIPE_SENTINEL);
+    found_second = 0;
 
     while (fgets(line, sizeof(line), pipe_stream) != NULL) {
-        if (strstr(line, "M273_PIPE_OK") != NULL) {
-            found = 1;
+        if (strstr(line, "M273_PIPE_SECOND") != NULL) {
+            found_second = 1;
         }
     }
 
     close_status = pclose(pipe_stream);
-    return found && close_status != -1;
+    sentinel_after = file_exists(M273_PIPE_SENTINEL);
+    remove_all_versions(M273_PIPE_SENTINEL);
+
+    return delivered_early &&
+           found_second &&
+           sentinel_after &&
+           close_status != -1;
 }
 
 int main(void)
@@ -193,6 +242,7 @@ int main(void)
 
     remove_all_versions(M273_SSE_FIXTURE);
     remove_all_versions(M273_SSE_RESPONSE);
+    remove_all_versions(M273_PIPE_SENTINEL);
 
     if (!result) {
         (void)fprintf(
@@ -203,7 +253,7 @@ int main(void)
     }
 
     (void)puts(
-        "M273 SSE parser, record-boundary, and popen regressions passed."
+        "M273 SSE parser and incremental popen regressions passed."
     );
     return EXIT_SUCCESS;
 }
