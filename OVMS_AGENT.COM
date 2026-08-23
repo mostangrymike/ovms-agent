@@ -26,5 +26,9 @@ $ ELSE
 $     DEFINE/USER SYS$INPUT SYS$COMMAND
 $ ENDIF
 
+$! M273 live SSE transport requires stream-oriented C RTL pipes.  Scope
+$! the feature to this image activation only; do not change the caller's
+$! process/system C RTL feature environment.
+$ DEFINE/USER DECC$STREAM_PIPE ENABLE
 $ RUN 'IMAGE'
 $ EXIT $STATUS
