@@ -7,6 +7,7 @@
 #include "LLM_SSE.H"
 #include "LLM_TRANSPORT.H"
 #include "llm_config.h"
+#include "ANSI_TERM.H"
 
 #define M262_RESPONSE_URL_MAX 640U
 #define M273_STREAM_REQ "OVMS_AGENT_STREAM_REQ.TMP"
@@ -102,6 +103,15 @@ static void m273_emit_text(const char *text)
     size_t length;
 
     if (text == NULL || *text == '\0') {
+        return;
+    }
+
+    /*
+     * AGENT/PLAN saves and displays the completed plan as one object.
+     * Keep that path non-incremental until plan persistence itself has
+     * a streaming-safe contract; ordinary response modes may stream.
+     */
+    if (llm_last_workflow == LLM_WORKFLOW_PLAN) {
         return;
     }
 
@@ -298,6 +308,22 @@ int perform_openai_request(void)
 
     m273_last_streamed = 0;
     m273_stream_last_nl = 1;
+
+    /*
+     * Streaming is an interactive capability, never the default wire
+     * contract. ANSI_TERM remains the authority for terminal detection;
+     * OVMS_AGENT_NOSTREAM independently disables SSE without disabling
+     * color/status presentation.
+     */
+    if (m273_stream_output == ansi_term_stream &&
+        (getenv("OVMS_AGENT_NOSTREAM") != NULL ||
+         !ansi_term_enabled())) {
+        m273_stream_output = NULL;
+    } else if (m273_stream_output == NULL &&
+               getenv("OVMS_AGENT_NOSTREAM") == NULL &&
+               ansi_term_enabled()) {
+        m273_stream_output = ansi_term_stream;
+    }
 
     base = llm_api_url();
     if (base == NULL || *base == '\0') {
