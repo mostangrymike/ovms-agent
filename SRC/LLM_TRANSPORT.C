@@ -248,7 +248,28 @@ static int m273_stream_request(const char *url)
         m273_stream_last_nl = 1;
     }
 
-    return parsed && close_status != -1 ? 1 : 0;
+    if (parsed && close_status != -1) {
+        return 1;
+    }
+
+    /*
+     * A stream attempt that produced no user-visible assistant text is
+     * safe to retry through the pre-M273 blocking transport.  This is
+     * the compatibility path for gateways whose SSE dialect differs
+     * from the Responses event stream we understand.  Once any text
+     * has been emitted, never retry the provider request: doing so could
+     * duplicate both output and side effects/cost.
+     */
+    if (!m273_last_streamed) {
+        if (getenv("OVMS_AGENT_STREAM_DEBUG") != NULL) {
+            (void)puts(
+                "M273 stream was not recognized; retrying blocking transport."
+            );
+        }
+        return -1;
+    }
+
+    return 0;
 }
 
 int write_headers(const char *api_key)
