@@ -25,5 +25,5 @@ static void m273_repair_git_diff(const agent_state *state)
 }
 
 #define project_git_diff m273_repair_git_diff
-#include "LLM_RETRY_CORE.C"
+#include "LLM_RETRY.C"
 #undef project_git_diff
