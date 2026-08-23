@@ -356,15 +356,15 @@ int llm_sse_parse(FILE *input,
 
     /*
      * Raw diagnostic capture is opt-in and contains only the provider
-     * response body read from curl stdout.  Authentication headers and
-     * the request body are never written here.  Remove stale versions
-     * on every parse so a later diagnostic can never be mistaken for a
-     * current stream.
+     * response body read from curl stdout. Authentication headers and
+     * the request body are never written here. Use stream-LF records so
+     * TYPE/SEARCH preserve SSE lines on OpenVMS rather than expanding a
+     * diagnostic into tiny RMS records.
      */
     sse_remove_all(M273_SSE_RAW);
     debug_file = NULL;
     if (getenv("OVMS_AGENT_STREAM_DEBUG") != NULL) {
-        debug_file = fopen(M273_SSE_RAW, "w");
+        debug_file = fopen(M273_SSE_RAW, "w", "rfm=stmlf");
     }
 
     event_data = NULL;
@@ -401,6 +401,28 @@ int llm_sse_parse(FILE *input,
                 }
             }
         } else if (strncmp(line, "event:", 6U) == 0) {
+            /*
+             * OpenVMS record-oriented popen streams can suppress an
+             * otherwise empty SSE separator record. A new event marker
+             * is therefore also an unambiguous boundary for any prior
+             * data record. Standard blank-line-delimited SSE continues
+             * to work because event_length is already zero in that case.
+             */
+            if (event_length != 0U) {
+                if (!sse_process_event(event_data,
+                                       text_callback,
+                                       response_path,
+                                       text_emitted,
+                                       &final_seen)) {
+                    success = 0;
+                    free(line);
+                    break;
+                }
+                event_length = 0U;
+                if (event_data != NULL) {
+                    event_data[0] = '\0';
+                }
+            }
             saw_sse = 1;
         } else if (strncmp(line, "data:", 5U) == 0) {
             const char *data;
