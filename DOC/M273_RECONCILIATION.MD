@@ -16,9 +16,27 @@ ANSI output is opt-in by positive capability detection, not opt-out by assumptio
 
 An earlier M273 candidate additionally gated terminal output on `DEV$M_ODV` and `DEV$M_DET`. VAX probing showed that this was too restrictive for the live interactive environment, so those extra characteristic gates were removed rather than teaching the presentation layer a platform-specific false negative.
 
+The accepted Phase 0/1 VAX gate reported `SYS$OUTPUT DEVCLASS=66 DEVNAM=_FTA5:` and `ANSI terminal probe: enabled=1 forced_plain=0`. The same exact module passed redirected-output and `OVMS_AGENT_PLAIN` captures with a byte-level verifier that rejects byte `0x1B`; both captures contained no escape byte.
+
 `OVMS_AGENT_PLAIN` and `OVMS_AGENT_NOCOLOR` are explicit logical-name escape hatches. If either is defined, plain mode wins before terminal detection is consulted.
 
 Persistent status-line operations are a no-op in plain mode so existing batch and machine-driven output does not gain new lines.
+
+## Presentation routing
+
+The production integration keeps presentation decisions out of mutation/control-flow code:
+
+- assistant response/error/raw-response display routes through `ANSI_TERM`;
+- `GITDIFF` and repair final-diff rendering use an ANSI diff callback registered by `MAIN`, while legacy minimal-link tests retain their original plain fallback when no callback is registered;
+- AGENT/WRITE exact-text and line-range Current/Proposed previews route stdout presentation through `ANSI_TERM` while file streams and transaction logic remain ordinary stdio;
+- AGENT/PATCH adds an interactive-only colored structured-patch preview after the existing validator succeeds; plain mode adds no preview bytes;
+- saved-plan/approval stdout routes through a presentation wrapper without changing approval text or yes/no semantics.
+
+## Status and metrics boundary
+
+The interactive agent loop can show the current turn against the active `AGENT/AUTO/LIMITS` ceiling while a provider request is in flight. The line is erased before response/tool output and is a no-op in plain mode.
+
+The existing `AGENT/METRICS` implementation does not currently collect provider input tokens, output tokens, total tokens, or monetary cost. It summarizes workflow/build/patch/self-test activity from the activity log. M273 therefore must not invent a token or cost number. A future token/cost status field requires provider-usage accounting first; monetary cost additionally requires a trustworthy provider/model pricing source or provider-supplied cost data.
 
 ## Streaming is not presentation-only
 
@@ -30,9 +48,9 @@ This dependency is intentionally recorded here so future work does not simulate 
 
 ## M273 sequencing
 
-1. VAX-validate the isolated ANSI module and plain-output invariants.
-2. Wire the module into the canonical build.
-3. Route existing diff/approval, assistant-response, and status presentation call sites through it without changing their control flow.
-4. Add the interactive one-line turn/metrics status display.
-5. Treat SSE/provider streaming as a networking sub-slice, with its own transport acceptance, before enabling incremental terminal display.
-6. Run focused redirected/override regressions plus the full OpenVMS/VAX build before promotion.
+1. VAX-validate the isolated ANSI module and plain-output invariants. **Accepted.**
+2. Wire the module and focused no-ESC regressions into the canonical build.
+3. Route diff/approval, assistant-response, and turn-status presentation without changing write/approval semantics.
+4. Run a fresh full VAX build and interactive presentation checks on the integrated branch.
+5. Treat SSE/provider streaming as the networking sub-slice, with its own transport acceptance, before enabling incremental terminal display.
+6. Reconcile the token/cost request only after real usage-accounting data exists; never synthesize cost from unavailable metrics.
