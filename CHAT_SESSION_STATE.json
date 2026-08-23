@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T12:09:00-05:00",
+  "updated_at": "2026-08-23T12:13:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,7 +10,7 @@
     "latest_code_milestone_commit": "b8049449d030dbe6af438db589fb3bfa61909b6c",
     "latest_code_milestone_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
     "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M272 dead-file cleanup was VAX-accepted from a fresh shallow clone and promoted to main. The permanent m272 tag is still pending creation and direct verification."
+    "note": "M272 dead-file cleanup was VAX-accepted from a fresh clone, promoted to main, permanently tagged m272, and completed with retention cleanup."
   },
   "m269": {
     "issue": 44,
@@ -22,13 +22,13 @@
   },
   "m270": {
     "issue": 45,
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED_PENDING_M272_TAG_GATE",
+    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
     "branch": "m270-src-case-normalization",
     "accepted_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
     "accepted_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
     "build_status": "%X00000001",
-    "tag": "m270 verified identical to accepted head",
-    "branch_state": "temporarily retained until m272 permanent tag is created and directly verified; then eligible for pruning under two-branch retention"
+    "tag": "m270 retained and verified",
+    "branch_state": "deleted from GitHub after m272 tag verification and independently verified absent"
   },
   "m271": {
     "issue": 46,
@@ -40,46 +40,48 @@
     "build_status": "%X00000001",
     "setup_status": "%X00000001",
     "final_design": "GITAUTH wrapper using the active saved profile and the same short-lived repository-scoped http.extraHeader/include.path authentication mechanism as guarded AGENT/GITHUB operations; GIT_TERMINAL_PROMPT=0 fails closed.",
-    "tag": "m271 verified identical to accepted/promoted code commit",
-    "main_promotion": "8dcbef9ce4197b8bda476ef943158206c843051f",
-    "post_promotion_rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6"
+    "tag": "m271 verified identical to accepted/promoted code commit"
   },
   "m272": {
     "issue": 47,
-    "issue_state": "open pending permanent tag verification",
-    "status": "VAX_ACCEPTED_PROMOTED_PENDING_TAG",
+    "issue_state": "closed/completed",
+    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
     "branch": "m272-dead-file-cleanup",
     "accepted_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
     "accepted_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
     "build_status": "%X00000001",
-    "cleanup": "48 dead/unused files removed; GitHub compare against pre-M272 main showed deletion-only changes with no source edits, build edits, RULES changes, or mode churn.",
+    "cleanup": "48 dead/unused files removed; final GitHub compare against pre-M272 main contained only file deletions with no code/build edits, RULES changes, or mode churn.",
     "vax_evidence": {
-      "checkout": "fresh GITAUTH shallow clone of m272-dead-file-cleanup resolved exactly to accepted head",
+      "checkout": "fresh GITAUTH clone of m272-dead-file-cleanup resolved exactly to accepted head",
       "branch": "git branch --show-current returned m272-dead-file-cleanup",
       "working_tree": "git status --short produced no output",
       "full_build": "all regression tests passed and BUILD_STATUS=%X00000001"
     },
     "main_promotion": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "main_remote_verification": "GitHub branch main directly verified at accepted M272 head",
-    "tag": "m272 absent as of this checkpoint; must be created and directly verified before issue closure or retention pruning"
+    "main_remote_verification": "GitHub main directly verified at accepted M272 head",
+    "tag": "m272 pushed with visible ref update and independently verified identical to accepted head",
+    "retention_cleanup": "m270-src-case-normalization deleted with visible git-receive-pack output and independently verified absent"
   },
   "repository_hygiene": {
     "m268_branch": "pruned from GitHub",
     "m269_branch": "pruned from GitHub",
-    "m270_branch": "temporarily retained pending m272 tag gate",
+    "m270_branch": "pruned from GitHub",
     "m271_branch": "retained",
     "m272_branch": "retained",
     "m269_tag": "verified",
     "m270_tag": "verified",
     "m271_tag": "verified",
-    "m272_tag": "pending/absent",
-    "retention_after_m272_tag": "retain m271-git-auth-helper and m272-dead-file-cleanup; prune m270-src-case-normalization only after m272 tag direct verification",
+    "m272_tag": "verified",
+    "retained_completed_milestone_branches": [
+      "m271-git-auth-helper",
+      "m272-dead-file-cleanup"
+    ],
     "security_note": "Never record credential values in durable state."
   },
   "local_openvms_state": {
     "m272_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M272_TEST]",
     "m272_acceptance_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "m272_acceptance_checkout_state": "clean fresh shallow clone; full build/regressions green",
+    "m272_acceptance_checkout_state": "clean fresh clone; full build/regressions green",
     "final_m271_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M271_FINAL]",
     "older_main_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] may be stale and should not be assumed current without verification",
     "github_profile": "ovms-agent configured with masked replacement credential",
@@ -98,10 +100,9 @@
     "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches."
   ],
   "next_work": [
-    "Create local lightweight tag m272 at exact accepted head b8049449d030dbe6af438db589fb3bfa61909b6c and push it with GITAUTH; require visible git-receive-pack/ref output.",
-    "Directly verify GitHub ref m272 resolves exactly to accepted M272 head.",
-    "Only after tag verification, prune m270-src-case-normalization and directly verify branch absence.",
-    "Close issue #47 after permanent tag verification and retention cleanup, then update this state to COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED.",
-    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub state before acting."
+    "No active milestone is open after M272 completion.",
+    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
+    "If a current canonical VAX main checkout is needed, refresh or create it with GITAUTH and the established RMS-safe workflow rather than assuming SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] is current.",
+    "Create a new GitHub issue and milestone branch for the next substantive project change."
   ]
 }
