@@ -4,8 +4,9 @@ $!===========================================================
 $ SET NOON
 $ FINAL_STATUS = 1
 $
-$! Compile private copies so this regression never depends on stale
-$! canonical objects or changes their later build ordering.
+$! Compile a private JSON parser so this regression never depends on
+$! a stale canonical object. LLM_SSE.OBJ is canonical and remains for
+$! the final OVMS Agent link after this focused regression succeeds.
 $ CC/OBJECT=[.BUILD]M273_JSON_PARSE.OBJ -
      /STANDARD=RELAXED_ANSI89 -
      /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
@@ -13,7 +14,7 @@ $ CC/OBJECT=[.BUILD]M273_JSON_PARSE.OBJ -
      [.SRC]LLM_JSON_PARSE.C
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ CC/OBJECT=[.BUILD]M273_LLM_SSE.OBJ -
+$ CC/OBJECT=[.BUILD]LLM_SSE.OBJ -
      /STANDARD=RELAXED_ANSI89 -
      /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
      /INCLUDE_DIRECTORY=([.SRC]) -
@@ -30,7 +31,7 @@ $ IF .NOT. $STATUS THEN GOTO FAIL
 $
 $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_STREAM_TEST.OBJ, -
-     [.BUILD]M273_LLM_SSE.OBJ, -
+     [.BUILD]LLM_SSE.OBJ, -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
