@@ -12,7 +12,7 @@ This file records durable operating rules learned during development of OVMS Age
 - **OpenVMS is the hardware/OS acceptance environment.** Use it for DEC C/VAX compile and link behavior, RMS semantics and record formats, DCL behavior, runtime behavior, live acceptance, and generated or uncommitted files.
 - Do not ask for a VAX-side `SEARCH` or similar repository-discovery command when GitHub can answer the question.
 - A local/VAX blob SHA is an acceptance cross-check, not a substitute for GitHub repository discovery or branch state.
-- Do not mix OVMS Agent build architecture with VMSBBS or unrelated projects.
+- Do not mix OVMS Agent build architecture with unrelated projects.
 
 ## 2. GitHub Search Discipline
 
