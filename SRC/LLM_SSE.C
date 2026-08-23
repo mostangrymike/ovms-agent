@@ -7,6 +7,18 @@
 
 #define LLM_SSE_LINE_INITIAL 512U
 #define LLM_SSE_LINE_MAX 4194304U
+#define M273_SSE_RAW "OVMS_AGENT_STREAM_RAW.TMP"
+
+static void sse_remove_all(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    while (remove(path) == 0) {
+        /* Remove OpenVMS file versions newest first. */
+    }
+}
 
 static char *sse_read_line(FILE *input)
 {
@@ -330,6 +342,7 @@ int llm_sse_parse(FILE *input,
     int final_seen;
     int success;
     char *line;
+    FILE *debug_file;
 
     if (input == NULL ||
         response_path == NULL ||
@@ -339,6 +352,19 @@ int llm_sse_parse(FILE *input,
 
     if (text_emitted != NULL) {
         *text_emitted = 0;
+    }
+
+    /*
+     * Raw diagnostic capture is opt-in and contains only the provider
+     * response body read from curl stdout.  Authentication headers and
+     * the request body are never written here.  Remove stale versions
+     * on every parse so a later diagnostic can never be mistaken for a
+     * current stream.
+     */
+    sse_remove_all(M273_SSE_RAW);
+    debug_file = NULL;
+    if (getenv("OVMS_AGENT_STREAM_DEBUG") != NULL) {
+        debug_file = fopen(M273_SSE_RAW, "w");
     }
 
     event_data = NULL;
@@ -352,6 +378,12 @@ int llm_sse_parse(FILE *input,
     success = 1;
 
     while ((line = sse_read_line(input)) != NULL) {
+        if (debug_file != NULL) {
+            (void)fputs(line, debug_file);
+            (void)fputc('\n', debug_file);
+            (void)fflush(debug_file);
+        }
+
         if (line[0] == '\0') {
             if (event_length != 0U) {
                 if (!sse_process_event(event_data,
@@ -427,6 +459,10 @@ int llm_sse_parse(FILE *input,
 
     if (ferror(input)) {
         success = 0;
+    }
+
+    if (debug_file != NULL) {
+        (void)fclose(debug_file);
     }
 
     free(event_data);
