@@ -35,9 +35,9 @@ $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$! Match the canonical launcher.  OpenVMS popen() otherwise adds CR/LF
-$! record carriage control, which can fragment no-buffer SSE into records.
-$ DEFINE/USER DECC$POPEN_NO_CRLF_REC_ATTR "ENABLE"
+$! Exercise the same default C RTL popen record behavior used by the
+$! canonical launcher. The parser itself must tolerate a missing empty
+$! SSE separator record; no DECC$ pipe feature logical is required.
 $ RUN [.BUILD]M273_STREAM_TEST
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
