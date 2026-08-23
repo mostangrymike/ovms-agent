@@ -53,7 +53,7 @@ $! for each invocation, matching the previously proven authenticated path.
 $ git config --global --unset-all credential.helper
 $ git config --global --unset credential.useHttpPath
 $
-$ GITAUTH :== GIT "-c" "credential.helper=" "-c" -
+$ GITAUTH :== 'GIT' "-c" "credential.helper=" "-c" -
 "credential.helper=!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE" "-c" -
 "credential.useHttpPath=true"
 $
