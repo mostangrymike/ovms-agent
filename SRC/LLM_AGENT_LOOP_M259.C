@@ -2,6 +2,24 @@
 #include <string.h>
 
 #include "llm_config.h"
+#include "llm_internal.h"
+#include "LLM_AUTO.H"
+#include "ANSI_TERM.H"
+
+static void m273_note_turn(unsigned int turn, unsigned int limit)
+{
+    llm_auto_note_turn();
+    ansi_term_status_turn(turn, limit);
+}
+
+static int m273_provider_request(void)
+{
+    int result;
+
+    result = perform_openai_request();
+    ansi_term_status_clear();
+    return result;
+}
 
 static char *m262_provider_env(const char *name)
 {
@@ -21,5 +39,9 @@ static char *m262_provider_env(const char *name)
 }
 
 #define getenv m262_provider_env
+#define llm_auto_note_turn() m273_note_turn(turn + 1U, turn_limit)
+#define perform_openai_request() m273_provider_request()
 #include "LLM_AGENT_LOOP_M259_CORE.C"
+#undef perform_openai_request
+#undef llm_auto_note_turn
 #undef getenv
