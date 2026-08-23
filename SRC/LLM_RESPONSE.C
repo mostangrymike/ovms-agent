@@ -6,6 +6,7 @@
 #include "llm_internal.h"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_RESPONSE.H"
+#include "ANSI_TERM.H"
 
 int save_response_id(const char *json)
 {
@@ -51,8 +52,8 @@ int display_clean_response(void)
     decoded = extract_output_text_from_json(json);
 
     if (decoded != NULL) {
-        (void)puts("");
-        (void)puts(decoded);
+        ansi_term_puts("");
+        ansi_term_puts(decoded);
         free(decoded);
         free(json);
         return 1;
@@ -64,8 +65,8 @@ int display_clean_response(void)
         decoded = json_decode_string(text_value, NULL);
 
         if (decoded != NULL) {
-            (void)puts("");
-            (void)printf("Provider API error: %s\n", decoded);
+            ansi_term_puts("");
+            ansi_term_printf("Provider API error: %s\n", decoded);
             free(decoded);
             free(json);
             return 1;
@@ -84,14 +85,14 @@ void display_raw_response(void)
     file = fopen(LLM_RESPONSE_FILE, "r");
 
     if (file == NULL) {
-        (void)printf("Unable to open %s: %s\n",
-                     LLM_RESPONSE_FILE,
-                     strerror(errno));
+        ansi_term_printf("Unable to open %s: %s\n",
+                         LLM_RESPONSE_FILE,
+                         strerror(errno));
         return;
     }
 
     while (fgets(line, sizeof(line), file) != NULL) {
-        (void)fputs(line, stdout);
+        ansi_term_write(line);
     }
 
     (void)fclose(file);
@@ -114,7 +115,7 @@ int display_api_error_from_json(const char *json)
         return 0;
     }
 
-    (void)printf("Provider API error: %s\n", decoded);
+    ansi_term_printf("Provider API error: %s\n", decoded);
     free(decoded);
     return 1;
 }
@@ -129,8 +130,8 @@ int display_output_text_from_json(const char *json)
         return 0;
     }
 
-    (void)puts("");
-    (void)puts(decoded);
+    ansi_term_puts("");
+    ansi_term_puts(decoded);
     free(decoded);
     return 1;
 }
