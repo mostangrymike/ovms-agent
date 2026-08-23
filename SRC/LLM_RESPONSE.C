@@ -6,6 +6,7 @@
 #include "llm_internal.h"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_RESPONSE.H"
+#include "LLM_TRANSPORT.H"
 #include "ANSI_TERM.H"
 
 int save_response_id(const char *json)
@@ -52,8 +53,10 @@ int display_clean_response(void)
     decoded = extract_output_text_from_json(json);
 
     if (decoded != NULL) {
-        ansi_term_puts("");
-        ansi_term_puts(decoded);
+        if (!llm_transport_streamed()) {
+            ansi_term_puts("");
+            ansi_term_puts(decoded);
+        }
         free(decoded);
         free(json);
         return 1;
@@ -130,8 +133,10 @@ int display_output_text_from_json(const char *json)
         return 0;
     }
 
-    ansi_term_puts("");
-    ansi_term_puts(decoded);
+    if (!llm_transport_streamed()) {
+        ansi_term_puts("");
+        ansi_term_puts(decoded);
+    }
     free(decoded);
     return 1;
 }
