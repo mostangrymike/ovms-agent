@@ -53,8 +53,10 @@ $! for each invocation, matching the previously proven authenticated path.
 $ git config --global --unset-all credential.helper
 $ git config --global --unset credential.useHttpPath
 $
+$! Capture the real GIT foreign-command image and preserve quotes around the
+$! helper value so DCL passes "!MCR SYS$LOGIN:..." as one Git -c argument.
 $ GITAUTH :== 'GIT' "-c" "credential.helper=" "-c" -
-"credential.helper=!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE" "-c" -
+"""credential.helper=!MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE""" "-c" -
 "credential.useHttpPath=true"
 $
 $ MCR SYS$LOGIN:OVMS_AGENT_GH_ASKPASS.EXE --check
