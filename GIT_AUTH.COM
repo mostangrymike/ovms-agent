@@ -15,11 +15,10 @@ $     WRITE SYS$ERROR "OVMS Agent Git askpass executable is not installed."
 $     EXIT %X00000002
 $ ENDIF
 $
-$! Git launches GIT_ASKPASS through the OpenVMS C RTL execvp() path.
-$! On OpenVMS execvp() searches VAXC$PATH when only an image name is given.
-$! Keep Git's own executable directory in the search list as well.
-$ DEFINE/PROCESS VAXC$PATH SYS$LOGIN:,GIT$ROOT:[GIT_CORE]
-$ DEFINE/PROCESS GIT_ASKPASS OVMS_AGENT_GH_ASKPASS.EXE
+$! Git performs its own PATH lookup before execve(), so VAXC$PATH is not
+$! consulted here. Give Git a path containing '/' so it skips that lookup.
+$! The OpenVMS C RTL translates sys$login/FILE to SYS$LOGIN:FILE.
+$ DEFINE/PROCESS GIT_ASKPASS "sys$login/OVMS_AGENT_GH_ASKPASS.EXE"
 $ DEFINE/PROCESS GIT_TERMINAL_PROMPT "0"
 $
 $! Explicitly suppress credential-helper use for authenticated network calls.
