@@ -121,6 +121,13 @@ void ansi_term_write_n(const char *text, size_t length)
     }
 }
 
+void ansi_term_vprintf(const char *format, va_list arguments)
+{
+    if (format != NULL) {
+        (void)vprintf(format, arguments);
+    }
+}
+
 void ansi_term_printf(const char *format, ...)
 {
     va_list arguments;
@@ -130,7 +137,7 @@ void ansi_term_printf(const char *format, ...)
     }
 
     va_start(arguments, format);
-    (void)vprintf(format, arguments);
+    ansi_term_vprintf(format, arguments);
     va_end(arguments);
 }
 
