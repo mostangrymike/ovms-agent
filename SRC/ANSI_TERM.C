@@ -234,8 +234,13 @@ int ansi_term_git_diff(void)
 
     ansi_remove_all_versions(ANSI_GIT_DIFF_FILE);
 
+    /*
+     * Do not end this DCL command with "--".  On OpenVMS a trailing
+     * hyphen is a DCL continuation marker, so an end-of-options token
+     * at end of command can leave the foreign command incomplete.
+     */
     status = system(
-        "git diff --no-color --output=OVMS_AGENT_ANSI_DIFF.TMP --"
+        "git diff --no-color --output=OVMS_AGENT_ANSI_DIFF.TMP"
     );
 
     if ((status & 1) == 0) {
