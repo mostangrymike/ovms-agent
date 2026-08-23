@@ -54,20 +54,12 @@ This file records durable operating rules learned during development of OVMS Age
 
 ## 6. Git on OpenVMS
 
-- Native OpenVMS Git HTTPS authentication is known to work when the credential helper is disabled per invocation.
-- Preferred fetch pattern:
-
-  ```text
-  git -c credential.helper= fetch -v --progress origin
-  ```
-
-- Preferred push pattern for the active M267 branch:
-
-  ```text
-  git -c credential.helper= push -v --progress origin "HEAD:m267-llm-naming"
-  ```
-
-- GitHub username is entered normally; use a GitHub PAT when Git asks for the password.
+- **Use the M271 `GITAUTH` wrapper as the standing prompt-free raw Git network path on VAX/OpenVMS.** Run `@SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM` after Git setup (or `@GIT_AUTH_SETUP` from an accepted checkout to install it), then use `GITAUTH` for GitHub network commands that need the active saved OVMS Agent GitHub profile.
+- `GITAUTH` uses the same proven short-lived, repository-scoped `http.extraHeader` / `include.path` authentication mechanism as guarded `AGENT/GITHUB` operations. It must not place the credential value in the DCL symbol, Git command line, or logs.
+- Keep `GIT_TERMINAL_PROMPT=0` for this path so authentication fails closed instead of falling back to interactive username/PAT prompts.
+- Do **not** use `credential.helper=store`, the former global `credential.helper` experiment, or the abandoned askpass path as the standing VAX solution. Those approaches were disproved by direct remote verification.
+- An odd OpenVMS Git status by itself is **not** proof that a network operation occurred. For read-side acceptance, require visible Git network/ref output. For mutations, require visible Git update output and then independently verify the resulting GitHub ref/state before proceeding.
+- Before promoting from a shallow acceptance clone, unshallow it and verify ancestry. A shallow boundary can make a genuine fast-forward appear locally as a non-fast-forward push rejection.
 - Native VAX Git worktree/index operations can be unreliable on RMS files. Do not assume `git pull`, `git reset`, or `git add` has materialized or indexed files correctly merely because it returned success.
 - When native Git cannot hash or stage an RMS file reliably, verify the physical file, use `git hash-object`, and if necessary use lower-level index operations such as `git update-index --cacheinfo` only with verified blob SHAs and repository modes.
 - `git hash-object` without `-w` computes a SHA but does not store a new blob in the object database. Use `git hash-object -w` when a new blob must be referenced by the index.
