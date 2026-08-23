@@ -66,6 +66,17 @@ static void m273_patch_preview(const char *path)
 
 void llm_patch_apply_cmd(const char *arguments)
 {
-    m273_patch_preview(arguments);
+    char validation[2048];
+
+    if (ansi_term_enabled() &&
+        arguments != NULL &&
+        *arguments != '\0' &&
+        llm_patch_validate(
+            arguments,
+            validation,
+            sizeof(validation))) {
+        m273_patch_preview(arguments);
+    }
+
     m273_patch_apply_core(arguments);
 }
