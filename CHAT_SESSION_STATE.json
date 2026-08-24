@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T20:05:00-05:00",
+  "updated_at": "2026-08-23T21:29:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -9,116 +9,113 @@
     "latest_code_milestone": "M273",
     "latest_code_milestone_commit": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "latest_code_milestone_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-    "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M273 is complete, promoted to main, permanently tagged m273, and retention cleanup is complete. Exact current main f57b1ebc was subsequently cloned fresh to SYS$SYSDEVICE:[MIKE.OVMS_AGENT] and passed the full VAX @BUILD with BUILD_STATUS=%X00000001."
+    "note": "M273 remains the promoted main milestone. M274 is active only on its development branch and must not be treated as promoted main."
   },
-  "m269": {
-    "issue": 44,
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-    "branch": "m269-github-preflight",
-    "accepted_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a",
-    "tag": "m269 verified identical to accepted head",
-    "branch_state": "deleted from GitHub and independently verified absent"
-  },
-  "m270": {
-    "issue": 45,
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-    "branch": "m270-src-case-normalization",
-    "accepted_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
-    "accepted_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
-    "build_status": "%X00000001",
-    "tag": "m270 retained and verified",
-    "branch_state": "deleted from GitHub after m272 tag verification and independently verified absent"
-  },
-  "m271": {
-    "issue": 46,
-    "issue_state": "closed/completed",
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-    "branch": "m271-git-auth-helper",
-    "accepted_head": "8dcbef9ce4197b8bda476ef943158206c843051f",
-    "accepted_tree": "504f73629d784d5bb9e41ca513ce6a56ae651fe9",
-    "build_status": "%X00000001",
-    "setup_status": "%X00000001",
-    "final_design": "GITAUTH wrapper using the active saved profile and the same short-lived repository-scoped http.extraHeader/include.path authentication mechanism as guarded AGENT/GITHUB operations; GIT_TERMINAL_PROMPT=0 fails closed.",
-    "tag": "m271 verified identical to accepted/promoted code commit",
-    "branch_state": "deleted from GitHub after M273 tag verification; VAX push showed explicit remote deletion and independent GitHub branch search confirmed absence"
-  },
-  "m272": {
-    "issue": 47,
-    "issue_state": "closed/completed",
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
-    "branch": "m272-dead-file-cleanup",
-    "accepted_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "accepted_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
-    "build_status": "%X00000001",
-    "cleanup": "48 dead/unused files removed; final GitHub compare against pre-M272 main contained only file deletions with no code/build edits, RULES changes, or mode churn.",
-    "vax_evidence": {
-      "checkout": "fresh GITAUTH clone of m272-dead-file-cleanup resolved exactly to accepted head",
-      "branch": "git branch --show-current returned m272-dead-file-cleanup",
-      "working_tree": "git status --short produced no output",
-      "full_build": "all regression tests passed and BUILD_STATUS=%X00000001"
+  "completed_milestones": {
+    "m269": {
+      "issue": 44,
+      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
+      "accepted_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a"
     },
-    "main_promotion": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "main_remote_verification": "GitHub main directly verified at accepted M272 head",
-    "tag": "m272 pushed with visible ref update and independently verified identical to accepted head",
-    "retention_cleanup": "m270-src-case-normalization deleted with visible git-receive-pack output and independently verified absent"
-  },
-  "m273": {
-    "issue": 48,
-    "issue_state": "closed/completed",
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
-    "branch": "m273-ansi-presentation",
-    "latest_vax_green_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "latest_vax_green_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-    "latest_vax_green_build_status": "%X00000001",
-    "phase5_streaming": "ACCEPTED at 1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9: fresh VAX clone, full build/regressions green, live Requesty 20-line and 100-line ASK tests streamed with no blocking-fallback diagnostic after byte-oriented fragmented-SSE parser plus DECC$STREAM_PIPE incremental pipe support.",
-    "accepted_stream_design": "DECC$STREAM_PIPE is scoped /USER to the launched image; SSE parser tolerates arbitrary OpenVMS record fragmentation including inside event/data tokens; blocking compatibility path remains; never resend after any assistant delta has been emitted.",
-    "rejected_stream_experiment": "DECC$POPEN_NO_CRLF_REC_ATTR is rejected as a standing launcher/runtime dependency.",
-    "phase6_usage": "ACCEPTED at d44424fae4d9b8f4a45048ab0018d8fa8e5a40de: fresh clean VAX clone, full @BUILD green, live Requesty ASK usage input=15 output=206 total=221, AGENT/METRICS reported exact provider-supplied latest/session values and Responses with usage=1, monetary cost correctly unavailable, subsequent read-only AGENT request remained functional.",
-    "phase6_scope": "Provider-supplied top-level usage input/output/total tokens only; current-process last/session totals; AGENT/METRICS plus transient ANSI turn status; no synthesized monetary cost.",
-    "final_reconciliation_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "final_reconciliation_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-    "final_reconciliation_state": "Documentation-only child of the original Phase 6 VAX-green code head d44424fa; exact f57b1ebc was later freshly cloned and full-build VAX-validated during post-milestone cleanup.",
-    "promotion_diff": "M272 main b8049449 to M273 code d44424fa is 64 commits ahead, 0 behind, touching only the intended ANSI presentation, streaming transport/regression, provider usage/metrics, wrappers, build wiring, and reconciliation files.",
-    "main_promotion": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "main_remote_verification": "GitHub main independently fetched at exact reconciliation SHA f57b1ebc after fast-forward promotion.",
-    "tag": "m273",
-    "tag_state": "VERIFIED: VAX push reported new tag m273 and independent GitHub commit resolution of ref m273 returned exact promoted reconciliation SHA f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
-    "retention_cleanup": "m271-git-auth-helper deleted with visible git-receive-pack output and independently verified absent; retained completed milestone branches are M272 and M273.",
-    "issue_closure": "GitHub issue #48 closed with state_reason=completed after tag and retention verification."
+    "m270": {
+      "issue": 45,
+      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
+      "accepted_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
+      "accepted_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
+      "build_status": "%X00000001"
+    },
+    "m271": {
+      "issue": 46,
+      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
+      "accepted_head": "8dcbef9ce4197b8bda476ef943158206c843051f",
+      "accepted_tree": "504f73629d784d5bb9e41ca513ce6a56ae651fe9",
+      "build_status": "%X00000001",
+      "auth_design": "GITAUTH saved-profile wrapper using short-lived repository-scoped include.path/http.extraHeader and GIT_TERMINAL_PROMPT=0."
+    },
+    "m272": {
+      "issue": 47,
+      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
+      "branch": "m272-dead-file-cleanup",
+      "accepted_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
+      "accepted_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
+      "build_status": "%X00000001"
+    },
+    "m273": {
+      "issue": 48,
+      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
+      "branch": "m273-ansi-presentation",
+      "accepted_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+      "accepted_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
+      "build_status": "%X00000001",
+      "tag": "m273"
+    }
   },
   "m274": {
     "issue": 49,
     "issue_state": "open",
-    "status": "ACTIVE_PHASE1_NOT_STARTED",
+    "status": "ACTIVE_PHASE1_READY_AFTER_AGENT_SELF_REPAIR",
     "branch": "m274-agent-stress-project",
     "starting_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "branch_remote_verification": "GitHub branch independently fetched at exact starting SHA f57b1ebc before any target-project source was generated.",
-    "goal": "Stress-test the current OVMS Agent by using it as the development tool for a small network-device config inventory/diff tracker; application polish is secondary to genuine unscripted agent friction.",
-    "target_layout": "Real target project root will be a subdirectory of the M274 checkout so OVMS Agent binds project_root/build to the target while Git commands still discover the parent ovms-agent repository.",
-    "phase1": "Use AGENT/WRITE for initial config ingest + storage scaffold (~4-5 files), then AGENT/BUILD immediately without manual source preinspection. On failure use AGENT/REPAIR/PLAN -> approve/apply -> retry; no hand-fix. Publish the first clean result through AGENT/GITHUB.",
-    "phase2": "Grow to roughly 10-15 files with diff + first-pass rule engines; then run MODULE/GRAPH, CLUSTER, CYCLE for real. Do not design away cycles in advance; use refactor commands if a real cycle exists.",
-    "phase3": "Perform a real risk-scoring extraction using EXTRACT/FUNCTION, then RENAME, then MOVE/FUNCTION in that exact order.",
-    "phase4": "Route a meaningful refactor through branch + PR via AGENT/GITHUB/PR and merge through normal review.",
-    "phase5": "At a natural boundary switch PROVIDER profile to a genuinely different backend and log behavioral differences.",
-    "phase6": "Build final reporting/query layer across multiple sittings using AGENT/SESSION/FORK and resume to exercise persistence.",
-    "phase7": "Write DOC/M274_RECONCILIATION.MD focused on OVMS Agent behavior, exercised/unused commands, surprises, unresolved friction, and regression-coverage implications.",
-    "observation_log": "Issue #49 comments are the durable chronological observation log; observation zero records that no target source had been generated/read/pre-corrected before Phase 1.",
-    "next_gate": "Switch canonical VAX checkout from main to m274-agent-stress-project without source divergence, create an empty target subdirectory, launch the current OVMS Agent with that directory as current project root, run the single Phase 1 AGENT/WRITE goal, and immediately run AGENT/BUILD before any manual file inspection."
+    "remote_head": "1083c28780b277ef27f010e83e38b71503345e94",
+    "remote_tree": "5e8604795dcbca50f840952370dad294aeeeec78",
+    "latest_vax_green_head": "1083c28780b277ef27f010e83e38b71503345e94",
+    "latest_vax_green_build_status": "1 (odd success)",
+    "latest_vax_green_evidence": "Exact combined source state containing issue #50 production repair plus real nested-directory M234 regression passed full AGENT/BUILD on VAX. The published executable was then launched from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG], where AGENT/GIT/REFRESH succeeded and AGENT/GIT/STATUS returned repository state instead of capture-unavailable.",
+    "target_root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
+    "target_source_state": "No network-inventory target source has yet been generated. Original Phase 1 blind first-generation/first-build requirement remains intact. The target directory may contain runtime/capture artifacts and must be inspected/cleaned without reading nonexistent target source before Phase 1.",
+    "provider": "requesty (openai/gpt-5)",
+    "transport_workaround": "OVMS_AGENT_NOSTREAM=1 remains the safe diagnostic/workaround in the current DCL process because interactive SSE tool-call mode hung during self-hosted AGENT/WRITE; do not silently treat that streaming path as fixed.",
+    "phase_plan": {
+      "phase1": "Use AGENT/WRITE for initial config ingest + storage scaffold (~4-5 files), then AGENT/BUILD immediately without manual source preinspection. On failure use AGENT/REPAIR/PLAN -> approve/apply -> retry; no hand-fix. Publish first clean target result through OVMS Agent GitHub path.",
+      "phase2": "Grow to roughly 10-15 files with diff + first-pass rule engines; then run MODULE/GRAPH, CLUSTER, CYCLE for real. Do not design away cycles in advance.",
+      "phase3": "Perform a genuine risk-scoring refactor using EXTRACT/FUNCTION, then RENAME, then MOVE/FUNCTION in that exact order.",
+      "phase4": "Route a meaningful change through branch + PR via AGENT/GITHUB/PR and merge through normal review.",
+      "phase5": "Switch PROVIDER profiles to a genuinely different backend at a natural milestone boundary and record behavioral differences.",
+      "phase6": "Build final reporting/query layer across multiple sittings using AGENT/SESSION/FORK and resume.",
+      "phase7": "Write DOC/M274_RECONCILIATION.MD focused on OVMS Agent behavior, commands exercised/not exercised, surprises, unresolved friction, and regression gaps."
+    },
+    "defects": {
+      "50": {
+        "title": "nested project Git-context capture fails on OpenVMS",
+        "state": "closed/completed",
+        "production_commit": "c0bce4e24ed4e9f3cf5ee0dd8c46f171ebdf2a8a",
+        "regression_commit": "1083c28780b277ef27f010e83e38b71503345e94",
+        "root_cause": "Relative SYS$OUTPUT capture escaped to repository top level when Git changed effective CWD; first attempted fgetname fix also used UNIX-style translated path for a DCL/OpenVMS SYS$OUTPUT consumer. Final fix retains the OpenVMS full filespec and adds graceful llm_git_compose fallback plus real nested-directory regression."
+      },
+      "51": {
+        "state": "open",
+        "summary": "AGENT/WRITE composed goal/context can exceed downstream request-builder 8KB limit once a real Git diff is present, even though composer permits much larger context."
+      },
+      "52": {
+        "state": "open",
+        "summary": "AGENT/TOOL/RUN PATCH corrupted && operators in replacement text; native PATCH avoided the corruption when the repair was rewritten without &&/||."
+      },
+      "53": {
+        "state": "open",
+        "summary": "AGENT/BUILD failure does not persist diagnostics in the OVMS_AGENT_FAILED_BUILD.TXT form required by AGENT/REPAIR/PLAN; repeated build failures yielded 'No failed build output is available.'"
+      }
+    },
+    "observations": [
+      "Initial nested AGENT/WRITE failed safely before generating any target source.",
+      "Raw Git from nested target root worked while OVMS Agent Git capture failed, isolating the wrapper defect.",
+      "Interactive SSE tool-call AGENT/WRITE hung at turn 1/12; OVMS_AGENT_NOSTREAM=1 progressed normally.",
+      "A 12-turn read-only AGENT/WRITE run falsely summarized proposed edits as completed despite no write.",
+      "Workspace approval is required in addition to OVMS_AGENT_WRITE_ENABLED=1; write rejection occurred only after substantial model/tool work.",
+      "Guarded-write rollback correctly removed an applied patch when the run hit the turn limit after an unnecessary post-write read.",
+      "Human review rejected two plausible but incomplete/incorrect repair proposals before accepting the bounded production fix.",
+      "Native PATCH plus full AGENT/BUILD recovered after AGENT/TOOL/RUN PATCH corruption.",
+      "Real nested M234 regression initially failed and exposed the OpenVMS-vs-UNIX fgetname consumer mismatch; after correction, full build and live nested acceptance passed.",
+      "Nested AGENT/GIT/STATUS reports parent-repository modified paths while nested AGENT/GIT/DIFF reports no unstaged diff, consistent with repository-wide status versus current-subdirectory-scoped git diff --."
+    ]
   },
   "repository_hygiene": {
-    "m268_branch": "pruned from GitHub",
-    "m269_branch": "pruned from GitHub",
-    "m270_branch": "pruned from GitHub",
-    "m271_branch": "pruned from GitHub",
+    "m268_branch": "pruned",
+    "m269_branch": "pruned",
+    "m270_branch": "pruned",
+    "m271_branch": "pruned",
     "m272_branch": "retained",
     "m273_branch": "retained",
     "m274_branch": "active",
-    "m269_tag": "verified",
-    "m270_tag": "verified",
-    "m271_tag": "verified",
-    "m272_tag": "verified",
-    "m273_tag": "verified at f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "retained_completed_milestone_branches": [
       "m272-dead-file-cleanup",
       "m273-ansi-presentation"
@@ -127,32 +124,30 @@
   },
   "local_openvms_state": {
     "canonical_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "canonical_checkout_branch": "main until the M274 branch-switch gate is performed",
-    "canonical_checkout_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "canonical_checkout_state": "fresh GITAUTH clone; git status --short clean; full @BUILD all regressions passed; BUILD_STATUS=%X00000001",
-    "home_cleanup_state": "COMPLETE: obsolete M269-M273 test/phase checkouts, stale OVMS_AGENT_MAIN, redundant OVMS_AGENT_M273_USAGE, old askpass/credential-test artifacts, TPU journals, legacy raw-key files, HELLO compiler-test files, empty hsperfdata_MIKE directory, cleanup procedures, and stale src.;1 OpenAI-specific source snapshot were removed. Current home listing retains canonical OVMS_AGENT plus current config/auth/login/editor files and unrelated TOP.EXE.",
-    "old_acceptance_checkouts": "deleted during VAX home-directory cleanup; GitHub tags/issues/durable state preserve milestone history",
-    "github_profile": "ovms-agent configured with masked replacement credential",
-    "installed_auth_wrapper": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE",
-    "installed_auth_startup": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM",
-    "legacy_auth_experiments": "credential.helper=store, global credential.helper and askpass paths are rejected as standing solutions; old askpass/credential-test artifacts were erased during cleanup"
+    "canonical_checkout_branch": "m274-agent-stress-project",
+    "canonical_checkout_head": "1083c28780b277ef27f010e83e38b71503345e94",
+    "canonical_checkout_worktree": "clean after committing and pushing the production repair and nested regression",
+    "latest_full_build": "AGENT/BUILD success status 1 with full regression suite including real nested M234 test",
+    "live_nested_acceptance": "passed from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
+    "github_profile": "ovms-agent",
+    "auth_wrapper": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
   },
   "standing_rules": [
+    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub main, active branch and issue state.",
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
-    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
-    "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS after installing/loading SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM.",
-    "Do not use credential.helper=store, the rejected global credential.helper experiment, or askpass as the standing VAX Git authentication solution.",
-    "Do not treat an odd VAX Git status alone as proof that a network operation occurred; require visible Git network/ref output and directly verify remote mutations on GitHub.",
-    "Unshallow a shallow acceptance clone and verify ancestry before using it for VAX-side promotion operations.",
-    "Repository filenames should be uppercase by default unless a concrete external/tooling blocker requires lowercase.",
-    "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches.",
-    "Never mark an untested GitHub head as latest_vax_green_head."
+    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
+    "For M274 target implementation and OVMS Agent self-repair, do not substitute manual/GitHub source edits for the requested OVMS Agent flows. Control-plane issue/state logging is allowed.",
+    "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS.",
+    "Do not use credential.helper=store, global credential.helper, or askpass as standing authentication solutions.",
+    "Never mark an untested GitHub head as latest_vax_green_head.",
+    "Keep main, chat-session-state, active milestone branch, and only the two most recently completed milestone development branches; permanently tag milestones before pruning older completed branches."
   ],
   "next_work": [
-    "M274 is active under issue #49 and branch m274-agent-stress-project, rooted at current main f57b1ebc.",
-    "Preserve the user's seven-phase stress-test sequence exactly; do not shortcut, pre-stage, or hand-fix friction that the requested OVMS Agent workflow should encounter.",
-    "Immediate gate: switch SYS$SYSDEVICE:[MIKE.OVMS_AGENT] to the remote M274 branch at the same starting SHA, create only the empty target project directory, launch OVMS Agent from that target root, run AGENT/WRITE once for the initial 4-5-file config-ingest/storage scaffold, then run AGENT/BUILD immediately before any source inspection.",
-    "Log surprising OVMS Agent behavior, positive or negative, in issue #49 as it occurs.",
-    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/M274 branch/issue state before acting."
+    "Issue #50 is closed and M274 branch head 1083c287 is VAX-green and remotely verified.",
+    "Do not work on #51/#52/#53 unless they block the next required M274 phase; preserve them as reconciliation evidence.",
+    "Before Phase 1, inspect and remove only OVMS Agent runtime/capture artifacts from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG] so the target root is clean; do not generate/read target application source in advance.",
+    "Launch the current VAX-green agent from the cleaned target root, set workspace approval, retain OVMS_AGENT_NOSTREAM=1 for now, run the original Phase 1 AGENT/WRITE scaffold goal once, then immediately run AGENT/BUILD before any manual source inspection.",
+    "If the target build fails, use AGENT/REPAIR/PLAN first exactly as required; if #53 prevents the repair handoff again, log the failure and recover only through an OVMS Agent path, not manual source editing.",
+    "Log surprising OVMS Agent behavior, positive or negative, on issue #49 as it occurs."
   ]
 }
