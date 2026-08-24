@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T19:38:00-05:00",
+  "updated_at": "2026-08-23T19:57:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,7 +10,7 @@
     "latest_code_milestone_commit": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "latest_code_milestone_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
     "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M273 is complete, promoted to main, permanently tagged m273, and retention cleanup is complete. The authoritative VAX-tested code checkpoint is parent d44424fa; f57b1ebc changes documentation only."
+    "note": "M273 is complete, promoted to main, permanently tagged m273, and retention cleanup is complete. Exact current main f57b1ebc was subsequently cloned fresh to SYS$SYSDEVICE:[MIKE.OVMS_AGENT] and passed the full VAX @BUILD with BUILD_STATUS=%X00000001."
   },
   "m269": {
     "issue": 44,
@@ -68,19 +68,18 @@
     "issue_state": "closed/completed",
     "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
     "branch": "m273-ansi-presentation",
-    "latest_vax_green_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
-    "latest_vax_green_tree": "17c69cc9b11553d1486a0dab4d57e87b091ef14b",
+    "latest_vax_green_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+    "latest_vax_green_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
     "latest_vax_green_build_status": "%X00000001",
     "phase5_streaming": "ACCEPTED at 1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9: fresh VAX clone, full build/regressions green, live Requesty 20-line and 100-line ASK tests streamed with no blocking-fallback diagnostic after byte-oriented fragmented-SSE parser plus DECC$STREAM_PIPE incremental pipe support.",
     "accepted_stream_design": "DECC$STREAM_PIPE is scoped /USER to the launched image; SSE parser tolerates arbitrary OpenVMS record fragmentation including inside event/data tokens; blocking compatibility path remains; never resend after any assistant delta has been emitted.",
     "rejected_stream_experiment": "DECC$POPEN_NO_CRLF_REC_ATTR is rejected as a standing launcher/runtime dependency.",
     "phase6_usage": "ACCEPTED at d44424fae4d9b8f4a45048ab0018d8fa8e5a40de: fresh clean VAX clone, full @BUILD green, live Requesty ASK usage input=15 output=206 total=221, AGENT/METRICS reported exact provider-supplied latest/session values and Responses with usage=1, monetary cost correctly unavailable, subsequent read-only AGENT request remained functional.",
-    "phase6_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE]",
     "phase6_scope": "Provider-supplied top-level usage input/output/total tokens only; current-process last/session totals; AGENT/METRICS plus transient ANSI turn status; no synthesized monetary cost.",
     "final_reconciliation_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "final_reconciliation_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-    "final_reconciliation_state": "DOCUMENTATION_ONLY_AFTER_VAX_GREEN_CODE; does not supersede latest_vax_green_head",
-    "promotion_diff": "M272 main b8049449 to VAX-green M273 code d44424fa is 64 commits ahead, 0 behind, touching only the intended ANSI presentation, streaming transport/regression, provider usage/metrics, wrappers, build wiring, and reconciliation files.",
+    "final_reconciliation_state": "Documentation-only child of the original Phase 6 VAX-green code head d44424fa; exact f57b1ebc was later freshly cloned and full-build VAX-validated during post-milestone cleanup.",
+    "promotion_diff": "M272 main b8049449 to M273 code d44424fa is 64 commits ahead, 0 behind, touching only the intended ANSI presentation, streaming transport/regression, provider usage/metrics, wrappers, build wiring, and reconciliation files.",
     "main_promotion": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "main_remote_verification": "GitHub main independently fetched at exact reconciliation SHA f57b1ebc after fast-forward promotion.",
     "tag": "m273",
@@ -107,20 +106,16 @@
     "security_note": "Never record credential values in durable state."
   },
   "local_openvms_state": {
-    "m273_phase6_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE]",
-    "m273_phase6_acceptance_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
-    "m273_phase6_acceptance_state": "clean fresh clone; full build/regressions green; live Requesty usage metrics accepted",
-    "m273_phase5_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_STREAM_BYTES]",
-    "m273_phase5_acceptance_head": "1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9",
-    "m273_phase5_acceptance_state": "clean fresh clone; full build/regressions green; live Requesty streaming accepted",
-    "m272_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M272_TEST]",
-    "m272_acceptance_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "final_m271_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M271_FINAL]",
-    "older_main_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] may be stale and should not be assumed current without verification",
+    "canonical_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
+    "canonical_checkout_branch": "main",
+    "canonical_checkout_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+    "canonical_checkout_state": "fresh GITAUTH clone; git status --short clean; full @BUILD all regressions passed; BUILD_STATUS=%X00000001",
+    "m273_usage_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE] remains only as a redundant pre-cleanup checkout and may be deleted after canonical checkout verification",
+    "old_acceptance_checkouts": "M269 through M273 phase/test checkouts and stale OVMS_AGENT_MAIN were recursively deleted during VAX home-directory cleanup",
     "github_profile": "ovms-agent configured with masked replacement credential",
     "installed_auth_wrapper": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE",
     "installed_auth_startup": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM",
-    "legacy_auth_experiments": "credential.helper=store, global credential.helper and askpass paths are rejected as standing solutions"
+    "legacy_auth_experiments": "credential.helper=store, global credential.helper and askpass paths are rejected as standing solutions; old askpass/credential-test artifacts were erased during cleanup"
   },
   "standing_rules": [
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
@@ -135,6 +130,8 @@
   ],
   "next_work": [
     "No active milestone is open after M273 completion.",
+    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT] as the canonical VAX working checkout; exact current main f57b1ebc is VAX-green.",
+    "Finish local cleanup by deleting redundant SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE] after the canonical checkout has been retained.",
     "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
     "For the next substantive change, create a new GitHub issue and milestone branch from current main f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
     "Do not reopen M273 streaming or provider-usage work without new contrary VAX evidence."
