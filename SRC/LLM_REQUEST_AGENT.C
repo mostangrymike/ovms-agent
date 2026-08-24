@@ -9,7 +9,7 @@
 #include "LLM_JSON_PARSE.H"
 #include "LLM_AUTO.H"
 
-#define LLM_AGENT_GOAL_MAX 8192U
+#define LLM_AGENT_GOAL_MAX 32768U
 
 static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
 
@@ -182,12 +182,11 @@ int write_agent_request_mode(const char *model,
         }
     }
 
-    if (success && allow_write && call_id != NULL && tool_output != NULL) {
+    if (success && allow_write && call_id != NULL && tool_output != NULL && strstr(tool_output, "\neffect: read\n") != NULL) {
         if (fputs(",\"tool_choice\":\"required\"", file) == EOF) {
             success = 0;
         }
     }
-
     if (success &&
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
