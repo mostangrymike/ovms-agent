@@ -5,8 +5,8 @@
 #include "LLM_JSON_PARSE.H"
 #include "LLM_SSE.H"
 
-#define LLM_SSE_LINE_INITIAL 512U
-#define LLM_SSE_LINE_MAX 4194304U
+#define LLM_SSE_INITIAL 512U
+#define LLM_SSE_MAX 4194304U
 #define M273_SSE_RAW "OVMS_AGENT_STREAM_RAW.TMP"
 
 static void sse_remove_all(const char *path)
@@ -20,105 +20,29 @@ static void sse_remove_all(const char *path)
     }
 }
 
-static char *sse_read_line(FILE *input)
+static int sse_append_char(char **buffer,
+                           size_t *length,
+                           size_t *capacity,
+                           int ch)
 {
-    char *line;
-    size_t capacity;
-    size_t length;
-    int ch;
-
-    if (input == NULL) {
-        return NULL;
-    }
-
-    capacity = LLM_SSE_LINE_INITIAL;
-    line = (char *)malloc(capacity);
-    if (line == NULL) {
-        return NULL;
-    }
-
-    length = 0U;
-    ch = EOF;
-
-    while ((ch = fgetc(input)) != EOF) {
-        if (ch == '\n') {
-            break;
-        }
-
-        if (ch == '\r') {
-            continue;
-        }
-
-        if (length + 1U >= capacity) {
-            char *grown;
-            size_t next_capacity;
-
-            if (capacity >= LLM_SSE_LINE_MAX) {
-                free(line);
-                return NULL;
-            }
-
-            next_capacity = capacity * 2U;
-            if (next_capacity > LLM_SSE_LINE_MAX) {
-                next_capacity = LLM_SSE_LINE_MAX;
-            }
-
-            grown = (char *)realloc(line, next_capacity);
-            if (grown == NULL) {
-                free(line);
-                return NULL;
-            }
-
-            line = grown;
-            capacity = next_capacity;
-        }
-
-        line[length++] = (char)ch;
-    }
-
-    if (ch == EOF && length == 0U) {
-        free(line);
-        return NULL;
-    }
-
-    line[length] = '\0';
-    return line;
-}
-
-static int sse_append(char **buffer,
-                      size_t *length,
-                      size_t *capacity,
-                      const char *text,
-                      int add_newline)
-{
-    size_t text_length;
-    size_t needed;
     char *grown;
+    size_t next_capacity;
 
-    if (buffer == NULL ||
-        length == NULL ||
-        capacity == NULL ||
-        text == NULL) {
+    if (buffer == NULL || length == NULL || capacity == NULL) {
         return 0;
     }
 
-    text_length = strlen(text);
-    needed = *length + text_length +
-        (add_newline ? 1U : 0U) + 1U;
-
-    if (needed > LLM_SSE_LINE_MAX) {
+    if (*length + 2U > LLM_SSE_MAX) {
         return 0;
     }
 
-    if (*capacity < needed) {
-        size_t next_capacity;
-
+    if (*capacity < *length + 2U) {
         next_capacity = *capacity != 0U ?
-            *capacity : LLM_SSE_LINE_INITIAL;
+            *capacity : LLM_SSE_INITIAL;
 
-        while (next_capacity < needed) {
-            if (next_capacity >= LLM_SSE_LINE_MAX / 2U) {
-                next_capacity = LLM_SSE_LINE_MAX;
+        while (next_capacity < *length + 2U) {
+            if (next_capacity >= LLM_SSE_MAX / 2U) {
+                next_capacity = LLM_SSE_MAX;
                 break;
             }
             next_capacity *= 2U;
@@ -133,15 +57,7 @@ static int sse_append(char **buffer,
         *capacity = next_capacity;
     }
 
-    if (add_newline && *length != 0U) {
-        (*buffer)[(*length)++] = '\n';
-    }
-
-    if (text_length != 0U) {
-        (void)memcpy(*buffer + *length, text, text_length);
-        *length += text_length;
-    }
-
+    (*buffer)[(*length)++] = (char)ch;
     (*buffer)[*length] = '\0';
     return 1;
 }
@@ -327,6 +243,27 @@ static int sse_process_event(const char *data,
     return 1;
 }
 
+static int sse_marker_step(int ch, int *matched)
+{
+    static const char marker[] = "data:";
+
+    if (matched == NULL) {
+        return 0;
+    }
+
+    if (ch == marker[*matched]) {
+        ++(*matched);
+        if (*matched == 5) {
+            *matched = 0;
+            return 1;
+        }
+        return 0;
+    }
+
+    *matched = ch == 'd' ? 1 : 0;
+    return 0;
+}
+
 int llm_sse_parse(FILE *input,
                   llm_sse_text_cb text_callback,
                   const char *response_path,
@@ -338,10 +275,17 @@ int llm_sse_parse(FILE *input,
     char *plain_data;
     size_t plain_length;
     size_t plain_capacity;
+    int mode;
+    int marker_matched;
+    int after_data;
+    int in_object;
+    int object_depth;
+    int in_string;
+    int escaped;
     int saw_sse;
     int final_seen;
     int success;
-    char *line;
+    int ch;
     FILE *debug_file;
 
     if (input == NULL ||
@@ -355,11 +299,10 @@ int llm_sse_parse(FILE *input,
     }
 
     /*
-     * Raw diagnostic capture is opt-in and contains only the provider
-     * response body read from curl stdout. Authentication headers and
-     * the request body are never written here. Use stream-LF records so
-     * TYPE/SEARCH preserve SSE lines on OpenVMS rather than expanding a
-     * diagnostic into tiny RMS records.
+     * Raw diagnostic capture is opt-in and contains only bytes read
+     * from curl stdout. Authentication headers and request data are
+     * never written here. The input bytes are preserved exactly so a
+     * later diagnostic can expose OpenVMS pipe record boundaries.
      */
     sse_remove_all(M273_SSE_RAW);
     debug_file = NULL;
@@ -373,101 +316,142 @@ int llm_sse_parse(FILE *input,
     plain_data = NULL;
     plain_length = 0U;
     plain_capacity = 0U;
+    mode = 0;
+    marker_matched = 0;
+    after_data = 0;
+    in_object = 0;
+    object_depth = 0;
+    in_string = 0;
+    escaped = 0;
     saw_sse = 0;
     final_seen = 0;
     success = 1;
 
-    while ((line = sse_read_line(input)) != NULL) {
+    while ((ch = fgetc(input)) != EOF) {
         if (debug_file != NULL) {
-            (void)fputs(line, debug_file);
-            (void)fputc('\n', debug_file);
-            (void)fflush(debug_file);
+            (void)fputc(ch, debug_file);
+            if (ch == '\n' || ch == '\r') {
+                (void)fflush(debug_file);
+            }
         }
 
-        if (line[0] == '\0') {
-            if (event_length != 0U) {
-                if (!sse_process_event(event_data,
-                                       text_callback,
-                                       response_path,
-                                       text_emitted,
-                                       &final_seen)) {
-                    success = 0;
-                    free(line);
-                    break;
-                }
-                event_length = 0U;
-                if (event_data != NULL) {
-                    event_data[0] = '\0';
-                }
-            }
-        } else if (strncmp(line, "event:", 6U) == 0) {
-            /*
-             * OpenVMS record-oriented popen streams can suppress an
-             * otherwise empty SSE separator record. A new event marker
-             * is therefore also an unambiguous boundary for any prior
-             * data record. Standard blank-line-delimited SSE continues
-             * to work because event_length is already zero in that case.
-             */
-            if (event_length != 0U) {
-                if (!sse_process_event(event_data,
-                                       text_callback,
-                                       response_path,
-                                       text_emitted,
-                                       &final_seen)) {
-                    success = 0;
-                    free(line);
-                    break;
-                }
-                event_length = 0U;
-                if (event_data != NULL) {
-                    event_data[0] = '\0';
-                }
-            }
-            saw_sse = 1;
-        } else if (strncmp(line, "data:", 5U) == 0) {
-            const char *data;
+        /*
+         * Live VAX evidence shows C RTL pipe record boundaries can be
+         * exposed as CR/LF at arbitrary byte positions: inside event
+         * names, inside the `data:` marker, and inside the JSON object.
+         * JSON carried by SSE is one wire line and encodes user newlines
+         * as escapes, so raw CR/LF bytes are framing noise here.
+         */
+        if (ch == '\n' || ch == '\r') {
+            continue;
+        }
 
-            saw_sse = 1;
-            data = line + 5;
-            if (*data == ' ') {
-                ++data;
+        if (mode == 0) {
+            if (ch == ' ' || ch == '\t') {
+                continue;
             }
 
-            if (!sse_append(&event_data,
-                            &event_length,
-                            &event_capacity,
-                            data,
-                            event_length != 0U)) {
+            if (ch == '{') {
+                mode = 1;
+            } else {
+                mode = 2;
+            }
+        }
+
+        if (mode == 1) {
+            if (!sse_append_char(&plain_data,
+                                 &plain_length,
+                                 &plain_capacity,
+                                 ch)) {
                 success = 0;
-                free(line);
                 break;
             }
-        } else if (!saw_sse) {
-            if (!sse_append(&plain_data,
-                            &plain_length,
-                            &plain_capacity,
-                            line,
-                            plain_length != 0U)) {
+            continue;
+        }
+
+        if (in_object) {
+            if (!sse_append_char(&event_data,
+                                 &event_length,
+                                 &event_capacity,
+                                 ch)) {
                 success = 0;
-                free(line);
                 break;
+            }
+
+            if (in_string) {
+                if (escaped) {
+                    escaped = 0;
+                } else if (ch == '\\') {
+                    escaped = 1;
+                } else if (ch == '"') {
+                    in_string = 0;
+                }
+            } else if (ch == '"') {
+                in_string = 1;
+            } else if (ch == '{') {
+                ++object_depth;
+            } else if (ch == '}') {
+                --object_depth;
+                if (object_depth == 0) {
+                    if (!sse_process_event(event_data,
+                                           text_callback,
+                                           response_path,
+                                           text_emitted,
+                                           &final_seen)) {
+                        success = 0;
+                        break;
+                    }
+
+                    event_length = 0U;
+                    if (event_data != NULL) {
+                        event_data[0] = '\0';
+                    }
+                    in_object = 0;
+                    in_string = 0;
+                    escaped = 0;
+                }
+            }
+            continue;
+        }
+
+        if (after_data) {
+            if (ch == ' ' || ch == '\t') {
+                continue;
+            }
+
+            after_data = 0;
+            if (ch == '{') {
+                saw_sse = 1;
+                in_object = 1;
+                object_depth = 1;
+                in_string = 0;
+                escaped = 0;
+                event_length = 0U;
+                if (!sse_append_char(&event_data,
+                                     &event_length,
+                                     &event_capacity,
+                                     ch)) {
+                    success = 0;
+                    break;
+                }
+                continue;
             }
         }
 
-        free(line);
-    }
-
-    if (success && event_length != 0U) {
-        if (!sse_process_event(event_data,
-                               text_callback,
-                               response_path,
-                               text_emitted,
-                               &final_seen)) {
-            success = 0;
+        if (sse_marker_step(ch, &marker_matched)) {
+            after_data = 1;
         }
     }
 
-    if (success && !saw_sse && plain_length != 0U) {
+    if (ferror(input)) {
+        success = 0;
+    }
+
+    if (in_object || after_data) {
+        success = 0;
+    }
+
+    if (success && mode == 1 && plain_length != 0U) {
         const char *plain_start;
 
         plain_start = skip_space(plain_data);
@@ -479,15 +463,13 @@ int llm_sse_parse(FILE *input,
         }
     }
 
-    if (ferror(input)) {
-        success = 0;
-    }
-
     if (debug_file != NULL) {
         (void)fclose(debug_file);
     }
 
     free(event_data);
     free(plain_data);
-    return success && final_seen;
+    return success &&
+           ((mode == 1 && final_seen) ||
+            (saw_sse && final_seen));
 }
