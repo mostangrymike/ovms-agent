@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T12:13:00-05:00",
+  "updated_at": "2026-08-23T19:15:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,7 +10,7 @@
     "latest_code_milestone_commit": "b8049449d030dbe6af438db589fb3bfa61909b6c",
     "latest_code_milestone_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
     "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M272 dead-file cleanup was VAX-accepted from a fresh clone, promoted to main, permanently tagged m272, and completed with retention cleanup."
+    "note": "M272 remains the latest promoted main milestone while M273 is active on its development branch."
   },
   "m269": {
     "issue": 44,
@@ -62,12 +62,31 @@
     "tag": "m272 pushed with visible ref update and independently verified identical to accepted head",
     "retention_cleanup": "m270-src-case-normalization deleted with visible git-receive-pack output and independently verified absent"
   },
+  "m273": {
+    "issue": 48,
+    "issue_state": "open",
+    "status": "ACTIVE_PHASE6_USAGE_CANDIDATE",
+    "branch": "m273-ansi-presentation",
+    "latest_vax_green_head": "1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9",
+    "latest_vax_green_tree": "563d9533772f085ee407b6854c29684c6b583f96",
+    "latest_vax_green_build_status": "%X00000001",
+    "phase5_streaming": "ACCEPTED: fresh VAX clone matched 1667dbcd; full build/regressions green; live Requesty 20-line and 100-line ASK tests streamed with no blocking-fallback diagnostic after byte-oriented fragmented-SSE parser plus DECC$STREAM_PIPE incremental pipe support.",
+    "phase5_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_STREAM_BYTES]",
+    "accepted_stream_design": "DECC$STREAM_PIPE is scoped /USER to the launched image; SSE parser tolerates arbitrary OpenVMS record fragmentation including inside event/data tokens; blocking compatibility path remains; never resend after any assistant delta has been emitted.",
+    "rejected_stream_experiment": "DECC$POPEN_NO_CRLF_REC_ATTR is rejected as a standing launcher/runtime dependency.",
+    "phase6_candidate_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
+    "phase6_candidate_tree": "17c69cc9b11553d1486a0dab4d57e87b091ef14b",
+    "phase6_candidate_state": "UNTESTED_ON_VAX",
+    "phase6_scope": "Capture only provider-supplied top-level usage input/output/total tokens after successful completed responses; maintain current-process last/session totals; append tokens to AGENT/METRICS and interactive turn status when available; do not synthesize monetary cost. Accepted Phase 5 transport core is wrapped rather than edited.",
+    "next_gate": "Fresh GITAUTH clone of d44424fa, clean status, full @BUILD with BUILD_STATUS=%X00000001, then live Requesty ASK followed by AGENT/METRICS to verify real token values. Do not mark d44424fa VAX-green until that evidence is supplied."
+  },
   "repository_hygiene": {
     "m268_branch": "pruned from GitHub",
     "m269_branch": "pruned from GitHub",
     "m270_branch": "pruned from GitHub",
     "m271_branch": "retained",
     "m272_branch": "retained",
+    "m273_branch": "active",
     "m269_tag": "verified",
     "m270_tag": "verified",
     "m271_tag": "verified",
@@ -79,9 +98,11 @@
     "security_note": "Never record credential values in durable state."
   },
   "local_openvms_state": {
+    "m273_phase5_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_STREAM_BYTES]",
+    "m273_phase5_acceptance_head": "1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9",
+    "m273_phase5_acceptance_state": "clean fresh clone; full build/regressions green; live Requesty streaming accepted",
     "m272_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M272_TEST]",
     "m272_acceptance_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-    "m272_acceptance_checkout_state": "clean fresh clone; full build/regressions green",
     "final_m271_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M271_FINAL]",
     "older_main_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] may be stale and should not be assumed current without verification",
     "github_profile": "ovms-agent configured with masked replacement credential",
@@ -97,12 +118,13 @@
     "Do not treat an odd VAX Git status alone as proof that a remote operation occurred; require visible Git network/ref output and directly verify remote mutations on GitHub.",
     "Unshallow a shallow acceptance clone and verify ancestry before using it for VAX-side promotion operations.",
     "Repository filenames should be uppercase by default unless a concrete external/tooling blocker requires lowercase.",
-    "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches."
+    "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches.",
+    "Never mark an untested GitHub head as latest_vax_green_head."
   ],
   "next_work": [
-    "No active milestone is open after M272 completion.",
-    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
-    "If a current canonical VAX main checkout is needed, refresh or create it with GITAUTH and the established RMS-safe workflow rather than assuming SYS$SYSDEVICE:[MIKE.OVMS_AGENT_MAIN] is current.",
-    "Create a new GitHub issue and milestone branch for the next substantive project change."
+    "M273 is active on m273-ansi-presentation; Phase 5 streaming is accepted at 1667dbcd and must not be reopened without new contrary VAX evidence.",
+    "Validate Phase 6 candidate d44424fa from a fresh VAX clone with full @BUILD, then live Requesty ASK plus AGENT/METRICS.",
+    "If Phase 6 fails, fix only the usage/metrics slice unless evidence implicates the accepted streaming transport.",
+    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub branch/issue state before acting."
   ]
 }
