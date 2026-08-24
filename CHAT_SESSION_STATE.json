@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T19:15:00-05:00",
+  "updated_at": "2026-08-23T19:28:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,7 +10,7 @@
     "latest_code_milestone_commit": "b8049449d030dbe6af438db589fb3bfa61909b6c",
     "latest_code_milestone_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
     "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M272 remains the latest promoted main milestone while M273 is active on its development branch."
+    "note": "M272 remains the latest promoted main milestone while M273 has completed VAX code acceptance and is in final reconciliation/promotion preparation."
   },
   "m269": {
     "issue": 44,
@@ -65,20 +65,21 @@
   "m273": {
     "issue": 48,
     "issue_state": "open",
-    "status": "ACTIVE_PHASE6_USAGE_CANDIDATE",
+    "status": "CODE_ACCEPTED_FINAL_RECONCILIATION",
     "branch": "m273-ansi-presentation",
-    "latest_vax_green_head": "1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9",
-    "latest_vax_green_tree": "563d9533772f085ee407b6854c29684c6b583f96",
+    "latest_vax_green_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
+    "latest_vax_green_tree": "17c69cc9b11553d1486a0dab4d57e87b091ef14b",
     "latest_vax_green_build_status": "%X00000001",
-    "phase5_streaming": "ACCEPTED: fresh VAX clone matched 1667dbcd; full build/regressions green; live Requesty 20-line and 100-line ASK tests streamed with no blocking-fallback diagnostic after byte-oriented fragmented-SSE parser plus DECC$STREAM_PIPE incremental pipe support.",
-    "phase5_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_STREAM_BYTES]",
+    "phase5_streaming": "ACCEPTED at 1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9: fresh VAX clone, full build/regressions green, live Requesty 20-line and 100-line ASK tests streamed with no blocking-fallback diagnostic after byte-oriented fragmented-SSE parser plus DECC$STREAM_PIPE incremental pipe support.",
     "accepted_stream_design": "DECC$STREAM_PIPE is scoped /USER to the launched image; SSE parser tolerates arbitrary OpenVMS record fragmentation including inside event/data tokens; blocking compatibility path remains; never resend after any assistant delta has been emitted.",
     "rejected_stream_experiment": "DECC$POPEN_NO_CRLF_REC_ATTR is rejected as a standing launcher/runtime dependency.",
-    "phase6_candidate_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
-    "phase6_candidate_tree": "17c69cc9b11553d1486a0dab4d57e87b091ef14b",
-    "phase6_candidate_state": "UNTESTED_ON_VAX",
-    "phase6_scope": "Capture only provider-supplied top-level usage input/output/total tokens after successful completed responses; maintain current-process last/session totals; append tokens to AGENT/METRICS and interactive turn status when available; do not synthesize monetary cost. Accepted Phase 5 transport core is wrapped rather than edited.",
-    "next_gate": "Fresh GITAUTH clone of d44424fa, clean status, full @BUILD with BUILD_STATUS=%X00000001, then live Requesty ASK followed by AGENT/METRICS to verify real token values. Do not mark d44424fa VAX-green until that evidence is supplied."
+    "phase6_usage": "ACCEPTED at d44424fae4d9b8f4a45048ab0018d8fa8e5a40de: fresh clean VAX clone, full @BUILD green, live Requesty ASK usage input=15 output=206 total=221, AGENT/METRICS reported exact provider-supplied latest/session values and Responses with usage=1, monetary cost correctly unavailable, subsequent read-only AGENT request remained functional.",
+    "phase6_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE]",
+    "phase6_scope": "Provider-supplied top-level usage input/output/total tokens only; current-process last/session totals; AGENT/METRICS plus transient ANSI turn status; no synthesized monetary cost.",
+    "final_reconciliation_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+    "final_reconciliation_state": "DOCUMENTATION_ONLY_AFTER_VAX_GREEN_CODE; does not supersede latest_vax_green_head",
+    "promotion_diff": "M272 main b8049449 to VAX-green M273 code d44424fa is 64 commits ahead, 0 behind, touching only the intended ANSI presentation, streaming transport/regression, provider usage/metrics, wrappers, build wiring, and reconciliation files.",
+    "next_gate": "Audit the documentation-only reconciliation commit against d44424fa, then promote M273 using the established milestone/tag/retention workflow. Do not claim f57b1ebc is VAX-tested code."
   },
   "repository_hygiene": {
     "m268_branch": "pruned from GitHub",
@@ -98,6 +99,9 @@
     "security_note": "Never record credential values in durable state."
   },
   "local_openvms_state": {
+    "m273_phase6_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE]",
+    "m273_phase6_acceptance_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
+    "m273_phase6_acceptance_state": "clean fresh clone; full build/regressions green; live Requesty usage metrics accepted",
     "m273_phase5_acceptance_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_STREAM_BYTES]",
     "m273_phase5_acceptance_head": "1667dbcd2cf9dddc7441bd1f5f3ed7e08d5430c9",
     "m273_phase5_acceptance_state": "clean fresh clone; full build/regressions green; live Requesty streaming accepted",
@@ -122,9 +126,9 @@
     "Never mark an untested GitHub head as latest_vax_green_head."
   ],
   "next_work": [
-    "M273 is active on m273-ansi-presentation; Phase 5 streaming is accepted at 1667dbcd and must not be reopened without new contrary VAX evidence.",
-    "Validate Phase 6 candidate d44424fa from a fresh VAX clone with full @BUILD, then live Requesty ASK plus AGENT/METRICS.",
-    "If Phase 6 fails, fix only the usage/metrics slice unless evidence implicates the accepted streaming transport.",
+    "M273 code is VAX-accepted at d44424fa; Phase 5 streaming and Phase 6 provider token metrics are accepted and must not be reopened without new contrary VAX evidence.",
+    "Final reconciliation-only branch head f57b1ebc must be audited as documentation-only and must not replace d44424fa as latest_vax_green_head.",
+    "Complete M273 promotion, permanent m273 tag verification, issue closure, and retention cleanup so only the two most recent completed milestone branches remain.",
     "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub branch/issue state before acting."
   ]
 }
