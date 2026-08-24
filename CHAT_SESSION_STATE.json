@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T21:29:00-05:00",
+  "updated_at": "2026-08-23T21:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -9,145 +9,96 @@
     "latest_code_milestone": "M273",
     "latest_code_milestone_commit": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "latest_code_milestone_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-    "note": "M273 remains the promoted main milestone. M274 is active only on its development branch and must not be treated as promoted main."
+    "note": "M273 remains promoted main; M274 remains development-only on its active branch."
   },
   "completed_milestones": {
-    "m269": {
-      "issue": 44,
-      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-      "accepted_head": "f3f871e2b4080f2c70ad14b2ab1b49b3354f257a"
-    },
-    "m270": {
-      "issue": 45,
-      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-      "accepted_head": "f70a5792dc16a6b8ff15890f1921e8ada4ed3656",
-      "accepted_tree": "a0c6135bc5185ac676f8d6c15ff6dc81691b52d5",
-      "build_status": "%X00000001"
-    },
-    "m271": {
-      "issue": 46,
-      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
-      "accepted_head": "8dcbef9ce4197b8bda476ef943158206c843051f",
-      "accepted_tree": "504f73629d784d5bb9e41ca513ce6a56ae651fe9",
-      "build_status": "%X00000001",
-      "auth_design": "GITAUTH saved-profile wrapper using short-lived repository-scoped include.path/http.extraHeader and GIT_TERMINAL_PROMPT=0."
-    },
-    "m272": {
-      "issue": 47,
-      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
-      "branch": "m272-dead-file-cleanup",
-      "accepted_head": "b8049449d030dbe6af438db589fb3bfa61909b6c",
-      "accepted_tree": "90bd7f5ba1f59404e988ce3ed5127f437428518d",
-      "build_status": "%X00000001"
-    },
-    "m273": {
-      "issue": 48,
-      "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
-      "branch": "m273-ansi-presentation",
-      "accepted_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-      "accepted_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
-      "build_status": "%X00000001",
-      "tag": "m273"
-    }
+    "m269": {"issue":44,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"f3f871e2b4080f2c70ad14b2ab1b49b3354f257a"},
+    "m270": {"issue":45,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"f70a5792dc16a6b8ff15890f1921e8ada4ed3656","accepted_tree":"a0c6135bc5185ac676f8d6c15ff6dc81691b52d5","build_status":"%X00000001"},
+    "m271": {"issue":46,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"8dcbef9ce4197b8bda476ef943158206c843051f","accepted_tree":"504f73629d784d5bb9e41ca513ce6a56ae651fe9","build_status":"%X00000001"},
+    "m272": {"issue":47,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED","branch":"m272-dead-file-cleanup","accepted_head":"b8049449d030dbe6af438db589fb3bfa61909b6c","accepted_tree":"90bd7f5ba1f59404e988ce3ed5127f437428518d","build_status":"%X00000001"},
+    "m273": {"issue":48,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED","branch":"m273-ansi-presentation","accepted_head":"f57b1ebc7ea54d3b9245ae581dcd27290dd52d54","accepted_tree":"d26dde3ab70364a6621f2d43de449e430d8a6f68","build_status":"%X00000001","tag":"m273"}
   },
   "m274": {
     "issue": 49,
     "issue_state": "open",
-    "status": "ACTIVE_PHASE1_READY_AFTER_AGENT_SELF_REPAIR",
+    "status": "ACTIVE_PHASE2_READY",
     "branch": "m274-agent-stress-project",
     "starting_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "remote_head": "1083c28780b277ef27f010e83e38b71503345e94",
-    "remote_tree": "5e8604795dcbca50f840952370dad294aeeeec78",
-    "latest_vax_green_head": "1083c28780b277ef27f010e83e38b71503345e94",
-    "latest_vax_green_build_status": "1 (odd success)",
-    "latest_vax_green_evidence": "Exact combined source state containing issue #50 production repair plus real nested-directory M234 regression passed full AGENT/BUILD on VAX. The published executable was then launched from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG], where AGENT/GIT/REFRESH succeeded and AGENT/GIT/STATUS returned repository state instead of capture-unavailable.",
+    "remote_head": "98ae1f531e4ee7f98cb0f6ed57af2edb141c3e40",
+    "remote_tree": "2d12d86dd545fd260acca7fbcbab6c7f7c1277aa",
+    "agent_full_vax_green_head": "1083c28780b277ef27f010e83e38b71503345e94",
+    "agent_full_vax_green_evidence": "Full OVMS Agent AGENT/BUILD/regression suite passed status 1 with the real nested-directory M234 regression; live nested Git acceptance also passed.",
+    "phase1_target_head": "98ae1f531e4ee7f98cb0f6ed57af2edb141c3e40",
+    "phase1_target_tree": "2d12d86dd545fd260acca7fbcbab6c7f7c1277aa",
+    "phase1_status": "COMPLETE_BUILD_RUNTIME_PUBLISHED",
+    "phase1_evidence": "Initial AGENT/WRITE scaffold from empty root failed without creating files (#54); immediate AGENT/BUILD failed due missing BUILD.COM; AGENT/REPAIR/PLAN again reproduced #53. Recovery used AGENT/CREATE for STORAGE.H, STORAGE.C, MAIN.C, BUILD.COM. First build succeeded with one DEC C informational time_t diagnostic; bounded AGENT/WRITE changed only tt < 0 to tt == (time_t)-1; clean target AGENT/BUILD passed status 1. Runtime smoke test passed add/list/show. Runtime/build/transcript artifacts were removed. Commit 98ae1f5 contains exactly the four target files and was pushed through AGENT/GITHUB/PUSH; GitHub compare shows one commit ahead, zero behind, exactly those four files.",
     "target_root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
-    "target_source_state": "No network-inventory target source has yet been generated. Original Phase 1 blind first-generation/first-build requirement remains intact. The target directory may contain runtime/capture artifacts and must be inspected/cleaned without reading nonexistent target source before Phase 1.",
+    "target_git_path": "m274_netcfg",
+    "target_files_phase1": ["m274_netcfg/build.com","m274_netcfg/main.c","m274_netcfg/storage.c","m274_netcfg/storage.h"],
     "provider": "requesty (openai/gpt-5)",
-    "transport_workaround": "OVMS_AGENT_NOSTREAM=1 remains the safe diagnostic/workaround in the current DCL process because interactive SSE tool-call mode hung during self-hosted AGENT/WRITE; do not silently treat that streaming path as fixed.",
+    "transport_workaround": "OVMS_AGENT_NOSTREAM=1 remains in use because interactive SSE tool-call AGENT/WRITE previously hung; do not treat streaming tool-call mode as fixed.",
     "phase_plan": {
-      "phase1": "Use AGENT/WRITE for initial config ingest + storage scaffold (~4-5 files), then AGENT/BUILD immediately without manual source preinspection. On failure use AGENT/REPAIR/PLAN -> approve/apply -> retry; no hand-fix. Publish first clean target result through OVMS Agent GitHub path.",
-      "phase2": "Grow to roughly 10-15 files with diff + first-pass rule engines; then run MODULE/GRAPH, CLUSTER, CYCLE for real. Do not design away cycles in advance.",
-      "phase3": "Perform a genuine risk-scoring refactor using EXTRACT/FUNCTION, then RENAME, then MOVE/FUNCTION in that exact order.",
-      "phase4": "Route a meaningful change through branch + PR via AGENT/GITHUB/PR and merge through normal review.",
-      "phase5": "Switch PROVIDER profiles to a genuinely different backend at a natural milestone boundary and record behavioral differences.",
-      "phase6": "Build final reporting/query layer across multiple sittings using AGENT/SESSION/FORK and resume.",
-      "phase7": "Write DOC/M274_RECONCILIATION.MD focused on OVMS Agent behavior, commands exercised/not exercised, surprises, unresolved friction, and regression gaps."
+      "phase1": "COMPLETE",
+      "phase2": "Grow naturally to roughly 10-15 files with a config diff engine and first-pass rule engine. Then genuinely run MODULE/GRAPH, CLUSTER, and CYCLE. Do not intentionally design cycles away or manufacture them; if a real cycle exists, fix it through refactor commands rather than hand edits.",
+      "phase3": "Perform genuine risk-scoring refactor in exact order: EXTRACT/FUNCTION, RENAME, MOVE/FUNCTION.",
+      "phase4": "Meaningful change through branch + PR using AGENT/GITHUB/PR and normal review/merge.",
+      "phase5": "At a natural boundary switch PROVIDER to a genuinely different backend and record behavioral differences.",
+      "phase6": "Final reporting/query layer across more than one sitting using AGENT/SESSION/FORK and resume.",
+      "phase7": "Write DOC/M274_RECONCILIATION.MD focused on OVMS Agent command coverage, failures, surprises, and unresolved gaps."
     },
     "defects": {
-      "50": {
-        "title": "nested project Git-context capture fails on OpenVMS",
-        "state": "closed/completed",
-        "production_commit": "c0bce4e24ed4e9f3cf5ee0dd8c46f171ebdf2a8a",
-        "regression_commit": "1083c28780b277ef27f010e83e38b71503345e94",
-        "root_cause": "Relative SYS$OUTPUT capture escaped to repository top level when Git changed effective CWD; first attempted fgetname fix also used UNIX-style translated path for a DCL/OpenVMS SYS$OUTPUT consumer. Final fix retains the OpenVMS full filespec and adds graceful llm_git_compose fallback plus real nested-directory regression."
-      },
-      "51": {
-        "state": "open",
-        "summary": "AGENT/WRITE composed goal/context can exceed downstream request-builder 8KB limit once a real Git diff is present, even though composer permits much larger context."
-      },
-      "52": {
-        "state": "open",
-        "summary": "AGENT/TOOL/RUN PATCH corrupted && operators in replacement text; native PATCH avoided the corruption when the repair was rewritten without &&/||."
-      },
-      "53": {
-        "state": "open",
-        "summary": "AGENT/BUILD failure does not persist diagnostics in the OVMS_AGENT_FAILED_BUILD.TXT form required by AGENT/REPAIR/PLAN; repeated build failures yielded 'No failed build output is available.'"
-      }
+      "50": {"state":"closed/completed","title":"nested project Git-context capture fails on OpenVMS","production_commit":"c0bce4e24ed4e9f3cf5ee0dd8c46f171ebdf2a8a","regression_commit":"1083c28780b277ef27f010e83e38b71503345e94"},
+      "51": {"state":"open","summary":"Composed AGENT context can exceed downstream request-builder 8KB limit with real Git diff."},
+      "52": {"state":"open","summary":"AGENT/TOOL/RUN PATCH corrupted && operators in one replacement path; native PATCH avoided the corruption."},
+      "53": {"state":"open","summary":"AGENT/BUILD does not persist diagnostics required by AGENT/REPAIR/PLAN; reproduced on compiler failure, regression failure, and missing BUILD.COM failure."},
+      "54": {"state":"open","title":"AGENT/WRITE cannot scaffold new project files from empty root","summary":"AGENT/WRITE selected replace/patch operations against nonexistent files and finally printed source for manual saving. Phase 1 recovered via shipped AGENT/CREATE, so #54 remains open as an underlying write-loop defect."}
     },
     "observations": [
-      "Initial nested AGENT/WRITE failed safely before generating any target source.",
-      "Raw Git from nested target root worked while OVMS Agent Git capture failed, isolating the wrapper defect.",
-      "Interactive SSE tool-call AGENT/WRITE hung at turn 1/12; OVMS_AGENT_NOSTREAM=1 progressed normally.",
-      "A 12-turn read-only AGENT/WRITE run falsely summarized proposed edits as completed despite no write.",
-      "Workspace approval is required in addition to OVMS_AGENT_WRITE_ENABLED=1; write rejection occurred only after substantial model/tool work.",
-      "Guarded-write rollback correctly removed an applied patch when the run hit the turn limit after an unnecessary post-write read.",
-      "Human review rejected two plausible but incomplete/incorrect repair proposals before accepting the bounded production fix.",
-      "Native PATCH plus full AGENT/BUILD recovered after AGENT/TOOL/RUN PATCH corruption.",
-      "Real nested M234 regression initially failed and exposed the OpenVMS-vs-UNIX fgetname consumer mismatch; after correction, full build and live nested acceptance passed.",
-      "Nested AGENT/GIT/STATUS reports parent-repository modified paths while nested AGENT/GIT/DIFF reports no unstaged diff, consistent with repository-wide status versus current-subdirectory-scoped git diff --."
+      "Nested Git context defect #50 was found before any target source generation and fixed through OVMS Agent self-hosting.",
+      "Interactive SSE tool-call mode hung; NOSTREAM progressed, leaving streaming tool-call coverage unresolved.",
+      "AGENT/WRITE can exhaust turns then falsely summarize unmade changes; transactional rollback also correctly removed incomplete writes.",
+      "Human approval caught incomplete and incorrect self-repair proposals.",
+      "Real nested M234 regression disproved an initially green but incomplete #50 fix and drove the OpenVMS full-filespec correction.",
+      "AGENT/WRITE cannot create an empty-project scaffold (#54), but AGENT/CREATE successfully created one guarded file per run.",
+      "AGENT/REPAIR/PLAN failed after the Phase 1 missing-BUILD.COM failure, third distinct #53 reproduction.",
+      "Generated Phase 1 code built on first recovery attempt except for one informational time_t comparison diagnostic; one bounded AGENT/WRITE fixed it and clean build passed.",
+      "Runtime smoke test passed add/list/show; OpenVMS DCL lowercased unquoted argv text but lookup remained consistent.",
+      "VAX Git canonicalized target paths to lowercase and reported all four new target files as mode 100755, including .c/.h; record as platform behavior and do not normalize unless it causes a real issue.",
+      "OVMS Agent created ovms_agent_transcript.dat in the target root; it was explicitly removed before staging."
     ]
   },
   "repository_hygiene": {
-    "m268_branch": "pruned",
-    "m269_branch": "pruned",
-    "m270_branch": "pruned",
-    "m271_branch": "pruned",
-    "m272_branch": "retained",
-    "m273_branch": "retained",
-    "m274_branch": "active",
-    "retained_completed_milestone_branches": [
-      "m272-dead-file-cleanup",
-      "m273-ansi-presentation"
-    ],
-    "security_note": "Never record credential values in durable state."
+    "m268_branch":"pruned","m269_branch":"pruned","m270_branch":"pruned","m271_branch":"pruned","m272_branch":"retained","m273_branch":"retained","m274_branch":"active",
+    "retained_completed_milestone_branches":["m272-dead-file-cleanup","m273-ansi-presentation"],
+    "security_note":"Never record credential values in durable state."
   },
   "local_openvms_state": {
-    "canonical_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "canonical_checkout_branch": "m274-agent-stress-project",
-    "canonical_checkout_head": "1083c28780b277ef27f010e83e38b71503345e94",
-    "canonical_checkout_worktree": "clean after committing and pushing the production repair and nested regression",
-    "latest_full_build": "AGENT/BUILD success status 1 with full regression suite including real nested M234 test",
-    "live_nested_acceptance": "passed from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
-    "github_profile": "ovms-agent",
-    "auth_wrapper": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
+    "canonical_checkout":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
+    "canonical_checkout_branch":"m274-agent-stress-project",
+    "canonical_checkout_head":"98ae1f531e4ee7f98cb0f6ed57af2edb141c3e40",
+    "canonical_checkout_worktree":"clean immediately before launching OVMS Agent for the successful Phase 1 push",
+    "target_root":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
+    "phase1_target_build":"clean AGENT/BUILD status 1 after bounded time_t fix",
+    "phase1_runtime":"add/list/show passed",
+    "github_profile":"ovms-agent",
+    "auth_wrapper":"SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
   },
   "standing_rules": [
-    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub main, active branch and issue state.",
+    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub main, active branch, and issue state.",
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
-    "For M274 target implementation and OVMS Agent self-repair, do not substitute manual/GitHub source edits for the requested OVMS Agent flows. Control-plane issue/state logging is allowed.",
+    "For M274 target implementation and OVMS Agent self-repair, do not substitute manual/GitHub source edits for the requested OVMS Agent flows. GitHub control-plane issue/state logging is allowed.",
     "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS.",
     "Do not use credential.helper=store, global credential.helper, or askpass as standing authentication solutions.",
-    "Never mark an untested GitHub head as latest_vax_green_head.",
+    "Never mark an untested GitHub head as a full VAX-green agent head.",
     "Keep main, chat-session-state, active milestone branch, and only the two most recently completed milestone development branches; permanently tag milestones before pruning older completed branches."
   ],
   "next_work": [
-    "Issue #50 is closed and M274 branch head 1083c287 is VAX-green and remotely verified.",
-    "Do not work on #51/#52/#53 unless they block the next required M274 phase; preserve them as reconciliation evidence.",
-    "Before Phase 1, inspect and remove only OVMS Agent runtime/capture artifacts from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG] so the target root is clean; do not generate/read target application source in advance.",
-    "Launch the current VAX-green agent from the cleaned target root, set workspace approval, retain OVMS_AGENT_NOSTREAM=1 for now, run the original Phase 1 AGENT/WRITE scaffold goal once, then immediately run AGENT/BUILD before any manual source inspection.",
-    "If the target build fails, use AGENT/REPAIR/PLAN first exactly as required; if #53 prevents the repair handoff again, log the failure and recover only through an OVMS Agent path, not manual source editing.",
-    "Log surprising OVMS Agent behavior, positive or negative, on issue #49 as it occurs."
+    "Phase 1 is complete at remote head 98ae1f531e4ee7f98cb0f6ed57af2edb141c3e40.",
+    "Begin Phase 2 from the target root with OVMS Agent, naturally add a config diff engine and first-pass rule engine until the target has roughly 10-15 files.",
+    "Do not pre-design module boundaries merely to avoid cycles; once file growth is real, run MODULE/GRAPH, CLUSTER, and CYCLE genuinely and react to the observed graph.",
+    "If a real cycle is found, fix it using OVMS Agent refactor commands, not manual source editing.",
+    "Do not repair #51/#52/#53/#54 unless one blocks the next required M274 action; preserve unresolved defects as reconciliation evidence.",
+    "Log surprising OVMS Agent behavior on issue #49 as it occurs."
   ]
 }
