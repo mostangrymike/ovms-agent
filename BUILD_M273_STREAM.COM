@@ -35,6 +35,12 @@ $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
+$! M273_STREAM_TEST now proves three parser framings: ordinary SSE,
+$! missing blank separators, and a worst-case fixture with a record
+$! boundary after every SSE character. The last case covers the live
+$! VAX evidence where event names, data: markers, and JSON were split
+$! across C RTL pipe records.
+$
 $! Build a child command procedure for an actual incremental-delivery
 $! check. It emits one line, waits, creates a sentinel, then emits a
 $! second line. The parent test must receive the first line before the
@@ -74,7 +80,7 @@ $     FINAL_STATUS = M273_TEST_STATUS
 $     GOTO FAIL_DONE
 $ ENDIF
 $
-$ WRITE SYS$OUTPUT "M273 SSE/incremental-popen regressions passed."
+$ WRITE SYS$OUTPUT "M273 fragmented-SSE/incremental-popen regressions passed."
 $ EXIT 1
 $
 $ FAIL:
