@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T19:35:00-05:00",
+  "updated_at": "2026-08-23T19:38:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,7 +10,7 @@
     "latest_code_milestone_commit": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "latest_code_milestone_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
     "rules_commit": "62f00f3de78a68602c0b27e01c4cf58ecd118cd6",
-    "note": "M273 was fast-forward promoted to main at final reconciliation head f57b1ebc. The authoritative VAX-tested code checkpoint is its parent d44424fa; f57b1ebc changes documentation only."
+    "note": "M273 is complete, promoted to main, permanently tagged m273, and retention cleanup is complete. The authoritative VAX-tested code checkpoint is parent d44424fa; f57b1ebc changes documentation only."
   },
   "m269": {
     "issue": 44,
@@ -33,7 +33,7 @@
   "m271": {
     "issue": 46,
     "issue_state": "closed/completed",
-    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED_PENDING_PRUNE",
+    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED",
     "branch": "m271-git-auth-helper",
     "accepted_head": "8dcbef9ce4197b8bda476ef943158206c843051f",
     "accepted_tree": "504f73629d784d5bb9e41ca513ce6a56ae651fe9",
@@ -41,7 +41,7 @@
     "setup_status": "%X00000001",
     "final_design": "GITAUTH wrapper using the active saved profile and the same short-lived repository-scoped http.extraHeader/include.path authentication mechanism as guarded AGENT/GITHUB operations; GIT_TERMINAL_PROMPT=0 fails closed.",
     "tag": "m271 verified identical to accepted/promoted code commit",
-    "branch_state": "still present; now older than retained completed M272/M273 pair and pending prune"
+    "branch_state": "deleted from GitHub after M273 tag verification; VAX push showed explicit remote deletion and independent GitHub branch search confirmed absence"
   },
   "m272": {
     "issue": 47,
@@ -65,8 +65,8 @@
   },
   "m273": {
     "issue": 48,
-    "issue_state": "open",
-    "status": "PROMOTED_TAGGED_AWAITING_RETENTION_CLEANUP",
+    "issue_state": "closed/completed",
+    "status": "COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED",
     "branch": "m273-ansi-presentation",
     "latest_vax_green_head": "d44424fae4d9b8f4a45048ab0018d8fa8e5a40de",
     "latest_vax_green_tree": "17c69cc9b11553d1486a0dab4d57e87b091ef14b",
@@ -85,26 +85,22 @@
     "main_remote_verification": "GitHub main independently fetched at exact reconciliation SHA f57b1ebc after fast-forward promotion.",
     "tag": "m273",
     "tag_state": "VERIFIED: VAX push reported new tag m273 and independent GitHub commit resolution of ref m273 returned exact promoted reconciliation SHA f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
-    "next_gate": "Delete remote branch m271-git-auth-helper with visible git-receive-pack output, independently verify it absent, then close issue #48 and finalize retention state with M272/M273 as the two retained completed milestone branches."
+    "retention_cleanup": "m271-git-auth-helper deleted with visible git-receive-pack output and independently verified absent; retained completed milestone branches are M272 and M273.",
+    "issue_closure": "GitHub issue #48 closed with state_reason=completed after tag and retention verification."
   },
   "repository_hygiene": {
     "m268_branch": "pruned from GitHub",
     "m269_branch": "pruned from GitHub",
     "m270_branch": "pruned from GitHub",
-    "m271_branch": "retained pending final M273 cleanup",
+    "m271_branch": "pruned from GitHub",
     "m272_branch": "retained",
-    "m273_branch": "promoted/tagged; retain after completion",
+    "m273_branch": "retained",
     "m269_tag": "verified",
     "m270_tag": "verified",
     "m271_tag": "verified",
     "m272_tag": "verified",
     "m273_tag": "verified at f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "retained_completed_milestone_branches": [
-      "m271-git-auth-helper",
-      "m272-dead-file-cleanup",
-      "m273-ansi-presentation"
-    ],
-    "target_retained_completed_milestone_branches": [
       "m272-dead-file-cleanup",
       "m273-ansi-presentation"
     ],
@@ -138,9 +134,9 @@
     "Never mark an untested GitHub head as latest_vax_green_head."
   ],
   "next_work": [
-    "M273 code is VAX-accepted at d44424fa and promoted to main via documentation-only reconciliation head f57b1ebc; Phase 5 streaming and Phase 6 provider token metrics are accepted and must not be reopened without new contrary VAX evidence.",
-    "Permanent tag m273 is independently verified at f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
-    "Prune remote m271-git-auth-helper, independently verify it absent, close issue #48, and finalize retained completed milestone branches as m272-dead-file-cleanup and m273-ansi-presentation.",
-    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting."
+    "No active milestone is open after M273 completion.",
+    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
+    "For the next substantive change, create a new GitHub issue and milestone branch from current main f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
+    "Do not reopen M273 streaming or provider-usage work without new contrary VAX evidence."
   ]
 }
