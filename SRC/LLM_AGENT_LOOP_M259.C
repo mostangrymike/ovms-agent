@@ -4,12 +4,19 @@
 #include "llm_config.h"
 #include "llm_internal.h"
 #include "LLM_AUTO.H"
+#include "LLM_USAGE.H"
 #include "ANSI_TERM.H"
 
 static void m273_note_turn(unsigned int turn, unsigned int limit)
 {
+    char status[160];
+
     llm_auto_note_turn();
-    ansi_term_status_turn(turn, limit);
+    if (llm_usage_status(status, sizeof(status), turn, limit)) {
+        ansi_term_status(status);
+    } else {
+        ansi_term_status_turn(turn, limit);
+    }
 }
 
 static int m273_provider_request(void)

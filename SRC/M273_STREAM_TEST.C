@@ -4,6 +4,7 @@
 
 #include "LLM_JSON_PARSE.H"
 #include "LLM_SSE.H"
+#include "LLM_USAGE.H"
 
 #define M273_SSE_FIXTURE "[.BUILD]M273_SSE_FIXTURE.TXT"
 #define M273_SSE_RESPONSE "[.BUILD]M273_SSE_RESPONSE.TXT"
@@ -230,6 +231,72 @@ static int test_fragmented_parser(void)
     return verify_parser_result();
 }
 
+static int test_usage(void)
+{
+    static const char second_response[] =
+        "{\"output\":[{\"type\":\"message\","
+        "\"content\":[{\"type\":\"output_text\","
+        "\"text\":\"fake \\\"usage\\\": key\"}]}],"
+        "\"usage\":{\"input_tokens\":4,"
+        "\"output_tokens\":6,\"total_tokens\":10}}";
+    static const char no_usage[] =
+        "{\"id\":\"resp_no_usage\",\"status\":\"completed\"}";
+    llm_usage_stats stats;
+    char status[160];
+
+    if (!llm_usage_record_file(M273_SSE_RESPONSE)) {
+        return 0;
+    }
+
+    llm_usage_get(&stats);
+    if (!stats.last_known ||
+        stats.requests != 1UL ||
+        stats.last_input != 1UL ||
+        stats.last_output != 2UL ||
+        stats.last_total != 3UL ||
+        stats.session_input != 1UL ||
+        stats.session_output != 2UL ||
+        stats.session_total != 3UL) {
+        return 0;
+    }
+
+    if (!llm_usage_record_json(second_response)) {
+        return 0;
+    }
+
+    llm_usage_get(&stats);
+    if (!stats.last_known ||
+        stats.requests != 2UL ||
+        stats.last_input != 4UL ||
+        stats.last_output != 6UL ||
+        stats.last_total != 10UL ||
+        stats.session_input != 5UL ||
+        stats.session_output != 8UL ||
+        stats.session_total != 13UL) {
+        return 0;
+    }
+
+    if (!llm_usage_status(status, sizeof(status), 2U, 4U) ||
+        strstr(status, "turn 2/4") == NULL ||
+        strstr(status, "in=4") == NULL ||
+        strstr(status, "out=6") == NULL ||
+        strstr(status, "total=10") == NULL ||
+        strstr(status, "session=13") == NULL) {
+        return 0;
+    }
+
+    if (llm_usage_record_json(no_usage)) {
+        return 0;
+    }
+
+    llm_usage_get(&stats);
+    return !stats.last_known &&
+           stats.requests == 2UL &&
+           stats.session_input == 5UL &&
+           stats.session_output == 8UL &&
+           stats.session_total == 13UL;
+}
+
 static int test_popen(void)
 {
     FILE *pipe_stream;
@@ -297,6 +364,7 @@ int main(void)
         test_parser_case(1) &&
         test_parser_case(0) &&
         test_fragmented_parser() &&
+        test_usage() &&
         test_popen();
 
     remove_all_versions(M273_SSE_FIXTURE);
@@ -306,13 +374,13 @@ int main(void)
     if (!result) {
         (void)fprintf(
             stderr,
-            "M273 streaming regression failed.\n"
+            "M273 streaming/usage regression failed.\n"
         );
         return EXIT_FAILURE;
     }
 
     (void)puts(
-        "M273 SSE fragmented-record and incremental popen regressions passed."
+        "M273 SSE, usage, and incremental popen regressions passed."
     );
     return EXIT_SUCCESS;
 }

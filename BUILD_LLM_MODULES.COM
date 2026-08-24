@@ -85,10 +85,13 @@ $ CC/OBJECT=[.BUILD]LLM_REQUEST_BASIC.OBJ -
 [.SRC]LLM_REQUEST_BASIC.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
+$! M273 wraps the accepted transport core only to capture provider-supplied
+$! usage from the completed response. The SSE/pipe implementation itself
+$! remains unchanged after Phase 5 VAX acceptance.
 $ CC/OBJECT=[.BUILD]LLM_TRANSPORT.OBJ -
 /INCLUDE=([.SRC]) -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-[.SRC]LLM_TRANSPORT.C
+[.SRC]LLM_TRANSPORT_M273.C
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
 $ CC/OBJECT=[.BUILD]LLM_RESPONSE.OBJ -

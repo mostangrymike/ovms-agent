@@ -5,10 +5,13 @@
 #include "LLM_CONTEXT.H"
 #include "LLM_PATCH.H"
 #include "LLM_PROJECT_MAP.H"
+#include "LLM_USAGE.H"
 
 #define command_register_agent command_register_agent_base
 #define llm_show_github m262_show_github
+#define llm_show_metrics m273_show_metrics
 #include "COMMAND_AGENT.C"
+#undef llm_show_metrics
 #undef llm_show_github
 #undef command_register_agent
 

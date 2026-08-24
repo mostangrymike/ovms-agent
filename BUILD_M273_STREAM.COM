@@ -1,12 +1,13 @@
 $!===========================================================
-$! BUILD_M273_STREAM.COM - M273 SSE/popen regressions
+$! BUILD_M273_STREAM.COM - M273 SSE/popen/usage regressions
 $!===========================================================
 $ SET NOON
 $ FINAL_STATUS = 1
 $
 $! Compile a private JSON parser so this regression never depends on
-$! a stale canonical object. LLM_SSE.OBJ is canonical and remains for
-$! the final OVMS Agent link after this focused regression succeeds.
+$! a stale canonical object. LLM_SSE.OBJ and the usage objects are
+$! canonical and remain for the final OVMS Agent link after this
+$! focused regression succeeds.
 $ CC/OBJECT=[.BUILD]M273_JSON_PARSE.OBJ -
      /STANDARD=RELAXED_ANSI89 -
      /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
@@ -21,6 +22,20 @@ $ CC/OBJECT=[.BUILD]LLM_SSE.OBJ -
      [.SRC]LLM_SSE.C
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
+$ CC/OBJECT=[.BUILD]LLM_USAGE.OBJ -
+     /STANDARD=RELAXED_ANSI89 -
+     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+     /INCLUDE_DIRECTORY=([.SRC]) -
+     [.SRC]LLM_USAGE.C
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
+$ CC/OBJECT=[.BUILD]LLM_USAGE_METRICS.OBJ -
+     /STANDARD=RELAXED_ANSI89 -
+     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+     /INCLUDE_DIRECTORY=([.SRC]) -
+     [.SRC]LLM_USAGE_METRICS.C
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
 $! Default DEC C mode is intentional here: popen()/pclose() are
 $! OpenVMS C RTL extensions and must retain their native prototypes.
 $ CC/OBJECT=[.BUILD]M273_STREAM_TEST.OBJ -
@@ -32,14 +47,9 @@ $
 $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_STREAM_TEST.OBJ, -
      [.BUILD]LLM_SSE.OBJ, -
+     [.BUILD]LLM_USAGE.OBJ, -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
-$
-$! M273_STREAM_TEST now proves three parser framings: ordinary SSE,
-$! missing blank separators, and a worst-case fixture with a record
-$! boundary after every SSE character. The last case covers the live
-$! VAX evidence where event names, data: markers, and JSON were split
-$! across C RTL pipe records.
 $
 $! Build a child command procedure for an actual incremental-delivery
 $! check. It emits one line, waits, creates a sentinel, then emits a
@@ -80,11 +90,11 @@ $     FINAL_STATUS = M273_TEST_STATUS
 $     GOTO FAIL_DONE
 $ ENDIF
 $
-$ WRITE SYS$OUTPUT "M273 fragmented-SSE/incremental-popen regressions passed."
+$ WRITE SYS$OUTPUT "M273 SSE/usage/incremental-popen regressions passed."
 $ EXIT 1
 $
 $ FAIL:
 $ FINAL_STATUS = $STATUS
 $ FAIL_DONE:
-$ WRITE SYS$ERROR "M273 SSE/popen regression failed."
+$ WRITE SYS$ERROR "M273 SSE/popen/usage regression failed."
 $ EXIT 'FINAL_STATUS'
