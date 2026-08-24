@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T20:01:00-05:00",
+  "updated_at": "2026-08-23T20:05:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -87,6 +87,25 @@
     "retention_cleanup": "m271-git-auth-helper deleted with visible git-receive-pack output and independently verified absent; retained completed milestone branches are M272 and M273.",
     "issue_closure": "GitHub issue #48 closed with state_reason=completed after tag and retention verification."
   },
+  "m274": {
+    "issue": 49,
+    "issue_state": "open",
+    "status": "ACTIVE_PHASE1_NOT_STARTED",
+    "branch": "m274-agent-stress-project",
+    "starting_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+    "branch_remote_verification": "GitHub branch independently fetched at exact starting SHA f57b1ebc before any target-project source was generated.",
+    "goal": "Stress-test the current OVMS Agent by using it as the development tool for a small network-device config inventory/diff tracker; application polish is secondary to genuine unscripted agent friction.",
+    "target_layout": "Real target project root will be a subdirectory of the M274 checkout so OVMS Agent binds project_root/build to the target while Git commands still discover the parent ovms-agent repository.",
+    "phase1": "Use AGENT/WRITE for initial config ingest + storage scaffold (~4-5 files), then AGENT/BUILD immediately without manual source preinspection. On failure use AGENT/REPAIR/PLAN -> approve/apply -> retry; no hand-fix. Publish the first clean result through AGENT/GITHUB.",
+    "phase2": "Grow to roughly 10-15 files with diff + first-pass rule engines; then run MODULE/GRAPH, CLUSTER, CYCLE for real. Do not design away cycles in advance; use refactor commands if a real cycle exists.",
+    "phase3": "Perform a real risk-scoring extraction using EXTRACT/FUNCTION, then RENAME, then MOVE/FUNCTION in that exact order.",
+    "phase4": "Route a meaningful refactor through branch + PR via AGENT/GITHUB/PR and merge through normal review.",
+    "phase5": "At a natural boundary switch PROVIDER profile to a genuinely different backend and log behavioral differences.",
+    "phase6": "Build final reporting/query layer across multiple sittings using AGENT/SESSION/FORK and resume to exercise persistence.",
+    "phase7": "Write DOC/M274_RECONCILIATION.MD focused on OVMS Agent behavior, exercised/unused commands, surprises, unresolved friction, and regression-coverage implications.",
+    "observation_log": "Issue #49 comments are the durable chronological observation log; observation zero records that no target source had been generated/read/pre-corrected before Phase 1.",
+    "next_gate": "Switch canonical VAX checkout from main to m274-agent-stress-project without source divergence, create an empty target subdirectory, launch the current OVMS Agent with that directory as current project root, run the single Phase 1 AGENT/WRITE goal, and immediately run AGENT/BUILD before any manual file inspection."
+  },
   "repository_hygiene": {
     "m268_branch": "pruned from GitHub",
     "m269_branch": "pruned from GitHub",
@@ -94,6 +113,7 @@
     "m271_branch": "pruned from GitHub",
     "m272_branch": "retained",
     "m273_branch": "retained",
+    "m274_branch": "active",
     "m269_tag": "verified",
     "m270_tag": "verified",
     "m271_tag": "verified",
@@ -107,7 +127,7 @@
   },
   "local_openvms_state": {
     "canonical_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "canonical_checkout_branch": "main",
+    "canonical_checkout_branch": "main until the M274 branch-switch gate is performed",
     "canonical_checkout_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "canonical_checkout_state": "fresh GITAUTH clone; git status --short clean; full @BUILD all regressions passed; BUILD_STATUS=%X00000001",
     "home_cleanup_state": "COMPLETE: obsolete M269-M273 test/phase checkouts, stale OVMS_AGENT_MAIN, redundant OVMS_AGENT_M273_USAGE, old askpass/credential-test artifacts, TPU journals, legacy raw-key files, HELLO compiler-test files, empty hsperfdata_MIKE directory, cleanup procedures, and stale src.;1 OpenAI-specific source snapshot were removed. Current home listing retains canonical OVMS_AGENT plus current config/auth/login/editor files and unrelated TOP.EXE.",
@@ -122,17 +142,17 @@
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL and runtime acceptance.",
     "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS after installing/loading SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM.",
     "Do not use credential.helper=store, the rejected global credential.helper experiment, or askpass as the standing VAX Git authentication solution.",
-    "Do not treat an odd VAX Git status alone as proof that a remote operation occurred; require visible Git network/ref output and directly verify remote mutations on GitHub.",
+    "Do not treat an odd VAX Git status alone as proof that a network operation occurred; require visible Git network/ref output and directly verify remote mutations on GitHub.",
     "Unshallow a shallow acceptance clone and verify ancestry before using it for VAX-side promotion operations.",
     "Repository filenames should be uppercase by default unless a concrete external/tooling blocker requires lowercase.",
     "Keep only the two most recently completed milestone development branches after promotion, with permanent milestone tags before pruning older completed branches.",
     "Never mark an untested GitHub head as latest_vax_green_head."
   ],
   "next_work": [
-    "No active milestone is open after M273 completion.",
-    "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT] as the canonical VAX working checkout; exact current main f57b1ebc is VAX-green.",
-    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
-    "For the next substantive change, create a new GitHub issue and milestone branch from current main f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
-    "Do not reopen M273 streaming or provider-usage work without new contrary VAX evidence."
+    "M274 is active under issue #49 and branch m274-agent-stress-project, rooted at current main f57b1ebc.",
+    "Preserve the user's seven-phase stress-test sequence exactly; do not shortcut, pre-stage, or hand-fix friction that the requested OVMS Agent workflow should encounter.",
+    "Immediate gate: switch SYS$SYSDEVICE:[MIKE.OVMS_AGENT] to the remote M274 branch at the same starting SHA, create only the empty target project directory, launch OVMS Agent from that target root, run AGENT/WRITE once for the initial 4-5-file config-ingest/storage scaffold, then run AGENT/BUILD immediately before any source inspection.",
+    "Log surprising OVMS Agent behavior, positive or negative, in issue #49 as it occurs.",
+    "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/M274 branch/issue state before acting."
   ]
 }
