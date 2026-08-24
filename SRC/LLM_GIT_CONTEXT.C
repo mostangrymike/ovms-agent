@@ -400,8 +400,19 @@ int llm_git_compose(const agent_state *state,
                     const char *goal,
                     char *output, size_t output_size)
 {
-    if (!m263_git_prepare(state)) return 0;
-    return llm_git_compose_base(state, goal, output, output_size);
+    int written;
+    if (m263_git_prepare(state))
+        return llm_git_compose_base(state,goal,output,output_size);
+    if (goal == NULL)
+        return 0;
+    if (*goal == '\0')
+        return 0;
+    if (output == NULL)
+        return 0;
+    if (output_size == 0U)
+        return 0;
+    written=snprintf(output,output_size,"%s",goal);
+    return written >= 0 && (size_t)written < output_size;
 }
 
 void llm_show_git_status(const agent_state *state)
