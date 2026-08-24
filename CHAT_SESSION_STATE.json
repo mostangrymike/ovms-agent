@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-23T19:57:00-05:00",
+  "updated_at": "2026-08-23T20:01:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -110,8 +110,8 @@
     "canonical_checkout_branch": "main",
     "canonical_checkout_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "canonical_checkout_state": "fresh GITAUTH clone; git status --short clean; full @BUILD all regressions passed; BUILD_STATUS=%X00000001",
-    "m273_usage_checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE] remains only as a redundant pre-cleanup checkout and may be deleted after canonical checkout verification",
-    "old_acceptance_checkouts": "M269 through M273 phase/test checkouts and stale OVMS_AGENT_MAIN were recursively deleted during VAX home-directory cleanup",
+    "home_cleanup_state": "COMPLETE: obsolete M269-M273 test/phase checkouts, stale OVMS_AGENT_MAIN, redundant OVMS_AGENT_M273_USAGE, old askpass/credential-test artifacts, TPU journals, legacy raw-key files, HELLO compiler-test files, empty hsperfdata_MIKE directory, cleanup procedures, and stale src.;1 OpenAI-specific source snapshot were removed. Current home listing retains canonical OVMS_AGENT plus current config/auth/login/editor files and unrelated TOP.EXE.",
+    "old_acceptance_checkouts": "deleted during VAX home-directory cleanup; GitHub tags/issues/durable state preserve milestone history",
     "github_profile": "ovms-agent configured with masked replacement credential",
     "installed_auth_wrapper": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE",
     "installed_auth_startup": "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM",
@@ -131,7 +131,6 @@
   "next_work": [
     "No active milestone is open after M273 completion.",
     "Use SYS$SYSDEVICE:[MIKE.OVMS_AGENT] as the canonical VAX working checkout; exact current main f57b1ebc is VAX-green.",
-    "Finish local cleanup by deleting redundant SYS$SYSDEVICE:[MIKE.OVMS_AGENT_M273_USAGE] after the canonical checkout has been retained.",
     "At the start of the next chat, read RULES.md on main and this CHAT_SESSION_STATE.json, then verify live GitHub main/branch/issue state before acting.",
     "For the next substantive change, create a new GitHub issue and milestone branch from current main f57b1ebc7ea54d3b9245ae581dcd27290dd52d54.",
     "Do not reopen M273 streaming or provider-usage work without new contrary VAX evidence."
