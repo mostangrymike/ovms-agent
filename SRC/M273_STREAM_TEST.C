@@ -116,7 +116,51 @@ static int write_fixture(int blank_separators)
     return success;
 }
 
-static int test_parser_case(int blank_separators)
+static int write_fragmented_fixture(void)
+{
+    static const char wire[] =
+        "event: response.output_text.delta"
+        "data: {\"type\":\"response.output_text.delta\","
+        "\"delta\":\"Hello \"}"
+        "event: response.output_text.delta"
+        "data: {\"type\":\"response.output_text.delta\","
+        "\"delta\":\"world\"}"
+        "event: response.completed"
+        "data: {\"type\":\"response.completed\","
+        "\"response\":{\"id\":\"resp_m273\","
+        "\"object\":\"response\",\"status\":\"completed\","
+        "\"output\":[{\"type\":\"message\","
+        "\"content\":[{\"type\":\"output_text\","
+        "\"text\":\"Hello world\"}]}],"
+        "\"usage\":{\"input_tokens\":1,"
+        "\"output_tokens\":2,\"total_tokens\":3}}}";
+    FILE *file;
+    size_t index;
+    int success;
+
+    remove_all_versions(M273_SSE_FIXTURE);
+    file = fopen(M273_SSE_FIXTURE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    success = 1;
+    for (index = 0U; wire[index] != '\0'; ++index) {
+        if (fputc((unsigned char)wire[index], file) == EOF ||
+            fputc('\n', file) == EOF) {
+            success = 0;
+            break;
+        }
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
+static int verify_parser_result(void)
 {
     FILE *input;
     char *json;
@@ -127,10 +171,6 @@ static int test_parser_case(int blank_separators)
 
     streamed_text[0] = '\0';
     remove_all_versions(M273_SSE_RESPONSE);
-
-    if (!write_fixture(blank_separators)) {
-        return 0;
-    }
 
     input = fopen(M273_SSE_FIXTURE, "r");
     if (input == NULL) {
@@ -170,6 +210,24 @@ static int test_parser_case(int blank_separators)
     free(text);
     free(json);
     return result;
+}
+
+static int test_parser_case(int blank_separators)
+{
+    if (!write_fixture(blank_separators)) {
+        return 0;
+    }
+
+    return verify_parser_result();
+}
+
+static int test_fragmented_parser(void)
+{
+    if (!write_fragmented_fixture()) {
+        return 0;
+    }
+
+    return verify_parser_result();
 }
 
 static int test_popen(void)
@@ -238,6 +296,7 @@ int main(void)
     result =
         test_parser_case(1) &&
         test_parser_case(0) &&
+        test_fragmented_parser() &&
         test_popen();
 
     remove_all_versions(M273_SSE_FIXTURE);
@@ -253,7 +312,7 @@ int main(void)
     }
 
     (void)puts(
-        "M273 SSE parser and incremental popen regressions passed."
+        "M273 SSE fragmented-record and incremental popen regressions passed."
     );
     return EXIT_SUCCESS;
 }
