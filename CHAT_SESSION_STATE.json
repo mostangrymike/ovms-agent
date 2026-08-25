@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-25T15:51:23-05:00",
+  "updated_at": "2026-08-25T15:59:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -80,7 +80,10 @@
         "A1": "ACCEPTED_VAX_GREEN",
         "A1_changes": "Inserted move_companion_header, move_strip_static, move_prepare_export helpers only; no existing MOVE behavior changed.",
         "A1_build": "Full canonical @BUILD: all regression tests passed; BUILD_STATUS=%X00000001.",
-        "next": "A2 helper milestone: external-caller companion-header validation only, then another full canonical build."
+        "A2": "ACCEPTED_VAX_GREEN",
+        "A2_changes": "Inserted move_ext_callers_ready helper only; validates unique external caller modules against the destination companion-header include; no existing MOVE behavior changed.",
+        "A2_build": "Full canonical @BUILD: all regression tests passed; BUILD_STATUS=%X00000001.",
+        "next": "A3 helper milestone: final-#endif discovery and guarded companion-header prototype writer, then another full canonical build before wiring MOVE/FUNCTION/APPLY."
       }
     },
     "defects": {
@@ -111,7 +114,7 @@
       "Requesty first #74 attempt exhausted tool-turn budget after inspections and produced no executable guarded write.",
       "A later cancelled proposal correctly refused to guess after recognizing insufficient inspected range.",
       "Repeated paid read-only source discovery was unnecessary; GitHub should be maximized for source archaeology while VAX remains authoritative for unpublished/local behavior.",
-      "A1 helper-only self-repair is full canonical VAX-green but remains unpublished."
+      "A1 and A2 helper-only self-repair slices are full canonical VAX-green but remain unpublished."
     ]
   },
   "repository_hygiene": {
@@ -123,8 +126,8 @@
     "canonical_checkout":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "canonical_checkout_branch":"m274-agent-stress-project",
     "known_remote_head":"9be88f42db3cd1210ab93e715fd6229fbca950c6",
-    "working_tree":"Contains unpublished M274 self-repair work. A1 in SRC/SYMBOL_INDEX.C is VAX-green. Inspect exact diff/status before commit or push.",
-    "latest_local_acceptance":"2026-08-25 full canonical @BUILD after #74 A1: all regression tests passed, BUILD_STATUS=%X00000001.",
+    "working_tree":"Contains unpublished M274 self-repair work. A1 and A2 in SRC/SYMBOL_INDEX.C are VAX-green. Inspect exact diff/status before commit or push.",
+    "latest_local_acceptance":"2026-08-25 full canonical @BUILD after #74 A2: all regression tests passed, BUILD_STATUS=%X00000001.",
     "target_root":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
     "github_profile":"ovms-agent",
     "auth_wrapper":"SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
@@ -139,10 +142,10 @@
     "Keep main, chat-session-state, active milestone branch, and only the two most recently completed milestone development branches; permanently tag milestones before pruning older completed branches."
   ],
   "next_work": [
-    "Resume #74 from canonical checkout after A1 VAX-green checkpoint.",
-    "Run A2 guarded helper insertion for external caller companion-header validation; review proposal before approval.",
-    "After each accepted helper milestone, run full canonical @BUILD and record BUILD_STATUS.",
-    "Then add bounded header prototype writer and finally wire MOVE/FUNCTION/APPLY transaction behavior; do not combine into one giant patch.",
+    "Resume #74 from canonical checkout after A1+A2 VAX-green checkpoints.",
+    "Run A3 guarded helper insertion for final #endif discovery and companion-header prototype writing; review proposal before approval.",
+    "After A3, run full canonical @BUILD and record BUILD_STATUS.",
+    "Then wire the accepted helpers into MOVE/FUNCTION/APPLY in bounded slices; do not combine into one giant patch.",
     "Return to M274 target and retry exact MOVE/FUNCTION report_risk_score rules.c then /APPLY.",
     "Require explicit target @BUILD plus runtime Risk score acceptance; account for open #73 verifier warning separately.",
     "Close #74 only after exact target move succeeds and canonical regressions pass.",
