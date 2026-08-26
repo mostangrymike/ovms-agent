@@ -110,7 +110,15 @@ $ IF EXTRA .NES. " " THEN GOTO CREATE_USAGE
 $
 $ OPEN/WRITE/ERROR=NETWORK_ERROR BODY 'BODYFILE'
 $ DQ = """"
-$ JSON = "{" + DQ + "title" + DQ + ":" + DQ + TITLE + DQ + "," + DQ + "head" + DQ + ":" + DQ + HEAD + DQ + "," + DQ + "base" + DQ + ":" + DQ + BASE + DQ + "," + DQ + "body" + DQ + ":" + DQ + "Closes #" + ISSUE + DQ + "}"
+$ JSON = "{" + DQ + "title" + DQ
+$ JSON = JSON + ":" + DQ + TITLE + DQ
+$ JSON = JSON + "," + DQ + "head" + DQ
+$ JSON = JSON + ":" + DQ + HEAD + DQ
+$ JSON = JSON + "," + DQ + "base" + DQ
+$ JSON = JSON + ":" + DQ + BASE + DQ
+$ JSON = JSON + "," + DQ + "body" + DQ
+$ JSON = JSON + ":" + DQ + "Closes #" + ISSUE
+$ JSON = JSON + DQ + "}"
 $ WRITE BODY JSON
 $ CLOSE BODY
 $ BODY_STATUS = $STATUS
