@@ -109,7 +109,7 @@ $ IF TITLE .EQS. "" THEN GOTO CREATE_USAGE
 $ IF EXTRA .NES. " " THEN GOTO CREATE_USAGE
 $
 $ OPEN/WRITE/ERROR=NETWORK_ERROR BODY 'BODYFILE'
-$ DQ = F$CHAR(34)
+$ DQ = """"
 $ JSON = "{" + DQ + "title" + DQ + ":" + DQ + TITLE + DQ + "," + DQ + "head" + DQ + ":" + DQ + HEAD + DQ + "," + DQ + "base" + DQ + ":" + DQ + BASE + DQ + "," + DQ + "body" + DQ + ":" + DQ + "Closes #" + ISSUE + DQ + "}"
 $ WRITE BODY JSON
 $ CLOSE BODY
