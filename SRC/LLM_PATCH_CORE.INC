@@ -5,7 +5,8 @@
 
 #define PATCH_MAX_HUNKS 16U
 #define PATCH_PATH_MAX 256U
-#define PATCH_TEXT_MAX 32768U
+#define PATCH_HUNK_TEXT_MAX 32768U
+#define PATCH_FILE_MAX 1048576U
 #define PATCH_LAST_MAX 2048U
 
 typedef struct patch_hunk {
@@ -82,7 +83,7 @@ static int append_text(char **dst, size_t *used, const char *line)
     size_t n;
     char *p;
     n = strlen(line);
-    if (*used + n >= PATCH_TEXT_MAX) return 0;
+    if (*used + n >= PATCH_HUNK_TEXT_MAX) return 0;
     p = (char *)realloc(*dst, *used + n + 1U);
     if (p == NULL) return 0;
     *dst = p;
@@ -182,7 +183,7 @@ static char *read_all(const char *path, size_t *sz)
     fp = fopen(path, "r");
     if (fp == NULL) return NULL;
     if (fseek(fp, 0L, SEEK_END) != 0 || (n = ftell(fp)) < 0L ||
-        n >= (long)PATCH_TEXT_MAX || fseek(fp, 0L, SEEK_SET) != 0) {
+        n >= (long)PATCH_FILE_MAX || fseek(fp, 0L, SEEK_SET) != 0) {
         (void)fclose(fp); return NULL;
     }
     p = (char *)malloc((size_t)n + 1U);
@@ -257,7 +258,7 @@ static char *render_patch(const patch_doc *d, const char *orig,
         b = strlen(d->hunks[i].new_text);
         total = b >= a ? total + (b-a) : total - (a-b);
     }
-    if (total >= PATCH_TEXT_MAX) return NULL;
+    if (total >= PATCH_FILE_MAX) return NULL;
     out = (char *)malloc(total + 1U);
     if (out == NULL) return NULL;
     for (i = 0U; i < d->count; ++i) {

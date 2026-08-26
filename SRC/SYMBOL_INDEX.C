@@ -20,6 +20,173 @@ typedef struct symbol_manifest_record {
     unsigned long mtime;
 } symbol_manifest_record;
 
+static int symbol_source_uses_src(void)
+{
+    DIR *directory;
+
+    directory = opendir("SRC");
+
+    if (directory == NULL) {
+        return 0;
+    }
+
+    (void)closedir(directory);
+    return 1;
+}
+
+static const char *symbol_source_directory(void)
+{
+    return symbol_source_uses_src() ? "SRC" : ".";
+}
+
+static DIR *symbol_source_opendir(void)
+{
+    return opendir(symbol_source_directory());
+}
+
+static int symbol_name_equal_ci(const char *left,
+                                const char *right)
+{
+    unsigned char a;
+    unsigned char b;
+
+    if (left == NULL || right == NULL) {
+        return 0;
+    }
+
+    while (*left != '\0' && *right != '\0') {
+        a = (unsigned char)*left++;
+        b = (unsigned char)*right++;
+
+        if (tolower(a) != tolower(b)) {
+            return 0;
+        }
+    }
+
+    return *left == '\0' && *right == '\0';
+}
+
+static int symbol_source_path(char *path,
+                              size_t path_size,
+                              const char *name)
+{
+    const char *directory;
+    const char *relative;
+    const char *selected;
+    DIR *scan;
+    struct dirent *entry;
+    struct stat st;
+    char resolved[SYMBOL_PATH_SIZE];
+    int written;
+
+    if (path == NULL ||
+        path_size == 0U ||
+        name == NULL ||
+        *name == '\0') {
+        return 0;
+    }
+
+    directory = symbol_source_directory();
+    relative = name;
+
+    if (strncmp(relative, "SRC/", 4U) == 0 ||
+        strncmp(relative, "src/", 4U) == 0) {
+        relative += 4;
+    }
+
+    selected = relative;
+
+    if (strcmp(directory, ".") == 0) {
+        written = snprintf(
+            path,
+            path_size,
+            "%s",
+            selected
+        );
+    } else {
+        written = snprintf(
+            path,
+            path_size,
+            "%s/%s",
+            directory,
+            selected
+        );
+    }
+
+    if (written < 0 ||
+        (size_t)written >= path_size) {
+        return 0;
+    }
+
+    /*
+     * If the requested spelling resolves on the host filesystem,
+     * recover the directory-entry spelling used by the symbol index.
+     */
+    if (stat(path, &st) != 0) {
+        return 1;
+    }
+
+    resolved[0] = '\0';
+    scan = opendir(directory);
+
+    if (scan == NULL) {
+        return 1;
+    }
+
+    while ((entry = readdir(scan)) != NULL) {
+        if (strcmp(entry->d_name, relative) == 0) {
+            if (strlen(entry->d_name) <
+                sizeof(resolved)) {
+                (void)strcpy(
+                    resolved,
+                    entry->d_name
+                );
+            }
+            break;
+        }
+
+        if (resolved[0] == '\0' &&
+            symbol_name_equal_ci(
+                entry->d_name,
+                relative) &&
+            strlen(entry->d_name) <
+                sizeof(resolved)) {
+            (void)strcpy(
+                resolved,
+                entry->d_name
+            );
+        }
+    }
+
+    (void)closedir(scan);
+
+    if (resolved[0] == '\0') {
+        return 1;
+    }
+
+    selected = resolved;
+
+    if (strcmp(directory, ".") == 0) {
+        written = snprintf(
+            path,
+            path_size,
+            "%s",
+            selected
+        );
+    } else {
+        written = snprintf(
+            path,
+            path_size,
+            "%s/%s",
+            directory,
+            selected
+        );
+    }
+
+    return written >= 0 &&
+           (size_t)written < path_size;
+}
+
 static int symbol_is_identifier_char(int ch)
 {
     return isalnum((unsigned char)ch) || ch == '_';
@@ -841,10 +1008,10 @@ static unsigned int symbol_build_index(void)
     unsigned int entries;
     time_t now;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
-        (void)puts("Unable to open SRC directory.");
+        (void)puts("Unable to open source directory.");
         return 0U;
     }
 
@@ -886,11 +1053,10 @@ static unsigned int symbol_build_index(void)
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -1125,10 +1291,10 @@ static unsigned int symbol_scan_live(const char *symbol,
     struct dirent *entry;
     unsigned int matches;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
-        (void)puts("Unable to open SRC directory.");
+        (void)puts("Unable to open source directory.");
         return 0U;
     }
 
@@ -1145,11 +1311,10 @@ static unsigned int symbol_scan_live(const char *symbol,
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -1550,7 +1715,7 @@ static int symbol_find_definition_live(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return 0;
@@ -1567,11 +1732,10 @@ static int symbol_find_definition_live(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -1893,7 +2057,7 @@ static int symbol_find_type_definition(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return 0;
@@ -1911,11 +2075,10 @@ static int symbol_find_type_definition(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -2187,21 +2350,11 @@ static int module_path_prepare(
         return 0;
     }
 
-    if (strncmp(module, "SRC/", 4U) == 0 ||
-        strncmp(module, "src/", 4U) == 0) {
-        if (strlen(module) >= path_size) {
-            return 0;
-        }
-
-        (void)strcpy(path, module);
-    } else {
-        if ((size_t)snprintf(
-                path,
-                path_size,
-                "SRC/%s",
-                module) >= path_size) {
-            return 0;
-        }
+    if (!symbol_source_path(
+            path,
+            path_size,
+            module)) {
+        return 0;
     }
 
     length = strlen(path);
@@ -2554,11 +2707,10 @@ static int dependency_header_is_project_local(
         return 0;
     }
 
-    if ((size_t)snprintf(
+    if (!symbol_source_path(
             path,
             sizeof(path),
-            "SRC/%s",
-            header) >= sizeof(path)) {
+            header)) {
         return 0;
     }
 
@@ -3186,10 +3338,10 @@ void symbol_who_uses(agent_state *state,
         return;
     }
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
-        (void)puts("Unable to open SRC directory.");
+        (void)puts("Unable to open source directory.");
         return;
     }
 
@@ -3211,11 +3363,10 @@ void symbol_who_uses(agent_state *state,
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -5627,7 +5778,7 @@ static void unused_collect_isolated_modules(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return;
@@ -5642,11 +5793,10 @@ static void unused_collect_isolated_modules(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -5872,7 +6022,7 @@ static void unused_detail_scan_sources(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return;
@@ -5891,11 +6041,10 @@ static void unused_detail_scan_sources(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -6251,7 +6400,7 @@ static void rename_collect_matches(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return;
@@ -6270,11 +6419,10 @@ static void rename_collect_matches(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -6331,7 +6479,7 @@ static int rename_new_name_conflicts(
     struct dirent *entry;
     int found;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return 0;
@@ -6352,11 +6500,10 @@ static int rename_new_name_conflicts(
             continue;
         }
 
-        if ((size_t)snprintf(
+        if (!symbol_source_path(
                 path,
                 sizeof(path),
-                "SRC/%s",
-                entry->d_name) >= sizeof(path)) {
+                entry->d_name)) {
             continue;
         }
 
@@ -6879,8 +7026,23 @@ static int rename_make_vms_filespec(
 
     slash = strchr(project_path, '/');
 
-    if (slash == NULL ||
-        slash == project_path ||
+    if (slash == NULL) {
+        if (*project_path == '\0') {
+            return 0;
+        }
+
+        if ((size_t)snprintf(
+                filespec,
+                filespec_size,
+                "%s",
+                project_path) >= filespec_size) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    if (slash == project_path ||
         slash[1] == '\0') {
         return 0;
     }
@@ -7529,14 +7691,21 @@ static void extract_analyze_line(
             context->has_preprocessor = 1U;
         }
 
-        if ((isalpha((unsigned char)*trimmed) ||
-             *trimmed == '_') &&
-            strchr(trimmed, ':') != NULL &&
-            strstr(trimmed, "case ") != trimmed &&
-            strstr(trimmed, "default:") != trimmed) {
-            context->has_label = 1U;
-        }
-    }
+          if ((isalpha((unsigned char)*trimmed) ||
+               *trimmed == '_') &&
+              strstr(trimmed, "case ") != trimmed &&
+              strstr(trimmed, "default:") != trimmed) {
+              const char *label_end = trimmed + 1;
+              while (symbol_is_identifier_char((unsigned char)*label_end)) {
+                  ++label_end;
+              }
+              while (*label_end == ' ' || *label_end == '\\t') {
+                  ++label_end;
+              }
+              if (*label_end == ':') {
+                  context->has_label = 1U;
+              }
+          }    }
 }
 
 static int extract_print_selection(
@@ -14013,7 +14182,7 @@ static int move_shared_declaration_exists(
     DIR *directory;
     struct dirent *entry;
 
-    directory = opendir("SRC");
+    directory = symbol_source_opendir();
 
     if (directory == NULL) {
         return 0;
@@ -14032,12 +14201,12 @@ static int move_shared_declaration_exists(
             continue;
         }
 
-        (void)snprintf(
-            path,
-            sizeof(path),
-            "SRC/%s",
-            entry->d_name
-        );
+        if (!symbol_source_path(
+                path,
+                sizeof(path),
+                entry->d_name)) {
+            continue;
+        }
 
         if (move_header_contains_declaration(
                 path,
@@ -14292,12 +14461,12 @@ static int move_project_header_required(
         return 1;
     }
 
-    (void)snprintf(
-        path,
-        sizeof(path),
-        "SRC/%s",
-        header
-    );
+    if (!symbol_source_path(
+            path,
+            sizeof(path),
+            header)) {
+        return 1;
+    }
 
     file = fopen(path, "r");
 
@@ -14857,8 +15026,219 @@ static int move_confirm_apply(
            answer[0] == 'Y';
 }
 
-int symbol_move_function_apply(
-    agent_state *state,
+static int move_companion_header(
+    const char *module_path,
+    char *header_path,
+    size_t header_size)
+{
+    size_t n;
+    const char *end;
+
+    if (module_path == NULL || header_path == NULL || header_size == 0U) {
+        return 0;
+    }
+
+    if (module_path[0] == '\0') {
+        return 0;
+    }
+
+    n = strlen(module_path);
+    if (n + 1U > header_size) {
+        return 0;
+    }
+
+    if (n < 3U) {
+        return 0;
+    }
+
+    end = module_path + n;
+    if (end[-2] != '.') {
+        return 0;
+    }
+
+    if (end[-1] != 'c' && end[-1] != 'C') {
+        return 0;
+    }
+
+    memcpy(header_path, module_path, n + 1U);
+    header_path[n - 1U] = 'h';
+    return 1;
+}
+
+static int move_strip_static(char *text)
+{
+    char *p;
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    p = text;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
+        ++p;
+    }
+
+    if (strncmp(p, "static", 6U) != 0) {
+        return 0;
+    }
+
+    if (p[6] != ' ' && p[6] != '\t' && p[6] != '\r' && p[6] != '\n') {
+        return 0;
+    }
+
+    memmove(p, p + 6, strlen(p + 6) + 1U);
+    return 1;
+}
+
+static int move_prepare_export(
+    extract_text_buffer *definition,
+    char *prototype,
+    size_t prototype_size)
+{
+    char signature[SYMBOL_LINE_SIZE * 8U];
+    const char *src;
+    const char *brace;
+    size_t n;
+    int rc;
+
+    if (definition == NULL || definition->data == NULL || prototype == NULL) {
+        return 0;
+    }
+
+    if (prototype_size == 0U) {
+        return 0;
+    }
+
+    src = definition->data;
+    brace = strchr(src, '{');
+    if (brace == NULL) {
+        return 0;
+    }
+
+    n = (size_t)(brace - src);
+    if (n >= sizeof(signature)) {
+        return 0;
+    }
+
+    memcpy(signature, src, n);
+    signature[n] = '\0';
+
+    inline_trim(signature);
+    (void)move_strip_static(signature);
+
+    rc = snprintf(prototype, prototype_size, "%s;\n", signature);
+    if (rc < 0 || (size_t)rc >= prototype_size) {
+        return 0;
+    }
+
+    (void)move_strip_static(definition->data);
+    definition->used = strlen(definition->data);
+    return 1;
+}
+static int move_ext_callers_ready(
+    const move_function_info *info,
+    const char *header_path,
+    unsigned int *external_count)
+{
+    FILE *fp;
+    char line[SYMBOL_LINE_SIZE];
+    char include_buf[SYMBOL_PATH_SIZE + 4U];
+    char kind;
+    char *record_symbol;
+    char *record_path;
+    unsigned long record_line;
+    const char *base;
+    int sn_rc;
+    move_string_list checked_modules;
+    unsigned int count;
+
+    if (external_count != NULL) *external_count = 0U;
+
+    if (info == NULL || header_path == NULL) return 0;
+    if (!move_file_exists(header_path)) return 0;
+
+    base = strrchr(header_path, '/');
+    if (base != NULL) ++base;
+    else base = header_path;
+
+    sn_rc = snprintf(include_buf, sizeof(include_buf), "\"%s\"", base);
+    if (sn_rc < 0 || (size_t)sn_rc >= sizeof(include_buf)) return 0;
+
+    (void)memset(&checked_modules, 0, sizeof(checked_modules));
+    count = 0U;
+
+    fp = fopen(SYMBOL_INDEX_FILE, "r");
+    if (fp == NULL) return 0;
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        move_string_list includes;
+
+        record_symbol = NULL;
+        record_path = NULL;
+        record_line = 0UL;
+
+        if (!symbol_parse_record(line, &kind, &record_symbol, &record_path, &record_line)) {
+            continue;
+        }
+        if (kind != 'C' || record_symbol == NULL || record_path == NULL) continue;
+        if (strcmp(record_symbol, info->symbol) != 0) continue;
+        if (strcmp(record_path, info->destination_module) == 0) continue;
+        if (move_list_contains(&checked_modules, record_path)) continue;
+
+        if (!move_list_add(&checked_modules, record_path)) {
+            (void)fclose(fp);
+            return 0;
+        }
+
+        (void)memset(&includes, 0, sizeof(includes));
+        if (!move_collect_includes(record_path, &includes) ||
+            !move_list_contains(&includes, include_buf)) {
+            (void)fclose(fp);
+            return 0;
+        }
+
+        ++count;
+    }
+
+    (void)fclose(fp);
+
+    if (external_count != NULL) *external_count = count;
+    return 1;
+}
+
+static unsigned long move_last_endif_line(const char *path)
+{
+    FILE *file;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    unsigned long last;
+    char *p;
+
+    if (path == NULL) return 0UL;
+
+    file = fopen(path, "r");
+    if (file == NULL) return 0UL;
+
+    line_number = 0UL;
+    last = 0UL;
+
+    while (fgets(line, (int)sizeof(line), file) != NULL) {
+        ++line_number;
+
+        p = line;
+        while (*p == ' ' || *p == '\t') ++p;
+
+        if (strncmp(p, "#endif", 6U) == 0 &&
+            (p[6] == '\0' || p[6] == '\r' || p[6] == '\n' ||
+             p[6] == ' ' || p[6] == '\t')) {
+            last = line_number;
+        }
+    }
+
+    (void)fclose(file);
+    return last;
+}
+int symbol_move_function_apply(    agent_state *state,
     const char *symbol,
     const char *destination)
 {
@@ -14868,6 +15248,9 @@ int symbol_move_function_apply(
     rename_transaction transaction;
     unsigned int checked;
     unsigned int changed;
+    char header_path[SYMBOL_PATH_SIZE];
+    char prototype[SYMBOL_LINE_SIZE * 8U];
+    unsigned int external_count;
     int reindex_ok;
     int build_ok;
     int source_written;
@@ -14959,9 +15342,24 @@ int symbol_move_function_apply(
         return 0;
     }
 
-    if (!move_shared_declaration_exists(symbol)) {
+    if (!move_companion_header(
+            info.destination_module,
+            header_path,
+            sizeof(header_path)) ||
+        !move_file_exists(header_path)) {
         (void)puts(
-            "Move refused. No shared header declaration was found."
+            "Move refused. Destination companion header was not found."
+        );
+        return 0;
+    }
+
+    if (!move_ext_callers_ready(
+            &info,
+            header_path,
+            &external_count)) {
+        (void)puts(
+            "Move refused. Every external caller must include "
+            "the destination companion header."
         );
         return 0;
     }
@@ -15024,7 +15422,17 @@ int symbol_move_function_apply(
         free(definition.data);
         return 0;
     }
-
+    if (external_count > 0U &&
+        !move_prepare_export(
+            &definition,
+            prototype,
+            sizeof(prototype))) {
+        (void)puts(
+            "Move refused. Unable to prepare exported function declaration."
+        );
+        free(definition.data);
+        return 0;
+    }
     if (!move_confirm_apply(&info)) {
         (void)puts("Function move cancelled.");
         free(definition.data);
@@ -15165,6 +15573,151 @@ int symbol_move_function_apply(
         );
     }
 
+    return 0;
+}
+
+static int move_write_header_proto(
+    const char *header_path,
+    const char *symbol,
+    const char *prototype,
+    unsigned int *changed
+)
+{
+    unsigned long insert_at;
+    FILE *file;
+    FILE *output;
+    char line[SYMBOL_LINE_SIZE];
+    unsigned long line_number;
+    int inserted;
+
+    if (changed != NULL) {
+        *changed = 0U;
+    }
+
+    if (header_path == NULL || symbol == NULL || prototype == NULL) {
+        return 0;
+    }
+
+    if (!move_file_exists(header_path)) {
+        return 0;
+    }
+
+    if (move_header_contains_declaration(header_path, symbol)) {
+        return 1;
+    }
+
+    insert_at = move_last_endif_line(header_path);
+
+    file = fopen(header_path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    output = fopen("OVMS_MOVE_HEADER.TMP", "w");
+    if (output == NULL) {
+        (void)fclose(file);
+        (void)remove("OVMS_MOVE_HEADER.TMP");
+        return 0;
+    }
+
+    line_number = 0UL;
+    inserted = 0;
+
+    while (fgets(line, (int)sizeof(line), file) != NULL) {
+        ++line_number;
+
+        if (insert_at != 0UL && line_number == insert_at && inserted == 0) {
+            if (fputs(prototype, output) == EOF) {
+                goto cleanup;
+            }
+            inserted = 1;
+        }
+
+        if (fputs(line, output) == EOF) {
+            goto cleanup;
+        }
+    }
+
+    if (ferror(file)) {
+        goto cleanup;
+    }
+
+    if (insert_at == 0UL) {
+        if (fputs(prototype, output) == EOF) {
+            goto cleanup;
+        }
+        inserted = 1;
+    }
+
+    if (insert_at != 0UL && inserted == 0) {
+        goto cleanup;
+    }
+
+    {
+        int input_close;
+        int output_close;
+
+        input_close = fclose(file);
+        file = NULL;
+
+        output_close = fclose(output);
+        output = NULL;
+
+        if (input_close != 0 || output_close != 0) {
+            (void)remove("OVMS_MOVE_HEADER.TMP");
+            return 0;
+        }
+    }
+
+    {
+        char filespec[SYMBOL_PATH_SIZE + 16U];
+        char command[SYMBOL_PATH_SIZE * 2U + 96U];
+        int status;
+        int sn_rc;
+
+        filespec[0] = '\0';
+
+        if (!rename_make_vms_filespec(header_path, filespec, sizeof(filespec))) {
+            (void)remove("OVMS_MOVE_HEADER.TMP");
+            return 0;
+        }
+
+        sn_rc = snprintf(
+            command,
+            sizeof(command),
+            "COPY/NOLOG OVMS_MOVE_HEADER.TMP %s;",
+            filespec
+        );
+
+        if (sn_rc < 0 || (size_t)sn_rc >= sizeof(command)) {
+            (void)remove("OVMS_MOVE_HEADER.TMP");
+            return 0;
+        }
+
+        status = system(command);
+        (void)remove("OVMS_MOVE_HEADER.TMP");
+
+        if (!(status == 0 || (status & 1) != 0)) {
+            return 0;
+        }
+    }
+
+    if (changed != NULL) {
+        *changed = 1U;
+    }
+
+    return 1;
+
+cleanup:
+    if (file != NULL) {
+        (void)fclose(file);
+        file = NULL;
+    }
+    if (output != NULL) {
+        (void)fclose(output);
+        output = NULL;
+    }
+    (void)remove("OVMS_MOVE_HEADER.TMP");
     return 0;
 }
 
