@@ -285,12 +285,12 @@ static int st_copy_file(const char *src, const char *dst, unsigned long *out_sz)
         *out_sz = 0UL;
     }
 
-    fi = fopen(src, "rb");
+    fi = fopen(src, "r");
     if (fi == NULL) {
         return INV_ERR_IO;
     }
 
-    fo = fopen(dst, "wb");
+    fo = fopen(dst, "w");
     if (fo == NULL) {
         fclose(fi);
         return INV_ERR_IO;
