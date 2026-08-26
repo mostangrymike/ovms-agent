@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-25T15:59:00-05:00",
+  "updated_at": "2026-08-25T21:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -21,70 +21,60 @@
   "m274": {
     "issue": 49,
     "issue_state": "open",
-    "status": "ACTIVE_PHASE3_MOVE_REPAIR",
+    "status": "ACTIVE_PHASE4_PR",
     "branch": "m274-agent-stress-project",
     "starting_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "remote_head": "9be88f42db3cd1210ab93e715fd6229fbca950c6",
-    "remote_tree": "48ee7212966d84b5c69631fb8d965f6af554839c",
-    "remote_head_note": "Live GitHub branch verified 2026-08-25. Do not treat unpublished VAX working-tree repairs as this remote head.",
+    "remote_head": "7bfa31aa050ad5b830bdbe621253ba25931d048b",
+    "latest_vax_green_agent_head": "84d6ae585ba660586bc863caad7a049fc1b61e1a",
+    "latest_target_checkpoint": "7bfa31aa050ad5b830bdbe621253ba25931d048b",
     "target_root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
     "target_git_path": "m274_netcfg",
     "provider": "requesty (openai/gpt-5.2)",
-    "requesty_budget_note": "Use GitHub for source archaeology; reserve paid provider turns for required guarded OVMS Agent self-repair/write behavior.",
+    "requesty_budget_note": "Use GitHub for source archaeology and repository edits by default; reserve paid provider turns for required OVMS Agent behavioral flows.",
     "phase_plan": {
       "phase1": "COMPLETE_BUILD_RUNTIME_PUBLISHED",
-      "phase2": "COMPLETE_ACCEPTED",
-      "phase3": "IN_PROGRESS_MOVE_BLOCKED_BY_74",
-      "phase4": "PENDING_BRANCH_PR",
+      "phase2": "COMPLETE_ACCEPTED_PUBLISHED",
+      "phase3": "COMPLETE_EXTRACT_RENAME_MOVE_ACCEPTED_PUBLISHED",
+      "phase4": "NEXT_BRANCH_PR_VIA_AGENT_GITHUB_PR",
       "phase5": "PENDING_DIFFERENT_PROVIDER",
       "phase6": "PENDING_SESSION_FORK_RESUME",
       "phase7": "PENDING_RECONCILIATION"
     },
     "phase2_acceptance": {
       "modules": ["main.c","storage.c","diff.c","rules.c","fileutil.c"],
-      "reindex": "5 source files / 482 entries before Phase 3 extraction; 485 entries after rename",
       "graph": ["diff->fileutil","main->storage,diff,rules","rules->fileutil"],
       "cluster": "5 singletons",
       "cycle": "none",
       "runtime": "inventory/config diff/rules checks accepted"
     },
-    "phase3": {
-      "risk_scoring": "Accepted runtime output Risk score: 0/100 (LOW).",
-      "extract": "EXTRACT/FUNCTION accepted after #72 repair; explicit target @BUILD and runtime status 1.",
-      "rename": "RENAME extracted_risk_score -> report_risk_score accepted; explicit target @BUILD and runtime status 1.",
-      "move": {
-        "symbol": "report_risk_score",
-        "source": "main.c",
-        "source_definition_line": 266,
-        "destination": "rules.c",
-        "caller": "main.c line 390",
-        "preview": "REQUIRES REVIEW - declarations and dependencies must be coordinated",
-        "apply_reproduction": "Move refused. No shared header declaration was found.",
-        "target_layout": "main.c and rules.c already include rules.h; rules.h has no report_risk_score prototype.",
-        "blocker_issue": 74
-      }
+    "phase3_acceptance": {
+      "order": "EXTRACT/FUNCTION -> RENAME -> MOVE/FUNCTION",
+      "risk_scoring": "Risk score 0/100 (LOW) accepted.",
+      "extract": "Accepted after #72 repair with explicit target build/runtime.",
+      "rename": "extracted_risk_score -> report_risk_score accepted.",
+      "move": "report_risk_score moved main.c -> rules.c; rules.h received exported prototype; main.c remains external caller.",
+      "move_show": "rules.c line 502 after accepted move",
+      "move_callers": "main.c line 365 after accepted move",
+      "target_build_status": "%X00000001",
+      "target_runtime": "Warnings 0; Errors 0; Risk score 0/100 (LOW)",
+      "target_runtime_status": "%X00000001",
+      "agent_build": "All regression tests passed",
+      "agent_build_status": "%X00000001",
+      "agent_commit": "84d6ae585ba660586bc863caad7a049fc1b61e1a",
+      "target_commit": "7bfa31aa050ad5b830bdbe621253ba25931d048b"
     },
     "issue74": {
-      "state": "open",
+      "state": "closed_completed",
       "title": "MOVE/FUNCTION cannot safely move static function with external callers in flat-root project",
-      "live_vax_correction": "move_shared_declaration_exists() already uses symbol_source_opendir()/symbol_source_path(); issue body hard-coded-SRC point is superseded by later live VAX evidence/comments.",
-      "required_contract": [
-        "destination companion header from destination .c/.C path",
+      "accepted_contract": [
+        "destination companion header derived from destination module",
         "all external caller modules including source must already include companion header",
-        "static moved definition must be promoted to external linkage when external callers remain",
-        "matching prototype inserted exactly once before final #endif or at EOF",
-        "header participates in rollback transaction only when changed",
-        "preserve DEC C/VAX C89 and OpenVMS version semantics"
+        "static moved definition promoted to external linkage when external callers remain",
+        "matching prototype inserted before final #endif or at EOF",
+        "header registered in rollback transaction only after successful materialization",
+        "DEC C/VAX C89 and OpenVMS version semantics preserved"
       ],
-      "repair_progress": {
-        "A1": "ACCEPTED_VAX_GREEN",
-        "A1_changes": "Inserted move_companion_header, move_strip_static, move_prepare_export helpers only; no existing MOVE behavior changed.",
-        "A1_build": "Full canonical @BUILD: all regression tests passed; BUILD_STATUS=%X00000001.",
-        "A2": "ACCEPTED_VAX_GREEN",
-        "A2_changes": "Inserted move_ext_callers_ready helper only; validates unique external caller modules against the destination companion-header include; no existing MOVE behavior changed.",
-        "A2_build": "Full canonical @BUILD: all regression tests passed; BUILD_STATUS=%X00000001.",
-        "next": "A3 helper milestone: final-#endif discovery and guarded companion-header prototype writer, then another full canonical build before wiring MOVE/FUNCTION/APPLY."
-      }
+      "final_behavior": "Real M274 MOVE/FUNCTION/APPLY succeeded; canonical Agent and explicit target build/runtime gates passed."
     },
     "defects": {
       "50": {"state":"closed","summary":"nested project Git-context capture"},
@@ -96,38 +86,59 @@
       "57": {"state":"closed","summary":"required-tool post-write contradiction"},
       "58": {"state":"open","summary":"post-rejection/post-write proposal/rollback behavior"},
       "61": {"state":"open","summary":"Groq build provider incompatibility around store:true"},
-      "62": {"state":"local_repair","summary":"flat-root symbol index source-layout support; verify publication before closure claim"},
-      "64": {"state":"local_repair","summary":"uppercase/path-case graph behavior; verify publication before closure claim"},
+      "62": {"state":"published_repair_verify_issue_state","summary":"flat-root symbol-index source-layout support"},
+      "64": {"state":"published_repair_verify_issue_state","summary":"uppercase/path-case graph behavior"},
       "65": {"state":"open","summary":"SHOW/STRUCT local declaration misclassified as struct definition"},
       "66": {"state":"open","summary":"gpt-oss range tool schema/name behavior"},
       "67": {"state":"open","summary":"malformed gpt-oss tool name"},
       "68": {"state":"open","summary":"OPEN provider 429 retry-after not honored"},
-      "69": {"state":"closed","summary":"EXTRACT/FUNCTION ternary colon misclassified as C label; VAX-green repair"},
+      "69": {"state":"closed","summary":"EXTRACT/FUNCTION ternary colon misclassified as C label"},
       "70": {"state":"open","summary":"OpenRouter free-router can serialize tool call as plain text"},
       "71": {"state":"open","summary":"AGENT/FIX goal guard synthetic NULL rejection"},
-      "72": {"state":"closed","summary":"flat-root refactor write VMS filespec conversion; VAX-green repair"},
+      "72": {"state":"closed","summary":"flat-root refactor write VMS filespec conversion"},
       "73": {"state":"open","summary":"refactor verifier hard-codes [.BUILD] object invalidation for flat-root target"},
-      "74": {"state":"open","summary":"MOVE/FUNCTION static function with external callers"}
+      "74": {"state":"closed_completed","summary":"MOVE/FUNCTION static function with external callers"},
+      "75": {"state":"closed_completed","summary":"replace_lines boundary separator defect"},
+      "76": {"state":"open","summary":"AGENT/WRITE oversized REVIEW / unexpected inspection / orphan tool-call path"},
+      "77": {"state":"open","summary":"BUILD.COM generated OpenVMS file versions can fill device; PURGE/KEEP=1 workaround verified"}
     },
     "observations": [
-      "Human approval rejected multiple unsafe or incomplete #74 proposals before writes.",
-      "Requesty first #74 attempt exhausted tool-turn budget after inspections and produced no executable guarded write.",
-      "A later cancelled proposal correctly refused to guess after recognizing insufficient inspected range.",
-      "Repeated paid read-only source discovery was unnecessary; GitHub should be maximized for source archaeology while VAX remains authoritative for unpublished/local behavior.",
-      "A1 and A2 helper-only self-repair slices are full canonical VAX-green but remain unpublished."
+      "Human approval rejected unsafe #74 proposals before writes.",
+      "A4c-2 reproduced #76 even with no-inspection instruction; no write occurred on the failed attempt.",
+      "Real MOVE acceptance also reproduced #73 [.BUILD] invalidation warnings but explicit target build/runtime passed.",
+      "Canonical build initially failed because SYS$SYSDEVICE had only 1.16 MB free from accumulated BUILD file versions; PURGE/KEEP=1 [.BUILD]*.* raised free space to 2.28 GB and full regressions then passed.",
+      "M245_MCP_SSE_TEST.EXE alone had 32 historical versions totaling about 44 MB before purge.",
+      "Published target commit contains cosmetic whitespace/indentation scars from generated/refactor history; functional acceptance is green."
+    ],
+    "next_work": [
+      "Phase 4: exercise AGENT/GITHUB/PR for a meaningful branch + pull request and merge via normal review, not a direct-push shortcut.",
+      "Before Phase 4 VAX work, delete clearly disposable m274_fix*.patch and m274_netcfg repair patch/transcript files; preserve or intentionally classify runtime fixture/data files.",
+      "Use native DCL filespec syntax such as [.M274_NETCFG]RULES.H for DCL SEARCH; do not use POSIX M274_NETCFG/RULES.H with SEARCH.",
+      "Keep #73, #76, and #77 separate from Phase 4 unless they directly block acceptance.",
+      "After Phase 4, switch to a genuinely different provider for Phase 5 and record behavioral differences.",
+      "Phase 6 must use AGENT/SESSION/FORK and span more than one sitting.",
+      "Phase 7 must produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
     ]
   },
   "repository_hygiene": {
-    "m268_branch":"pruned","m269_branch":"pruned","m270_branch":"pruned","m271_branch":"pruned","m272_branch":"retained","m273_branch":"retained","m274_branch":"active",
+    "m268_branch":"pruned",
+    "m269_branch":"pruned",
+    "m270_branch":"pruned",
+    "m271_branch":"pruned",
+    "m272_branch":"retained",
+    "m273_branch":"retained",
+    "m274_branch":"active",
     "retained_completed_milestone_branches":["m272-dead-file-cleanup","m273-ansi-presentation"],
     "security_note":"Never record credential values in durable state."
   },
   "local_openvms_state": {
     "canonical_checkout":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "canonical_checkout_branch":"m274-agent-stress-project",
-    "known_remote_head":"9be88f42db3cd1210ab93e715fd6229fbca950c6",
-    "working_tree":"Contains unpublished M274 self-repair work. A1 and A2 in SRC/SYMBOL_INDEX.C are VAX-green. Inspect exact diff/status before commit or push.",
-    "latest_local_acceptance":"2026-08-25 full canonical @BUILD after #74 A2: all regression tests passed, BUILD_STATUS=%X00000001.",
+    "known_remote_head":"7bfa31aa050ad5b830bdbe621253ba25931d048b",
+    "tracked_working_tree":"clean after target commit/push",
+    "untracked_note":"M274 repair patches, runtime data/config/diff fixtures, and transcript files remain untracked; classify/clean before PR workflow as appropriate.",
+    "latest_local_acceptance":"2026-08-25 canonical @BUILD all regressions passed after BUILD purge; target @BUILD and runtime check also passed.",
+    "disk_recovery":"PURGE/KEEP=1/NOLOG [.BUILD]*.* raised SYS$SYSDEVICE free space from 1.16 MB to 2.28 GB.",
     "target_root":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
     "github_profile":"ovms-agent",
     "auth_wrapper":"SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
@@ -135,21 +146,11 @@
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub main, active branch, and issue state.",
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
-    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
-    "For M274 target implementation and OVMS Agent self-repair, do not substitute manual/GitHub source edits for the requested OVMS Agent flows. GitHub control-plane issue/state logging is allowed.",
+    "GitHub is the development control plane/source of truth; make repository/source edits on GitHub by default when safe and available.",
+    "VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
     "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS.",
-    "Never mark an untested GitHub head as a full VAX-green agent head.",
+    "Never mark an untested GitHub head as a full VAX-green Agent head.",
+    "Build/test file-version accumulation in [.BUILD] can exhaust disk; purge generated versions when necessary while #77 remains open.",
     "Keep main, chat-session-state, active milestone branch, and only the two most recently completed milestone development branches; permanently tag milestones before pruning older completed branches."
-  ],
-  "next_work": [
-    "Resume #74 from canonical checkout after A1+A2 VAX-green checkpoints.",
-    "Run A3 guarded helper insertion for final #endif discovery and companion-header prototype writing; review proposal before approval.",
-    "After A3, run full canonical @BUILD and record BUILD_STATUS.",
-    "Then wire the accepted helpers into MOVE/FUNCTION/APPLY in bounded slices; do not combine into one giant patch.",
-    "Return to M274 target and retry exact MOVE/FUNCTION report_risk_score rules.c then /APPLY.",
-    "Require explicit target @BUILD plus runtime Risk score acceptance; account for open #73 verifier warning separately.",
-    "Close #74 only after exact target move succeeds and canonical regressions pass.",
-    "Before Phase 4, inspect VAX working-tree diff/staged set, create coherent commit(s), push with established GitHub/VAX path, and independently verify remote branch state.",
-    "Continue M274 Phase 4 branch+PR, Phase 5 provider switch, Phase 6 session persistence, and Phase 7 reconciliation."
   ]
 }
