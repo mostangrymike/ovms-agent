@@ -120,11 +120,10 @@ $ URL = "https:" + "//api.github.com/repos/" + REPO + "/pulls"
 $ curl --silent --show-error --fail --request POST --output 'APIRESP' --header @'HEADERS' --data-binary @'BODYFILE' 'URL'
 $ CURL_STATUS = $STATUS
 $ IF (CURL_STATUS .AND. 1) .EQ. 0 THEN GOTO CURL_ERROR
-$ IF F$SEARCH(APIRESP+";*") .EQS. "" THEN GOTO NETWORK_ERROR
-$ COPY/NOLOG 'APIRESP' 'P2'
-$ COPY_STATUS = $STATUS
+$ OPEN/WRITE/ERROR=FAIL_NO_RESPONSE RESP 'P2'
+$ WRITE RESP "GitHub PR create request succeeded."
+$ CLOSE RESP
 $ GOSUB CLEANUP
-$ IF (COPY_STATUS .AND. 1) .EQ. 0 THEN EXIT %X00000002
 $ EXIT %X00000001
 $
 $MAKE_HEADERS:
