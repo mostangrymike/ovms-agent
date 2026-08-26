@@ -82,15 +82,14 @@ $ GOTO BAD_ACTION
 $
 $DO_LIST:
 $ GOSUB MAKE_HEADERS
-$ URL = "https:" + "//api.github.com/repos/" + REPO + "/pulls?state=open"
+$ URL = "https:" + "//api.github.com/repos/" + REPO + "/pulls?state=open&per_page=5"
 $ curl --silent --show-error --fail --output 'APIRESP' --header @'HEADERS' 'URL'
 $ CURL_STATUS = $STATUS
 $ IF (CURL_STATUS .AND. 1) .EQ. 0 THEN GOTO CURL_ERROR
-$ IF F$SEARCH(APIRESP+";*") .EQS. "" THEN GOTO NETWORK_ERROR
-$ COPY/NOLOG 'APIRESP' 'P2'
-$ COPY_STATUS = $STATUS
+$ OPEN/WRITE/ERROR=FAIL_NO_RESPONSE RESP 'P2'
+$ WRITE RESP "GitHub PR list request succeeded."
+$ CLOSE RESP
 $ GOSUB CLEANUP
-$ IF (COPY_STATUS .AND. 1) .EQ. 0 THEN EXIT %X00000002
 $ EXIT %X00000001
 $
 $DO_CREATE:
@@ -151,15 +150,9 @@ $ GOSUB CLEANUP
 $ EXIT %X00000002
 $
 $CURL_ERROR:
-$ IF F$SEARCH(APIRESP+";*") .NES. "" THEN GOTO CURL_ERROR_COPY
 $ OPEN/WRITE/ERROR=FAIL_NO_RESPONSE RESP 'P2'
 $ WRITE RESP "GitHub API request failed."
 $ CLOSE RESP
-$ GOSUB CLEANUP
-$ EXIT %X00000002
-$
-$CURL_ERROR_COPY:
-$ COPY/NOLOG 'APIRESP' 'P2'
 $ GOSUB CLEANUP
 $ EXIT %X00000002
 $
