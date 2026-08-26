@@ -15238,7 +15238,15 @@ static unsigned long move_last_endif_line(const char *path)
     (void)fclose(file);
     return last;
 }
-int symbol_move_function_apply(    agent_state *state,
+static int move_write_header_proto(
+    const char *header_path,
+    const char *symbol,
+    const char *prototype,
+    unsigned int *changed
+);
+
+int symbol_move_function_apply(
+    agent_state *state,
     const char *symbol,
     const char *destination)
 {
@@ -15251,6 +15259,7 @@ int symbol_move_function_apply(    agent_state *state,
     char header_path[SYMBOL_PATH_SIZE];
     char prototype[SYMBOL_LINE_SIZE * 8U];
     unsigned int external_count;
+    unsigned int header_changed;
     int reindex_ok;
     int build_ok;
     int source_written;
@@ -15487,7 +15496,41 @@ int symbol_move_function_apply(    agent_state *state,
 
         return 0;
     }
+    if (external_count > 0U) {
+        header_changed = 0U;
 
+        if (!move_write_header_proto(
+                header_path,
+                symbol,
+                prototype,
+                &header_changed)) {
+            (void)puts(
+                "Move failed while writing the destination companion header."
+            );
+
+            if (rename_restore_transaction(&transaction)) {
+                (void)puts(
+                    "Previous module versions restored."
+                );
+            } else {
+                (void)puts(
+                    "Automatic restoration was incomplete; inspect file versions."
+                );
+            }
+
+            return 0;
+        }
+
+        if (header_changed != 0U) {
+            (void)strcpy(
+                transaction.files[2].path,
+                header_path
+            );
+            transaction.files[2].replacements = 1U;
+            transaction.file_count = 3U;
+            transaction.total_replacements = 3U;
+        }
+    }
     (void)puts(
         "Function moved. Rebuilding symbol index..."
     );
