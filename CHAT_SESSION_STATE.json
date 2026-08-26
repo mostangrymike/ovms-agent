@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-26",
+  "updated_at": "2026-08-26T11:26:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,9 +11,10 @@
   },
   "m274": {
     "issue": 49,
-    "status": "ACTIVE_PHASE4_MERGED_AWAITING_POST_MERGE_VAX_ACCEPTANCE",
+    "status": "ACTIVE_PHASE6_NEXT",
     "parent_branch": "m274-agent-stress-project",
     "parent_remote_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "latest_vax_green_agent_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
     "phase4_child_branch": "m274-phase4-build-purge",
     "phase4_child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
     "phase4_pr": 80,
@@ -24,15 +25,20 @@
     "phase4_acceptance": {
       "agent_pr_create": "SUCCESS_END_TO_END",
       "agent_command": "AGENT/GITHUB/PR create m274-agent-stress-project m274-phase4-build-purge 77 Bound-OpenVMS-build-artifact-versions",
-      "independent_github_verification": "Exactly one PR; correct base/head/title/body; exactly BUILD.COM and GITHUB_BRIDGE.COM; mergeable before merge.",
+      "independent_github_verification": "Exactly one PR; correct base/head/title/body; exactly BUILD.COM and GITHUB_BRIDGE.COM.",
       "merge": "PR #80 merged through normal GitHub review path.",
-      "post_merge_vax_build": "PENDING"
+      "post_merge_vax_build": "GREEN",
+      "post_merge_vax_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+      "post_merge_build_output": "All regression tests passed; Build completed successfully.",
+      "post_merge_build_status": "%X00000001",
+      "tracked_worktree": "clean; only known untracked m274_netcfg runtime/fixture files remain"
     },
     "build_purge_fix": {
       "issue": 77,
-      "state": "open_pending_post_merge_vax_acceptance",
+      "state": "closed_completed",
       "change": "BUILD.COM purges older generated [.BUILD] versions with PURGE/KEEP=1 before each build.",
-      "pre_merge_acceptance": "Two consecutive canonical builds passed; generated version count/space remained bounded; all regressions passed; status %X00000001.",
+      "pre_merge_acceptance": "Two consecutive canonical builds passed with bounded generated version count/space.",
+      "post_merge_acceptance": "Merged parent canonical @BUILD passed all regressions with %X00000001.",
       "disk_recovery": "Earlier PURGE/KEEP=1/NOLOG [.BUILD]*.* raised SYS$SYSDEVICE free space from 1.16 MB to about 2.28 GB."
     },
     "github_bridge": {
@@ -40,11 +46,11 @@
       "state": "open",
       "final_phase4_behavior": "HELP, LIST, and CREATE proven through actual AGENT/GITHUB/PR route.",
       "credential_source": "Reuses active SYS$LOGIN:OVMS_AGENT_GITHUB.DAT profile; no second credential store.",
-      "create_body_fix": "OpenVMS DCL OPEN/WRITE created VFC files that GitHub could not parse as JSON. Final bridge creates BODYFILE with CREATE/FDL=\"RECORD;FORMAT STREAM_LF\", OPEN/APPEND, incremental DCL JSON construction, then curl --data-binary @BODYFILE.",
+      "create_body_fix": "DCL OPEN/WRITE produced VFC files that GitHub could not parse as JSON. Final bridge creates BODYFILE with CREATE/FDL=\"RECORD;FORMAT STREAM_LF\", OPEN/APPEND, incremental DCL JSON construction, then curl --data-binary @BODYFILE.",
       "known_remaining": "Keep #78 open for shipped setup/documentation/grammar and broader service-bridge completeness."
     },
     "provider_phase5": {
-      "status": "EVIDENCE_SUFFICIENT_DIFFERENT_PROVIDER_BEHAVIOR_OBSERVED",
+      "status": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
       "requesty": "Account restricted during M274.",
       "openrouter_north": "Strong on small deterministic writes; later hit account-level free-model daily limit; redundant post-write retry reproduced #58.",
       "groq_qwen": "Plain ASK succeeded; AGENT/CREATE returned neither output text nor function call; #79 opened.",
@@ -56,9 +62,9 @@
       "phase1": "COMPLETE",
       "phase2": "COMPLETE",
       "phase3": "COMPLETE",
-      "phase4": "MERGED_PENDING_POST_MERGE_VAX_BUILD",
+      "phase4": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
       "phase5": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "phase6": "PENDING_AGENTS_SESSION_FORK_MULTI_SITTING_REPORTING_LAYER",
+      "phase6": "NEXT_AGENTS_SESSION_FORK_MULTI_SITTING_REPORTING_LAYER",
       "phase7": "PENDING_DOC_M274_RECONCILIATION"
     },
     "target": {
@@ -74,23 +80,24 @@
       "67": "open - Groq gpt-oss malformed tool name marker",
       "73": "open - refactor verifier hardcodes [.BUILD] invalidation for flat-root target",
       "76": "open - AGENT/WRITE orphan tool-call/oversized review path",
-      "77": "open pending merged-parent VAX acceptance - generated build versions fill device",
+      "77": "closed completed - generated build versions fill device",
       "78": "open - GitHub service bridge setup/docs/completeness",
       "79": "open - Groq Qwen Responses output not recognized as text/function call"
     },
     "next_work": [
-      "On VAX checkout, switch to m274-agent-stress-project, GITAUTH fetch origin m274-agent-stress-project, fast-forward to c82ba7a19ab928a9975b6ca38cda2c0d732707f4, and run canonical @BUILD.",
-      "Require All regression tests passed and BUILD_STATUS shown as %X00000001 before closing #77.",
-      "After merged-parent VAX acceptance, log #49/#77 checkpoint and close #77 completed; keep #78 open.",
-      "Then continue Phase 6 with AGENT/SESSION/FORK across more than one sitting and implement reporting/query layer.",
-      "Finally produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
+      "Begin Phase 6 on VAX from m274-agent-stress-project at c82ba7a19ab928a9975b6ca38cda2c0d732707f4.",
+      "Exercise AGENT/SESSION/FORK for the reporting/query layer and deliberately span more than one sitting so resume/persistence is real.",
+      "Use OVMS Agent for the mandated Phase 6 development flow; keep GitHub as control plane and VAX as acceptance authority.",
+      "After Phase 6 acceptance, produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
     ]
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_local_branch_at_last_observation": "m274-phase4-build-purge",
-    "local_child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
-    "parent_sync_needed": true,
+    "current_local_branch_at_last_observation": "m274-agent-stress-project",
+    "local_parent_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "parent_sync_needed": false,
+    "latest_canonical_build": "GREEN",
+    "latest_canonical_build_status": "%X00000001",
     "untracked_files": [
       "m274_netcfg/m274_basecfg.txt",
       "m274_netcfg/m274_candcfg.txt",
