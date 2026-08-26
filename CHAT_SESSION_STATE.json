@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-26T16:32:00-05:00",
+  "updated_at": "2026-08-26T17:00:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,31 +11,27 @@
   },
   "m274": {
     "issue": 49,
-    "status": "ACTIVE_PHASE6_GITHUB_SUMMARY_QUERY_AWAITING_VAX",
+    "status": "ACTIVE_PHASE6_MERGED_PARENT_POSTMERGE_VAX_PENDING",
     "parent_branch": "m274-agent-stress-project",
-    "parent_remote_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "latest_published_vax_green_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "parent_remote_head": "ba31fdbb91487243892472a0d836a6447fe79f71",
+    "latest_vax_green_source_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
+    "latest_vax_green_parent_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
     "phase6_branch": "m274-phase6-reporting",
-    "phase6_remote_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
-    "phase6_publication_state": "GITHUB_COMMIT_AWAITING_VAX_ACCEPTANCE",
-    "phase4": {
-      "status": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
-      "child_branch": "m274-phase4-build-purge",
-      "child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
-      "pr": 80,
-      "merge_commit": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-      "changed_files": ["BUILD.COM", "GITHUB_BRIDGE.COM"],
-      "post_merge_build_status": "%X00000001"
-    },
-    "phase5": {
-      "status": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "requesty": "Account restricted; do not spend further credit.",
-      "openrouter_north": "Useful for small deterministic writes; later hit account-level free-model daily limit; redundant post-write retry reproduced #58.",
-      "groq_qwen": "Plain ASK works. AGENT/CREATE has #79. Persistent-session read tools work, but repeated TPM 429 aborts expose #68 and intent-only final behavior exposed #81.",
-      "note": "Provider evidence is sufficient; do not model-hop or spend money solely for Phase 5."
+    "phase6_source_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
+    "phase6_pr": 85,
+    "phase6_merge_commit": "ba31fdbb91487243892472a0d836a6447fe79f71",
+    "phase6_publication_state": "VAX_GREEN_SOURCE_MERGED_PARENT_POSTMERGE_VAX_PENDING",
+    "phase_plan": {
+      "phase1": "COMPLETE",
+      "phase2": "COMPLETE",
+      "phase3": "COMPLETE",
+      "phase4": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
+      "phase5": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
+      "phase6": "SOURCE_VAX_GREEN_PR85_MERGED_POSTMERGE_PARENT_VAX_PENDING",
+      "phase7": "PENDING_DOC_M274_RECONCILIATION"
     },
     "phase6": {
-      "status": "GITHUB_SUMMARY_QUERY_AWAITING_VAX_ACCEPTANCE",
+      "status": "SOURCE_ACCEPTED_PR85_MERGED_PARENT_POSTMERGE_VAX_PENDING",
       "base_session": {
         "id": "42BABDB9",
         "name": "m274-phase6-reporting-base"
@@ -43,89 +39,58 @@
       "child_session": {
         "id": "6F535C3D",
         "name": "m274-phase6-reporting-impl",
-        "parent": "42BABDB9",
-        "policy_after_latest_reapproval": "workspace",
-        "last_observed_execs": 6
+        "parent": "42BABDB9"
       },
       "persistence_evidence": [
-        "Base session persisted across provider failure.",
-        "Child fork inherited parent link, goal, execution state, and policy context.",
-        "Full OVMS Agent process restart preserved Groq Qwen model, both sessions, child goal, transcript, and resume capability.",
-        "Child 6F535C3D resumed successfully across more than one process launch/sitting.",
-        "Resume cleared effective approval to read-only and explicit workspace reapproval restored guarded-write policy as designed.",
-        "Uncommitted summary source changes survived process restart and were visible after resume.",
-        "Session history records model read tools and deterministic workspace PATCH writes."
+        "Child session was created with AGENT/SESSION/FORK from base 42BABDB9.",
+        "Child 6F535C3D resumed across multiple OVMS Agent process launches and more than one sitting.",
+        "Resume preserved goal/history/transcript and cleared effective approval until explicit workspace reapproval.",
+        "Uncommitted summary changes survived process restart.",
+        "Real guarded writes were performed in the persisted child session and the summary slice was compiled and run successfully on VAX."
       ],
-      "provider_evidence": {
-        "groq_model": "qwen/qwen3.6-27b",
-        "intent_only_issue": 81,
-        "tpm_retry_issue": 68,
-        "create_parser_issue": 79,
-        "workspace_create_gap_issue": 82,
-        "tool_run_argument_issue": 83
-      },
-      "summary_checkpoint": {
-        "tracked_file": "m274_netcfg/main.c",
-        "change": "Local Agent-side summary command, usage text, do_summary prototype and implementation using public storage APIs only.",
-        "write_path": "Persisted child session 6F535C3D using AGENT/TOOL/RUN PATCH with workspace policy and write gate enabled.",
-        "temporary_markers_remaining": false,
-        "git_diff_check": "CLEAN",
-        "target_build": "GREEN",
-        "target_build_status": "%X00000001",
-        "runtime_command": "INVCLI m274_phase2.dat summary",
-        "runtime_output": {
-          "Devices": 1,
-          "ConfigBytes": 83,
-          "NewestUpdated": 1787620123
-        },
-        "runtime_status": "%X00000001",
-        "badarg_command": "INVCLI m274_phase2.dat summary extra",
-        "badarg_status": "%X00000002",
-        "note": "This proves the required persisted-session real write/build/runtime path, but the local working file later received partial query experiments and is no longer the source-of-truth."
-      },
-      "github_combined_checkpoint": {
-        "commit": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
+      "source_commit": {
+        "sha": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
         "parent": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
         "message": "Add M274 Phase 6 reporting summary and query",
         "changed_files": ["m274_netcfg/main.c"],
-        "audit": "Exactly one commit ahead; exactly one file modified; 128 additions, 0 deletions; no unrelated file changes.",
-        "contents": "Adds summary/query prototypes, dispatch, usage, static do_summary and static do_query. Query fields are device/address/path/all with case-sensitive substring matching; every successful query prints Matches: n; invalid field returns RC_USAGE.",
-        "external_identifier_risk": "None added: do_summary and do_query are static/internal.",
-        "vax_acceptance": "PENDING",
-        "vax_green": false
+        "audit": "Exactly one file modified; 128 additions; 0 deletions; no unrelated changes.",
+        "vax_green": true,
+        "rms_materialization": "Verified with repository-root AGENT/TOOL/RUN GITRESTORE m274_netcfg/main.c at exact HEAD.",
+        "git_diff_check": "CLEAN",
+        "target_build_status": "%X00000001",
+        "canonical_root_build": "All regression tests passed",
+        "canonical_root_build_status": "%X00000001",
+        "summary_output": "Devices: 1; ConfigBytes: 83; NewestUpdated: 1787620123",
+        "query_acceptance": "device/address/path/all each Matches: 1 and %X00000001; zero-match Matches: 0 and %X00000001; invalid field %X00000002",
+        "existing_regressions": "list/show/diff/check all %X00000001; risk 0/100 LOW",
+        "tracked_worktree": "clean"
       },
-      "design_after_findings": {
-        "report_files": "No report.c/report.h are required for Phase 6; summary/query remain bounded static helpers in existing main.c.",
-        "source_edit_control_plane": "The Phase 6 persistence/resume requirement is now proven. Per RULES.md, routine source editing returned to GitHub. Do not continue using AGENT/TOOL/RUN as a substitute for normal GitHub source edits.",
-        "issue_82": "Persistent workspace continuation cannot create a new file because its advertised write tool set lacks create_file.",
-        "issue_83": "AGENT/TOOL/RUN dispatches a transcript-sanitized 768-byte argument buffer to live handlers. Long arguments truncate and literal pipe characters are converted to spaces before PATCH sees them.",
-        "query_semantics": "Fields device, address, path, all; case-sensitive substring; output includes device/address/path/config size/updated time for each match and final Matches count."
+      "merge": {
+        "pr": 85,
+        "base": "m274-agent-stress-project",
+        "head": "m274-phase6-reporting",
+        "expected_head_guard": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
+        "merge_commit": "ba31fdbb91487243892472a0d836a6447fe79f71",
+        "merge_tree": "3d7aebefccd8e7a2ffa2e5e059a93fc0c77d0216",
+        "source_tree": "3d7aebefccd8e7a2ffa2e5e059a93fc0c77d0216",
+        "tree_identity": "Merge commit tree is identical to the VAX-green source tree.",
+        "parent_vax_acceptance": "PENDING"
       },
-      "next_sitting": [
-        "Current VAX HEAD is still c82ba7a19ab928a9975b6ca38cda2c0d732707f4 and local main.c contains partial Agent-side query experiments.",
-        "While that old HEAD is current, use AGENT/TOOL/RUN GITRESTORE main.c and approve it to discard only the tracked local main.c experiments by restoring/verifying old HEAD contents as the effective RMS file.",
-        "Exit OVMS Agent. From SYS$SYSDEVICE:[MIKE.OVMS_AGENT], use GITAUTH fetch origin m274-phase6-reporting, then git merge --ff-only FETCH_HEAD and verify HEAD is exactly 8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4.",
-        "Relaunch OVMS Agent in M274_NETCFG, set workspace approval if resume/startup leaves effective policy read-only, and use AGENT/TOOL/RUN GITRESTORE main.c again so new Git HEAD contents are RMS-materialized and verified.",
-        "Run target git diff --check/build/runtime acceptance for summary and query and regression checks for existing list/show/diff/check behavior.",
-        "Run canonical root @BUILD and require All regression tests passed plus %X00000001 before calling 8c29ef13 VAX-green.",
-        "Only after VAX acceptance update #49/state and decide Phase 6 merge/promotion path.",
-        "After Phase 6 acceptance/promotion, produce DOC/M274_RECONCILIATION.MD for Phase 7."
+      "observations": [
+        "Groq Qwen can finalize with intent-only prose before executing a required tool (#81).",
+        "Groq TPM 429 handling aborts persistent-session execution instead of honoring retry timing (#68).",
+        "Persistent resumed workspace write tools cannot create a new file (#82).",
+        "AGENT/TOOL/RUN dispatches transcript-sanitized arguments: 768-byte truncation and literal pipe removal can mutate live PATCH payloads (#83).",
+        "GITRESTORE conflates Git-tree and current-directory RMS path namespaces when run below repository root (#84).",
+        "Native VAX git merge --ff-only printed Updating c82ba7a..8c29ef1 but left HEAD unchanged; explicit update-ref + mixed index alignment + RMS-aware restore was required.",
+        "Invalid query field returned expected %X00000002, but the explicit stderr message present in source was not visible in the captured terminal output; preserve for Phase 7 reconciliation."
+      ],
+      "next_work": [
+        "Post-merge VAX acceptance of exact parent commit ba31fdbb91487243892472a0d836a6447fe79f71.",
+        "Because ba31fdbb and 8c29ef13 have identical trees, switch refs without rematerializing source: fetch parent, guarded update-ref local parent branch, switch symbolic HEAD to parent, verify clean status and exact HEAD.",
+        "Run canonical root @BUILD at ba31fdbb and require All regression tests passed plus %X00000001.",
+        "After post-merge acceptance, mark Phase 6 complete and begin Phase 7 DOC/M274_RECONCILIATION.MD on GitHub."
       ]
-    },
-    "phase_plan": {
-      "phase1": "COMPLETE",
-      "phase2": "COMPLETE",
-      "phase3": "COMPLETE",
-      "phase4": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
-      "phase5": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "phase6": "IN_PROGRESS_GITHUB_HEAD_AWAITING_VAX_ACCEPTANCE",
-      "phase7": "PENDING_DOC_M274_RECONCILIATION"
-    },
-    "target": {
-      "root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
-      "git_path": "m274_netcfg",
-      "phase3_order": "EXTRACT/FUNCTION -> RENAME -> MOVE/FUNCTION",
-      "phase3_result": "Accepted; report_risk_score moved main.c -> rules.c with rules.h prototype; risk 0/100 LOW; target build/runtime %X00000001."
     },
     "important_defects": {
       "51": "open - composed AGENT context can exceed request-builder limit",
@@ -140,17 +105,17 @@
       "79": "open - Groq Qwen Responses output not recognized as text/function call in AGENT/CREATE",
       "81": "open - Groq Qwen agent can finalize with intent-only text before executing any tool",
       "82": "open - persistent session workspace continuation cannot create new files",
-      "83": "open - AGENT/TOOL/RUN mutates live tool arguments via transcript sanitizer: 768-byte truncation and literal pipe characters converted to spaces before dispatch"
+      "83": "open - AGENT/TOOL/RUN mutates live tool arguments via transcript sanitizer",
+      "84": "open - GITRESTORE conflates Git tree paths with current-directory RMS paths"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_local_branch_at_last_observation": "m274-phase6-reporting",
-    "local_branch_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "remote_phase6_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
-    "tracked_modifications": ["m274_netcfg/main.c - partial Agent-side summary/query experiments; must be discarded via RMS-aware GITRESTORE before fast-forward"],
-    "latest_target_build": "GREEN_SUMMARY_ONLY_BEFORE_PARTIAL_QUERY_EXPERIMENTS",
-    "latest_target_build_status": "%X00000001",
+    "local_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
+    "tracked_worktree": "clean",
+    "remote_parent_head": "ba31fdbb91487243892472a0d836a6447fe79f71",
+    "latest_vax_green_source_head": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
     "untracked_files": [
       "m274_netcfg/m274_basecfg.txt",
       "m274_netcfg/m274_candcfg.txt",
@@ -165,21 +130,21 @@
       "m274_netcfg/ovms_agent_transcript.dat"
     ],
     "auth_path": "Use GITAUTH for prompt-free raw Git network operations.",
-    "rms_restore_path": "Use AGENT/TOOL/RUN GITRESTORE for changed tracked files to materialize and verify Git HEAD contents as effective OpenVMS RMS files.",
-    "status_format_note": "After @BUILD, assign BUILD_STATUS = $STATUS and use SHOW SYMBOL BUILD_STATUS; do not feed the string-form status to F$FAO !XL."
+    "rms_restore_rule": "Run GITRESTORE from repository root for nested tracked paths until #84 is fixed.",
+    "vax_git_ref_rule": "Verify git rev-parse HEAD after every ref-changing operation; native success text is not acceptance evidence."
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
     "GitHub is the development control plane/source of truth and routine source/repository edits belong on GitHub by default; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
     "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent; all agent commands must be one physical input line.",
     "Use GITAUTH as the standard prompt-free raw Git network path on VAX; never configure credential.helper store/global/askpass.",
-    "Use the RMS-aware GITRESTORE path for changed tracked files when branch updates must be physically materialized/verified on OpenVMS.",
+    "Use RMS-aware GITRESTORE for changed tracked files and run it from repository root for nested paths until #84 is fixed.",
+    "Verify exact HEAD after native VAX Git ref-changing commands; if a proven fetched fast-forward does not move HEAD, separate ref, index, and RMS worktree recovery instead of trusting success text.",
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
-    "Never claim an unpublished or untested GitHub head is VAX-green.",
+    "Never call an untested GitHub head VAX-green.",
     "Canonical root build acceptance requires All regression tests passed and final status %X00000001.",
     "Do not stage known untracked M274 runtime/config/diff/session fixtures casually.",
-    "If OVMS Agent emits a redundant post-write Apply patch prompt after a successful write, do not approve the redundant proposal; exit and log #58 when relevant.",
-    "Until #83 is fixed, do not rely on AGENT/TOOL/RUN for arbitrary source-edit payloads: its live dispatch currently uses a transcript-sanitized 768-byte buffer that can truncate arguments and replace literal pipe characters with spaces.",
+    "Until #83 is fixed, do not rely on AGENT/TOOL/RUN for arbitrary source-edit payloads.",
     "Never record credential values in durable state."
   ]
 }
