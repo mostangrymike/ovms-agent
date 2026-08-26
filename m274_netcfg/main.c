@@ -21,6 +21,8 @@
 static void print_usage(void);
 static int do_add(INV_STORE *st, const char *dev, const char *addr, const char *cfg);
 static int do_list(INV_STORE *st);
+static int do_summary(INV_STORE *st);
+static int do_query(INV_STORE *st, const char *field, const char *value);
 static int do_show(INV_STORE *st, const char *dev);
 static void print_item_line(const INV_ITEM *it);
 static void print_item_detail(const INV_ITEM *it);
@@ -68,6 +70,20 @@ int main(int argc, char *argv[])
         }
     } else if (strcmp(cmd, "list") == 0) {
         rc = do_list(st);
+    } else if (strcmp(cmd, "summary") == 0) {
+        if (argc != 3) {
+            print_usage();
+            rc = RC_USAGE;
+        } else {
+            rc = do_summary(st);
+        }
+    } else if (strcmp(cmd, "query") == 0) {
+        if (argc != 5) {
+            print_usage();
+            rc = RC_USAGE;
+        } else {
+            rc = do_query(st, argv[3], argv[4]);
+        }
     } else if (strcmp(cmd, "show") == 0) {
         const char *dev;
         if (argc < 4) {
@@ -117,6 +133,10 @@ static void print_usage(void)
     printf("    Ingest config from local CFG_FILE. Use '-' for MGMT_ADDR if none.\n");
     printf("  invcli STORE_PATH list\n");
     printf("    List all inventory items.\n");
+    printf("  invcli STORE_PATH summary\n");
+    printf("    Summarize inventory count, config bytes, and newest update time.\n");
+    printf("  invcli STORE_PATH query FIELD VALUE\n");
+    printf("    Search device, address, path, or all metadata fields.\n");
     printf("  invcli STORE_PATH show DEVICE_ID\n");
     printf("    Show one item's stored metadata.\n");
     printf("  invcli STORE_PATH diff DEVICE_ID CFG_FILE [DIFF_OUT]\n");
@@ -167,6 +187,114 @@ static int do_list(INV_STORE *st)
             return RC_ERR;
         }
     }
+    return RC_OK;
+}
+
+static int do_summary(INV_STORE *st)
+{
+    unsigned long n;
+    unsigned long i;
+    unsigned long total_bytes;
+    unsigned long newest;
+    INV_ITEM it;
+    int r;
+
+    if (st == NULL) {
+        return RC_ERR;
+    }
+
+    n = inv_count(st);
+    total_bytes = 0UL;
+    newest = 0UL;
+
+    for (i = 0UL; i < n; ++i) {
+        r = inv_get_by_index(st, i, &it);
+        if (r != INV_OK) {
+            fprintf(stderr, "Error: read item %lu failed (%d)\n", i, r);
+            return RC_ERR;
+        }
+        total_bytes += (unsigned long)it.cfg_size;
+        if ((unsigned long)it.updated_time > newest) {
+            newest = (unsigned long)it.updated_time;
+        }
+    }
+
+    printf("Devices: %lu\n", n);
+    printf("ConfigBytes: %lu\n", total_bytes);
+    printf("NewestUpdated: %lu\n", newest);
+    return RC_OK;
+}
+
+static int do_query(INV_STORE *st, const char *field, const char *value)
+{
+    unsigned long n;
+    unsigned long i;
+    unsigned long matches;
+    INV_ITEM it;
+    int r;
+    int match;
+
+    if (st == NULL || field == NULL || value == NULL) {
+        return RC_ERR;
+    }
+
+    if (strcmp(field, "device") != 0 &&
+        strcmp(field, "address") != 0 &&
+        strcmp(field, "path") != 0 &&
+        strcmp(field, "all") != 0) {
+        fprintf(stderr,
+                "Error: query field must be device, address, path, or all.\n");
+        return RC_USAGE;
+    }
+
+    n = inv_count(st);
+    matches = 0UL;
+
+    for (i = 0UL; i < n; ++i) {
+        r = inv_get_by_index(st, i, &it);
+        if (r != INV_OK) {
+            fprintf(stderr, "Error: read item %lu failed (%d)\n", i, r);
+            return RC_ERR;
+        }
+
+        match = 0;
+
+        if (strcmp(field, "device") == 0) {
+            if (strstr(it.device_id, value) != NULL) {
+                match = 1;
+            }
+        } else if (strcmp(field, "address") == 0) {
+            if (strstr(it.mgmt_addr, value) != NULL) {
+                match = 1;
+            }
+        } else if (strcmp(field, "path") == 0) {
+            if (strstr(it.cfg_path, value) != NULL) {
+                match = 1;
+            }
+        } else {
+            if (strstr(it.device_id, value) != NULL) {
+                match = 1;
+            }
+            if (!match && strstr(it.mgmt_addr, value) != NULL) {
+                match = 1;
+            }
+            if (!match && strstr(it.cfg_path, value) != NULL) {
+                match = 1;
+            }
+        }
+
+        if (match) {
+            printf("%s\t%s\t%s\t%lu\t%lu\n",
+                   it.device_id,
+                   it.mgmt_addr,
+                   it.cfg_path,
+                   (unsigned long)it.cfg_size,
+                   (unsigned long)it.updated_time);
+            ++matches;
+        }
+    }
+
+    printf("Matches: %lu\n", matches);
     return RC_OK;
 }
 
