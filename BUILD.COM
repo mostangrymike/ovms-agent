@@ -33,6 +33,11 @@ $ THEN
 $     CREATE/DIRECTORY [.BUILD]
 $     IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $ ENDIF
+$! Bound generated OpenVMS file versions before each build.
+$ IF F$SEARCH("[.BUILD]*.*;*") .NES. ""
+$ THEN
+$     PURGE/KEEP=1/NOLOG [.BUILD]*.*
+$ ENDIF
 $
 $ IF BUILD_QUIET
 $ THEN
