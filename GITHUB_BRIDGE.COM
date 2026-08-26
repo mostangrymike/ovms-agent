@@ -117,14 +117,23 @@ $ SET FILE/PROTECTION=(S:RWED,O:RWED,G,W) 'BODYFILE'
 $
 $ GOSUB MAKE_HEADERS
 $ URL = "https:" + "//api.github.com/repos/" + REPO + "/pulls"
-$ curl --silent --show-error --fail --request POST --output 'APIRESP' --header @'HEADERS' --data-binary @'BODYFILE' 'URL'
+$ curl --silent --show-error --request POST --output 'APIRESP' --header @'HEADERS' --data-binary @'BODYFILE' 'URL'
 $ CURL_STATUS = $STATUS
 $ IF (CURL_STATUS .AND. 1) .EQ. 0 THEN GOTO CURL_ERROR
+$ SEARCH/NOHEADING/OUTPUT=NL: 'APIRESP' """html_url"""
+$ API_STATUS = $STATUS
+$ IF (API_STATUS .AND. 1) .EQ. 0 THEN GOTO CREATE_API_ERROR
 $ OPEN/WRITE/ERROR=FAIL_NO_RESPONSE RESP 'P2'
 $ WRITE RESP "GitHub PR create request succeeded."
 $ CLOSE RESP
 $ GOSUB CLEANUP
 $ EXIT %X00000001
+$
+$CREATE_API_ERROR:
+$ WRITE SYS$OUTPUT "GitHub API error response:"
+$ TYPE 'APIRESP'
+$ GOSUB CLEANUP
+$ EXIT %X00000002
 $
 $MAKE_HEADERS:
 $ IF F$SEARCH(HEADERS+";*") .NES. "" THEN DELETE/NOLOG 'HEADERS';*
