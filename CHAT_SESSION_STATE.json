@@ -1,156 +1,119 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-25T21:55:00-05:00",
+  "updated_at": "2026-08-26",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
     "latest_code_milestone": "M273",
-    "latest_code_milestone_commit": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "latest_code_milestone_tree": "d26dde3ab70364a6621f2d43de449e430d8a6f68",
     "note": "M273 remains promoted main; M274 remains development-only."
-  },
-  "completed_milestones": {
-    "m269": {"issue":44,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"f3f871e2b4080f2c70ad14b2ab1b49b3354f257a"},
-    "m270": {"issue":45,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"f70a5792dc16a6b8ff15890f1921e8ada4ed3656","accepted_tree":"a0c6135bc5185ac676f8d6c15ff6dc81691b52d5","build_status":"%X00000001"},
-    "m271": {"issue":46,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_PRUNED","accepted_head":"8dcbef9ce4197b8bda476ef943158206c843051f","accepted_tree":"504f73629d784d5bb9e41ca513ce6a56ae651fe9","build_status":"%X00000001"},
-    "m272": {"issue":47,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED","branch":"m272-dead-file-cleanup","accepted_head":"b8049449d030dbe6af438db589fb3bfa61909b6c","accepted_tree":"90bd7f5ba1f59404e988ce3ed5127f437428518d","build_status":"%X00000001"},
-    "m273": {"issue":48,"status":"COMPLETE_PROMOTED_TAGGED_BRANCH_RETAINED","branch":"m273-ansi-presentation","accepted_head":"f57b1ebc7ea54d3b9245ae581dcd27290dd52d54","accepted_tree":"d26dde3ab70364a6621f2d43de449e430d8a6f68","build_status":"%X00000001","tag":"m273"}
   },
   "m274": {
     "issue": 49,
-    "issue_state": "open",
-    "status": "ACTIVE_PHASE4_PR",
-    "branch": "m274-agent-stress-project",
-    "starting_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-    "remote_head": "7bfa31aa050ad5b830bdbe621253ba25931d048b",
-    "latest_vax_green_agent_head": "84d6ae585ba660586bc863caad7a049fc1b61e1a",
-    "latest_target_checkpoint": "7bfa31aa050ad5b830bdbe621253ba25931d048b",
-    "target_root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
-    "target_git_path": "m274_netcfg",
-    "provider": "requesty (openai/gpt-5.2)",
-    "requesty_budget_note": "Use GitHub for source archaeology and repository edits by default; reserve paid provider turns for required OVMS Agent behavioral flows.",
+    "status": "ACTIVE_PHASE4_MERGED_AWAITING_POST_MERGE_VAX_ACCEPTANCE",
+    "parent_branch": "m274-agent-stress-project",
+    "parent_remote_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "phase4_child_branch": "m274-phase4-build-purge",
+    "phase4_child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
+    "phase4_pr": 80,
+    "phase4_pr_title": "Bound-OpenVMS-build-artifact-versions",
+    "phase4_pr_body": "Closes #77",
+    "phase4_changed_files": ["BUILD.COM", "GITHUB_BRIDGE.COM"],
+    "phase4_merge_commit": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "phase4_acceptance": {
+      "agent_pr_create": "SUCCESS_END_TO_END",
+      "agent_command": "AGENT/GITHUB/PR create m274-agent-stress-project m274-phase4-build-purge 77 Bound-OpenVMS-build-artifact-versions",
+      "independent_github_verification": "Exactly one PR; correct base/head/title/body; exactly BUILD.COM and GITHUB_BRIDGE.COM; mergeable before merge.",
+      "merge": "PR #80 merged through normal GitHub review path.",
+      "post_merge_vax_build": "PENDING"
+    },
+    "build_purge_fix": {
+      "issue": 77,
+      "state": "open_pending_post_merge_vax_acceptance",
+      "change": "BUILD.COM purges older generated [.BUILD] versions with PURGE/KEEP=1 before each build.",
+      "pre_merge_acceptance": "Two consecutive canonical builds passed; generated version count/space remained bounded; all regressions passed; status %X00000001.",
+      "disk_recovery": "Earlier PURGE/KEEP=1/NOLOG [.BUILD]*.* raised SYS$SYSDEVICE free space from 1.16 MB to about 2.28 GB."
+    },
+    "github_bridge": {
+      "issue": 78,
+      "state": "open",
+      "final_phase4_behavior": "HELP, LIST, and CREATE proven through actual AGENT/GITHUB/PR route.",
+      "credential_source": "Reuses active SYS$LOGIN:OVMS_AGENT_GITHUB.DAT profile; no second credential store.",
+      "create_body_fix": "OpenVMS DCL OPEN/WRITE created VFC files that GitHub could not parse as JSON. Final bridge creates BODYFILE with CREATE/FDL=\"RECORD;FORMAT STREAM_LF\", OPEN/APPEND, incremental DCL JSON construction, then curl --data-binary @BODYFILE.",
+      "known_remaining": "Keep #78 open for shipped setup/documentation/grammar and broader service-bridge completeness."
+    },
+    "provider_phase5": {
+      "status": "EVIDENCE_SUFFICIENT_DIFFERENT_PROVIDER_BEHAVIOR_OBSERVED",
+      "requesty": "Account restricted during M274.",
+      "openrouter_north": "Strong on small deterministic writes; later hit account-level free-model daily limit; redundant post-write retry reproduced #58.",
+      "groq_qwen": "Plain ASK succeeded; AGENT/CREATE returned neither output text nor function call; #79 opened.",
+      "groq_gpt_oss": "Known #66/#67 tool-call incompatibilities.",
+      "nemotron": "ASK/read/tiny create worked; large create/read-followup unreliable and slow.",
+      "note": "Do not spend money or continue free-model hopping solely for Phase 5; evidence is sufficient."
+    },
     "phase_plan": {
-      "phase1": "COMPLETE_BUILD_RUNTIME_PUBLISHED",
-      "phase2": "COMPLETE_ACCEPTED_PUBLISHED",
-      "phase3": "COMPLETE_EXTRACT_RENAME_MOVE_ACCEPTED_PUBLISHED",
-      "phase4": "NEXT_BRANCH_PR_VIA_AGENT_GITHUB_PR",
-      "phase5": "PENDING_DIFFERENT_PROVIDER",
-      "phase6": "PENDING_SESSION_FORK_RESUME",
-      "phase7": "PENDING_RECONCILIATION"
+      "phase1": "COMPLETE",
+      "phase2": "COMPLETE",
+      "phase3": "COMPLETE",
+      "phase4": "MERGED_PENDING_POST_MERGE_VAX_BUILD",
+      "phase5": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
+      "phase6": "PENDING_AGENTS_SESSION_FORK_MULTI_SITTING_REPORTING_LAYER",
+      "phase7": "PENDING_DOC_M274_RECONCILIATION"
     },
-    "phase2_acceptance": {
-      "modules": ["main.c","storage.c","diff.c","rules.c","fileutil.c"],
-      "graph": ["diff->fileutil","main->storage,diff,rules","rules->fileutil"],
-      "cluster": "5 singletons",
-      "cycle": "none",
-      "runtime": "inventory/config diff/rules checks accepted"
+    "target": {
+      "root": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
+      "git_path": "m274_netcfg",
+      "phase3_order": "EXTRACT/FUNCTION -> RENAME -> MOVE/FUNCTION",
+      "phase3_result": "Accepted; report_risk_score moved main.c -> rules.c with rules.h prototype; risk 0/100 LOW; target build/runtime %X00000001."
     },
-    "phase3_acceptance": {
-      "order": "EXTRACT/FUNCTION -> RENAME -> MOVE/FUNCTION",
-      "risk_scoring": "Risk score 0/100 (LOW) accepted.",
-      "extract": "Accepted after #72 repair with explicit target build/runtime.",
-      "rename": "extracted_risk_score -> report_risk_score accepted.",
-      "move": "report_risk_score moved main.c -> rules.c; rules.h received exported prototype; main.c remains external caller.",
-      "move_show": "rules.c line 502 after accepted move",
-      "move_callers": "main.c line 365 after accepted move",
-      "target_build_status": "%X00000001",
-      "target_runtime": "Warnings 0; Errors 0; Risk score 0/100 (LOW)",
-      "target_runtime_status": "%X00000001",
-      "agent_build": "All regression tests passed",
-      "agent_build_status": "%X00000001",
-      "agent_commit": "84d6ae585ba660586bc863caad7a049fc1b61e1a",
-      "target_commit": "7bfa31aa050ad5b830bdbe621253ba25931d048b"
+    "important_defects": {
+      "51": "open - composed AGENT context can exceed request-builder limit",
+      "58": "open - redundant/multiple post-write proposals can cause rollback behavior",
+      "66": "open - Groq gpt-oss unsupported ranged read args",
+      "67": "open - Groq gpt-oss malformed tool name marker",
+      "73": "open - refactor verifier hardcodes [.BUILD] invalidation for flat-root target",
+      "76": "open - AGENT/WRITE orphan tool-call/oversized review path",
+      "77": "open pending merged-parent VAX acceptance - generated build versions fill device",
+      "78": "open - GitHub service bridge setup/docs/completeness",
+      "79": "open - Groq Qwen Responses output not recognized as text/function call"
     },
-    "issue74": {
-      "state": "closed_completed",
-      "title": "MOVE/FUNCTION cannot safely move static function with external callers in flat-root project",
-      "accepted_contract": [
-        "destination companion header derived from destination module",
-        "all external caller modules including source must already include companion header",
-        "static moved definition promoted to external linkage when external callers remain",
-        "matching prototype inserted before final #endif or at EOF",
-        "header registered in rollback transaction only after successful materialization",
-        "DEC C/VAX C89 and OpenVMS version semantics preserved"
-      ],
-      "final_behavior": "Real M274 MOVE/FUNCTION/APPLY succeeded; canonical Agent and explicit target build/runtime gates passed."
-    },
-    "defects": {
-      "50": {"state":"closed","summary":"nested project Git-context capture"},
-      "51": {"state":"open","summary":"composed AGENT context can exceed request-builder limit"},
-      "52": {"state":"open","summary":"AGENT tool PATCH && corruption"},
-      "53": {"state":"open","summary":"failed build diagnostics not persisted to repair plan"},
-      "54": {"state":"open","summary":"AGENT/WRITE cannot scaffold nonexistent files/empty root"},
-      "56": {"state":"open","summary":"OpenRouter/request output-token ceiling compatibility"},
-      "57": {"state":"closed","summary":"required-tool post-write contradiction"},
-      "58": {"state":"open","summary":"post-rejection/post-write proposal/rollback behavior"},
-      "61": {"state":"open","summary":"Groq build provider incompatibility around store:true"},
-      "62": {"state":"published_repair_verify_issue_state","summary":"flat-root symbol-index source-layout support"},
-      "64": {"state":"published_repair_verify_issue_state","summary":"uppercase/path-case graph behavior"},
-      "65": {"state":"open","summary":"SHOW/STRUCT local declaration misclassified as struct definition"},
-      "66": {"state":"open","summary":"gpt-oss range tool schema/name behavior"},
-      "67": {"state":"open","summary":"malformed gpt-oss tool name"},
-      "68": {"state":"open","summary":"OPEN provider 429 retry-after not honored"},
-      "69": {"state":"closed","summary":"EXTRACT/FUNCTION ternary colon misclassified as C label"},
-      "70": {"state":"open","summary":"OpenRouter free-router can serialize tool call as plain text"},
-      "71": {"state":"open","summary":"AGENT/FIX goal guard synthetic NULL rejection"},
-      "72": {"state":"closed","summary":"flat-root refactor write VMS filespec conversion"},
-      "73": {"state":"open","summary":"refactor verifier hard-codes [.BUILD] object invalidation for flat-root target"},
-      "74": {"state":"closed_completed","summary":"MOVE/FUNCTION static function with external callers"},
-      "75": {"state":"closed_completed","summary":"replace_lines boundary separator defect"},
-      "76": {"state":"open","summary":"AGENT/WRITE oversized REVIEW / unexpected inspection / orphan tool-call path"},
-      "77": {"state":"open","summary":"BUILD.COM generated OpenVMS file versions can fill device; PURGE/KEEP=1 workaround verified"}
-    },
-    "observations": [
-      "Human approval rejected unsafe #74 proposals before writes.",
-      "A4c-2 reproduced #76 even with no-inspection instruction; no write occurred on the failed attempt.",
-      "Real MOVE acceptance also reproduced #73 [.BUILD] invalidation warnings but explicit target build/runtime passed.",
-      "Canonical build initially failed because SYS$SYSDEVICE had only 1.16 MB free from accumulated BUILD file versions; PURGE/KEEP=1 [.BUILD]*.* raised free space to 2.28 GB and full regressions then passed.",
-      "M245_MCP_SSE_TEST.EXE alone had 32 historical versions totaling about 44 MB before purge.",
-      "Published target commit contains cosmetic whitespace/indentation scars from generated/refactor history; functional acceptance is green."
-    ],
     "next_work": [
-      "Phase 4: exercise AGENT/GITHUB/PR for a meaningful branch + pull request and merge via normal review, not a direct-push shortcut.",
-      "Before Phase 4 VAX work, delete clearly disposable m274_fix*.patch and m274_netcfg repair patch/transcript files; preserve or intentionally classify runtime fixture/data files.",
-      "Use native DCL filespec syntax such as [.M274_NETCFG]RULES.H for DCL SEARCH; do not use POSIX M274_NETCFG/RULES.H with SEARCH.",
-      "Keep #73, #76, and #77 separate from Phase 4 unless they directly block acceptance.",
-      "After Phase 4, switch to a genuinely different provider for Phase 5 and record behavioral differences.",
-      "Phase 6 must use AGENT/SESSION/FORK and span more than one sitting.",
-      "Phase 7 must produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
+      "On VAX checkout, switch to m274-agent-stress-project, GITAUTH fetch origin m274-agent-stress-project, fast-forward to c82ba7a19ab928a9975b6ca38cda2c0d732707f4, and run canonical @BUILD.",
+      "Require All regression tests passed and BUILD_STATUS shown as %X00000001 before closing #77.",
+      "After merged-parent VAX acceptance, log #49/#77 checkpoint and close #77 completed; keep #78 open.",
+      "Then continue Phase 6 with AGENT/SESSION/FORK across more than one sitting and implement reporting/query layer.",
+      "Finally produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
     ]
   },
-  "repository_hygiene": {
-    "m268_branch":"pruned",
-    "m269_branch":"pruned",
-    "m270_branch":"pruned",
-    "m271_branch":"pruned",
-    "m272_branch":"retained",
-    "m273_branch":"retained",
-    "m274_branch":"active",
-    "retained_completed_milestone_branches":["m272-dead-file-cleanup","m273-ansi-presentation"],
-    "security_note":"Never record credential values in durable state."
-  },
   "local_openvms_state": {
-    "canonical_checkout":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "canonical_checkout_branch":"m274-agent-stress-project",
-    "known_remote_head":"7bfa31aa050ad5b830bdbe621253ba25931d048b",
-    "tracked_working_tree":"clean after target commit/push",
-    "untracked_note":"M274 repair patches, runtime data/config/diff fixtures, and transcript files remain untracked; classify/clean before PR workflow as appropriate.",
-    "latest_local_acceptance":"2026-08-25 canonical @BUILD all regressions passed after BUILD purge; target @BUILD and runtime check also passed.",
-    "disk_recovery":"PURGE/KEEP=1/NOLOG [.BUILD]*.* raised SYS$SYSDEVICE free space from 1.16 MB to 2.28 GB.",
-    "target_root":"SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]",
-    "github_profile":"ovms-agent",
-    "auth_wrapper":"SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE / OVMS_AGENT_GIT_AUTH.COM"
+    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
+    "current_local_branch_at_last_observation": "m274-phase4-build-purge",
+    "local_child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
+    "parent_sync_needed": true,
+    "untracked_files": [
+      "m274_netcfg/m274_basecfg.txt",
+      "m274_netcfg/m274_candcfg.txt",
+      "m274_netcfg/m274_diff.txt",
+      "m274_netcfg/m274_diff2.txt",
+      "m274_netcfg/m274_p2text.dat",
+      "m274_netcfg/m274_p2text.dat__router1_cfg",
+      "m274_netcfg/m274_phase2.dat",
+      "m274_netcfg/m274_phase2.dat__router1_cfg"
+    ],
+    "auth_path": "Use GITAUTH for prompt-free raw Git network operations.",
+    "status_format_note": "After @BUILD, assign BUILD_STATUS = $STATUS and use SHOW SYMBOL BUILD_STATUS; do not feed the string-form status to F$FAO !XL."
   },
   "standing_rules": [
-    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub main, active branch, and issue state.",
-    "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent.",
-    "GitHub is the development control plane/source of truth; make repository/source edits on GitHub by default when safe and available.",
-    "VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
-    "Use GITAUTH as the standing prompt-free raw Git network path on VAX/OpenVMS.",
-    "Never mark an untested GitHub head as a full VAX-green Agent head.",
-    "Build/test file-version accumulation in [.BUILD] can exhaust disk; purge generated versions when necessary while #77 remains open.",
-    "Keep main, chat-session-state, active milestone branch, and only the two most recently completed milestone development branches; permanently tag milestones before pruning older completed branches."
+    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
+    "Omit literal OVMS-AGENT> from lines intended to paste into OVMS Agent; all agent commands must be one physical input line.",
+    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
+    "Use GITAUTH as the standard prompt-free raw Git network path on VAX; never configure credential.helper store/global/askpass.",
+    "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
+    "Never claim an unpublished or untested GitHub head is VAX-green.",
+    "Canonical build acceptance requires All regression tests passed and final status %X00000001.",
+    "Do not stage known untracked M274 runtime/config/diff fixtures casually.",
+    "If OVMS Agent emits a redundant post-write Apply patch prompt after a successful write, do not approve the redundant proposal; exit and log #58 when relevant.",
+    "Never record credential values in durable state."
   ]
 }
