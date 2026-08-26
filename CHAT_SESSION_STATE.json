@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-26T11:26:00-05:00",
+  "updated_at": "2026-08-26T14:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,52 +11,94 @@
   },
   "m274": {
     "issue": 49,
-    "status": "ACTIVE_PHASE6_NEXT",
+    "status": "ACTIVE_PHASE6_SUMMARY_VAX_GREEN_QUERY_NEXT",
     "parent_branch": "m274-agent-stress-project",
     "parent_remote_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "latest_vax_green_agent_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "phase4_child_branch": "m274-phase4-build-purge",
-    "phase4_child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
-    "phase4_pr": 80,
-    "phase4_pr_title": "Bound-OpenVMS-build-artifact-versions",
-    "phase4_pr_body": "Closes #77",
-    "phase4_changed_files": ["BUILD.COM", "GITHUB_BRIDGE.COM"],
-    "phase4_merge_commit": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "phase4_acceptance": {
-      "agent_pr_create": "SUCCESS_END_TO_END",
-      "agent_command": "AGENT/GITHUB/PR create m274-agent-stress-project m274-phase4-build-purge 77 Bound-OpenVMS-build-artifact-versions",
-      "independent_github_verification": "Exactly one PR; correct base/head/title/body; exactly BUILD.COM and GITHUB_BRIDGE.COM.",
-      "merge": "PR #80 merged through normal GitHub review path.",
-      "post_merge_vax_build": "GREEN",
-      "post_merge_vax_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-      "post_merge_build_output": "All regression tests passed; Build completed successfully.",
-      "post_merge_build_status": "%X00000001",
-      "tracked_worktree": "clean; only known untracked m274_netcfg runtime/fixture files remain"
+    "latest_published_vax_green_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "phase6_branch": "m274-phase6-reporting",
+    "phase6_remote_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "phase6_publication_state": "UNCOMMITTED_LOCAL_CHECKPOINT",
+    "phase4": {
+      "status": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
+      "child_branch": "m274-phase4-build-purge",
+      "child_head": "1870ffd8b7426f46e633205255ac8190c98abefe",
+      "pr": 80,
+      "merge_commit": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+      "changed_files": ["BUILD.COM", "GITHUB_BRIDGE.COM"],
+      "post_merge_build_status": "%X00000001"
     },
-    "build_purge_fix": {
-      "issue": 77,
-      "state": "closed_completed",
-      "change": "BUILD.COM purges older generated [.BUILD] versions with PURGE/KEEP=1 before each build.",
-      "pre_merge_acceptance": "Two consecutive canonical builds passed with bounded generated version count/space.",
-      "post_merge_acceptance": "Merged parent canonical @BUILD passed all regressions with %X00000001.",
-      "disk_recovery": "Earlier PURGE/KEEP=1/NOLOG [.BUILD]*.* raised SYS$SYSDEVICE free space from 1.16 MB to about 2.28 GB."
-    },
-    "github_bridge": {
-      "issue": 78,
-      "state": "open",
-      "final_phase4_behavior": "HELP, LIST, and CREATE proven through actual AGENT/GITHUB/PR route.",
-      "credential_source": "Reuses active SYS$LOGIN:OVMS_AGENT_GITHUB.DAT profile; no second credential store.",
-      "create_body_fix": "DCL OPEN/WRITE produced VFC files that GitHub could not parse as JSON. Final bridge creates BODYFILE with CREATE/FDL=\"RECORD;FORMAT STREAM_LF\", OPEN/APPEND, incremental DCL JSON construction, then curl --data-binary @BODYFILE.",
-      "known_remaining": "Keep #78 open for shipped setup/documentation/grammar and broader service-bridge completeness."
-    },
-    "provider_phase5": {
+    "phase5": {
       "status": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "requesty": "Account restricted during M274.",
-      "openrouter_north": "Strong on small deterministic writes; later hit account-level free-model daily limit; redundant post-write retry reproduced #58.",
-      "groq_qwen": "Plain ASK succeeded; AGENT/CREATE returned neither output text nor function call; #79 opened.",
-      "groq_gpt_oss": "Known #66/#67 tool-call incompatibilities.",
-      "nemotron": "ASK/read/tiny create worked; large create/read-followup unreliable and slow.",
-      "note": "Do not spend money or continue free-model hopping solely for Phase 5; evidence is sufficient."
+      "requesty": "Account restricted; do not spend further credit.",
+      "openrouter_north": "Useful for small deterministic writes; later hit account-level free-model daily limit; redundant post-write retry reproduced #58.",
+      "groq_qwen": "Plain ASK works. AGENT/CREATE has #79. Persistent-session read tools work, but repeated TPM 429 aborts expose #68 and intent-only final behavior exposed #81.",
+      "note": "Provider evidence is sufficient; do not model-hop or spend money solely for Phase 5."
+    },
+    "phase6": {
+      "status": "SUMMARY_SLICE_VAX_GREEN_QUERY_NEXT",
+      "base_session": {
+        "id": "42BABDB9",
+        "name": "m274-phase6-reporting-base"
+      },
+      "child_session": {
+        "id": "6F535C3D",
+        "name": "m274-phase6-reporting-impl",
+        "parent": "42BABDB9",
+        "policy": "workspace",
+        "last_observed_execs": 6
+      },
+      "persistence_evidence": [
+        "Base session persisted across provider failure.",
+        "Child fork inherited parent link, goal, execution state, and policy context.",
+        "Full OVMS Agent process restart preserved Groq Qwen model, both sessions, child goal, transcript, and resume capability.",
+        "Child 6F535C3D resumed successfully after restart.",
+        "Session history records model read tools and deterministic workspace PATCH writes."
+      ],
+      "provider_evidence": {
+        "groq_model": "qwen/qwen3.6-27b",
+        "intent_only_issue": 81,
+        "tpm_retry_issue": 68,
+        "create_parser_issue": 79,
+        "workspace_create_gap_issue": 82,
+        "tool_run_truncation_issue": 83
+      },
+      "summary_checkpoint": {
+        "tracked_file": "m274_netcfg/main.c",
+        "change": "Added summary command, usage text, do_summary prototype and implementation using public storage APIs only.",
+        "new_files": [],
+        "write_path": "Current persisted child session 6F535C3D using AGENT/TOOL/RUN PATCH with workspace policy and write gate enabled.",
+        "temporary_markers_remaining": false,
+        "git_diff_check": "CLEAN",
+        "target_build": "GREEN",
+        "target_build_status": "%X00000001",
+        "runtime_command": "INVCLI m274_phase2.dat summary",
+        "runtime_output": {
+          "Devices": 1,
+          "ConfigBytes": 83,
+          "NewestUpdated": 1787620123
+        },
+        "runtime_status": "%X00000001",
+        "badarg_command": "INVCLI m274_phase2.dat summary extra",
+        "badarg_status": "%X00000002",
+        "publication": "Not committed or pushed yet. Remote phase6 branch remains c82ba7a19ab928a9975b6ca38cda2c0d732707f4."
+      },
+      "design_after_findings": {
+        "report_files": "Do not require report.c/report.h for Phase 6 acceptance because resumed workspace sessions cannot create new files (#82).",
+        "implementation_location": "Keep bounded summary/query reporting helpers in existing main.c unless #82 is repaired first.",
+        "query_next": "Add query FIELD VALUE in main.c using existing public inventory APIs. Accepted fields should remain simple and deterministic: device, address, path, all; case-sensitive substring matching is acceptable.",
+        "tooling_constraint": "Keep each AGENT/TOOL/RUN argument comfortably below 768 bytes until #83 is fixed; split large exact edits into marker-based bounded PATCH operations."
+      },
+      "next_sitting": [
+        "Do not commit the summary-only checkpoint yet unless deliberately choosing a separate checkpoint commit.",
+        "Relaunch OVMS Agent in SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG] and verify/resume child session 6F535C3D.",
+        "Verify workspace policy and write gate before writes.",
+        "Preserve the existing uncommitted main.c summary changes.",
+        "Implement query FIELD VALUE in bounded existing-file edits through the resumed child-session workflow; avoid provider retries if Groq TPM behavior repeats.",
+        "Run target compile/runtime acceptance for summary and query plus existing list/show/diff/check regressions.",
+        "Run canonical root @BUILD and require All regression tests passed plus %X00000001 before publication.",
+        "Then commit/push m274-phase6-reporting and decide merge/promotion path.",
+        "After Phase 6 is accepted/published, produce DOC/M274_RECONCILIATION.MD for Phase 7."
+      ]
     },
     "phase_plan": {
       "phase1": "COMPLETE",
@@ -64,7 +106,7 @@
       "phase3": "COMPLETE",
       "phase4": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
       "phase5": "SUBSTANTIALLY_COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "phase6": "NEXT_AGENTS_SESSION_FORK_MULTI_SITTING_REPORTING_LAYER",
+      "phase6": "IN_PROGRESS_SUMMARY_VAX_GREEN_QUERY_NEXT",
       "phase7": "PENDING_DOC_M274_RECONCILIATION"
     },
     "target": {
@@ -78,26 +120,24 @@
       "58": "open - redundant/multiple post-write proposals can cause rollback behavior",
       "66": "open - Groq gpt-oss unsupported ranged read args",
       "67": "open - Groq gpt-oss malformed tool name marker",
+      "68": "open - Groq 429 retry behavior aborts persistent-session execution instead of honoring provider retry timing",
       "73": "open - refactor verifier hardcodes [.BUILD] invalidation for flat-root target",
       "76": "open - AGENT/WRITE orphan tool-call/oversized review path",
       "77": "closed completed - generated build versions fill device",
       "78": "open - GitHub service bridge setup/docs/completeness",
-      "79": "open - Groq Qwen Responses output not recognized as text/function call"
-    },
-    "next_work": [
-      "Begin Phase 6 on VAX from m274-agent-stress-project at c82ba7a19ab928a9975b6ca38cda2c0d732707f4.",
-      "Exercise AGENT/SESSION/FORK for the reporting/query layer and deliberately span more than one sitting so resume/persistence is real.",
-      "Use OVMS Agent for the mandated Phase 6 development flow; keep GitHub as control plane and VAX as acceptance authority.",
-      "After Phase 6 acceptance, produce DOC/M274_RECONCILIATION.MD focused on observed OVMS Agent behavior."
-    ]
+      "79": "open - Groq Qwen Responses output not recognized as text/function call in AGENT/CREATE",
+      "81": "open - Groq Qwen agent can finalize with intent-only text before executing any tool",
+      "82": "open - persistent session workspace continuation cannot create new files",
+      "83": "open - AGENT/TOOL/RUN silently truncates live tool arguments to 768-byte transcript buffer before dispatch"
+    }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_local_branch_at_last_observation": "m274-agent-stress-project",
-    "local_parent_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
-    "parent_sync_needed": false,
-    "latest_canonical_build": "GREEN",
-    "latest_canonical_build_status": "%X00000001",
+    "current_local_branch_at_last_observation": "m274-phase6-reporting",
+    "local_branch_base_head": "c82ba7a19ab928a9975b6ca38cda2c0d732707f4",
+    "tracked_modifications": ["m274_netcfg/main.c"],
+    "latest_target_build": "GREEN",
+    "latest_target_build_status": "%X00000001",
     "untracked_files": [
       "m274_netcfg/m274_basecfg.txt",
       "m274_netcfg/m274_candcfg.txt",
@@ -106,7 +146,10 @@
       "m274_netcfg/m274_p2text.dat",
       "m274_netcfg/m274_p2text.dat__router1_cfg",
       "m274_netcfg/m274_phase2.dat",
-      "m274_netcfg/m274_phase2.dat__router1_cfg"
+      "m274_netcfg/m274_phase2.dat__router1_cfg",
+      "m274_netcfg/ovms_agent_session.cur",
+      "m274_netcfg/ovms_agent_sessions.dat",
+      "m274_netcfg/ovms_agent_transcript.dat"
     ],
     "auth_path": "Use GITAUTH for prompt-free raw Git network operations.",
     "status_format_note": "After @BUILD, assign BUILD_STATUS = $STATUS and use SHOW SYMBOL BUILD_STATUS; do not feed the string-form status to F$FAO !XL."
@@ -118,9 +161,10 @@
     "Use GITAUTH as the standard prompt-free raw Git network path on VAX; never configure credential.helper store/global/askpass.",
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
     "Never claim an unpublished or untested GitHub head is VAX-green.",
-    "Canonical build acceptance requires All regression tests passed and final status %X00000001.",
-    "Do not stage known untracked M274 runtime/config/diff fixtures casually.",
+    "Canonical root build acceptance requires All regression tests passed and final status %X00000001.",
+    "Do not stage known untracked M274 runtime/config/diff/session fixtures casually.",
     "If OVMS Agent emits a redundant post-write Apply patch prompt after a successful write, do not approve the redundant proposal; exit and log #58 when relevant.",
+    "Until #83 is fixed, keep AGENT/TOOL/RUN live arguments below 768 bytes and split larger PATCH operations.",
     "Never record credential values in durable state."
   ]
 }
