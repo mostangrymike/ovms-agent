@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:25:00-05:00",
+  "updated_at": "2026-08-27T13:30:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,7 +11,7 @@
   },
   "m276": {
     "issue": 90,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_TAG_PRUNE_PENDING",
+    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
     "branch": "m276-agent-loop-hardening",
     "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
@@ -20,10 +20,11 @@
     "promotion_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
     "promotion_tree": "ebdd40601eb3cc5292a2fc4179695971f6c53b37",
     "reconciliation": "DOC/M276_RECONCILIATION.MD",
+    "tag": "m276",
+    "tag_target": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
     "scope_issues": [58, 68, 81],
     "closed_issues": [58, 68, 81],
     "canonical_acceptance": {
-      "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
       "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
       "build": "All regression tests passed; Build completed successfully",
       "status": "%X00000001",
@@ -31,25 +32,29 @@
       "tracked_worktree": "clean"
     },
     "live_acceptance": {
-      "81": "PASS: zero-tool exact reply produced explicit evidence-free early-final diagnostic; status showed Tool calls 0 and Stop reason error; process %X00000001; clean worktree",
-      "58": "PASS: first controlled fixture write approved/applied, second deliberate write blocked with status limit and no second approval; only first change remained; fixture restored from HEAD with %X00000001 and clean worktree",
-      "68": "PASS: real Groq rate limits recovered in the same autonomous run after visible waits of 3 seconds and 19 seconds; context and write state survived and run reached successful final"
+      "81": "PASS: zero-tool exact reply produced explicit evidence-free early-final diagnostic; Tool calls 0; Stop reason error; process %X00000001; clean worktree",
+      "58": "PASS: first controlled fixture write applied, second deliberate write blocked with status limit and no second approval; fixture restored from HEAD with %X00000001 and clean worktree",
+      "68": "PASS: real Groq rate limits recovered in same autonomous run after visible waits of 3 seconds and 19 seconds; run reached successful final"
     },
-    "retention_pending": {
-      "tag": "create lightweight m276 at canonical promoted main c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-      "delete_completed_branch": "m274-agent-stress-project",
-      "retain_completed_branches": ["m275-backlog-hardening", "m276-agent-loop-hardening"]
+    "retention": {
+      "remote_branches": ["main", "chat-session-state", "m275-backlog-hardening", "m276-agent-loop-hardening"],
+      "deleted_completed_branch": "m274-agent-stress-project",
+      "result": "remote retention complete; only two most recent completed milestone development branches retained"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m276-agent-loop-hardening",
     "local_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
-    "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-    "tracked_worktree": "clean after separately accepted M276 reconciliation build",
+    "local_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "local_tags": {
+      "m275": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
+      "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780"
+    },
+    "local_branches": ["main", "m275-backlog-hardening", "m276-agent-loop-hardening"],
+    "tracked_worktree": "clean",
     "core_filemode": "false",
-    "published_agent": "M276 reconciliation-head accepted build image",
-    "next_action": "advance local main to promoted c9aacd6..., create/push m276 tag there, prune m274-agent-stress-project locally/remotely, verify retention"
+    "remote_tracking_cleanup_pending": "delete stale refs/remotes/origin/m274-agent-stress-project and fetch refs/heads/m276-agent-loop-hardening into refs/remotes/origin/m276-agent-loop-hardening"
   },
   "important_open_defects": {
     "78": "GitHub bridge setup/docs/service completeness",
