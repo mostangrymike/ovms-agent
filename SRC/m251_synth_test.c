@@ -179,6 +179,35 @@ static int test_tool_like_text(void)
     return 1;
 }
 
+static int test_tool_model_compat(void)
+{
+    if (llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-120b")) {
+        return 0;
+    }
+
+    if (llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-20b")) {
+        return 0;
+    }
+
+    if (!llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "qwen/qwen3-32b")) {
+        return 0;
+    }
+
+    if (!llm_m279_tool_model_ok(
+            "https://openrouter.ai/api/v1",
+            "openai/gpt-oss-120b")) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static int request_has_default_limit(void)
 {
     char *request;
@@ -246,6 +275,13 @@ int main(void)
     if (!test_tool_like_text()) {
         (void)puts(
             "M279 failed: tool-like assistant text classifier was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_tool_model_compat()) {
+        (void)puts(
+            "M279 failed: provider tool-transport compatibility matrix invalid."
         );
         return EXIT_FAILURE;
     }
@@ -340,6 +376,7 @@ int main(void)
     (void)puts("M251 final synthesis request test passed.");
     (void)puts("M279 sibling tool-call filtering test passed.");
     (void)puts("M279 tool-like assistant text test passed.");
+    (void)puts("M279 GPT-OSS transport guard test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
