@@ -220,6 +220,11 @@ void llm_auto_finish(const char *reason)
     llm_auto_declined_after_write = 0;
 }
 
+int llm_auto_bounded_completed(void)
+{
+    return strcmp(llm_auto_last_reason, "bounded-write") == 0;
+}
+
 int llm_auto_limits_text(char *output, size_t output_size)
 {
     int written;
