@@ -174,6 +174,23 @@ For FETCH, PULL, and PUSH, the current checkout must identify the same repositor
 
 Approval controls remain authoritative. Network Git work requires the appropriate workspace approval, while PUSH remains protected by FULL approval.
 
+GitHub PR and issue service operations use the shipped GITHUB_BRIDGE.COM procedure. A normal `$ @OVMS_AGENT` launch automatically defines the user-mode logical name `OVMS_AGENT_GITHUB_BRIDGE` to the copy of GITHUB_BRIDGE.COM in that checkout when no bridge logical is already defined. If the caller, login environment, or system has already defined `OVMS_AGENT_GITHUB_BRIDGE`, OVMS Agent preserves that explicit override instead of replacing it.
+
+The service bridge reuses the active profile in SYS$LOGIN:OVMS_AGENT_GITHUB.DAT; it does not create a second credential store. Its authorization header, JSON body, and API-response files are short-lived SYS$LOGIN temporary files, protected against group/world access where they contain credentials, and deleted across OpenVMS file versions after each request. Service operations remain guarded by the existing FULL approval policy.
+
+Supported service grammar is:
+
+AGENT/GITHUB/PR help
+AGENT/GITHUB/PR list
+AGENT/GITHUB/PR create BASE HEAD ISSUE TITLE
+AGENT/GITHUB/ISSUES help
+AGENT/GITHUB/ISSUES list [open|closed|all]
+AGENT/GITHUB/ISSUES create TITLE
+
+PR and issue titles are currently one whitespace-delimited token. Use hyphens in place of spaces when needed. `PR create` creates a pull request from HEAD into BASE and uses `Closes #ISSUE` as its body. `ISSUES list` defaults to open issues when the state is omitted. `ISSUES create` creates an issue with the supplied title and a short OVMS Agent bridge marker in the body.
+
+For fine-grained GitHub tokens, PR listing requires access to the repository's pull requests and PR creation requires `Pull requests: write`; issue listing requires access to repository issues and issue creation requires `Issues: write`. Ensure the token is also authorized for the target repository. The classic token configuration proven during OVMS Agent development used `repo` scope for a private repository. If GitHub returns `Resource not accessible` or another authorization error, verify the endpoint permissions on the active saved token before changing bridge payload code.
+
 Multilingual OpenVMS Support
 
 OVMS Agent is aware of major OpenVMS development languages and tries to preserve each language's native conventions.
