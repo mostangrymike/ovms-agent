@@ -148,6 +148,37 @@ static int test_empty_completed(void)
     return !llm_response_empty_completed(nonempty_response, &tokens);
 }
 
+static int test_tool_like_text(void)
+{
+    static const char read_text[] =
+        "[[{\"name\":\"read_file_range\",\"parameters\":{"
+        "\"path\":\"SRC/X.C\",\"start_line\":1,\"end_line\":2}}]]";
+    static const char write_text[] =
+        "{\"name\":\"replace_text\",\"arguments\":{"
+        "\"path\":\"SRC/X.C\",\"old_text\":\"a\","
+        "\"new_text\":\"b\"}}";
+    char name[64];
+
+    if (!llm_text_tool_like(read_text, name, sizeof(name)) ||
+        strcmp(name, "read_file_range") != 0) {
+        return 0;
+    }
+
+    if (!llm_text_tool_like(write_text, name, sizeof(name)) ||
+        strcmp(name, "replace_text") != 0) {
+        return 0;
+    }
+
+    if (llm_text_tool_like(
+            "I will use read_file_range next.",
+            name,
+            sizeof(name))) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static int request_has_default_limit(void)
 {
     char *request;
@@ -208,6 +239,13 @@ int main(void)
     if (!test_empty_completed()) {
         (void)puts(
             "M279 failed: completed empty response classification was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_tool_like_text()) {
+        (void)puts(
+            "M279 failed: tool-like assistant text classifier was invalid."
         );
         return EXIT_FAILURE;
     }
@@ -301,6 +339,7 @@ int main(void)
 
     (void)puts("M251 final synthesis request test passed.");
     (void)puts("M279 sibling tool-call filtering test passed.");
+    (void)puts("M279 tool-like assistant text test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
