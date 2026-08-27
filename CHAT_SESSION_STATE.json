@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:30:00-05:00",
+  "updated_at": "2026-08-27T13:32:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -52,9 +52,10 @@
       "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780"
     },
     "local_branches": ["main", "m275-backlog-hardening", "m276-agent-loop-hardening"],
-    "tracked_worktree": "clean",
+    "remote_tracking_branches": ["origin/main", "origin/m275-backlog-hardening", "origin/m276-agent-loop-hardening"],
+    "tracked_worktree": "clean after final remote-tracking cleanup",
     "core_filemode": "false",
-    "remote_tracking_cleanup_pending": "delete stale refs/remotes/origin/m274-agent-stress-project and fetch refs/heads/m276-agent-loop-hardening into refs/remotes/origin/m276-agent-loop-hardening"
+    "hygiene_status": "COMPLETE"
   },
   "important_open_defects": {
     "78": "GitHub bridge setup/docs/service completeness",
