@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:55:00-05:00",
+  "updated_at": "2026-08-27T11:06:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,54 +18,46 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_TOP_ICASE_VAX_RETEST_PENDING",
+    "status": "CANONICAL_BUILD_GREEN_LIVE_ACCEPTANCE_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "remote_candidate_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-    "candidate_publication": "UNTESTED_GITHUB_CORRECTION",
+    "candidate_publication": "VAX_GREEN_BUILD_LIVE_CHECKS_PENDING",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
       "fix #84 GITRESTORE nested Git-tree/current-directory path handling",
       "fix #86 OpenVMS core.filemode normalization"
     ],
+    "canonical_build": {
+      "head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
+      "result": "All regression tests passed; Build completed successfully",
+      "status": "%X00000001",
+      "prebuild_git_status": "clean",
+      "prebuild_diff_check": "clean",
+      "postbuild_git_status": "clean",
+      "build_log_note": "successful-path OVMS_BUILD.LOG did not retain focused M265/M275 pass strings; canonical terminal output and final DCL status are acceptance evidence"
+    },
     "vax_evidence": {
-      "m265_gap008": "passes on recent M275 attempts",
-      "m275_83": "focused raw argument regression passes; full build/live Agent acceptance still pending",
-      "m275_84": {
-        "tested_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
-        "build_status": "%X00000002",
-        "build_stage": [
-          "chdir TEST succeeded",
-          "nested restore call failed",
-          "return to saved directory succeeded",
-          "RMS version cleanup succeeded"
-        ],
-        "direct_error": "GITRESTORE: repository path resolution failed for GAP008_RMS.TXT.",
-        "tracked_worktree_after_failure": "clean"
-      },
-      "issue86": "live GIT_AUTH_SETUP normalization previously passed by resetting repository-local core.filemode=false"
+      "m275_83": "focused >768-byte plus literal || and TAB raw-argument regression is included in canonical green build; live production-path Agent verification pending",
+      "m275_84": "top/icase correction is included in canonical green build; live nested production-path GITRESTORE from [.TEST] pending",
+      "m275_86": "GIT_AUTH_SETUP previously demonstrated core.filemode true -> false with %X00000001; final current-head repeat/cleanliness confirmation pending"
     },
     "root_cause_84": {
       "filesystem_git_case_mismatch": "rev-parse --show-prefix from TEST returns lowercase test/ while Git stores TEST/GAP008_RMS.TXT",
       "ls_tree": "git ls-tree --name-only produced no visible names on this OpenVMS Git port",
-      "plain_ls_files_nested": "from [.TEST], git ls-files --full-name and git ls-files --full-name GAP008_RMS.TXT produce no output because Git scopes through lowercase test/ before emitting index paths",
-      "working_pathspec": [
-        "git ls-files --full-name -- \" :(top,icase)test/GAP008_RMS.TXT\" conceptually returns TEST/GAP008_RMS.TXT; actual tested syntax omits the space after the opening quote",
-        "git ls-files --full-name -- \" :(top,icase)TEST/GAP008_RMS.TXT\" conceptually returns TEST/GAP008_RMS.TXT; actual tested syntax omits the space after the opening quote",
-        "git ls-files --full-name -- \" :(top)TEST/GAP008_RMS.TXT\" conceptually returns TEST/GAP008_RMS.TXT; actual tested syntax omits the space after the opening quote"
-      ],
-      "conclusion": "use one top-level icase pathspec lookup to bypass cwd case filtering and recover exact Git-stored spelling"
+      "plain_ls_files_nested": "from [.TEST], plain git ls-files is empty because Git scopes through lowercase test/ before emitting paths",
+      "proven_fix_primitive": "from [.TEST], git ls-files --full-name -- :(top,icase)test/GAP008_RMS.TXT returns exact TEST/GAP008_RMS.TXT",
+      "conclusion": "top-level icase pathspec bypasses cwd case filtering and recovers exact Git-stored spelling"
     },
     "current_correction": {
       "head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-      "base": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
       "commit": "Use top icase pathspec for OpenVMS restore lookup",
-      "delta": "only SRC/GIT_RMS_RESTORE.C, +22/-34",
-      "approach": "run git ls-files --full-name -- :(top,icase)<safe combined candidate>; trim trailing record terminators; require exactly one non-empty returned path; require case-equivalence to candidate and safe returned path; then use exact Git spelling in existing cat-file path",
-      "safety": "candidate is validated before DCL interpolation; multi-line/ambiguous case-collision results fail closed; local RMS path remains separate from Git tree path",
-      "vax_acceptance": "pending"
+      "delta_from_16a529d": "only SRC/GIT_RMS_RESTORE.C, +22/-34",
+      "approach": "safe combined candidate -> git ls-files --full-name -- :(top,icase)<candidate> -> require exactly one safe case-equivalent path -> existing cat-file/RMS replacement/post-write verification",
+      "canonical_vax_build": "green"
     },
+    "next_action": "Run live production-path acceptance: #83 read-only AGENT/TOOL/RUN GREP with literal ||; #84 @[-]GIT_RESTORE GAP008_RMS.TXT from [.TEST]; #86 force core.filemode=true then rerun @GIT_AUTH_SETUP and verify false plus clean status.",
     "cleanup": {
       "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
@@ -74,10 +66,10 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
-    "tracked_worktree": "clean after failed 16a529d build and top/icase pathspec probes",
+    "local_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
+    "tracked_worktree": "clean after canonical green build",
     "core_filemode": "false",
-    "published_agent": "still previous accepted executable because M275 build has not reached final publish"
+    "published_agent": "new green build image available at [.BUILD]OVMS_AGENT.EXE and used by OVMS_AGENT.COM/GIT_RESTORE.COM"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -86,9 +78,9 @@
     "79": "Groq Qwen AGENT/CREATE response parsing",
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
-    "83": "focused regression passes; full VAX build and live Agent verification still pending",
-    "84": "top/icase pathspec primitive proven live; correction 337233f pending VAX retest",
-    "86": "live setup normalization passed; full branch acceptance pending"
+    "83": "canonical green regression coverage complete; live production-path Agent verification pending",
+    "84": "canonical green regression coverage complete; live nested production-path GITRESTORE pending",
+    "86": "prior live setup normalization passed; final current-head confirmation pending"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
@@ -100,7 +92,7 @@
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
     "Never call an untested GitHub head VAX-green.",
     "Canonical root acceptance requires All regression tests passed and final status %X00000001.",
-    "Until #83 is accepted, do not rely on the currently installed Agent image for arbitrary AGENT/TOOL/RUN source-edit payloads.",
+    "Until #83 is accepted, do not rely on older installed Agent images for arbitrary AGENT/TOOL/RUN source-edit payloads; the current green [.BUILD] image may now be used only for bounded acceptance checks.",
     "Never record credential values in durable state."
   ]
 }
