@@ -129,6 +129,28 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    llm_auto_begin(LLM_WORKFLOW_AGENT);
+    if (llm_auto_final_has_evidence(LLM_WORKFLOW_AGENT)) {
+        (void)puts("M230 failed: zero-tool final evidence guard.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    llm_auto_note_tool();
+    if (!llm_auto_final_has_evidence(LLM_WORKFLOW_AGENT)) {
+        (void)puts("M230 failed: tool evidence final allowance.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    llm_auto_finish("final");
+
+    llm_auto_begin(LLM_WORKFLOW_PLAN);
+    if (!llm_auto_final_has_evidence(LLM_WORKFLOW_PLAN)) {
+        (void)puts("M230 failed: plan final evidence exemption.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    llm_auto_finish("final");
+
     if (!write_text(TEST_ROLLBACK, "before\n")) {
         (void)puts("M230 failed: rollback fixture create.");
         cleanup();
@@ -160,6 +182,59 @@ int main(void)
     if (!file_contains(TEST_ROLLBACK, "before") ||
         file_contains(TEST_ROLLBACK, "after")) {
         (void)puts("M230 failed: incomplete write rollback.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!write_text(TEST_ROLLBACK, "bounded-before\n")) {
+        (void)puts("M230 failed: bounded-write fixture create.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    llm_auto_test_limits(3U, 3U);
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
+
+    if (!llm_auto_allow_write() ||
+        !rms_replace_text_file(TEST_ROLLBACK, "bounded-kept\n")) {
+        (void)puts("M230 failed: bounded-write fixture write.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    llm_auto_note_decline();
+    llm_auto_finish("turn-limit");
+
+    if (!file_contains(TEST_ROLLBACK, "bounded-kept") ||
+        file_contains(TEST_ROLLBACK, "bounded-before") ||
+        !llm_auto_status_text(output, sizeof(output)) ||
+        strstr(output, "Stop reason:   bounded-write") == NULL) {
+        (void)puts("M230 failed: bounded approved write retention.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!write_text(TEST_ROLLBACK, "error-before\n")) {
+        (void)puts("M230 failed: error rollback fixture create.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
+
+    if (!llm_auto_allow_write() ||
+        !rms_replace_text_file(TEST_ROLLBACK, "error-after\n")) {
+        (void)puts("M230 failed: error rollback fixture write.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    llm_auto_note_decline();
+    llm_auto_finish("error");
+
+    if (!file_contains(TEST_ROLLBACK, "error-before") ||
+        file_contains(TEST_ROLLBACK, "error-after")) {
+        (void)puts("M230 failed: decline must not suppress error rollback.");
         cleanup();
         return EXIT_FAILURE;
     }
