@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:45:00-05:00",
+  "updated_at": "2026-08-27T10:47:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,11 +18,11 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_LS_FILES_CANONICALIZATION_VAX_RETEST_PENDING",
+    "status": "ACTIVE_84_LS_FILES_DIRECT_DIAGNOSTIC_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "remote_candidate_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
-    "candidate_publication": "UNTESTED_GITHUB_CORRECTION",
+    "candidate_publication": "VAX_TESTED_FAILING_CORRECTION",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
@@ -30,10 +30,10 @@
       "fix #86 OpenVMS core.filemode normalization"
     ],
     "vax_evidence": {
-      "m265_gap008": "passes on all recent M275 attempts",
+      "m265_gap008": "passes on recent M275 attempts",
       "m275_83": "focused raw argument regression passes; full build/live Agent acceptance still pending",
       "m275_84": {
-        "tested_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+        "tested_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
         "build_status": "%X00000002",
         "build_stage": [
           "chdir TEST succeeded",
@@ -41,8 +41,7 @@
           "return to saved directory succeeded",
           "RMS version cleanup succeeded"
         ],
-        "direct_status": "%X00000002",
-        "direct_error": "GITRESTORE: repository path resolution failed for GAP008_RMS.TXT.",
+        "build_log_gitrestore": "no GITRESTORE stderr lines captured",
         "tracked_worktree_after_failure": "clean"
       },
       "issue86": "live GIT_AUTH_SETUP normalization previously passed by resetting repository-local core.filemode=false"
@@ -63,8 +62,9 @@
       "delta": "only SRC/GIT_RMS_RESTORE.C",
       "approach": "capture git ls-files --full-name from caller directory, scan for exactly one case-insensitive match to combined prefix/local candidate, use exact tracked spelling for existing cat-file lookup",
       "safety": "ambiguous case-colliding tracked paths fail closed; local RMS path remains separate from Git tree path",
-      "vax_acceptance": "pending"
+      "result": "VAX build rejected; direct focused executable plus nested ls-files --full-name probe required before further source changes"
     },
+    "next_action": "Run [.BUILD]M275_BACKLOG_TEST directly with SYS$ERROR TT:, then from [.TEST] run git rev-parse --show-prefix, git ls-files --full-name, and git ls-files --full-name GAP008_RMS.TXT; do not edit or rebuild first.",
     "cleanup": {
       "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
@@ -73,10 +73,11 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-    "tracked_worktree": "clean after failed direct diagnostic and ls-files probes",
+    "local_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
+    "tracked_worktree": "clean after failed 16a529d build",
     "core_filemode": "false",
-    "published_agent": "still previous accepted executable because M275 build has not reached final publish"
+    "published_agent": "still previous accepted executable because M275 build has not reached final publish",
+    "focused_test_executable": "[.BUILD]M275_BACKLOG_TEST.EXE exists from failed 16a529d build and contains the ls-files canonicalizer"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -86,7 +87,7 @@
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
     "83": "focused regression passes; full VAX build and live Agent verification still pending",
-    "84": "ls-tree canonicalizer rejected; ls-files-based correction 16a529d pending VAX retest",
+    "84": "ls-files canonicalizer 16a529d compiles but still returns nested restore failure; direct diagnostic pending",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
