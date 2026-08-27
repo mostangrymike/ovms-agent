@@ -16,6 +16,18 @@ $     WRITE SYS$OUTPUT "Run @BUILD first."
 $     EXIT %X10000002
 $ ENDIF
 
+$! M278: make the shipped GitHub service bridge available to a normal
+$! @OVMS_AGENT launch.  Preserve any explicit caller/system override.
+$ IF F$TRNLNM("OVMS_AGENT_GITHUB_BRIDGE") .EQS. ""
+$ THEN
+$     BRIDGE_FILE = PROJECT_DIR + "GITHUB_BRIDGE.COM"
+$     IF F$SEARCH(BRIDGE_FILE) .NES. ""
+$     THEN
+$         BRIDGE_COMMAND = "@" + BRIDGE_FILE
+$         DEFINE/USER OVMS_AGENT_GITHUB_BRIDGE "''BRIDGE_COMMAND'"
+$     ENDIF
+$ ENDIF
+
 $ IF P1 .NES. ""
 $ THEN
 $     DEFINE/USER OVMS_AGENT_ONESHOT "''P1'"
