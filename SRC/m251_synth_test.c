@@ -4,6 +4,7 @@
 
 #include "llm_internal.h"
 #include "LLM_REQUEST_AGENT.H"
+#include "LLM_RESPONSE.H"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -116,6 +117,41 @@ static int test_nonempty_output(void)
     return ok;
 }
 
+static int test_empty_completed(void)
+{
+    static const char empty_response[] =
+        "{\"status\":\"completed\",\"output\":[],"
+        "\"usage\":{\"output_tokens\":7,\"total_tokens\":26}}";
+    static const char nonempty_response[] =
+        "{\"status\":\"completed\",\"output\":[{"
+        "\"type\":\"message\"}],\"usage\":{\"output_tokens\":7}}";
+    long tokens;
+
+    tokens = 0L;
+    if (!llm_response_empty_completed(empty_response, &tokens) ||
+        tokens != 7L) {
+        return 0;
+    }
+
+    tokens = 0L;
+    return !llm_response_empty_completed(nonempty_response, &tokens);
+}
+
+static int request_has_default_limit(void)
+{
+    char *request;
+    int ok;
+
+    request = read_request();
+    if (request == NULL) {
+        return 0;
+    }
+
+    ok = strstr(request, "\"max_output_tokens\":2048") != NULL;
+    free(request);
+    return ok;
+}
+
 int main(void)
 {
     char *request;
@@ -124,6 +160,13 @@ int main(void)
     if (!test_nonempty_output()) {
         (void)puts(
             "M251 failed: empty output_text masked later synthesis."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_empty_completed()) {
+        (void)puts(
+            "M279 failed: completed empty response classification was invalid."
         );
         return EXIT_FAILURE;
     }
@@ -140,6 +183,14 @@ int main(void)
             NULL,
             0)) {
         (void)puts("M251 failed: initial local-context request failed.");
+        remove_all(LLM_REQUEST_FILE);
+        return EXIT_FAILURE;
+    }
+
+    if (!request_has_default_limit()) {
+        (void)puts(
+            "M279 failed: agent request omitted default output-token cap."
+        );
         remove_all(LLM_REQUEST_FILE);
         return EXIT_FAILURE;
     }
@@ -182,6 +233,7 @@ int main(void)
         strstr(request, "\"call_id\":\"call_m251_last\"") != NULL &&
         strstr(request, "\"output\":\"last tool result\"") != NULL &&
         strstr(request, "Produce the final answer now") != NULL &&
+        strstr(request, "\"max_output_tokens\":2048") != NULL &&
         strstr(request, "\"parallel_tool_calls\":false") != NULL &&
         strstr(request, "\"tools\"") == NULL &&
         strstr(request, "\"tool_choice\"") == NULL;
