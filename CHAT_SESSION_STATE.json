@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:15:00-05:00",
+  "updated_at": "2026-08-27T13:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,22 +11,31 @@
   },
   "m276": {
     "issue": 90,
-    "status": "CODE_HEAD_VAX_GREEN_LIVE_ACCEPTANCE_IN_PROGRESS",
+    "status": "RECONCILIATION_HEAD_VAX_ACCEPTANCE_PENDING",
     "branch": "m276-agent-loop-hardening",
     "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
+    "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
+    "reconciliation": "DOC/M276_RECONCILIATION.MD",
     "scope_issues": [58, 68, 81],
+    "closed_issues": [58, 68, 81],
     "canonical_acceptance": {
+      "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
       "build": "All regression tests passed; Build completed successfully",
       "status": "%X00000001",
       "tracked_worktree": "clean"
     },
     "live_acceptance": {
-      "81": "PASS: AGENT was instructed to execute no tools and reply exactly EVIDENCE_FREE_M276_TEST; output was surfaced, explicit evidence-free early-final diagnostic printed, AGENT/AUTO/STATUS showed workflow AGENT, Turns 1, Tool calls 0, Stop reason error; process status %X00000001; exact head unchanged; worktree clean",
-      "58": "PENDING",
-      "68": "PENDING"
+      "81": "PASS: zero-tool exact reply EVIDENCE_FREE_M276_TEST produced explicit evidence-free early-final diagnostic; AGENT/AUTO/STATUS Turns 1, Tool calls 0, Stop reason error; process status %X00000001; clean worktree",
+      "58": "PASS: controlled TEST/GAP008_RMS.TXT first replace_text approved/applied, deliberate second replace_text blocked with status limit and no second confirmation; only first change remained; @GIT_RESTORE returned %X00000001 and restored clean HEAD fixture",
+      "68": "PASS during #58 live run: real Groq rate limits recovered after same-request waits of 3 seconds and 19 seconds; agent continued to successful final instead of aborting"
     },
-    "net_files": [
+    "reconciliation_publication": {
+      "head": "44e439bf10dfa26c4d1e865ead74708c57663552",
+      "delta_from_code_head": "one commit; only DOC/M276_RECONCILIATION.MD added (+128/-0)",
+      "status": "UNTESTED_RECONCILIATION_ONLY_HEAD"
+    },
+    "net_code_files": [
       "SRC/LLM_AUTO.H",
       "SRC/LLM_AUTO_CORE.INC",
       "SRC/LLM_RATE_LIMIT.C",
@@ -41,16 +50,14 @@
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m276-agent-loop-hardening",
     "local_head": "2cf921fe2296b5768961b9331b125859556b30ce",
-    "tracked_worktree": "clean after canonical build and live #81 acceptance",
+    "tracked_worktree": "clean after canonical build, live #81, live #58, live #68, and fixture restore",
     "core_filemode": "false",
-    "published_agent": "M276 code-head accepted build image"
+    "published_agent": "M276 code-head VAX-green/live-accepted build image",
+    "next_action": "materialize reconciliation head 44e439bf10dfa26c4d1e865ead74708c57663552 and run final canonical VAX gate"
   },
   "important_open_defects": {
-    "58": "M276 live acceptance pending",
-    "68": "M276 live acceptance pending",
     "78": "GitHub bridge setup/docs/service completeness",
     "79": "Groq Qwen AGENT/CREATE response parsing",
-    "81": "M276 live acceptance passed; close as completed",
     "82": "resumed workspace continuation cannot create files"
   },
   "standing_rules": [
@@ -60,6 +67,7 @@
     "Use GITAUTH for prompt-free raw Git network operations; never configure credential.helper store/global/askpass.",
     "Keep core.filemode=false on this VAX checkout.",
     "Never call an untested GitHub head VAX-green.",
-    "Canonical root acceptance requires All regression tests passed and final status %X00000001."
+    "Canonical root acceptance requires All regression tests passed and final status %X00000001.",
+    "Maintain permanent lightweight milestone tags and retain only the two most recently completed milestone development branches after promotion."
   ]
 }
