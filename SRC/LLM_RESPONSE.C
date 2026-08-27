@@ -92,6 +92,109 @@ int llm_response_empty_completed(const char *json,
     return 1;
 }
 
+static int llm_text_known_tool(const char *name)
+{
+    static const char *tools[] = {
+        "list_directory",
+        "read_file",
+        "read_file_range",
+        "search_file",
+        "replace_text",
+        "replace_lines",
+        "structured_patch",
+        "create_file",
+        "run_build",
+        NULL
+    };
+    const char **tool;
+
+    if (name == NULL || *name == '\0') {
+        return 0;
+    }
+
+    for (tool = tools; *tool != NULL; ++tool) {
+        if (strcmp(name, *tool) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int llm_text_tool_like(const char *text,
+                       char *tool_name,
+                       size_t tool_name_size)
+{
+    const char *start;
+    const char *end;
+    const char *value;
+    char *decoded;
+    int bracketed;
+    int has_arguments;
+
+    if (tool_name != NULL && tool_name_size > 0U) {
+        tool_name[0] = '\0';
+    }
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    start = text;
+    while (*start == ' ' || *start == '\t' ||
+           *start == '\r' || *start == '\n') {
+        ++start;
+    }
+
+    end = text + strlen(text);
+    while (end > start &&
+           (end[-1] == ' ' || end[-1] == '\t' ||
+            end[-1] == '\r' || end[-1] == '\n')) {
+        --end;
+    }
+
+    if (end <= start) {
+        return 0;
+    }
+
+    bracketed =
+        ((*start == '{' && end[-1] == '}') ||
+         (*start == '[' && end[-1] == ']'));
+    if (!bracketed) {
+        return 0;
+    }
+
+    has_arguments =
+        strstr(start, "\"parameters\"") != NULL ||
+        strstr(start, "\"arguments\"") != NULL;
+    if (!has_arguments) {
+        return 0;
+    }
+
+    value = find_string_value(start, "name");
+    if (value == NULL) {
+        return 0;
+    }
+
+    decoded = json_decode_string(value, NULL);
+    if (decoded == NULL) {
+        return 0;
+    }
+
+    if (!llm_text_known_tool(decoded)) {
+        free(decoded);
+        return 0;
+    }
+
+    if (tool_name != NULL && tool_name_size > 0U &&
+        strlen(decoded) < tool_name_size) {
+        (void)strcpy(tool_name, decoded);
+    }
+
+    free(decoded);
+    return 1;
+}
+
 int display_clean_response(void)
 {
     char *json;
@@ -205,6 +308,7 @@ int display_output_text_from_json(const char *json)
     char *call_name;
     char *call_id;
     char *call_args;
+    char text_tool[64];
     int agent_workflow;
 
     decoded = extract_output_text_from_json(json);
@@ -217,6 +321,22 @@ int display_output_text_from_json(const char *json)
         llm_last_workflow == LLM_WORKFLOW_AGENT ||
         llm_last_workflow == LLM_WORKFLOW_WRITE ||
         llm_last_workflow == LLM_WORKFLOW_FIX;
+
+    if (agent_workflow &&
+        llm_text_tool_like(decoded, text_tool, sizeof(text_tool))) {
+        if (!llm_transport_streamed()) {
+            ansi_term_puts("");
+            ansi_term_puts(decoded);
+        }
+        ansi_term_puts("");
+        ansi_term_printf(
+            "Provider returned tool-like assistant text for %s without a "
+            "structured function call; OVMS Agent did not execute it.\n",
+            text_tool[0] != '\0' ? text_tool : "an advertised tool"
+        );
+        free(decoded);
+        return 0;
+    }
 
     if (agent_workflow &&
         !llm_auto_final_has_evidence(llm_last_workflow)) {
