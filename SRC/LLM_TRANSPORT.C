@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "llm_internal.h"
+#include "LLM_RATE_LIMIT.H"
 #include "LLM_SSE.H"
 #include "LLM_TRANSPORT.H"
 #include "llm_config.h"
@@ -11,6 +13,7 @@
 
 #define M262_RESPONSE_URL_MAX 640U
 #define M273_STREAM_REQ "OVMS_AGENT_STREAM_REQ.TMP"
+#define M276_RATE_RETRIES 2U
 
 static llm_stream_cb m273_stream_output = NULL;
 static int m273_last_streamed = 0;
@@ -324,7 +327,10 @@ int perform_openai_request(void)
     const char *base;
     char url[M262_RESPONSE_URL_MAX];
     char command[1024];
+    char *response;
     size_t needed;
+    unsigned int retries;
+    unsigned int wait_seconds;
     int status;
 
     m273_last_streamed = 0;
@@ -376,7 +382,43 @@ int perform_openai_request(void)
 
     (void)strcpy(command, prefix);
     (void)strcat(command, url);
-    status = system(command);
+    retries = 0U;
 
-    return (status & 1) != 0;
+    for (;;) {
+        m273_remove_all(LLM_RESPONSE_FILE);
+        status = system(command);
+        if ((status & 1) == 0) {
+            return 0;
+        }
+
+        response = read_entire_file(LLM_RESPONSE_FILE, NULL);
+        wait_seconds = 0U;
+
+        if (response == NULL ||
+            !llm_rate_limit_delay(response, &wait_seconds)) {
+            free(response);
+            return 1;
+        }
+
+        free(response);
+
+        if (retries >= M276_RATE_RETRIES) {
+            (void)puts(
+                "Provider rate-limit retry budget exhausted; returning the "
+                "final provider error."
+            );
+            return 1;
+        }
+
+        ++retries;
+        (void)printf(
+            "Provider rate limit; retrying the same request in %u second%s "
+            "(%u of %u).\n",
+            wait_seconds,
+            wait_seconds == 1U ? "" : "s",
+            retries,
+            M276_RATE_RETRIES
+        );
+        (void)sleep(wait_seconds);
+    }
 }

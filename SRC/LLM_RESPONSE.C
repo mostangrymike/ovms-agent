@@ -126,10 +126,50 @@ int display_api_error_from_json(const char *json)
 int display_output_text_from_json(const char *json)
 {
     char *decoded;
+    char *call_name;
+    char *call_id;
+    char *call_args;
+    int agent_workflow;
 
     decoded = extract_output_text_from_json(json);
 
     if (decoded == NULL) {
+        return 0;
+    }
+
+    agent_workflow =
+        llm_last_workflow == LLM_WORKFLOW_AGENT ||
+        llm_last_workflow == LLM_WORKFLOW_WRITE ||
+        llm_last_workflow == LLM_WORKFLOW_FIX;
+
+    if (agent_workflow &&
+        !llm_auto_final_has_evidence(llm_last_workflow)) {
+        call_name = NULL;
+        call_id = NULL;
+        call_args = NULL;
+
+        if (extract_function_call(
+                json,
+                &call_name,
+                &call_id,
+                &call_args)) {
+            free(call_name);
+            free(call_id);
+            free(call_args);
+            free(decoded);
+            return 0;
+        }
+
+        if (!llm_transport_streamed()) {
+            ansi_term_puts("");
+            ansi_term_puts(decoded);
+        }
+        ansi_term_puts("");
+        ansi_term_puts(
+            "Agent returned final text before executing any project tool; "
+            "treating this as an evidence-free early final."
+        );
+        free(decoded);
         return 0;
     }
 

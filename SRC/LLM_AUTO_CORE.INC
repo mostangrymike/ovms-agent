@@ -106,8 +106,23 @@ void llm_auto_note_tool(void)
     ++llm_auto_cur_tools;
 }
 
+int llm_auto_final_has_evidence(int workflow)
+{
+    if (workflow == LLM_WORKFLOW_PLAN) {
+        return 1;
+    }
+
+    return llm_auto_cur_tools != 0U;
+}
+
 int llm_auto_allow_write(void)
 {
+    if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
+        rms_run_has_writes()) {
+        llm_auto_write_blocked = 1;
+        return 0;
+    }
+
     if (llm_auto_cur_writes >= llm_auto_write_cfg()) {
         llm_auto_write_blocked = 1;
         return 0;
@@ -131,6 +146,7 @@ int llm_auto_partial_limit(void)
 void llm_auto_finish(const char *reason)
 {
     int rollback_needed;
+    int bounded_write;
 
     llm_auto_last_turns = llm_auto_cur_turns;
     llm_auto_last_tools = llm_auto_cur_tools;
@@ -141,10 +157,25 @@ void llm_auto_finish(const char *reason)
         reason = "unknown";
     }
 
+    bounded_write =
+        llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
+        rms_run_has_writes() &&
+        llm_auto_write_blocked &&
+        strcmp(reason, "turn-limit") == 0;
+
+    if (bounded_write) {
+        reason = "bounded-write";
+        (void)puts(
+            "Guarded write reached the turn limit after an additional write "
+            "was blocked; retaining the earlier approved file changes."
+        );
+    }
+
     rollback_needed =
         llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
         rms_run_has_writes() &&
-        (strcmp(reason, "final") != 0 || llm_auto_write_blocked);
+        strcmp(reason, "final") != 0 &&
+        strcmp(reason, "bounded-write") != 0;
 
     if (rollback_needed) {
         (void)puts(
@@ -175,6 +206,11 @@ void llm_auto_finish(const char *reason)
     llm_auto_last_reason[
         sizeof(llm_auto_last_reason) - 1U
     ] = '\0';
+}
+
+int llm_auto_bounded_completed(void)
+{
+    return strcmp(llm_auto_last_reason, "bounded-write") == 0;
 }
 
 int llm_auto_limits_text(char *output, size_t output_size)
