@@ -1,59 +1,55 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:20:00-05:00",
+  "updated_at": "2026-08-27T13:25:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-    "latest_code_milestone": "M275",
-    "note": "M275 is promoted to main."
+    "head": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "latest_code_milestone": "M276",
+    "note": "M276 promoted through PR #91. Promoted main tree ebdd40601eb3cc5292a2fc4179695971f6c53b37 exactly matches separately VAX-accepted reconciliation head 44e439bf10dfa26c4d1e865ead74708c57663552."
   },
   "m276": {
     "issue": 90,
-    "status": "RECONCILIATION_HEAD_VAX_ACCEPTANCE_PENDING",
+    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_TAG_PRUNE_PENDING",
     "branch": "m276-agent-loop-hardening",
     "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
     "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
+    "promotion_pr": 91,
+    "promotion_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "promotion_tree": "ebdd40601eb3cc5292a2fc4179695971f6c53b37",
     "reconciliation": "DOC/M276_RECONCILIATION.MD",
     "scope_issues": [58, 68, 81],
     "closed_issues": [58, 68, 81],
     "canonical_acceptance": {
       "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
+      "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
       "build": "All regression tests passed; Build completed successfully",
       "status": "%X00000001",
+      "core_filemode": "false",
       "tracked_worktree": "clean"
     },
     "live_acceptance": {
-      "81": "PASS: zero-tool exact reply EVIDENCE_FREE_M276_TEST produced explicit evidence-free early-final diagnostic; AGENT/AUTO/STATUS Turns 1, Tool calls 0, Stop reason error; process status %X00000001; clean worktree",
-      "58": "PASS: controlled TEST/GAP008_RMS.TXT first replace_text approved/applied, deliberate second replace_text blocked with status limit and no second confirmation; only first change remained; @GIT_RESTORE returned %X00000001 and restored clean HEAD fixture",
-      "68": "PASS during #58 live run: real Groq rate limits recovered after same-request waits of 3 seconds and 19 seconds; agent continued to successful final instead of aborting"
+      "81": "PASS: zero-tool exact reply produced explicit evidence-free early-final diagnostic; status showed Tool calls 0 and Stop reason error; process %X00000001; clean worktree",
+      "58": "PASS: first controlled fixture write approved/applied, second deliberate write blocked with status limit and no second approval; only first change remained; fixture restored from HEAD with %X00000001 and clean worktree",
+      "68": "PASS: real Groq rate limits recovered in the same autonomous run after visible waits of 3 seconds and 19 seconds; context and write state survived and run reached successful final"
     },
-    "reconciliation_publication": {
-      "head": "44e439bf10dfa26c4d1e865ead74708c57663552",
-      "delta_from_code_head": "one commit; only DOC/M276_RECONCILIATION.MD added (+128/-0)",
-      "status": "UNTESTED_RECONCILIATION_ONLY_HEAD"
-    },
-    "net_code_files": [
-      "SRC/LLM_AUTO.H",
-      "SRC/LLM_AUTO_CORE.INC",
-      "SRC/LLM_RATE_LIMIT.C",
-      "SRC/LLM_RATE_LIMIT.H",
-      "SRC/LLM_RESPONSE.C",
-      "SRC/LLM_TRANSPORT.C",
-      "SRC/LLM_TRANSPORT_M273.C",
-      "SRC/m230_auto_test.c"
-    ]
+    "retention_pending": {
+      "tag": "create lightweight m276 at canonical promoted main c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+      "delete_completed_branch": "m274-agent-stress-project",
+      "retain_completed_branches": ["m275-backlog-hardening", "m276-agent-loop-hardening"]
+    }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m276-agent-loop-hardening",
-    "local_head": "2cf921fe2296b5768961b9331b125859556b30ce",
-    "tracked_worktree": "clean after canonical build, live #81, live #58, live #68, and fixture restore",
+    "local_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
+    "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
+    "tracked_worktree": "clean after separately accepted M276 reconciliation build",
     "core_filemode": "false",
-    "published_agent": "M276 code-head VAX-green/live-accepted build image",
-    "next_action": "materialize reconciliation head 44e439bf10dfa26c4d1e865ead74708c57663552 and run final canonical VAX gate"
+    "published_agent": "M276 reconciliation-head accepted build image",
+    "next_action": "advance local main to promoted c9aacd6..., create/push m276 tag there, prune m274-agent-stress-project locally/remotely, verify retention"
   },
   "important_open_defects": {
     "78": "GitHub bridge setup/docs/service completeness",
