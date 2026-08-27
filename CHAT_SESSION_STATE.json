@@ -1,113 +1,66 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T14:53:00-05:00",
+  "updated_at": "2026-08-27T15:01:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "latest_code_milestone": "M277",
-    "note": "M277 promoted through PR #93. Promoted main tree 07182e4d4216f82345aa15a7109372e17c88f987 exactly matches separately VAX-accepted reconciliation head 3b26ef10924010b93c71cef8957d5c6c00ce0fec."
-  },
-  "m276": {
-    "issue": 90,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
-    "branch": "m276-agent-loop-hardening",
-    "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
-    "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
-    "promotion_pr": 91,
-    "promotion_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "tag": "m276",
-    "tag_target": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "closed_issues": [58, 68, 81]
+    "head": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "latest_code_milestone": "M278",
+    "note": "M278 promoted through PR #96. Promoted main tree 873f3204dfe05c6b6b0e282a322b8c02a5e688c7 exactly matches separately VAX-accepted reconciliation head 7cfcad5969123add7d5de060c52a1c1ba3b7d52b. The merge commit itself was not separately VAX-run."
   },
   "m277": {
     "issue": 92,
     "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
     "branch": "m277-create-interoperability",
-    "base_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "code_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
     "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
-    "promotion_pr": 93,
     "promotion_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "promotion_tree": "07182e4d4216f82345aa15a7109372e17c88f987",
-    "reconciliation": "DOC/M277_RECONCILIATION.MD",
-    "scope_issues": [79, 82],
-    "closed_issues": [79, 82],
-    "out_of_scope": [78],
-    "canonical_acceptance": {
-      "code_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
-      "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
-      "build": "All regression tests passed; Build completed successfully",
-      "status": "%X00000001",
-      "core_filemode": "false",
-      "tracked_worktree": "clean"
-    },
-    "live_acceptance": {
-      "79": "PASS: Groq qwen/qwen3.6-27b produced a standard recognized create_file proposal; confirmation declined; probe absent; worktree clean; fail-closed response-type diagnostic retained for future shape drift",
-      "82": "PASS: persistent create refused under read-only; workspace plus writes enabled reached normal guarded create confirmation; workspace plus deassigned OVMS_AGENT_WRITE_ENABLED refused before provider contact; test session deleted; probe absent; worktree clean"
-    },
-    "promotion_verification": "PR #93 head remained exact accepted reconciliation head; compare reconciliation..merge has zero changed files; merge tree equals accepted reconciliation tree",
     "tag": "m277",
-    "tag_target": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "retention": "Complete: m275-backlog-hardening deleted remotely and locally; m276-agent-loop-hardening and m277-create-interoperability retained; final VAX remote-tracking refs match GitHub."
+    "tag_target": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
   },
   "m278": {
     "issue": 94,
-    "status": "FUNCTIONAL_COMPLETE_CODE_HEAD_VAX_GREEN_RECONCILIATION_PENDING",
+    "status": "PROMOTED_MAIN_VAX_GREEN_TAG_RETENTION_PENDING",
     "branch": "m278-github-service-completion",
     "base_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
     "reconciliation_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
-    "reconciliation": "DOC/M278_RECONCILIATION.MD",
+    "reconciliation_tree": "873f3204dfe05c6b6b0e282a322b8c02a5e688c7",
+    "promotion_pr": 96,
+    "promotion_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "promotion_tree": "873f3204dfe05c6b6b0e282a322b8c02a5e688c7",
     "scope_issues": [78],
-    "closed_issues": [78, 95],
-    "net_code_files": [
-      "GITHUB_BRIDGE.COM",
-      "OVMS_AGENT.COM",
-      "README.md",
-      "SRC/m250_github_test.c"
-    ],
+    "closed_issues": [78],
+    "acceptance_issue": 95,
     "canonical_acceptance": {
       "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
+      "reconciliation_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
       "build": "All regression tests passed; Build completed successfully",
-      "build_status": "%X00000001",
-      "focused_regression": "M250 guarded GitHub regression test passed",
-      "focused_status": "%X00000001",
+      "status": "%X00000001",
+      "focused_regression": "M250 guarded GitHub regression test passed; %X00000001",
       "core_filemode": "false",
       "tracked_worktree": "clean"
     },
     "live_acceptance": {
-      "full_gate": "PASS: AGENT/GITHUB/ISSUES help refused before FULL approval",
-      "pr": "PASS: PR help and PR list succeeded",
-      "issues": "PASS: issues help, list, and create succeeded",
-      "acceptance_issue": "#95 M278-SERVICE-BRIDGE-ACCEPTANCE created through OVMS Agent bridge, independently verified, and closed completed",
-      "cleanup": "PASS: request/response/header/body/API temporary files all absent after live run",
-      "override_path": "PASS: pre-existing OVMS_AGENT_GITHUB_BRIDGE override remained usable",
-      "auto_wire": "PASS: with bridge logical explicitly absent before @OVMS_AGENT, PR and issue help succeeded; logical remained absent in caller after EXIT"
+      "full_gate": "PASS",
+      "pr_help_list": "PASS",
+      "issues_help_list_create": "PASS",
+      "launcher_auto_wire": "PASS: with OVMS_AGENT_GITHUB_BRIDGE deassigned before launch, PR and issue help succeeded and the logical remained absent after exit",
+      "cleanup": "PASS: all bridge/request/response temporary artifacts absent after live run",
+      "acceptance_issue": "#95 created through bridge and independently closed completed"
     },
-    "reconciliation_audit": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b is exactly one commit beyond the VAX-green code head and adds only DOC/M278_RECONCILIATION.MD (+201/-0)",
-    "next_gate": "Materialize only DOC/M278_RECONCILIATION.MD at reconciliation head, run canonical @BUILD, verify %X00000001, clean worktree and core.filemode=false; then promote through normal PR path and verify promoted merge tree equals separately VAX-accepted reconciliation tree."
+    "promotion_verification": "PR #96 head remained exact accepted reconciliation head; compare reconciliation..merge has zero changed files; merge tree equals accepted reconciliation tree",
+    "tag": "m278 pending",
+    "retention": "pending: advance VAX local main, create/push permanent m278 tag, verify m276 tag, prune completed m276-agent-loop-hardening, retain m277 and m278 development branches"
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m278-github-service-completion",
-    "local_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
+    "local_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
     "local_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "local_branches": ["main", "m276-agent-loop-hardening", "m277-create-interoperability", "m278-github-service-completion"],
-    "remote_tracking_branches": ["origin/main", "origin/m276-agent-loop-hardening", "origin/m277-create-interoperability", "origin/m278-github-service-completion"],
-    "local_tags": {
-      "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-      "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
-    },
-    "tracked_worktree": "clean at VAX-green M278 code head; reconciliation doc not yet materialized",
+    "tracked_worktree": "clean after M278 reconciliation acceptance",
     "core_filemode": "false",
-    "published_agent": "M278 code-head accepted build image"
-  },
-  "github_remote_state": {
-    "branches": ["main", "chat-session-state", "m276-agent-loop-hardening", "m277-create-interoperability", "m278-github-service-completion"],
-    "m277_tag": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "m275_branch": "absent"
+    "published_agent": "M278 reconciliation-head accepted build image"
   },
   "important_open_defects": {},
   "standing_rules": [
