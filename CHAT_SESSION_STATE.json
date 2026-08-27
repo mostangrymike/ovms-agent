@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T14:27:00-05:00",
+  "updated_at": "2026-08-27T14:28:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -25,7 +25,7 @@
     "issue": 92,
     "status": "PROMOTED_MAIN_VAX_GREEN_REMOTE_RETENTION_COMPLETE_VAX_TRACKING_CLEANUP_PENDING",
     "branch": "m277-create-interoperability",
-    "base_main": "c9aacd6ac7b2942f7bf855cc8537717882e9312",
+    "base_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
     "code_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
     "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
     "promotion_pr": 93,
