@@ -1,6 +1,8 @@
 #ifndef LLM_REQUEST_AGENT_H
 #define LLM_REQUEST_AGENT_H
 
+#include "LLM_CONFIG.H"
+
 int llm_m279_tool_model_ok(const char *url,
                            const char *model);
 
