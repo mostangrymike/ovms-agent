@@ -4,6 +4,30 @@
 
 #include "llm_internal.h"
 
+#define M279_FAILED_BUILD "OVMS_AGENT_FAILED_BUILD.TXT"
+
+static int m279_save_failed_build(const char *text)
+{
+    FILE *file;
+    int success;
+
+    if (text == NULL) {
+        return 0;
+    }
+
+    file = fopen(M279_FAILED_BUILD, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    success = fputs(text, file) != EOF;
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
 void llm_agent_build(agent_state *state, const char *goal)
 {
     static const char instructions[] =
@@ -138,6 +162,14 @@ void llm_agent_build(agent_state *state, const char *goal)
     (void)printf("Tool executed: run_build [%s, status %d]\n",
                  (build_status & 1) != 0 ? "success" : "failure",
                  build_status);
+
+    if ((build_status & 1) == 0) {
+        if (!m279_save_failed_build(tool_output)) {
+            (void)puts("Warning: unable to save failed build output.");
+        }
+    } else {
+        (void)remove(M279_FAILED_BUILD);
+    }
 
     if (!write_build_followup_request(model,
                                             instructions,
