@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:02:00-05:00",
+  "updated_at": "2026-08-27T13:08:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -43,28 +43,11 @@
       "84": "from [.TEST], @[-]GIT_RESTORE GAP008_RMS.TXT restored and verified HEAD; status %X00000001; clean worktree",
       "86": "forced core.filemode=true, @GIT_AUTH_SETUP returned %X00000001 and normalized core.filemode=false; exact code head unchanged; clean worktree"
     },
-    "closed_issues": [83, 84, 86],
-    "cleanup": {
-      "m274_netcfg": "tracked fixture removed and stale physical local content cleaned; M274 reconciliation/history preserved",
-      "remote_retained_branches": [
-        "main",
-        "chat-session-state",
-        "m274-agent-stress-project",
-        "m275-backlog-hardening"
-      ],
-      "deleted_remote_branches": [
-        "m272-dead-file-cleanup",
-        "m273-ansi-presentation",
-        "m274-phase4-build-purge",
-        "m274-phase6-reporting",
-        "m275-promotion-staging"
-      ],
-      "retention_result": "complete; only the two most recently completed milestone development branches remain alongside main and chat-session-state"
-    }
+    "closed_issues": [83, 84, 86]
   },
   "m276": {
     "issue": 90,
-    "status": "GITHUB_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "status": "CODE_HEAD_VAX_GREEN_LIVE_ACCEPTANCE_PENDING",
     "branch": "m276-agent-loop-hardening",
     "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "candidate_head": "2cf921fe2296b5768961b9331b125859556b30ce",
@@ -83,39 +66,35 @@
       "58": "after one guarded AGENT/WRITE RMS write is materialized, later write actions are blocked; turn-limit after the block commits earlier approved changes as bounded-write, while real errors still roll back",
       "68": "provider error JSON with rate_limit_exceeded/Rate limit reached plus explicit Please try again in <decimal>s is retried using the same request; fractional waits round up, per-wait cap 60s, two retries",
       "81": "AGENT/WRITE/FIX output text cannot be accepted as final before any project tool evidence; function-call responses continue to the tool and PLAN is exempt",
-      "regression": "existing M230 regression now covers #58 retention/error rollback, #81 evidence gate, and #68 parser cases"
+      "regression": "existing M230 regression covers #58 retention/error rollback, #81 evidence gate, and #68 parser cases"
     },
     "build_wiring": "LLM_RATE_LIMIT.C is included by LLM_TRANSPORT_M273.C and compiled into the existing LLM_TRANSPORT.OBJ; no linker option or build procedure changes",
-    "github_audit": "main..candidate contains exactly the eight intended files; candidate is not VAX-green until canonical OpenVMS build acceptance",
-    "vax_acceptance": "PENDING"
+    "canonical_acceptance": {
+      "head": "2cf921fe2296b5768961b9331b125859556b30ce",
+      "diff_check": "clean",
+      "changed_files": "exactly eight intended files",
+      "build": "All regression tests passed; Build completed successfully",
+      "status": "%X00000001",
+      "tracked_worktree": "clean"
+    },
+    "live_acceptance": "PENDING for #81, #58, #68"
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "main",
-    "local_head": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
+    "current_branch": "m276-agent-loop-hardening",
+    "local_head": "2cf921fe2296b5768961b9331b125859556b30ce",
     "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-    "tracked_worktree": "clean after final M275 VAX hygiene; M276 has not yet been materialized locally",
+    "tracked_worktree": "clean after canonical M276 build",
     "core_filemode": "false",
-    "build_versions": "[.BUILD] purged with /KEEP=1",
-    "local_branches": [
-      "main",
-      "m274-agent-stress-project",
-      "m275-backlog-hardening"
-    ],
-    "remote_tracking_branches": [
-      "origin/main",
-      "origin/m274-agent-stress-project",
-      "origin/m275-backlog-hardening"
-    ],
-    "published_agent": "M275 accepted build image",
-    "hygiene_status": "M276_SYNC_PENDING"
+    "published_agent": "M276 code-head accepted build image",
+    "hygiene_status": "LIVE_ACCEPTANCE_PENDING"
   },
   "important_open_defects": {
-    "58": "M276 GitHub candidate pending VAX acceptance: extra post-write proposals can force rollback",
-    "68": "M276 GitHub candidate pending VAX acceptance: provider 429 aborts agent loop instead of bounded retry",
+    "58": "M276 code head VAX-green; live production acceptance pending",
+    "68": "M276 code head VAX-green; live provider retry acceptance pending",
     "78": "GitHub bridge setup/docs/service completeness",
     "79": "Groq Qwen AGENT/CREATE response parsing",
-    "81": "M276 GitHub candidate pending VAX acceptance: Groq Qwen intent-only final with zero tool evidence",
+    "81": "M276 code head VAX-green; live zero-evidence final acceptance pending",
     "82": "resumed workspace continuation cannot create files"
   },
   "standing_rules": [
