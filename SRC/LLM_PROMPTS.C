@@ -84,10 +84,16 @@ static const char prompt_write[] =
         "request a second existing-file patch in the same run. For scaffolding "
         "new project files, create only the files directly required by the user, "
         "one create_file call at a time, and stop when the requested scaffold is "
-        "complete. Do not ask for confirmation in ordinary text. Confirmation "
-        "is handled locally by the write tools; call the needed tool immediately "
-        "once the exact edit or file content is known. Never modify sensitive "
-        "files or request paths outside the project.";
+        "complete. When creating an OpenVMS BUILD.COM, use conservative DEC C "
+        "and DCL syntax and never invent compiler or linker qualifiers. For a "
+        "single-file program FOO.C with no project-specific build requirements, "
+        "prefer exactly the simple pattern `$ CC FOO.C`, `$ LINK FOO`, and "
+        "`$ EXIT $STATUS`; add qualifiers only when existing project evidence "
+        "proves they are valid and required. Do not ask for confirmation in "
+        "ordinary text. Confirmation is handled locally by the write tools; "
+        "call the needed tool immediately once the exact edit or file content "
+        "is known. Never modify sensitive files or request paths outside the "
+        "project.";
 
 static const char prompt_create[] =
         "You are a careful OpenVMS C project agent operating inside a "
