@@ -271,7 +271,7 @@ static int git_rms_capture_prefix(char *prefix,
     return 1;
 }
 
-static char *git_rms_tracked_paths(void)
+static char *git_rms_tracked_path(const char *candidate)
 {
     FILE *command;
     char dcl[256];
@@ -279,7 +279,8 @@ static char *git_rms_tracked_paths(void)
     int status;
     char *text;
 
-    if (!git_rms_current_default(current, sizeof(current))) {
+    if (!git_rms_path_safe(candidate) ||
+        !git_rms_current_default(current, sizeof(current))) {
         return NULL;
     }
 
@@ -295,10 +296,12 @@ static char *git_rms_tracked_paths(void)
             "$ SET NOON\n"
             "$ SET DEFAULT %s\n"
             "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
-            "$ GIT \"ls-files\" \"--full-name\"\n"
+            "$ GIT \"ls-files\" \"--full-name\" \"--\" \""
+            ":(top,icase)%s\"\n"
             "$ EXIT $STATUS\n",
             current,
-            GIT_RMS_FILES_FILE) < 0 ||
+            GIT_RMS_FILES_FILE,
+            candidate) < 0 ||
         fclose(command) != 0) {
         git_rms_remove_all(GIT_RMS_CMD_FILE);
         return NULL;
@@ -322,51 +325,36 @@ static int git_rms_canonical_path(const char *candidate,
                                   size_t git_path_size)
 {
     char *text;
-    char *cursor;
-    char *end;
     size_t length;
-    int found;
 
     if (!git_rms_path_safe(candidate) || git_path == NULL ||
         git_path_size == 0U) {
         return 0;
     }
 
-    text = git_rms_tracked_paths();
+    text = git_rms_tracked_path(candidate);
     if (text == NULL) {
         return 0;
     }
 
-    found = 0;
-    cursor = text;
-    while (*cursor != '\0') {
-        end = strchr(cursor, '\n');
-        if (end != NULL) {
-            *end = '\0';
-        }
-
-        length = strlen(cursor);
-        if (length > 0U && cursor[length - 1U] == '\r') {
-            cursor[--length] = '\0';
-        }
-
-        if (git_rms_ci_equal(cursor, candidate)) {
-            if (found || length >= git_path_size) {
-                free(text);
-                return 0;
-            }
-            (void)memcpy(git_path, cursor, length + 1U);
-            found = 1;
-        }
-
-        if (end == NULL) {
-            break;
-        }
-        cursor = end + 1;
+    length = strlen(text);
+    while (length > 0U &&
+           (text[length - 1U] == '\n' ||
+            text[length - 1U] == '\r')) {
+        text[--length] = '\0';
     }
 
+    if (length == 0U || length >= git_path_size ||
+        strchr(text, '\n') != NULL || strchr(text, '\r') != NULL ||
+        !git_rms_ci_equal(text, candidate) ||
+        !git_rms_path_safe(text)) {
+        free(text);
+        return 0;
+    }
+
+    (void)memcpy(git_path, text, length + 1U);
     free(text);
-    return found && git_rms_path_safe(git_path);
+    return 1;
 }
 
 static int git_rms_make_git_path(const char *path,
