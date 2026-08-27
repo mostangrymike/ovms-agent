@@ -7,11 +7,13 @@ const char *llm_prompt_write(void);
 const char *llm_prompt_create(void);
 
 /*
- * The agent loop includes the internal header before this header. Keep the
- * supervised-repair guard file-local and intercept only write calls made by
- * that loop.
+ * The M279 supervised-write interception is implementation-local to the
+ * agent loop. Other internal translation units also include this public
+ * prompt header, so they must not inherit macros that capture the loop's
+ * build_after_write or descriptor locals.
  */
-#if defined(LLM_INTERNAL_H)
+#if defined(LLM_AGENT_LOOP_PROMPT_GUARD)
+#include "LLM_AUTO.H"
 #include "LLM_GOAL_GUARD.INC"
 
 static int llm_guard_write_kind(
