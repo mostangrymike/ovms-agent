@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T09:14:00-05:00",
+  "updated_at": "2026-08-27T10:03:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,10 +18,10 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_CORRECTED_CANDIDATE_VAX_RETEST_PENDING",
+    "status": "ACTIVE_SECOND_84_CORRECTION_VAX_RETEST_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
+    "remote_candidate_head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
     "candidate_publication": "UNTESTED_GITHUB_CANDIDATE",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
@@ -29,31 +29,47 @@
       "fix #84 GITRESTORE nested Git-tree/current-directory path handling",
       "fix #86 OpenVMS core.filemode normalization"
     ],
-    "first_vax_attempt": {
-      "head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
-      "build_status": "%X00000002",
-      "failure": "M275 nested RMS-aware Git restore regression failed",
-      "side_effect": "TEST/GAP008_RMS.TXT left modified by failed regression",
-      "issue83_partial": "raw splitter helper passed before nested failure, but production wrapper not accepted because final image was not rebuilt",
-      "issue86": "candidate GIT_AUTH_SETUP changed repository-local core.filemode true to false with %X00000001",
-      "manual_agent_tests_after_failure": "used previous OVMS Agent executable and are not candidate acceptance evidence"
+    "vax_attempts": [
+      {
+        "head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
+        "build_status": "%X00000002",
+        "failure": "M275 nested RMS-aware Git restore regression failed",
+        "side_effect": "TEST/GAP008_RMS.TXT left modified by first regression design",
+        "issue86": "candidate GIT_AUTH_SETUP changed repository-local core.filemode true to false with %X00000001",
+        "manual_agent_tests_after_failure": "used previous OVMS Agent executable and are not candidate acceptance evidence"
+      },
+      {
+        "head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
+        "build_status": "%X00000002",
+        "failure": "dedicated M275 nested RMS-aware Git restore regression still failed",
+        "m265_regression": "passed",
+        "tracked_worktree_after_failure": "clean",
+        "untracked": "SRC/OVMS_AGENT_TRANSCRIPT.DAT only",
+        "inference": "raw #83 splitter subtest reached the later #84 test, but production image still not accepted because build stopped before final link"
+      }
+    ],
+    "current_correction": {
+      "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
+      "delta_from_f4b5": "only SRC/GIT_RMS_RESTORE.C and M275 regression diagnostics",
+      "git_capture": "resolve caller C current directory with a probe file plus fgetname(...,1), emit DCL SET DEFAULT to that exact OpenVMS directory, then run git rev-parse --show-prefix",
+      "reason": "system() DCL subprocess is not guaranteed to inherit a C RTL chdir, so stable temp files alone did not make Git observe the nested directory",
+      "regression_output": "#83 success is now printed immediately before #84 runs so later failures do not hide the raw-argument result"
     },
-    "correction": {
-      "git_capture": "GIT_RMS_RESTORE now uses stable SYS$LOGIN capture/temp specs so Git CWD changes cannot relocate nested capture files",
-      "regression": "new SRC/M275_BACKLOG_TEST.C uses disposable newer RMS versions and cleans back to original spec on failure/success",
-      "m265_test": "restored byte-for-byte to accepted baseline",
-      "build": "BUILD_LLM_MODULES.COM compiles/links/runs dedicated M275 backlog regression",
-      "history": "intermediate GitHub edits squashed; branch is one commit ahead of main"
+    "cleanup": {
+      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed; no netcfg paths remain in git status",
+      "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
-    "tracked_worktree": "dirty: TEST/GAP008_RMS.TXT modified by failed M275 regression",
+    "local_head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
+    "tracked_worktree": "clean after second failed M275 regression",
     "core_filemode": "false",
-    "m274_netcfg": "tracked fixture removed from candidate; local contents deleted; no netcfg paths shown by git status before failed regression",
-    "process_note": "latest capture ended inside the previously built OVMS Agent after a canceled PATCH; EXIT before DCL recovery"
+    "untracked": [
+      "SRC/OVMS_AGENT_TRANSCRIPT.DAT"
+    ],
+    "m274_netcfg": "removed locally and from candidate branch"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -62,9 +78,9 @@
     "79": "Groq Qwen AGENT/CREATE response parsing",
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
-    "83": "M275 corrected candidate pending VAX retest",
-    "84": "M275 corrected candidate pending VAX retest",
-    "86": "live normalization behavior passed; full branch acceptance pending"
+    "83": "M275 raw-dispatch candidate pending full VAX build and live Agent verification",
+    "84": "second M275 correction at afed98c pending VAX retest",
+    "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
