@@ -1,122 +1,82 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T08:25:00-05:00",
+  "updated_at": "2026-08-27T09:14:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "latest_code_milestone": "M274",
-    "note": "M274 is promoted and VAX-green on main after exact post-promotion acceptance of 1fa959e0f577d220c0c17bde0e39ea904c90fb6a."
+    "note": "M274 is promoted and VAX-green on main."
   },
   "m274": {
     "issue": 49,
-    "issue_state": "closed-completed",
     "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN",
-    "parent_branch": "m274-agent-stress-project",
-    "final_branch_head": "17153f0065e0d71933da36da16259ac4df7e2d61",
-    "final_branch_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
-    "vax_green_code_checkpoint": "ba31fdbb91487243892472a0d836a6447fe79f71",
-    "reconciliation": {
-      "path": "DOC/M274_RECONCILIATION.MD",
-      "commit": "17153f0065e0d71933da36da16259ac4df7e2d61",
-      "vax_accepted": true
+    "promotion_pr": 87,
+    "promotion_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
+    "reconciliation": "DOC/M274_RECONCILIATION.MD"
+  },
+  "m275": {
+    "issue": 88,
+    "status": "ACTIVE_CORRECTED_CANDIDATE_VAX_RETEST_PENDING",
+    "branch": "m275-backlog-hardening",
+    "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
+    "remote_candidate_head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
+    "candidate_publication": "UNTESTED_GITHUB_CANDIDATE",
+    "scope": [
+      "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
+      "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
+      "fix #84 GITRESTORE nested Git-tree/current-directory path handling",
+      "fix #86 OpenVMS core.filemode normalization"
+    ],
+    "first_vax_attempt": {
+      "head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
+      "build_status": "%X00000002",
+      "failure": "M275 nested RMS-aware Git restore regression failed",
+      "side_effect": "TEST/GAP008_RMS.TXT left modified by failed regression",
+      "issue83_partial": "raw splitter helper passed before nested failure, but production wrapper not accepted because final image was not rebuilt",
+      "issue86": "candidate GIT_AUTH_SETUP changed repository-local core.filemode true to false with %X00000001",
+      "manual_agent_tests_after_failure": "used previous OVMS Agent executable and are not candidate acceptance evidence"
     },
-    "phase_plan": {
-      "phase1": "COMPLETE",
-      "phase2": "COMPLETE",
-      "phase3": "COMPLETE",
-      "phase4": "COMPLETE",
-      "phase5": "COMPLETE",
-      "phase6": "COMPLETE",
-      "phase7": "COMPLETE"
-    },
-    "final_branch_vax_acceptance": {
-      "branch": "m274-agent-stress-project",
-      "head": "17153f0065e0d71933da36da16259ac4df7e2d61",
-      "target_build_status": "%X00000001",
-      "summary_status": "%X00000001",
-      "query_status": "%X00000001",
-      "root_build": "All regression tests passed.",
-      "root_build_status": "%X00000001",
-      "tracked_worktree": "clean after repository-local core.filemode=false normalization"
-    },
-    "phase6_persistence": {
-      "base_session": "42BABDB9",
-      "child_session": "6F535C3D",
-      "acceptance": "Child created with AGENT/SESSION/FORK, resumed across multiple process launches and more than one sitting, preserved goal/history/transcript, required workspace reapproval after resume, and produced real guarded summary writes compiled/run on VAX."
-    },
-    "promotion": {
-      "pr": 87,
-      "state": "merged",
-      "base": "main",
-      "original_main_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
-      "head": "m274-agent-stress-project",
-      "head_sha": "17153f0065e0d71933da36da16259ac4df7e2d61",
-      "merge_commit": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-      "merge_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
-      "tree_identity": "Promotion merge tree is identical to the VAX-accepted M274 branch tree.",
-      "postpromotion_vax_acceptance": {
-        "branch": "main",
-        "head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-        "target_build_status": "%X00000001",
-        "summary": "Devices: 1; ConfigBytes: 83; NewestUpdated: 1787620123",
-        "summary_status": "%X00000001",
-        "query": "query all router1 => Matches: 1",
-        "query_status": "%X00000001",
-        "root_build": "All regression tests passed.",
-        "root_build_status": "%X00000001",
-        "core_filemode": "false",
-        "tracked_worktree": "clean",
-        "untracked_state": "only known M274 fixture/session files"
-      }
-    },
-    "important_open_defects": {
-      "58": "extra post-write proposals can force rollback",
-      "68": "provider 429 aborts agent loop instead of bounded retry",
-      "78": "GitHub bridge setup/docs/service completeness",
-      "79": "Groq Qwen AGENT/CREATE response parsing",
-      "81": "Groq Qwen intent-only final with zero tool evidence",
-      "82": "resumed workspace continuation cannot create files",
-      "83": "AGENT/TOOL/RUN live args use transcript sanitizer/truncation",
-      "84": "GITRESTORE Git-tree/current-directory path conflation",
-      "86": "GITRESTORE mode-only 100644=>100755 drift on OpenVMS"
+    "correction": {
+      "git_capture": "GIT_RMS_RESTORE now uses stable SYS$LOGIN capture/temp specs so Git CWD changes cannot relocate nested capture files",
+      "regression": "new SRC/M275_BACKLOG_TEST.C uses disposable newer RMS versions and cleans back to original spec on failure/success",
+      "m265_test": "restored byte-for-byte to accepted baseline",
+      "build": "BUILD_LLM_MODULES.COM compiles/links/runs dedicated M275 backlog regression",
+      "history": "intermediate GitHub edits squashed; branch is one commit ahead of main"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "main",
-    "local_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "tracked_worktree": "clean",
+    "current_branch": "m275-backlog-hardening",
+    "local_head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
+    "tracked_worktree": "dirty: TEST/GAP008_RMS.TXT modified by failed M275 regression",
     "core_filemode": "false",
-    "remote_main_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "untracked_files": [
-      "m274_netcfg/m274_basecfg.txt",
-      "m274_netcfg/m274_candcfg.txt",
-      "m274_netcfg/m274_diff.txt",
-      "m274_netcfg/m274_diff2.txt",
-      "m274_netcfg/m274_p2text.dat",
-      "m274_netcfg/m274_p2text.dat__router1_cfg",
-      "m274_netcfg/m274_phase2.dat",
-      "m274_netcfg/m274_phase2.dat__router1_cfg",
-      "m274_netcfg/ovms_agent_session.cur",
-      "m274_netcfg/ovms_agent_sessions.dat",
-      "m274_netcfg/ovms_agent_transcript.dat"
-    ]
+    "m274_netcfg": "tracked fixture removed from candidate; local contents deleted; no netcfg paths shown by git status before failed regression",
+    "process_note": "latest capture ended inside the previously built OVMS Agent after a canceled PATCH; EXIT before DCL recovery"
+  },
+  "important_open_defects": {
+    "58": "extra post-write proposals can force rollback",
+    "68": "provider 429 aborts agent loop instead of bounded retry",
+    "78": "GitHub bridge setup/docs/service completeness",
+    "79": "Groq Qwen AGENT/CREATE response parsing",
+    "81": "Groq Qwen intent-only final with zero tool evidence",
+    "82": "resumed workspace continuation cannot create files",
+    "83": "M275 corrected candidate pending VAX retest",
+    "84": "M275 corrected candidate pending VAX retest",
+    "86": "live normalization behavior passed; full branch acceptance pending"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
     "Omit literal OVMS-AGENT> from lines intended for OVMS Agent; all agent commands must be one physical input line.",
     "Use GITAUTH for prompt-free raw Git network operations; never configure credential.helper store/global/askpass.",
-    "Use repository-root RMS-aware GITRESTORE for changed/new tracked nested paths until #84 is fixed.",
-    "On this VAX checkout keep core.filemode=false until #86 is resolved.",
+    "Keep core.filemode=false on this VAX checkout until #86 is fully accepted.",
     "Verify exact HEAD after VAX Git ref-changing operations; native success text alone is not acceptance evidence.",
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
-    "Never call an untested GitHub head VAX-green or a milestone promoted before post-merge VAX acceptance.",
+    "Never call an untested GitHub head VAX-green.",
     "Canonical root acceptance requires All regression tests passed and final status %X00000001.",
-    "Do not stage known untracked M274 runtime/config/diff/session fixtures casually.",
-    "Until #83 is fixed, do not rely on AGENT/TOOL/RUN for arbitrary source-edit payloads.",
+    "Until #83 is accepted, do not rely on the currently installed Agent image for arbitrary AGENT/TOOL/RUN source-edit payloads.",
     "Never record credential values in durable state."
   ]
 }
