@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T15:08:00-05:00",
+  "updated_at": "2026-08-27T16:25:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -54,6 +54,37 @@
     "tag_target": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
     "retention": "Complete: permanent m278 tag created and pushed; m276-agent-loop-hardening deleted after verifying permanent m276 tag; m277-create-interoperability and m278-github-service-completion retained; VAX local branches and remote-tracking refs match GitHub."
   },
+  "m279": {
+    "issue": 97,
+    "status": "SOURCE_CANDIDATE_READY_VAX_GATE_PENDING",
+    "branch": "m279-legacy-backlog-closure",
+    "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "candidate_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
+    "candidate_tree": "237c3cb37ceae73bbd3eb6779ea26db503aac252",
+    "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
+    "closed_issues": [],
+    "source_outcomes": {
+      "53": "failed AGENT/BUILD output persisted for AGENT/REPAIR/PLAN handoff",
+      "54": "AGENT/WRITE advertises transactional create_file with distinct bounded create budget",
+      "55": "flat-root known project filenames accepted by persisted-plan scope validator",
+      "56": "shared provider-neutral max_output_tokens cap, default 2048",
+      "59": "completed empty Responses output classified with token-use diagnostic",
+      "60": "structured patch approval reads live session approval policy",
+      "65": "command-side SHOW/STRUCT uses conservative brace-required type definition classifier",
+      "67": "Groq openai/gpt-oss-* agent tool requests fail locally on Responses transport; exact allowlist preserved",
+      "70": "JSON-like assistant text naming an advertised tool is diagnosed but never executed",
+      "71": "incidental NULL excluded from goal-protected code tokens",
+      "73": "refactor object invalidation recognizes [.BUILD] and flat-root layouts",
+      "76": "stateless continuation filters unanswered sibling function calls; guarded edit reader separated from 64 KiB REVIEW limit"
+    },
+    "static_audit": {
+      "changed_files": 25,
+      "new_files": "five .INC fragments included by existing translation units; no new linker object wiring",
+      "external_identifier_limit": "new link-visible names checked <=31 characters",
+      "rms_fixture": "70,000-byte large-edit regression uses 35,000 one-character lines"
+    },
+    "next_action": "Materialize exact candidate b95c6be05556aeb98122b3abd7a03912faabc5dd on the VAX with GITAUTH and GIT_RESTORE, run canonical @BUILD plus focused M251 regressions, verify clean status/core.filemode, then perform live provider/runtime acceptance before issue closure or reconciliation."
+  },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m278-github-service-completion",
@@ -65,17 +96,20 @@
       "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
     },
-    "tracked_worktree": "clean after final M278 remote-tracking repair",
+    "tracked_worktree": "clean after final M278 remote-tracking repair; this is the last recorded state before M279 VAX materialization",
     "core_filemode": "false",
     "published_agent": "M278 reconciliation-head accepted build image"
   },
   "github_remote_state": {
     "main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "retained_development_branches": ["m277-create-interoperability", "m278-github-service-completion"],
-    "m276_development_branch": "absent",
+    "active_m279_branch": "m279-legacy-backlog-closure@b95c6be05556aeb98122b3abd7a03912faabc5dd",
+    "retained_completed_development_branches": ["m277-create-interoperability", "m278-github-service-completion"],
     "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
   },
-  "important_open_defects": {},
+  "important_open_defects": {
+    "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
+    "note": "All have source-side M279 outcomes, but none are accepted or closed until VAX/live evidence is recorded."
+  },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
