@@ -9,6 +9,7 @@
 #define GIT_RMS_HEAD_FILE "SYS$LOGIN:OVMS_AGENT_GIT_HEAD.TMP"
 #define GIT_RMS_SIZE_FILE "SYS$LOGIN:OVMS_AGENT_GIT_SIZE.TMP"
 #define GIT_RMS_PREFIX_FILE "SYS$LOGIN:OVMS_AGENT_GIT_PREFIX.TMP"
+#define GIT_RMS_CWD_FILE "OVMS_AGENT_GIT_CWD.TMP"
 #define GIT_RMS_MAX_TEXT 262144U
 #define GIT_RMS_PATH_MAX 1024U
 
@@ -127,16 +128,63 @@ static int git_rms_read_size(
     return 1;
 }
 
+static int git_rms_current_default(char *output,
+                                   size_t output_size)
+{
+    FILE *probe;
+    char full[GIT_RMS_PATH_MAX];
+    char *end;
+    size_t length;
+
+    if (output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    git_rms_remove_all(GIT_RMS_CWD_FILE);
+    probe = fopen(GIT_RMS_CWD_FILE, "w");
+    if (probe == NULL) {
+        return 0;
+    }
+
+    if (fgetname(probe, full, 1) == NULL) {
+        (void)fclose(probe);
+        git_rms_remove_all(GIT_RMS_CWD_FILE);
+        return 0;
+    }
+
+    if (fclose(probe) != 0) {
+        git_rms_remove_all(full);
+        return 0;
+    }
+    git_rms_remove_all(full);
+
+    end = strrchr(full, ']');
+    if (end == NULL) {
+        return 0;
+    }
+
+    length = (size_t)(end - full) + 1U;
+    if (length >= output_size) {
+        return 0;
+    }
+
+    (void)memcpy(output, full, length);
+    output[length] = '\0';
+    return 1;
+}
+
 static int git_rms_capture_prefix(char *prefix,
                                   size_t prefix_size)
 {
     FILE *command;
     char dcl[256];
+    char current[GIT_RMS_PATH_MAX];
     char *text;
     size_t length;
     int status;
 
-    if (prefix == NULL || prefix_size == 0U) {
+    if (prefix == NULL || prefix_size == 0U ||
+        !git_rms_current_default(current, sizeof(current))) {
         return 0;
     }
 
@@ -150,9 +198,11 @@ static int git_rms_capture_prefix(char *prefix,
 
     if (fprintf(command,
             "$ SET NOON\n"
+            "$ SET DEFAULT %s\n"
             "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
             "$ GIT \"rev-parse\" \"--show-prefix\"\n"
             "$ EXIT $STATUS\n",
+            current,
             GIT_RMS_PREFIX_FILE) < 0 ||
         fclose(command) != 0) {
         git_rms_remove_all(GIT_RMS_CMD_FILE);
