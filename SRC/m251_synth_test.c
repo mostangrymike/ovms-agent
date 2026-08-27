@@ -235,8 +235,8 @@ static int test_large_edit_reader(void)
         return 0;
     }
 
-    for (index = 0UL; index < 70000UL; ++index) {
-        if (fputc('A', file) == EOF) {
+    for (index = 0UL; index < 35000UL; ++index) {
+        if (fputs("A\n", file) == EOF) {
             (void)fclose(file);
             remove_all(M279_LARGE_EDIT_TEST);
             return 0;
