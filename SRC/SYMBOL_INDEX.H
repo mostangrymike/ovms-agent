@@ -111,4 +111,11 @@ void symbol_decl_fix_diagnose(agent_state *state,
                               const char *module,
                               unsigned int limit);
 
+/*
+ * Refactor verification in SYMBOL_INDEX.C uses system() for controlled build
+ * and object invalidation.  The M279 wrapper delegates every command except
+ * the legacy [.BUILD] object-delete form, which gains flat-root awareness.
+ */
+#include "SYMBOL_SYSTEM_M279.INC"
+
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
