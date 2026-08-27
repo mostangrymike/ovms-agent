@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T08:22:00-05:00",
+  "updated_at": "2026-08-27T08:25:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "latest_code_milestone": "M273",
-    "note": "PR #87 merged M274 to main. Do not mark M274 promoted/VAX-green on main until exact post-promotion VAX acceptance of 1fa959e0f577d220c0c17bde0e39ea904c90fb6a."
+    "latest_code_milestone": "M274",
+    "note": "M274 is promoted and VAX-green on main after exact post-promotion acceptance of 1fa959e0f577d220c0c17bde0e39ea904c90fb6a."
   },
   "m274": {
     "issue": 49,
     "issue_state": "closed-completed",
-    "status": "COMPLETE_PROMOTION_MERGED_POSTPROMOTION_VAX_PENDING",
+    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN",
     "parent_branch": "m274-agent-stress-project",
     "final_branch_head": "17153f0065e0d71933da36da16259ac4df7e2d61",
     "final_branch_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
@@ -56,7 +56,20 @@
       "merge_commit": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
       "merge_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
       "tree_identity": "Promotion merge tree is identical to the VAX-accepted M274 branch tree.",
-      "postpromotion_vax_acceptance": "PENDING"
+      "postpromotion_vax_acceptance": {
+        "branch": "main",
+        "head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
+        "target_build_status": "%X00000001",
+        "summary": "Devices: 1; ConfigBytes: 83; NewestUpdated: 1787620123",
+        "summary_status": "%X00000001",
+        "query": "query all router1 => Matches: 1",
+        "query_status": "%X00000001",
+        "root_build": "All regression tests passed.",
+        "root_build_status": "%X00000001",
+        "core_filemode": "false",
+        "tracked_worktree": "clean",
+        "untracked_state": "only known M274 fixture/session files"
+      }
     },
     "important_open_defects": {
       "58": "extra post-write proposals can force rollback",
@@ -72,8 +85,8 @@
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "m274-agent-stress-project",
-    "local_head": "17153f0065e0d71933da36da16259ac4df7e2d61",
+    "current_branch": "main",
+    "local_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "tracked_worktree": "clean",
     "core_filemode": "false",
     "remote_main_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
