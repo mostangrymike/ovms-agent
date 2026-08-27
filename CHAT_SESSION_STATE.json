@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T14:21:00-05:00",
+  "updated_at": "2026-08-27T14:27:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -23,9 +23,9 @@
   },
   "m277": {
     "issue": 92,
-    "status": "PROMOTED_MAIN_VAX_GREEN_TAG_RETENTION_PENDING",
+    "status": "PROMOTED_MAIN_VAX_GREEN_REMOTE_RETENTION_COMPLETE_VAX_TRACKING_CLEANUP_PENDING",
     "branch": "m277-create-interoperability",
-    "base_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "base_main": "c9aacd6ac7b2942f7bf855cc8537717882e9312",
     "code_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
     "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
     "promotion_pr": 93,
@@ -48,20 +48,29 @@
       "82": "PASS: persistent create refused under read-only; workspace plus writes enabled reached normal guarded create confirmation; workspace plus deassigned OVMS_AGENT_WRITE_ENABLED refused before provider contact; test session deleted; probe absent; worktree clean"
     },
     "promotion_verification": "PR #93 head remained exact accepted reconciliation head; compare reconciliation..merge has zero changed files; merge tree equals accepted reconciliation tree",
-    "tag": "m277 pending",
-    "retention": "pending: create permanent m277 tag, advance VAX local main, then prune completed m275-backlog-hardening and retain m276/m277 development branches"
+    "tag": "m277",
+    "tag_target": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+    "retention": "GitHub remote retention complete: m275-backlog-hardening deleted; m276-agent-loop-hardening and m277-create-interoperability retained. VAX local branches match; only stale local remote-tracking ref origin/m275-backlog-hardening remains to delete."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m277-create-interoperability",
     "local_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
-    "local_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "local_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+    "local_branches": ["main", "m276-agent-loop-hardening", "m277-create-interoperability"],
+    "remote_tracking_branches": ["origin/main", "origin/m275-backlog-hardening stale-local-only", "origin/m276-agent-loop-hardening", "origin/m277-create-interoperability"],
     "local_tags": {
-      "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780"
+      "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+      "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
     },
-    "tracked_worktree": "clean after M277 reconciliation acceptance",
+    "tracked_worktree": "clean after M277 tag and local branch-retention step",
     "core_filemode": "false",
     "published_agent": "M277 reconciliation-head accepted build image"
+  },
+  "github_remote_state": {
+    "branches": ["main", "chat-session-state", "m276-agent-loop-hardening", "m277-create-interoperability"],
+    "m277_tag": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+    "m275_branch": "absent"
   },
   "important_open_defects": {
     "78": "GitHub bridge setup/docs/service completeness; deferred from M277"
