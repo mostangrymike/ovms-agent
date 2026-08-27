@@ -14,6 +14,34 @@
 
 static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
 
+int llm_m279_tool_model_ok(const char *url,
+                           const char *model)
+{
+    static const char groq_host[] = "api.groq.com";
+    static const char gpt_oss[] = "openai/gpt-oss-";
+
+    if (url == NULL || model == NULL) {
+        return 1;
+    }
+
+    return strstr(url, groq_host) == NULL ||
+           strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) != 0;
+}
+
+static int llm_m279_tool_model_check(const char *model)
+{
+    if (llm_m279_tool_model_ok(llm_api_url(), model)) {
+        return 1;
+    }
+
+    (void)puts(
+        "Groq GPT-OSS agent tool workflows are not supported through the "
+        "Responses transport. Use a Groq model with working Responses tool "
+        "calls or another provider."
+    );
+    return 0;
+}
+
 static int llm_update_local_ctx(const char *call_id,
                                 const char *tool_output)
 {
@@ -89,6 +117,10 @@ int write_create_agent_request(
 
     (void)previous_id;
 
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
@@ -156,6 +188,10 @@ int write_agent_request_mode(const char *model,
     int success;
 
     (void)previous_id;
+
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
 
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
@@ -299,6 +335,10 @@ int write_agent_request(const char *model,
     int success;
 
     (void)previous_id;
+
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
 
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
