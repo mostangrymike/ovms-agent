@@ -14,7 +14,6 @@ static unsigned int llm_auto_cur_tools = 0U;
 static unsigned int llm_auto_cur_writes = 0U;
 static int llm_auto_cur_workflow = LLM_WORKFLOW_NONE;
 static int llm_auto_write_blocked = 0;
-static int llm_auto_declined_after_write = 0;
 
 static unsigned int llm_auto_last_turns = 0U;
 static unsigned int llm_auto_last_tools = 0U;
@@ -80,7 +79,6 @@ void llm_auto_begin(int workflow)
     llm_auto_cur_writes = 0U;
     llm_auto_cur_workflow = workflow;
     llm_auto_write_blocked = 0;
-    llm_auto_declined_after_write = 0;
 
     if (workflow == LLM_WORKFLOW_WRITE) {
         rms_run_begin();
@@ -108,21 +106,6 @@ void llm_auto_note_tool(void)
     ++llm_auto_cur_tools;
 }
 
-void llm_auto_note_applied(void)
-{
-    if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE) {
-        llm_auto_declined_after_write = 0;
-    }
-}
-
-void llm_auto_note_decline(void)
-{
-    if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
-        rms_run_has_writes()) {
-        llm_auto_declined_after_write = 1;
-    }
-}
-
 int llm_auto_final_has_evidence(int workflow)
 {
     if (workflow == LLM_WORKFLOW_PLAN) {
@@ -134,6 +117,12 @@ int llm_auto_final_has_evidence(int workflow)
 
 int llm_auto_allow_write(void)
 {
+    if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
+        rms_run_has_writes()) {
+        llm_auto_write_blocked = 1;
+        return 0;
+    }
+
     if (llm_auto_cur_writes >= llm_auto_write_cfg()) {
         llm_auto_write_blocked = 1;
         return 0;
@@ -171,14 +160,14 @@ void llm_auto_finish(const char *reason)
     bounded_write =
         llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
         rms_run_has_writes() &&
-        llm_auto_declined_after_write &&
+        llm_auto_write_blocked &&
         strcmp(reason, "turn-limit") == 0;
 
     if (bounded_write) {
         reason = "bounded-write";
         (void)puts(
-            "Guarded write reached the turn limit after a later patch was "
-            "declined; retaining earlier approved file changes."
+            "Guarded write reached the turn limit after an additional write "
+            "was blocked; retaining the earlier approved file changes."
         );
     }
 
@@ -217,7 +206,6 @@ void llm_auto_finish(const char *reason)
     llm_auto_last_reason[
         sizeof(llm_auto_last_reason) - 1U
     ] = '\0';
-    llm_auto_declined_after_write = 0;
 }
 
 int llm_auto_bounded_completed(void)
@@ -307,7 +295,6 @@ void llm_auto_reset(void)
     llm_auto_last_tools = 0U;
     llm_auto_last_writes = 0U;
     llm_auto_last_workflow = LLM_WORKFLOW_NONE;
-    llm_auto_declined_after_write = 0;
     (void)strcpy(llm_auto_last_reason, "none");
 }
 
