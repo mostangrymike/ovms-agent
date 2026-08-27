@@ -119,3 +119,5 @@ static int plan_has_sensitive_text(const char *text)
     return plan_api_key_value(text) ||
            plan_bearer_value(text);
 }
+
+#include "LLM_PLAN_SCOPE_M279.INC"
