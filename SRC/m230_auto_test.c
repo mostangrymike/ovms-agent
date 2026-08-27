@@ -202,6 +202,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    llm_auto_note_applied();
     llm_auto_note_decline();
     llm_auto_finish("turn-limit");
 
@@ -210,6 +211,39 @@ int main(void)
         !llm_auto_status_text(output, sizeof(output)) ||
         strstr(output, "Stop reason:   bounded-write") == NULL) {
         (void)puts("M230 failed: bounded approved write retention.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!write_text(TEST_ROLLBACK, "later-before\n")) {
+        (void)puts("M230 failed: later-write fixture create.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    llm_auto_begin(LLM_WORKFLOW_WRITE);
+    if (!llm_auto_allow_write() ||
+        !rms_replace_text_file(TEST_ROLLBACK, "later-first\n")) {
+        (void)puts("M230 failed: later-write first patch.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    llm_auto_note_applied();
+    llm_auto_note_decline();
+
+    if (!llm_auto_allow_write() ||
+        !rms_replace_text_file(TEST_ROLLBACK, "later-second\n")) {
+        (void)puts("M230 failed: later-write second patch.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    llm_auto_note_applied();
+    llm_auto_finish("turn-limit");
+
+    if (!file_contains(TEST_ROLLBACK, "later-before") ||
+        file_contains(TEST_ROLLBACK, "later-first") ||
+        file_contains(TEST_ROLLBACK, "later-second")) {
+        (void)puts("M230 failed: later write must restore rollback semantics.");
         cleanup();
         return EXIT_FAILURE;
     }
@@ -229,6 +263,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    llm_auto_note_applied();
     llm_auto_note_decline();
     llm_auto_finish("error");
 
