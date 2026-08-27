@@ -208,6 +208,7 @@ int main(void)
 
     if (!file_contains(TEST_ROLLBACK, "bounded-kept") ||
         file_contains(TEST_ROLLBACK, "bounded-before") ||
+        !llm_auto_bounded_completed() ||
         !llm_auto_status_text(output, sizeof(output)) ||
         strstr(output, "Stop reason:   bounded-write") == NULL) {
         (void)puts("M230 failed: bounded approved write retention.");
@@ -242,7 +243,8 @@ int main(void)
 
     if (!file_contains(TEST_ROLLBACK, "later-before") ||
         file_contains(TEST_ROLLBACK, "later-first") ||
-        file_contains(TEST_ROLLBACK, "later-second")) {
+        file_contains(TEST_ROLLBACK, "later-second") ||
+        llm_auto_bounded_completed()) {
         (void)puts("M230 failed: later write must restore rollback semantics.");
         cleanup();
         return EXIT_FAILURE;
@@ -268,7 +270,8 @@ int main(void)
     llm_auto_finish("error");
 
     if (!file_contains(TEST_ROLLBACK, "error-before") ||
-        file_contains(TEST_ROLLBACK, "error-after")) {
+        file_contains(TEST_ROLLBACK, "error-after") ||
+        llm_auto_bounded_completed()) {
         (void)puts("M230 failed: decline must not suppress error rollback.");
         cleanup();
         return EXIT_FAILURE;
