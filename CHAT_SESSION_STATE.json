@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T11:24:00-05:00",
+  "updated_at": "2026-08-27T13:02:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -62,12 +62,39 @@
       "retention_result": "complete; only the two most recently completed milestone development branches remain alongside main and chat-session-state"
     }
   },
+  "m276": {
+    "issue": 90,
+    "status": "GITHUB_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "branch": "m276-agent-loop-hardening",
+    "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
+    "candidate_head": "2cf921fe2296b5768961b9331b125859556b30ce",
+    "scope_issues": [58, 68, 81],
+    "net_files": [
+      "SRC/LLM_AUTO.H",
+      "SRC/LLM_AUTO_CORE.INC",
+      "SRC/LLM_RATE_LIMIT.C",
+      "SRC/LLM_RATE_LIMIT.H",
+      "SRC/LLM_RESPONSE.C",
+      "SRC/LLM_TRANSPORT.C",
+      "SRC/LLM_TRANSPORT_M273.C",
+      "SRC/m230_auto_test.c"
+    ],
+    "candidate_summary": {
+      "58": "after one guarded AGENT/WRITE RMS write is materialized, later write actions are blocked; turn-limit after the block commits earlier approved changes as bounded-write, while real errors still roll back",
+      "68": "provider error JSON with rate_limit_exceeded/Rate limit reached plus explicit Please try again in <decimal>s is retried using the same request; fractional waits round up, per-wait cap 60s, two retries",
+      "81": "AGENT/WRITE/FIX output text cannot be accepted as final before any project tool evidence; function-call responses continue to the tool and PLAN is exempt",
+      "regression": "existing M230 regression now covers #58 retention/error rollback, #81 evidence gate, and #68 parser cases"
+    },
+    "build_wiring": "LLM_RATE_LIMIT.C is included by LLM_TRANSPORT_M273.C and compiled into the existing LLM_TRANSPORT.OBJ; no linker option or build procedure changes",
+    "github_audit": "main..candidate contains exactly the eight intended files; candidate is not VAX-green until canonical OpenVMS build acceptance",
+    "vax_acceptance": "PENDING"
+  },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "main",
     "local_head": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-    "tracked_worktree": "clean after final VAX hygiene; git status --short and git diff --check empty",
+    "tracked_worktree": "clean after final M275 VAX hygiene; M276 has not yet been materialized locally",
     "core_filemode": "false",
     "build_versions": "[.BUILD] purged with /KEEP=1",
     "local_branches": [
@@ -81,14 +108,14 @@
       "origin/m275-backlog-hardening"
     ],
     "published_agent": "M275 accepted build image",
-    "hygiene_status": "COMPLETE"
+    "hygiene_status": "M276_SYNC_PENDING"
   },
   "important_open_defects": {
-    "58": "extra post-write proposals can force rollback",
-    "68": "provider 429 aborts agent loop instead of bounded retry",
+    "58": "M276 GitHub candidate pending VAX acceptance: extra post-write proposals can force rollback",
+    "68": "M276 GitHub candidate pending VAX acceptance: provider 429 aborts agent loop instead of bounded retry",
     "78": "GitHub bridge setup/docs/service completeness",
     "79": "Groq Qwen AGENT/CREATE response parsing",
-    "81": "Groq Qwen intent-only final with zero tool evidence",
+    "81": "M276 GitHub candidate pending VAX acceptance: Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files"
   },
   "standing_rules": [
