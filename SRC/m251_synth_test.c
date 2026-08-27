@@ -6,6 +6,11 @@
 #include "LLM_REQUEST_AGENT.H"
 #include "LLM_RESPONSE.H"
 
+#define M279_LARGE_EDIT_TEST "M279_LARGE_EDIT.TMP"
+
+int llm_m279_edit_read_ok(const char *path,
+                          unsigned long minimum);
+
 int command_line_complete(const char *input,
                           size_t input_size,
                           int reached_eof)
@@ -158,6 +163,36 @@ static int request_has_default_limit(void)
     return ok;
 }
 
+static int test_large_edit_reader(void)
+{
+    FILE *file;
+    unsigned long index;
+    int ok;
+
+    remove_all(M279_LARGE_EDIT_TEST);
+    file = fopen(M279_LARGE_EDIT_TEST, "wb");
+    if (file == NULL) {
+        return 0;
+    }
+
+    for (index = 0UL; index < 70000UL; ++index) {
+        if (fputc('A', file) == EOF) {
+            (void)fclose(file);
+            remove_all(M279_LARGE_EDIT_TEST);
+            return 0;
+        }
+    }
+
+    if (fclose(file) != 0) {
+        remove_all(M279_LARGE_EDIT_TEST);
+        return 0;
+    }
+
+    ok = llm_m279_edit_read_ok(M279_LARGE_EDIT_TEST, 70000UL);
+    remove_all(M279_LARGE_EDIT_TEST);
+    return ok;
+}
+
 int main(void)
 {
     char *request;
@@ -173,6 +208,13 @@ int main(void)
     if (!test_empty_completed()) {
         (void)puts(
             "M279 failed: completed empty response classification was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_large_edit_reader()) {
+        (void)puts(
+            "M279 failed: guarded edit reader retained REVIEW size ceiling."
         );
         return EXIT_FAILURE;
     }
@@ -259,5 +301,6 @@ int main(void)
 
     (void)puts("M251 final synthesis request test passed.");
     (void)puts("M279 sibling tool-call filtering test passed.");
+    (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
