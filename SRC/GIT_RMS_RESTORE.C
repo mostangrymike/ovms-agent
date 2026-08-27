@@ -9,6 +9,7 @@
 #define GIT_RMS_HEAD_FILE "SYS$LOGIN:OVMS_AGENT_GIT_HEAD.TMP"
 #define GIT_RMS_SIZE_FILE "SYS$LOGIN:OVMS_AGENT_GIT_SIZE.TMP"
 #define GIT_RMS_PREFIX_FILE "SYS$LOGIN:OVMS_AGENT_GIT_PREFIX.TMP"
+#define GIT_RMS_TREE_FILE "SYS$LOGIN:OVMS_AGENT_GIT_TREE.TMP"
 #define GIT_RMS_CWD_FILE "OVMS_AGENT_GIT_CWD.TMP"
 #define GIT_RMS_MAX_TEXT 262144U
 #define GIT_RMS_PATH_MAX 1024U
@@ -51,6 +52,35 @@ static int git_rms_path_safe(const char *path)
     }
 
     return 1;
+}
+
+static int git_rms_ci_equal(const char *left,
+                            const char *right)
+{
+    unsigned char a;
+    unsigned char b;
+
+    if (left == NULL || right == NULL) {
+        return 0;
+    }
+
+    while (*left != '\0' && *right != '\0') {
+        a = (unsigned char)*left++;
+        b = (unsigned char)*right++;
+        if (a >= (unsigned char)'a' && a <= (unsigned char)'z') {
+            a = (unsigned char)(a - (unsigned char)'a' +
+                                (unsigned char)'A');
+        }
+        if (b >= (unsigned char)'a' && b <= (unsigned char)'z') {
+            b = (unsigned char)(b - (unsigned char)'a' +
+                                (unsigned char)'A');
+        }
+        if (a != b) {
+            return 0;
+        }
+    }
+
+    return *left == '\0' && *right == '\0';
 }
 
 static char *git_rms_read_text(const char *path)
@@ -241,11 +271,193 @@ static int git_rms_capture_prefix(char *prefix,
     return 1;
 }
 
+static char *git_rms_tree_names(const char *parent)
+{
+    FILE *command;
+    char dcl[256];
+    char current[GIT_RMS_PATH_MAX];
+    int status;
+    char *text;
+
+    if (parent == NULL || !git_rms_current_default(current, sizeof(current))) {
+        return NULL;
+    }
+
+    git_rms_remove_all(GIT_RMS_CMD_FILE);
+    git_rms_remove_all(GIT_RMS_TREE_FILE);
+
+    command = fopen(GIT_RMS_CMD_FILE, "w");
+    if (command == NULL) {
+        return NULL;
+    }
+
+    if (*parent == '\0') {
+        if (fprintf(command,
+                "$ SET NOON\n"
+                "$ SET DEFAULT %s\n"
+                "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
+                "$ GIT \"ls-tree\" \"--name-only\" \"HEAD\"\n"
+                "$ EXIT $STATUS\n",
+                current,
+                GIT_RMS_TREE_FILE) < 0) {
+            (void)fclose(command);
+            git_rms_remove_all(GIT_RMS_CMD_FILE);
+            return NULL;
+        }
+    } else {
+        if (fprintf(command,
+                "$ SET NOON\n"
+                "$ SET DEFAULT %s\n"
+                "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
+                "$ GIT \"ls-tree\" \"--name-only\" \"HEAD:%s\"\n"
+                "$ EXIT $STATUS\n",
+                current,
+                GIT_RMS_TREE_FILE,
+                parent) < 0) {
+            (void)fclose(command);
+            git_rms_remove_all(GIT_RMS_CMD_FILE);
+            return NULL;
+        }
+    }
+
+    if (fclose(command) != 0) {
+        git_rms_remove_all(GIT_RMS_CMD_FILE);
+        return NULL;
+    }
+
+    (void)snprintf(dcl, sizeof(dcl), "@%s", GIT_RMS_CMD_FILE);
+    status = system(dcl);
+    git_rms_remove_all(GIT_RMS_CMD_FILE);
+    if ((status & 1) == 0) {
+        git_rms_remove_all(GIT_RMS_TREE_FILE);
+        return NULL;
+    }
+
+    text = git_rms_read_text(GIT_RMS_TREE_FILE);
+    git_rms_remove_all(GIT_RMS_TREE_FILE);
+    return text;
+}
+
+static int git_rms_tree_component(const char *parent,
+                                  const char *component,
+                                  char *exact,
+                                  size_t exact_size)
+{
+    char *text;
+    char *cursor;
+    char *end;
+    size_t length;
+    int found;
+
+    if (parent == NULL || component == NULL || exact == NULL ||
+        exact_size == 0U || *component == '\0') {
+        return 0;
+    }
+
+    text = git_rms_tree_names(parent);
+    if (text == NULL) {
+        return 0;
+    }
+
+    found = 0;
+    cursor = text;
+    while (*cursor != '\0') {
+        end = strchr(cursor, '\n');
+        if (end != NULL) {
+            *end = '\0';
+        }
+        length = strlen(cursor);
+        if (length > 0U && cursor[length - 1U] == '\r') {
+            cursor[--length] = '\0';
+        }
+
+        if (git_rms_ci_equal(cursor, component)) {
+            if (found || length >= exact_size) {
+                free(text);
+                return 0;
+            }
+            (void)memcpy(exact, cursor, length + 1U);
+            found = 1;
+        }
+
+        if (end == NULL) {
+            break;
+        }
+        cursor = end + 1;
+    }
+
+    free(text);
+    return found;
+}
+
+static int git_rms_canonical_path(const char *candidate,
+                                  char *git_path,
+                                  size_t git_path_size)
+{
+    char parent[GIT_RMS_PATH_MAX];
+    char component[GIT_RMS_PATH_MAX];
+    char exact[GIT_RMS_PATH_MAX];
+    const char *cursor;
+    const char *slash;
+    size_t parent_length;
+    size_t length;
+
+    if (!git_rms_path_safe(candidate) || git_path == NULL ||
+        git_path_size == 0U) {
+        return 0;
+    }
+
+    parent[0] = '\0';
+    cursor = candidate;
+    while (*cursor != '\0') {
+        slash = strchr(cursor, '/');
+        if (slash == NULL) {
+            length = strlen(cursor);
+        } else {
+            length = (size_t)(slash - cursor);
+        }
+        if (length == 0U || length >= sizeof(component)) {
+            return 0;
+        }
+        (void)memcpy(component, cursor, length);
+        component[length] = '\0';
+
+        if (!git_rms_tree_component(parent, component,
+                                    exact, sizeof(exact))) {
+            return 0;
+        }
+
+        parent_length = strlen(parent);
+        length = strlen(exact);
+        if (parent_length + (parent_length != 0U ? 1U : 0U) +
+            length + 1U > sizeof(parent)) {
+            return 0;
+        }
+        if (parent_length != 0U) {
+            parent[parent_length++] = '/';
+        }
+        (void)memcpy(parent + parent_length, exact, length + 1U);
+
+        if (slash == NULL) {
+            break;
+        }
+        cursor = slash + 1;
+    }
+
+    length = strlen(parent);
+    if (length + 1U > git_path_size) {
+        return 0;
+    }
+    (void)memcpy(git_path, parent, length + 1U);
+    return git_rms_path_safe(git_path);
+}
+
 static int git_rms_make_git_path(const char *path,
                                  char *git_path,
                                  size_t git_path_size)
 {
     char prefix[GIT_RMS_PATH_MAX];
+    char candidate[GIT_RMS_PATH_MAX];
     size_t prefix_length;
     size_t path_length;
 
@@ -257,14 +469,15 @@ static int git_rms_make_git_path(const char *path,
 
     prefix_length = strlen(prefix);
     path_length = strlen(path);
-    if (prefix_length + path_length + 1U > git_path_size) {
+    if (prefix_length + path_length + 1U > sizeof(candidate)) {
         return 0;
     }
 
-    (void)memcpy(git_path, prefix, prefix_length);
-    (void)memcpy(git_path + prefix_length, path, path_length + 1U);
+    (void)memcpy(candidate, prefix, prefix_length);
+    (void)memcpy(candidate + prefix_length, path, path_length + 1U);
 
-    return git_rms_path_safe(git_path);
+    return git_rms_canonical_path(candidate,
+                                  git_path, git_path_size);
 }
 
 static char *git_rms_capture_head(const char *path)
