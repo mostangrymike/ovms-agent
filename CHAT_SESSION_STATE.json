@@ -1,101 +1,73 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T08:18:00-05:00",
+  "updated_at": "2026-08-27T08:22:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+    "head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "latest_code_milestone": "M273",
-    "note": "M274 is complete and awaiting promotion through PR #87; main has not moved yet."
+    "note": "PR #87 merged M274 to main. Do not mark M274 promoted/VAX-green on main until exact post-promotion VAX acceptance of 1fa959e0f577d220c0c17bde0e39ea904c90fb6a."
   },
   "m274": {
     "issue": 49,
     "issue_state": "closed-completed",
-    "status": "COMPLETE_PROMOTION_PR_87_OPEN",
+    "status": "COMPLETE_PROMOTION_MERGED_POSTPROMOTION_VAX_PENDING",
     "parent_branch": "m274-agent-stress-project",
     "final_branch_head": "17153f0065e0d71933da36da16259ac4df7e2d61",
+    "final_branch_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
     "vax_green_code_checkpoint": "ba31fdbb91487243892472a0d836a6447fe79f71",
     "reconciliation": {
       "path": "DOC/M274_RECONCILIATION.MD",
       "commit": "17153f0065e0d71933da36da16259ac4df7e2d61",
-      "parent": "ba31fdbb91487243892472a0d836a6447fe79f71",
-      "audit": "Documentation-only commit: exactly one added file, +236/-0, no code changes.",
       "vax_accepted": true
     },
     "phase_plan": {
       "phase1": "COMPLETE",
       "phase2": "COMPLETE",
       "phase3": "COMPLETE",
-      "phase4": "COMPLETE_PR_CREATED_VIA_AGENT_MERGED_VAX_GREEN",
-      "phase5": "COMPLETE_PROVIDER_COMPARISON_CAPTURED",
-      "phase6": "COMPLETE_MULTI_SITTING_PERSISTENCE_PR85_MERGED_VAX_GREEN",
-      "phase7": "COMPLETE_RECONCILIATION_VAX_ACCEPTED"
+      "phase4": "COMPLETE",
+      "phase5": "COMPLETE",
+      "phase6": "COMPLETE",
+      "phase7": "COMPLETE"
     },
-    "final_vax_acceptance": {
+    "final_branch_vax_acceptance": {
       "branch": "m274-agent-stress-project",
       "head": "17153f0065e0d71933da36da16259ac4df7e2d61",
       "target_build_status": "%X00000001",
-      "summary": "Devices: 1; ConfigBytes: 83; NewestUpdated: 1787620123; status %X00000001",
-      "query": "query all router1 => Matches: 1; status %X00000001",
+      "summary_status": "%X00000001",
+      "query_status": "%X00000001",
       "root_build": "All regression tests passed.",
       "root_build_status": "%X00000001",
-      "tracked_worktree": "clean after repository-local core.filemode=false normalization",
-      "filemode_note": "GITRESTORE restored reconciliation contents correctly but Git observed mode 100644=>100755 with core.filemode=true. Index remained 100644 and numstat was 0/0. Repository-local core.filemode=false removed the false tracked mode diff without changing index or repository content; product defect tracked as #86."
+      "tracked_worktree": "clean after repository-local core.filemode=false normalization"
     },
     "phase6_persistence": {
       "base_session": "42BABDB9",
       "child_session": "6F535C3D",
-      "acceptance": "Child created with AGENT/SESSION/FORK, resumed across multiple process launches and more than one sitting, preserved goal/history/transcript, required workspace reapproval after resume, and produced real guarded summary writes that were compiled and run on VAX.",
-      "source_commit": "8c29ef13bd49298c0b7c76613fd0b2b5c8175fa4",
-      "merge_pr": 85,
-      "merge_commit": "ba31fdbb91487243892472a0d836a6447fe79f71"
+      "acceptance": "Child created with AGENT/SESSION/FORK, resumed across multiple process launches and more than one sitting, preserved goal/history/transcript, required workspace reapproval after resume, and produced real guarded summary writes compiled/run on VAX."
     },
     "promotion": {
       "pr": 87,
-      "title": "Promote M274 OVMS Agent self-hosting stress test",
+      "state": "merged",
       "base": "main",
-      "base_sha": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
+      "original_main_head": "f57b1ebc7ea54d3b9245ae581dcd27290dd52d54",
       "head": "m274-agent-stress-project",
       "head_sha": "17153f0065e0d71933da36da16259ac4df7e2d61",
-      "commits": 25,
-      "changed_files": 23,
-      "state": "open",
-      "next": "Review PR #87 through the normal promotion path. Do not call M274 promoted until the PR is merged and exact resulting main head is VAX-accepted."
+      "merge_commit": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
+      "merge_tree": "fa29651760eeb2d43f67e0ca9225c9a88211162f",
+      "tree_identity": "Promotion merge tree is identical to the VAX-accepted M274 branch tree.",
+      "postpromotion_vax_acceptance": "PENDING"
     },
-    "important_defects": {
-      "50": "closed - nested project Git-context capture",
-      "51": "closed - composed context/request-builder goal limit mismatch",
-      "52": "open - edit/PATCH operator handling",
-      "53": "open - failed AGENT/BUILD diagnostics persistence",
-      "54": "open - AGENT/WRITE cannot bootstrap empty/nonexistent project",
-      "55": "open/relevant - AGENT/PLAN persistence/scope friction",
-      "56": "open - OpenRouter output ceiling",
-      "57": "closed - post-write tool_choice contradiction",
-      "58": "open - extra post-write proposals can force rollback",
-      "61": "open - Groq store:true behavior",
-      "62": "open - REINDEX flat-root/SRC assumption",
-      "64": "open - OpenVMS module path case matching",
-      "65": "open - SHOW/STRUCT local-variable misclassification",
-      "66": "open - Groq gpt-oss ranged-read args",
-      "67": "open - Groq gpt-oss malformed tool name marker",
-      "68": "open - provider 429 aborts agent loop instead of bounded retry",
-      "69": "closed - EXTRACT/FUNCTION ternary-colon false label",
-      "70": "open - OpenRouter tool-call-as-text",
-      "71": "open - goal-guard synthetic/NULL edge",
-      "72": "closed - flat-root refactor VMS filespec",
-      "73": "open - refactor verifier hardcodes [.BUILD] invalidation",
-      "74": "closed - MOVE/FUNCTION external caller repair",
-      "75": "closed - replace_lines boundary separator",
-      "76": "open - AGENT/WRITE orphan/ranged-read/oversized-review fallback",
-      "77": "closed - BUILD.COM generated-version accumulation",
-      "78": "open - GitHub bridge setup/docs/service completeness",
-      "79": "open - Groq Qwen AGENT/CREATE response parsing",
-      "81": "open - Groq Qwen intent-only final with zero tool evidence",
-      "82": "open - resumed workspace continuation cannot create files",
-      "83": "open - AGENT/TOOL/RUN live args use transcript sanitizer/truncation",
-      "84": "open - GITRESTORE Git-tree/current-directory path conflation",
-      "86": "open - GITRESTORE can leave mode-only 100644=>100755 tracked diff on OpenVMS"
+    "important_open_defects": {
+      "58": "extra post-write proposals can force rollback",
+      "68": "provider 429 aborts agent loop instead of bounded retry",
+      "78": "GitHub bridge setup/docs/service completeness",
+      "79": "Groq Qwen AGENT/CREATE response parsing",
+      "81": "Groq Qwen intent-only final with zero tool evidence",
+      "82": "resumed workspace continuation cannot create files",
+      "83": "AGENT/TOOL/RUN live args use transcript sanitizer/truncation",
+      "84": "GITRESTORE Git-tree/current-directory path conflation",
+      "86": "GITRESTORE mode-only 100644=>100755 drift on OpenVMS"
     }
   },
   "local_openvms_state": {
@@ -103,7 +75,8 @@
     "current_branch": "m274-agent-stress-project",
     "local_head": "17153f0065e0d71933da36da16259ac4df7e2d61",
     "tracked_worktree": "clean",
-    "core_filemode": "false (repository-local OpenVMS normalization; not repository content)",
+    "core_filemode": "false",
+    "remote_main_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "untracked_files": [
       "m274_netcfg/m274_basecfg.txt",
       "m274_netcfg/m274_candcfg.txt",
@@ -116,10 +89,7 @@
       "m274_netcfg/ovms_agent_session.cur",
       "m274_netcfg/ovms_agent_sessions.dat",
       "m274_netcfg/ovms_agent_transcript.dat"
-    ],
-    "auth_path": "Use GITAUTH for prompt-free raw Git network operations.",
-    "rms_restore_rule": "Run GITRESTORE from repository root for nested tracked paths until #84 is fixed.",
-    "vax_git_ref_rule": "Verify exact HEAD after every ref-changing operation; native success text alone is not acceptance evidence."
+    ]
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
@@ -127,7 +97,7 @@
     "Omit literal OVMS-AGENT> from lines intended for OVMS Agent; all agent commands must be one physical input line.",
     "Use GITAUTH for prompt-free raw Git network operations; never configure credential.helper store/global/askpass.",
     "Use repository-root RMS-aware GITRESTORE for changed/new tracked nested paths until #84 is fixed.",
-    "On this VAX checkout keep core.filemode=false until #86 is resolved; do not change the tracked index mode to hide worktree mode drift.",
+    "On this VAX checkout keep core.filemode=false until #86 is resolved.",
     "Verify exact HEAD after VAX Git ref-changing operations; native success text alone is not acceptance evidence.",
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
     "Never call an untested GitHub head VAX-green or a milestone promoted before post-merge VAX acceptance.",
