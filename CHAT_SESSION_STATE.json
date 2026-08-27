@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:38:00-05:00",
+  "updated_at": "2026-08-27T10:44:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,11 +18,11 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_CASE_CANONICALIZATION_VAX_RETEST_PENDING",
+    "status": "ACTIVE_84_CANONICALIZER_DIRECT_DIAGNOSTIC_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "remote_candidate_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-    "candidate_publication": "UNTESTED_GITHUB_CORRECTION",
+    "candidate_publication": "VAX_TESTED_FAILING_CORRECTION",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
@@ -77,6 +77,21 @@
           "restore_error": "GITRESTORE: HEAD tree lookup failed for test/GAP008_RMS.TXT.",
           "root_cause": "OpenVMS/Git reports nested filesystem prefix as lowercase test/, while Git HEAD stores case-sensitive TEST/GAP008_RMS.TXT"
         }
+      },
+      {
+        "head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+        "build_status": "%X00000002",
+        "m265_regression": "passed",
+        "m275_83_regression": "passed",
+        "m275_84_stages": [
+          "chdir TEST succeeded",
+          "nested restore call failed",
+          "return to saved directory succeeded",
+          "RMS version cleanup succeeded"
+        ],
+        "gitrestore_diagnostics": "no GITRESTORE: lines captured in OVMS_BUILD.LOG",
+        "tracked_worktree_after_failure": "clean",
+        "inference": "new case-canonicalization code compiled and ran but git_rms_restore_head still returns 0; direct focused executable run is required to expose the exact canonicalizer failure before another code change"
       }
     ],
     "root_cause_84": {
@@ -92,8 +107,9 @@
       "delta": "only SRC/GIT_RMS_RESTORE.C",
       "approach": "walk HEAD tree one path component at a time, match component names case-insensitively for OpenVMS semantics, reconstruct exact Git-stored spelling, then use the exact path for cat-file",
       "safety": "case-colliding names that OpenVMS cannot distinguish fail closed; local RMS path remains separate from Git tree path",
-      "acceptance": "VAX retest pending"
+      "result": "VAX build rejected; direct focused diagnostic pending"
     },
+    "next_action": "run [.BUILD]M275_BACKLOG_TEST directly with SYS$ERROR TT: using the executable produced by the failed 2c86f1f build; do not edit source or rebuild first",
     "cleanup": {
       "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
@@ -102,10 +118,11 @@
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
-    "tracked_worktree": "clean after direct 6842625 diagnostic run",
+    "local_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+    "tracked_worktree": "clean after failed 2c86f1f build",
     "core_filemode": "false",
-    "published_agent": "still previous accepted executable because M275 build has not reached final publish"
+    "published_agent": "still previous accepted executable because M275 build has not reached final publish",
+    "focused_test_executable": "[.BUILD]M275_BACKLOG_TEST.EXE exists from failed 2c86f1f build and contains the new canonicalizer"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -115,7 +132,7 @@
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
     "83": "M275 raw-dispatch regression passes in candidate test; full VAX build and live Agent verification still pending",
-    "84": "root cause identified as OpenVMS case-insensitive prefix versus case-sensitive Git tree path; correction 2c86f1f pending VAX retest",
+    "84": "case mismatch root cause identified; first tree-canonicalization correction 2c86f1f still returns failure and awaits direct focused diagnostic",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
