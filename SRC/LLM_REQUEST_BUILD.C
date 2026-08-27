@@ -34,7 +34,7 @@ int write_build_initial_request(
         fputs(",\"tool_choice\":{" 
               "\"type\":\"function\","
               "\"name\":\"run_build\""
-              "},\"store\":true,"
+              "},\"store\":false,"
               "\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
@@ -85,7 +85,7 @@ int write_build_followup_request(
         !json_write_escaped(file, tool_output) ||
         fputs("\"}],", file) == EOF ||
         !write_build_agent_tools(file) ||
-        fputs(",\"store\":true,"
+        fputs(",\"store\":false,"
               "\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }

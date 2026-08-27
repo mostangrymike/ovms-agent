@@ -83,12 +83,33 @@ static int llm_git_capture_one(const char *subcommand,
                                   size_t output_size)
 {
     FILE *command;
+    FILE *writer;
     char dcl[256];
+    char full[LLM_GIT_LINE_MAX];
+    char translated[LLM_GIT_LINE_MAX];
     int status;
     int truncated;
 
     llm_git_remove(LLM_GIT_CMD_FILE);
     llm_git_remove(output_file);
+
+    writer = fopen(output_file, "w");
+    if (writer == NULL) {
+        return 0;
+    }
+    if (fgetname(writer, full, 1) == NULL) {
+        (void)fclose(writer);
+        llm_git_remove(output_file);
+        return 0;
+    }
+    if (fclose(writer) != 0) {
+        llm_git_remove(output_file);
+        return 0;
+    }
+
+    /* SYS$OUTPUT is a DCL/OpenVMS consumer; retain the VMS full filespec. */
+    (void)strcpy(translated, full);
+    llm_git_remove(full);
 
     command = fopen(LLM_GIT_CMD_FILE, "w");
 
@@ -100,7 +121,7 @@ static int llm_git_capture_one(const char *subcommand,
             command,
             "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
             "$ GIT \"%s\"",
-            output_file,
+            translated,
             subcommand) < 0) {
         (void)fclose(command);
         return 0;
@@ -135,14 +156,14 @@ static int llm_git_capture_one(const char *subcommand,
 
     if ((status & 1) == 0) {
         llm_git_remove(LLM_GIT_CMD_FILE);
-        llm_git_remove(output_file);
+        llm_git_remove(translated);
         return 0;
     }
 
     if (!llm_git_read(
-            output_file, output, output_size, &truncated)) {
+            translated, output, output_size, &truncated)) {
         llm_git_remove(LLM_GIT_CMD_FILE);
-        llm_git_remove(output_file);
+        llm_git_remove(translated);
         return 0;
     }
 
@@ -151,10 +172,9 @@ static int llm_git_capture_one(const char *subcommand,
     }
 
     llm_git_remove(LLM_GIT_CMD_FILE);
-    llm_git_remove(output_file);
+    llm_git_remove(translated);
     return 1;
 }
-
 int llm_git_refresh(const agent_state *state)
 {
     (void)state;

@@ -389,9 +389,45 @@ char *execute_read_file_tool(
     char *path;
     char *output;
     const char *cached;
+    char *range_display_path;
+    long range_start;
+    long range_end;
+    int has_start;
+    int has_end;
 
     *cache_hit = 0;
     *display_path = NULL;
+
+    has_start =
+        arguments != NULL &&
+        strstr(arguments, "\"start_line\"") != NULL;
+    has_end =
+        arguments != NULL &&
+        strstr(arguments, "\"end_line\"") != NULL;
+
+    if (has_start || has_end) {
+        if (!has_start || !has_end) {
+            return make_tool_error(
+                "read_file range requires both start_line and end_line",
+                NULL
+            );
+        }
+
+        range_display_path = NULL;
+        range_start = 0L;
+        range_end = 0L;
+
+        output = execute_read_file_range_tool(
+            arguments,
+            &range_display_path,
+            &range_start,
+            &range_end
+        );
+
+        *display_path = range_display_path;
+        return output;
+    }
+
     path = extract_path_argument(arguments);
 
     if (path == NULL) {
@@ -1025,14 +1061,26 @@ llm_replace_result execute_replace_lines_tool(
     }
 
     {
+        size_t separator_length;
         size_t new_length;
         size_t replacement_length;
         char *replacement;
 
         replacement_length = strlen(new_text);
+        separator_length = 0U;
+
+        if (
+            replacement_length > 0U &&
+            new_text[replacement_length - 1U] != '\n' &&
+            end_offset < actual
+        ) {
+            separator_length = 1U;
+        }
+
         new_length =
             start_offset +
             replacement_length +
+            separator_length +
             (actual - end_offset);
 
         replacement = malloc(new_length + 1U);
@@ -1063,11 +1111,16 @@ llm_replace_result execute_replace_lines_tool(
             );
         }
 
+        if (separator_length != 0U) {
+            replacement[start_offset + replacement_length] = '\n';
+        }
+
         if (end_offset < actual) {
             (void)memcpy(
                 replacement +
                     start_offset +
-                    replacement_length,
+                    replacement_length +
+                    separator_length,
                 content + end_offset,
                 actual - end_offset
             );

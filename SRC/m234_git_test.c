@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "llm_internal.h"
 
@@ -70,6 +71,7 @@ int main(void)
     char output[32768];
     const char *rms_path;
     const char *copy_path;
+    char original_dir[OVMS_AGENT_ROOT_SIZE];
 
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";
@@ -129,6 +131,55 @@ int main(void)
     }
 
     llm_test_git_data(NULL, NULL);
+
+    if (getcwd(original_dir, sizeof(original_dir)) == NULL) {
+        (void)puts("M274 failed: unable to save current directory.");
+        return EXIT_FAILURE;
+    }
+
+    if (chdir("src") != 0) {
+        (void)puts("M274 failed: unable to enter nested Git directory.");
+        return EXIT_FAILURE;
+    }
+
+    state.project_root = ".";
+
+    if (!llm_git_refresh(&state)) {
+        (void)puts("M274 failed: nested Git refresh.");
+        (void)chdir(original_dir);
+        return EXIT_FAILURE;
+    }
+
+    if (!llm_git_status_text(&state, output, sizeof(output))) {
+        (void)puts("M274 failed: nested Git status text.");
+        (void)chdir(original_dir);
+        return EXIT_FAILURE;
+    }
+
+    if (strstr(output, "capture unavailable") != NULL) {
+        (void)puts("M274 failed: nested Git status capture unavailable.");
+        (void)chdir(original_dir);
+        return EXIT_FAILURE;
+    }
+
+    if (!llm_git_diff_text(&state, output, sizeof(output))) {
+        (void)puts("M274 failed: nested Git diff text.");
+        (void)chdir(original_dir);
+        return EXIT_FAILURE;
+    }
+
+    if (strstr(output, "capture unavailable") != NULL) {
+        (void)puts("M274 failed: nested Git diff capture unavailable.");
+        (void)chdir(original_dir);
+        return EXIT_FAILURE;
+    }
+
+    if (chdir(original_dir) != 0) {
+        (void)puts("M274 failed: unable to restore current directory.");
+        return EXIT_FAILURE;
+    }
+
+    state.project_root = ".";
 
     rms_path = "M263_RMS_GIT.TMP";
     copy_path = "M263_RMS_COPY.TMP";

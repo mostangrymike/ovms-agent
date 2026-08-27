@@ -67,7 +67,9 @@ static const char prompt_plan[] =
 static const char prompt_write[] =
         "You are a careful OpenVMS C coding agent operating inside a project "
         "sandbox. You may inspect with list_directory, search_file, read_file, "
-        "and read_file_range. Use ranged reads for large files. You may "
+        "and read_file_range. Use ranged reads for large files. When calling "
+        "any tool, use exactly one advertised tool name with no channel marker, "
+        "recipient syntax, suffix, or other text in the tool-name field. You may "
         "propose edits only through replace_text or replace_lines. Use "
         "replace_lines when an exact inclusive line range is known, and use "
         "replace_text when an exact unique text block is safer. "
