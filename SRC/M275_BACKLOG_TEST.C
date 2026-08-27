@@ -154,34 +154,63 @@ static int m275_test_nested_restore(void)
     int ok;
     int cleanup_ok;
 
-    if (getcwd(saved_dir, sizeof(saved_dir)) == NULL ||
-        !m275_current_spec(M275_NESTED_PATH,
+    if (getcwd(saved_dir, sizeof(saved_dir)) == NULL) {
+        (void)puts("M275 #84 stage: initial getcwd failed.");
+        return 0;
+    }
+
+    if (!m275_current_spec(M275_NESTED_PATH,
                            original_spec,
                            sizeof(original_spec))) {
+        (void)puts("M275 #84 stage: original RMS filespec capture failed.");
         return 0;
     }
 
     if (!rms_write_text_file(M275_NESTED_PATH,
                              M275_NESTED_MODIFIED)) {
+        (void)puts("M275 #84 stage: disposable RMS modification failed.");
         return 0;
     }
 
     ok = 0;
-    if (chdir("TEST") == 0) {
+    if (chdir("TEST") != 0) {
+        (void)puts("M275 #84 stage: chdir TEST failed.");
+    } else {
+        (void)puts("M275 #84 stage: chdir TEST succeeded.");
         ok = git_rms_restore_head("GAP008_RMS.TXT");
+        if (ok) {
+            (void)puts("M275 #84 stage: nested restore call succeeded.");
+        } else {
+            (void)puts("M275 #84 stage: nested restore call failed.");
+        }
         if (chdir(saved_dir) != 0) {
+            (void)puts("M275 #84 stage: return to saved directory failed.");
             return 0;
         }
+        (void)puts("M275 #84 stage: return to saved directory succeeded.");
     }
 
     if (ok) {
-        ok = m275_read_text(M275_NESTED_PATH,
-                            text, sizeof(text)) &&
-             strcmp(text, M275_NESTED_EXPECTED) == 0;
+        if (!m275_read_text(M275_NESTED_PATH,
+                            text, sizeof(text))) {
+            (void)puts("M275 #84 stage: restored content read failed.");
+            ok = 0;
+        } else if (strcmp(text, M275_NESTED_EXPECTED) != 0) {
+            (void)puts("M275 #84 stage: restored content mismatch.");
+            ok = 0;
+        } else {
+            (void)puts("M275 #84 stage: restored content verified.");
+        }
     }
 
     cleanup_ok = m275_cleanup_to_spec(M275_NESTED_PATH,
                                       original_spec);
+    if (cleanup_ok) {
+        (void)puts("M275 #84 stage: RMS version cleanup succeeded.");
+    } else {
+        (void)puts("M275 #84 stage: RMS version cleanup failed.");
+    }
+
     return ok && cleanup_ok;
 }
 
