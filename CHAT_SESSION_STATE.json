@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T11:20:00-05:00",
+  "updated_at": "2026-08-27T11:24:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -64,12 +64,24 @@
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "m275-backlog-hardening",
-    "local_head": "09435893ebb9be7a65270cb16dd125ae76196882",
+    "current_branch": "main",
+    "local_head": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-    "tracked_worktree": "clean after tag publication and remote branch pruning",
+    "tracked_worktree": "clean after final VAX hygiene; git status --short and git diff --check empty",
     "core_filemode": "false",
-    "published_agent": "M275 accepted build image"
+    "build_versions": "[.BUILD] purged with /KEEP=1",
+    "local_branches": [
+      "main",
+      "m274-agent-stress-project",
+      "m275-backlog-hardening"
+    ],
+    "remote_tracking_branches": [
+      "origin/main",
+      "origin/m274-agent-stress-project",
+      "origin/m275-backlog-hardening"
+    ],
+    "published_agent": "M275 accepted build image",
+    "hygiene_status": "COMPLETE"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
