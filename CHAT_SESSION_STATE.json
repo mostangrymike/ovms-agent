@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:44:00-05:00",
+  "updated_at": "2026-08-27T10:45:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,98 +18,53 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_CANONICALIZER_DIRECT_DIAGNOSTIC_PENDING",
+    "status": "ACTIVE_84_LS_FILES_CANONICALIZATION_VAX_RETEST_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-    "candidate_publication": "VAX_TESTED_FAILING_CORRECTION",
+    "remote_candidate_head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
+    "candidate_publication": "UNTESTED_GITHUB_CORRECTION",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
       "fix #84 GITRESTORE nested Git-tree/current-directory path handling",
       "fix #86 OpenVMS core.filemode normalization"
     ],
-    "vax_attempts": [
-      {
-        "head": "f751c94cebe3b70c5794c1f85a636d7d1854c129",
+    "vax_evidence": {
+      "m265_gap008": "passes on all recent M275 attempts",
+      "m275_83": "focused raw argument regression passes; full build/live Agent acceptance still pending",
+      "m275_84": {
+        "tested_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
         "build_status": "%X00000002",
-        "failure": "M275 nested RMS-aware Git restore regression failed",
-        "side_effect": "TEST/GAP008_RMS.TXT left modified by first regression design",
-        "issue86": "candidate GIT_AUTH_SETUP changed repository-local core.filemode true to false with %X00000001"
-      },
-      {
-        "head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
-        "build_status": "%X00000002",
-        "failure": "dedicated M275 nested RMS-aware Git restore regression still failed",
-        "m265_regression": "passed",
+        "build_stage": [
+          "chdir TEST succeeded",
+          "nested restore call failed",
+          "return to saved directory succeeded",
+          "RMS version cleanup succeeded"
+        ],
+        "direct_status": "%X00000002",
+        "direct_error": "GITRESTORE: repository path resolution failed for GAP008_RMS.TXT.",
         "tracked_worktree_after_failure": "clean"
       },
-      {
-        "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-        "build_status": "%X00000002",
-        "failure": "nested restore regression still failed after fgetname(...,1) plus generated DCL SET DEFAULT correction",
-        "m265_regression": "passed",
-        "m275_83_regression": "passed"
-      },
-      {
-        "head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
-        "build_status": "%X00000002",
-        "failure": "nested restore regression still failed",
-        "m265_regression": "passed",
-        "m275_83_regression": "passed",
-        "gitrestore_diagnostics": "no GITRESTORE: lines were captured"
-      },
-      {
-        "head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
-        "build_status": "%X00000002",
-        "m265_regression": "passed",
-        "m275_83_regression": "passed",
-        "m275_84_stages": [
-          "chdir TEST succeeded",
-          "nested restore call failed",
-          "return to saved directory succeeded",
-          "RMS version cleanup succeeded"
-        ],
-        "tracked_worktree_after_failure": "clean",
-        "direct_run": {
-          "status": "%X00000002",
-          "git_error": "fatal: path 'test/GAP008_RMS.TXT' exists on disk, but not in 'HEAD'",
-          "restore_error": "GITRESTORE: HEAD tree lookup failed for test/GAP008_RMS.TXT.",
-          "root_cause": "OpenVMS/Git reports nested filesystem prefix as lowercase test/, while Git HEAD stores case-sensitive TEST/GAP008_RMS.TXT"
-        }
-      },
-      {
-        "head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-        "build_status": "%X00000002",
-        "m265_regression": "passed",
-        "m275_83_regression": "passed",
-        "m275_84_stages": [
-          "chdir TEST succeeded",
-          "nested restore call failed",
-          "return to saved directory succeeded",
-          "RMS version cleanup succeeded"
-        ],
-        "gitrestore_diagnostics": "no GITRESTORE: lines captured in OVMS_BUILD.LOG",
-        "tracked_worktree_after_failure": "clean",
-        "inference": "new case-canonicalization code compiled and ran but git_rms_restore_head still returns 0; direct focused executable run is required to expose the exact canonicalizer failure before another code change"
-      }
-    ],
+      "issue86": "live GIT_AUTH_SETUP normalization previously passed by resetting repository-local core.filemode=false"
+    },
     "root_cause_84": {
-      "local_filesystem": "OpenVMS path semantics are case-insensitive",
-      "git_tree": "Git tree path lookup is case-sensitive",
-      "observed_candidate": "test/GAP008_RMS.TXT",
-      "actual_head_path": "TEST/GAP008_RMS.TXT",
-      "conclusion": "prefix/path spelling must be canonicalized against the Git tree before cat-file"
+      "filesystem_git_case_mismatch": "rev-parse --show-prefix from TEST returns lowercase test/ while Git stores TEST/GAP008_RMS.TXT",
+      "failed_primitive": "git ls-tree --name-only HEAD and HEAD:TEST produced no visible names on this OpenVMS Git port",
+      "proven_primitive": "git ls-files works and emits exact tracked paths",
+      "probes": [
+        "git ls-files TEST/GAP008_RMS.TXT => TEST/GAP008_RMS.TXT",
+        "git ls-files test/GAP008_RMS.TXT => no output"
+      ]
     },
     "current_correction": {
-      "head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-      "base": "684262526a4ccdbb2b157e20241d31de1683fc7e",
+      "head": "16a529db81fc9d926d9d1b58e5aea382f5c390bc",
+      "base": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+      "commit": "Use ls-files for OpenVMS restore path canonicalization",
       "delta": "only SRC/GIT_RMS_RESTORE.C",
-      "approach": "walk HEAD tree one path component at a time, match component names case-insensitively for OpenVMS semantics, reconstruct exact Git-stored spelling, then use the exact path for cat-file",
-      "safety": "case-colliding names that OpenVMS cannot distinguish fail closed; local RMS path remains separate from Git tree path",
-      "result": "VAX build rejected; direct focused diagnostic pending"
+      "approach": "capture git ls-files --full-name from caller directory, scan for exactly one case-insensitive match to combined prefix/local candidate, use exact tracked spelling for existing cat-file lookup",
+      "safety": "ambiguous case-colliding tracked paths fail closed; local RMS path remains separate from Git tree path",
+      "vax_acceptance": "pending"
     },
-    "next_action": "run [.BUILD]M275_BACKLOG_TEST directly with SYS$ERROR TT: using the executable produced by the failed 2c86f1f build; do not edit source or rebuild first",
     "cleanup": {
       "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
@@ -119,10 +74,9 @@
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
     "local_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
-    "tracked_worktree": "clean after failed 2c86f1f build",
+    "tracked_worktree": "clean after failed direct diagnostic and ls-files probes",
     "core_filemode": "false",
-    "published_agent": "still previous accepted executable because M275 build has not reached final publish",
-    "focused_test_executable": "[.BUILD]M275_BACKLOG_TEST.EXE exists from failed 2c86f1f build and contains the new canonicalizer"
+    "published_agent": "still previous accepted executable because M275 build has not reached final publish"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -131,8 +85,8 @@
     "79": "Groq Qwen AGENT/CREATE response parsing",
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
-    "83": "M275 raw-dispatch regression passes in candidate test; full VAX build and live Agent verification still pending",
-    "84": "case mismatch root cause identified; first tree-canonicalization correction 2c86f1f still returns failure and awaits direct focused diagnostic",
+    "83": "focused regression passes; full VAX build and live Agent verification still pending",
+    "84": "ls-tree canonicalizer rejected; ls-files-based correction 16a529d pending VAX retest",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
