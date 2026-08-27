@@ -5,10 +5,12 @@
 #include "git_rms_restore.h"
 #include "rms_write.h"
 
-#define GIT_RMS_CMD_FILE "OVMS_AGENT_GIT_RESTORE.COM"
-#define GIT_RMS_HEAD_FILE "OVMS_AGENT_GIT_HEAD.TMP"
-#define GIT_RMS_SIZE_FILE "OVMS_AGENT_GIT_SIZE.TMP"
+#define GIT_RMS_CMD_FILE "SYS$LOGIN:OVMS_AGENT_GIT_RESTORE.COM"
+#define GIT_RMS_HEAD_FILE "SYS$LOGIN:OVMS_AGENT_GIT_HEAD.TMP"
+#define GIT_RMS_SIZE_FILE "SYS$LOGIN:OVMS_AGENT_GIT_SIZE.TMP"
+#define GIT_RMS_PREFIX_FILE "SYS$LOGIN:OVMS_AGENT_GIT_PREFIX.TMP"
 #define GIT_RMS_MAX_TEXT 262144U
+#define GIT_RMS_PATH_MAX 1024U
 
 static void git_rms_remove_all(const char *path)
 {
@@ -125,6 +127,96 @@ static int git_rms_read_size(
     return 1;
 }
 
+static int git_rms_capture_prefix(char *prefix,
+                                  size_t prefix_size)
+{
+    FILE *command;
+    char dcl[256];
+    char *text;
+    size_t length;
+    int status;
+
+    if (prefix == NULL || prefix_size == 0U) {
+        return 0;
+    }
+
+    git_rms_remove_all(GIT_RMS_CMD_FILE);
+    git_rms_remove_all(GIT_RMS_PREFIX_FILE);
+
+    command = fopen(GIT_RMS_CMD_FILE, "w");
+    if (command == NULL) {
+        return 0;
+    }
+
+    if (fprintf(command,
+            "$ SET NOON\n"
+            "$ DEFINE/USER/NOLOG SYS$OUTPUT %s\n"
+            "$ GIT \"rev-parse\" \"--show-prefix\"\n"
+            "$ EXIT $STATUS\n",
+            GIT_RMS_PREFIX_FILE) < 0 ||
+        fclose(command) != 0) {
+        git_rms_remove_all(GIT_RMS_CMD_FILE);
+        return 0;
+    }
+
+    (void)snprintf(dcl, sizeof(dcl), "@%s", GIT_RMS_CMD_FILE);
+    status = system(dcl);
+    git_rms_remove_all(GIT_RMS_CMD_FILE);
+
+    if ((status & 1) == 0) {
+        git_rms_remove_all(GIT_RMS_PREFIX_FILE);
+        return 0;
+    }
+
+    text = git_rms_read_text(GIT_RMS_PREFIX_FILE);
+    git_rms_remove_all(GIT_RMS_PREFIX_FILE);
+    if (text == NULL) {
+        return 0;
+    }
+
+    length = strlen(text);
+    while (length > 0U &&
+           (text[length - 1U] == '\n' ||
+            text[length - 1U] == '\r')) {
+        text[--length] = '\0';
+    }
+
+    if (length >= prefix_size) {
+        free(text);
+        return 0;
+    }
+
+    (void)memcpy(prefix, text, length + 1U);
+    free(text);
+    return 1;
+}
+
+static int git_rms_make_git_path(const char *path,
+                                 char *git_path,
+                                 size_t git_path_size)
+{
+    char prefix[GIT_RMS_PATH_MAX];
+    size_t prefix_length;
+    size_t path_length;
+
+    if (!git_rms_path_safe(path) ||
+        git_path == NULL || git_path_size == 0U ||
+        !git_rms_capture_prefix(prefix, sizeof(prefix))) {
+        return 0;
+    }
+
+    prefix_length = strlen(prefix);
+    path_length = strlen(path);
+    if (prefix_length + path_length + 1U > git_path_size) {
+        return 0;
+    }
+
+    (void)memcpy(git_path, prefix, prefix_length);
+    (void)memcpy(git_path + prefix_length, path, path_length + 1U);
+
+    return git_rms_path_safe(git_path);
+}
+
 static char *git_rms_capture_head(const char *path)
 {
     FILE *command;
@@ -188,15 +280,16 @@ static char *git_rms_capture_head(const char *path)
 
 int git_rms_restore_head(const char *path)
 {
+    char git_path[GIT_RMS_PATH_MAX];
     char *head_text;
     char *current_text;
     int ok;
 
-    if (!git_rms_path_safe(path)) {
+    if (!git_rms_make_git_path(path, git_path, sizeof(git_path))) {
         return 0;
     }
 
-    head_text = git_rms_capture_head(path);
+    head_text = git_rms_capture_head(git_path);
     if (head_text == NULL) {
         return 0;
     }

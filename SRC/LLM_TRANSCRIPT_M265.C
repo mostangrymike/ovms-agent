@@ -7,6 +7,7 @@
 #undef llm_tool_run_cmd
 
 #include "git_rms_restore.h"
+#include "LLM_TOOL_ARGS_M275.H"
 
 #define M265_GIT_BATCH_MAX 32U
 
@@ -113,7 +114,7 @@ static int m265_git_restore_tool(
     const char *path_text)
 {
     char answer[32];
-    char buffer[LLM_TRANSCRIPT_ARG];
+    char buffer[OVMS_AGENT_INPUT_SIZE];
     char *paths[M265_GIT_BATCH_MAX];
     unsigned int count;
     unsigned int index;
@@ -228,18 +229,61 @@ static int m265_git_restore_tool(
 int llm_tool_run(agent_state *state,
                     const char *arguments)
 {
+    const llm_run_tool *tool;
     char name[32];
-    char rest[LLM_TRANSCRIPT_ARG];
+    char rest[OVMS_AGENT_INPUT_SIZE];
+    int policy;
 
-    if (state != NULL &&
-        llm_tx_split(arguments,
-                        name, sizeof(name),
-                        rest, sizeof(rest)) &&
-        llm_tx_equal_ci(name, "GITRESTORE")) {
+    if (state == NULL ||
+        !m275_tool_args_split(arguments,
+                              name, sizeof(name),
+                              rest, sizeof(rest))) {
+        return 0;
+    }
+
+    if (llm_tx_equal_ci(name, "GITRESTORE")) {
         return m265_git_restore_tool(state, rest);
     }
 
-    return llm_tool_run_base(state, arguments);
+    tool = llm_tx_find_tool(name);
+    if (tool == NULL) {
+        (void)llm_tx_append(
+            "tool", name, "unknown", "unknown", rest
+        );
+        return 0;
+    }
+
+    policy = llm_tx_policy_level();
+    if (policy < tool->minimum_policy) {
+        (void)llm_tx_append(
+            "tool", tool->name, tool->effect, "denied", rest
+        );
+        return 0;
+    }
+
+    if (tool->minimum_policy >= LLM_TOOL_WORK &&
+        !state->write_enabled) {
+        (void)llm_tx_append(
+            "tool", tool->name, tool->effect, "write-gate", rest
+        );
+        return 0;
+    }
+
+    if (strcmp(tool->name, "RUN") == 0 &&
+        !state->dcl_enabled) {
+        (void)llm_tx_append(
+            "tool", tool->name, tool->effect, "dcl-gate", rest
+        );
+        return 0;
+    }
+
+    if (!llm_tx_append(
+            "tool", tool->name, tool->effect, "dispatched", rest)) {
+        return 0;
+    }
+
+    tool->handler(state, rest);
+    return 1;
 }
 
 void llm_tool_run_cmd(agent_state *state,
