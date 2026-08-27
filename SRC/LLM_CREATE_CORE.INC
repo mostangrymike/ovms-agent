@@ -6,6 +6,92 @@
 #include "LLM_PROMPTS.H"
 
 
+int llm_create_output_types(const char *json,
+                            char *output,
+                            size_t output_size)
+{
+    char *items;
+    const char *position;
+    size_t used;
+    unsigned int count;
+
+    if (json == NULL || output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    output[0] = '\0';
+    items = extract_output_items_json(json);
+    if (items == NULL) {
+        return 0;
+    }
+
+    position = items;
+    used = 0U;
+    count = 0U;
+
+    while (*position != '\0') {
+        const char *value;
+
+        value = NULL;
+        if (*position == '"' &&
+            json_key_matches(position, "type", &value) &&
+            value != NULL && *value == '"') {
+            char *decoded;
+            size_t length;
+            size_t index;
+            size_t needed;
+            int safe;
+
+            decoded = json_decode_string(value, NULL);
+            if (decoded != NULL) {
+                length = strlen(decoded);
+                safe = length > 0U && length <= 48U;
+
+                for (index = 0U; safe && index < length; ++index) {
+                    unsigned char ch;
+
+                    ch = (unsigned char)decoded[index];
+                    if (!((ch >= (unsigned char)'a' &&
+                           ch <= (unsigned char)'z') ||
+                          (ch >= (unsigned char)'A' &&
+                           ch <= (unsigned char)'Z') ||
+                          (ch >= (unsigned char)'0' &&
+                           ch <= (unsigned char)'9') ||
+                          ch == (unsigned char)'_' ||
+                          ch == (unsigned char)'-' ||
+                          ch == (unsigned char)'.')) {
+                        safe = 0;
+                    }
+                }
+
+                if (safe) {
+                    needed = length + (count != 0U ? 2U : 0U);
+                    if (used + needed + 1U <= output_size) {
+                        if (count != 0U) {
+                            output[used++] = ',';
+                            output[used++] = ' ';
+                        }
+                        (void)memcpy(output + used, decoded, length);
+                        used += length;
+                        output[used] = '\0';
+                        ++count;
+                    }
+                }
+
+                free(decoded);
+            }
+        }
+
+        if (*position == '\\' && position[1] != '\0') {
+            ++position;
+        }
+        ++position;
+    }
+
+    free(items);
+    return count != 0U;
+}
+
 static char *create_prompt_rules(const char *base)
 {
     static const char rule[] =
@@ -104,6 +190,7 @@ void llm_agent_create(agent_state *state, const char *goal)
         char *new_call_id;
         char *arguments;
         const llm_tool_descriptor *descriptor;
+        char output_types[256];
 
         if (!write_create_agent_request(
                 model,
@@ -166,6 +253,20 @@ void llm_agent_create(agent_state *state, const char *goal)
                 &name,
                 &new_call_id,
                 &arguments)) {
+            if (llm_create_output_types(
+                    json,
+                    output_types,
+                    sizeof(output_types))) {
+                (void)printf(
+                    "Unrecognized create response output type values: %s\n",
+                    output_types
+                );
+            } else {
+                (void)puts(
+                    "Unrecognized create response contained no readable "
+                    "output type values."
+                );
+            }
             (void)puts(
                 "Response contained neither output text nor a function call."
             );
