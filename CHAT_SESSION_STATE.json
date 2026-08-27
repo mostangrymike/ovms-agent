@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:13:00-05:00",
+  "updated_at": "2026-08-27T10:23:48-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,10 +18,10 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_DIAGNOSTIC_VAX_RETEST_PENDING",
+    "status": "ACTIVE_84_TEST_STAGE_DIAGNOSTIC_VAX_RETEST_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+    "remote_candidate_head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
     "candidate_publication": "UNTESTED_GITHUB_DIAGNOSTIC",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
@@ -53,36 +53,52 @@
         "failure": "M275 nested RMS-aware Git restore regression still failed after fgetname(...,1) plus generated DCL SET DEFAULT correction",
         "m265_regression": "passed",
         "m275_83_regression": "passed and printed before #84 failure",
-        "pre_build_worktree": "clean",
-        "post_build_worktree": "not rechecked before entering OVMS Agent",
-        "manual_agent_test": "GITRESTORE LLM_TOOL_ARGS_M275.H from [MIKE.OVMS_AGENT.SRC] used the previously published executable and reproduced old #84 behavior; not candidate evidence"
+        "manual_agent_test": "post-failure GITRESTORE used previous published executable and is not candidate evidence"
+      },
+      {
+        "head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+        "build_status": "%X00000002",
+        "failure": "M275 nested RMS-aware Git restore regression still failed",
+        "m265_regression": "passed",
+        "m275_83_regression": "passed",
+        "gitrestore_diagnostics": "no GITRESTORE: lines were emitted",
+        "tracked_worktree_after_failure": "clean; only SRC/OVMS_AGENT_TRANSCRIPT.DAT untracked",
+        "inference": "instrumented git_rms_restore_head did not report a failure, so the focused test either did not call it or it returned success and the regression failed afterward"
       }
     ],
     "failed_correction": {
       "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
       "git_capture": "resolve caller C current directory with a probe file plus fgetname(...,1), emit DCL SET DEFAULT to that exact OpenVMS directory, then run git rev-parse --show-prefix",
-      "result": "VAX rejected; exact internal failing stage remains unknown"
+      "result": "VAX rejected"
+    },
+    "production_failure_diagnostic": {
+      "head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+      "delta": "only SRC/GIT_RMS_RESTORE.C, +17/-0",
+      "result": "no GITRESTORE diagnostic appeared during the failing #84 regression",
+      "meaning": "remaining failure is outside an observed git_rms_restore_head failure path"
     },
     "current_diagnostic": {
-      "head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
-      "base": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-      "delta": "only SRC/GIT_RMS_RESTORE.C, +17/-0",
-      "semantics": "no restore behavior change; boolean API preserved",
-      "purpose": "surface whether #84 fails at repository path resolution, HEAD tree lookup with resolved tree path, local RMS replace, post-write read, or post-write verification"
+      "head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
+      "base": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+      "delta": "only SRC/M275_BACKLOG_TEST.C, +35/-6",
+      "semantics": "no production restore behavior change",
+      "purpose": "identify exact focused-test stage: initial cwd/filespec, disposable RMS write, chdir TEST, restore return, return chdir, content read/compare, or RMS cleanup"
     },
     "cleanup": {
-      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed; no netcfg paths remained in pre-build git status",
+      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-    "pre_third_build_worktree": "clean",
-    "post_third_build_worktree": "not yet rechecked",
+    "local_head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+    "tracked_worktree": "clean after b2e93ad failed build",
+    "untracked": [
+      "SRC/OVMS_AGENT_TRANSCRIPT.DAT"
+    ],
     "core_filemode": "false",
-    "manual_agent_context": "last shown project root SYS$SYSDEVICE:[MIKE.OVMS_AGENT.SRC]; old published executable still active because @BUILD failed before final publish",
+    "published_agent": "still previous accepted executable because M275 build has not reached final publish",
     "m274_netcfg": "removed locally and from candidate branch"
   },
   "important_open_defects": {
@@ -93,7 +109,7 @@
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
     "83": "M275 raw-dispatch regression passes in candidate test; full VAX build and live Agent verification still pending",
-    "84": "afed98c rejected by VAX; diagnostic-only head b2e93ad pending VAX retest",
+    "84": "b2e93ad rejected by VAX without git_rms_restore_head failure diagnostic; stage-instrumented test head 6842625 pending VAX retest",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
