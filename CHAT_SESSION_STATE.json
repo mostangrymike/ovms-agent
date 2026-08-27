@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:32:00-05:00",
+  "updated_at": "2026-08-27T13:47:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -13,54 +13,51 @@
     "issue": 90,
     "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
     "branch": "m276-agent-loop-hardening",
-    "base_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "code_head": "2cf921fe2296b5768961b9331b125859556b30ce",
     "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
     "promotion_pr": 91,
     "promotion_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "promotion_tree": "ebdd40601eb3cc5292a2fc4179695971f6c53b37",
-    "reconciliation": "DOC/M276_RECONCILIATION.MD",
     "tag": "m276",
     "tag_target": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "scope_issues": [58, 68, 81],
-    "closed_issues": [58, 68, 81],
-    "canonical_acceptance": {
-      "reconciliation_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
-      "build": "All regression tests passed; Build completed successfully",
-      "status": "%X00000001",
-      "core_filemode": "false",
-      "tracked_worktree": "clean"
+    "closed_issues": [58, 68, 81]
+  },
+  "m277": {
+    "issue": 92,
+    "status": "GITHUB_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "branch": "m277-create-interoperability",
+    "base_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
+    "candidate_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
+    "scope_issues": [79, 82],
+    "out_of_scope": [78],
+    "net_files": [
+      "SRC/COMMAND_AGENT_M259.C",
+      "SRC/LLM_CREATE_CONTEXT_M277.INC",
+      "SRC/LLM_CREATE_CORE.INC",
+      "SRC/LLM_PARITY_M258.C",
+      "SRC/m251_create_test.c"
+    ],
+    "candidate_summary": {
+      "79": "diagnostic-first: unrecognized AGENT/CREATE Responses remain fail-closed but now print sanitized type values found inside output[]; no speculative alternate tool-call parser until live Groq/Qwen shape is captured",
+      "82": "adds explicit AGENT/EXEC/RESUME/CREATE goal; rebuilds persistent context, requires workspace/full plus OVMS_AGENT_WRITE_ENABLED, records session goal/execution evidence, and delegates to existing guarded llm_agent_create primitive",
+      "regression": "existing M251 create regression now covers output-type diagnostic behavior and the persistent-create policy predicate"
     },
-    "live_acceptance": {
-      "81": "PASS: zero-tool exact reply produced explicit evidence-free early-final diagnostic; Tool calls 0; Stop reason error; process %X00000001; clean worktree",
-      "58": "PASS: first controlled fixture write applied, second deliberate write blocked with status limit and no second approval; fixture restored from HEAD with %X00000001 and clean worktree",
-      "68": "PASS: real Groq rate limits recovered in same autonomous run after visible waits of 3 seconds and 19 seconds; run reached successful final"
-    },
-    "retention": {
-      "remote_branches": ["main", "chat-session-state", "m275-backlog-hardening", "m276-agent-loop-hardening"],
-      "deleted_completed_branch": "m274-agent-stress-project",
-      "result": "remote retention complete; only two most recent completed milestone development branches retained"
-    }
+    "github_audit": "main..candidate contains exactly five intended files; candidate is not VAX-green"
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m276-agent-loop-hardening",
     "local_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
     "local_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "local_tags": {
-      "m275": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
-      "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780"
-    },
     "local_branches": ["main", "m275-backlog-hardening", "m276-agent-loop-hardening"],
     "remote_tracking_branches": ["origin/main", "origin/m275-backlog-hardening", "origin/m276-agent-loop-hardening"],
-    "tracked_worktree": "clean after final remote-tracking cleanup",
+    "tracked_worktree": "clean after final M276 remote-tracking cleanup; M277 not yet materialized",
     "core_filemode": "false",
-    "hygiene_status": "COMPLETE"
+    "published_agent": "M276 reconciliation-head accepted build image"
   },
   "important_open_defects": {
-    "78": "GitHub bridge setup/docs/service completeness",
-    "79": "Groq Qwen AGENT/CREATE response parsing",
-    "82": "resumed workspace continuation cannot create files"
+    "78": "GitHub bridge setup/docs/service completeness; deferred from M277",
+    "79": "M277 diagnostic-first candidate pending VAX build/live Groq response capture",
+    "82": "M277 explicit persistent create candidate pending VAX build/live acceptance"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
