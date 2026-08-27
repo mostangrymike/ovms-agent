@@ -108,6 +108,13 @@ void llm_auto_note_tool(void)
     ++llm_auto_cur_tools;
 }
 
+void llm_auto_note_applied(void)
+{
+    if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE) {
+        llm_auto_declined_after_write = 0;
+    }
+}
+
 void llm_auto_note_decline(void)
 {
     if (llm_auto_cur_workflow == LLM_WORKFLOW_WRITE &&
