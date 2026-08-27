@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:31:00-05:00",
+  "updated_at": "2026-08-27T10:38:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,11 +18,11 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_84_DIRECT_DIAGNOSTIC_RUN_PENDING",
+    "status": "ACTIVE_84_CASE_CANONICALIZATION_VAX_RETEST_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
-    "candidate_publication": "VAX_TESTED_FAILING_DIAGNOSTIC",
+    "remote_candidate_head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+    "candidate_publication": "UNTESTED_GITHUB_CORRECTION",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
@@ -70,20 +70,29 @@
           "return to saved directory succeeded",
           "RMS version cleanup succeeded"
         ],
-        "gitrestore_diagnostics": "no GITRESTORE: lines were captured in OVMS_BUILD.LOG",
         "tracked_worktree_after_failure": "clean",
-        "inference": "git_rms_restore_head is definitely called from the nested directory and returns 0; focused test setup, return chdir, and cleanup are good. Failure is inside git_rms_restore_head, but its stderr diagnostics are not visible in BUILD.COM capture."
+        "direct_run": {
+          "status": "%X00000002",
+          "git_error": "fatal: path 'test/GAP008_RMS.TXT' exists on disk, but not in 'HEAD'",
+          "restore_error": "GITRESTORE: HEAD tree lookup failed for test/GAP008_RMS.TXT.",
+          "root_cause": "OpenVMS/Git reports nested filesystem prefix as lowercase test/, while Git HEAD stores case-sensitive TEST/GAP008_RMS.TXT"
+        }
       }
     ],
-    "failed_correction": {
-      "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-      "git_capture": "resolve caller C current directory with a probe file plus fgetname(...,1), emit DCL SET DEFAULT to that exact OpenVMS directory, then run git rev-parse --show-prefix",
-      "result": "VAX rejected"
+    "root_cause_84": {
+      "local_filesystem": "OpenVMS path semantics are case-insensitive",
+      "git_tree": "Git tree path lookup is case-sensitive",
+      "observed_candidate": "test/GAP008_RMS.TXT",
+      "actual_head_path": "TEST/GAP008_RMS.TXT",
+      "conclusion": "prefix/path spelling must be canonicalized against the Git tree before cat-file"
     },
-    "current_diagnostic": {
-      "head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
-      "next_action": "run the already-built [.BUILD]M275_BACKLOG_TEST.EXE directly from repository root outside BUILD.COM redirection to expose git_rms_restore_head stderr diagnostics",
-      "documentation_check": "DEC C fgetname(...,1) requests OpenVMS-format filespec, so the selector value itself is correct"
+    "current_correction": {
+      "head": "2c86f1f9005e29fc9057dacd9331e1c34d3e5450",
+      "base": "684262526a4ccdbb2b157e20241d31de1683fc7e",
+      "delta": "only SRC/GIT_RMS_RESTORE.C",
+      "approach": "walk HEAD tree one path component at a time, match component names case-insensitively for OpenVMS semantics, reconstruct exact Git-stored spelling, then use the exact path for cat-file",
+      "safety": "case-colliding names that OpenVMS cannot distinguish fail closed; local RMS path remains separate from Git tree path",
+      "acceptance": "VAX retest pending"
     },
     "cleanup": {
       "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
@@ -94,10 +103,9 @@
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
     "local_head": "684262526a4ccdbb2b157e20241d31de1683fc7e",
-    "tracked_worktree": "clean after 6842625 failed build",
+    "tracked_worktree": "clean after direct 6842625 diagnostic run",
     "core_filemode": "false",
-    "published_agent": "still previous accepted executable because M275 build has not reached final publish",
-    "focused_test_executable": "[.BUILD]M275_BACKLOG_TEST.EXE exists from failed 6842625 build and is suitable for direct diagnostic run"
+    "published_agent": "still previous accepted executable because M275 build has not reached final publish"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -107,7 +115,7 @@
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
     "83": "M275 raw-dispatch regression passes in candidate test; full VAX build and live Agent verification still pending",
-    "84": "6842625 proves nested restore call itself returns failure; direct focused executable run pending to expose stderr stage diagnostic",
+    "84": "root cause identified as OpenVMS case-insensitive prefix versus case-sensitive Git tree path; correction 2c86f1f pending VAX retest",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
