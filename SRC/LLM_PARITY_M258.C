@@ -17,4 +17,5 @@
 #undef llm_set_approval_cmd
 #undef llm_reset_approval
 
+#include "LLM_CREATE_CONTEXT_M277.INC"
 #include "LLM_AUTOPILOT_POLICY.INC"
