@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:47:00-05:00",
+  "updated_at": "2026-08-27T16:59:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,16 +10,23 @@
   },
   "m279": {
     "issue": 97,
-    "status": "THIRD_CANDIDATE_BUILD_GREEN_STATUS_CONFIRMATION_PENDING",
+    "status": "FOLLOWUP_SOURCE_CANDIDATE_VAX_GATE_PENDING",
     "branch": "m279-legacy-backlog-closure",
-    "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "build_output": "All regression tests passed; Build completed successfully",
-    "status_confirmation": "pending SHOW SYMBOL M279_BUILD_STATUS because prior F$FAO !8XL display was invalid for the saved DCL status symbol",
-    "worktree": "clean",
-    "core_filemode": "false",
-    "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
-    "closed_issues": [],
-    "next_action": "SHOW SYMBOL M279_BUILD_STATUS; then fresh focused regressions with saved statuses displayed via SHOW SYMBOL; then live acceptance."
+    "accepted_deterministic_head": "cad09a3208b287916357db2e092ef56bb391298b",
+    "accepted_deterministic_evidence": {
+      "build": "All regression tests passed; Build completed successfully; %X00000001",
+      "m251_synth": "%X00000001 with sibling-call, tool-like-text, GPT-OSS guard, large-edit fixtures",
+      "m251_repair_goal": "%X00000001 with flat-root plan and NULL guard fixture",
+      "m251_create": "%X00000001",
+      "worktree": "clean",
+      "core_filemode": "false"
+    },
+    "closed_issues": [55, 59, 71, 76],
+    "remaining_issues": [53, 54, 56, 60, 65, 67, 70, 73],
+    "candidate_head": "b2984a061e7aa4d85b9c1104e23ecd2f96ae4760",
+    "candidate_delta_from_accepted_head": ["SRC/LLM_PROMPTS.C"],
+    "candidate_note": "Pre-live audit found AGENT/WRITE prompt still replace-only despite new bounded create_file runtime/schema support. Prompt now permits bounded repeated create_file for scaffolding while retaining one bounded existing-file patch and local confirmation/overwrite protections.",
+    "next_action": "Advance VAX from cad09a32 to b2984a06, RMS-restore only SRC/LLM_PROMPTS.C, rerun canonical @BUILD and confirm %X00000001. Then run live/target acceptance for #53 #54 #56 #60 #65 #67 #70 #73."
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
