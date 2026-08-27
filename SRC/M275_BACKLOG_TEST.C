@@ -191,13 +191,13 @@ int main(void)
         (void)puts("M275: raw tool argument split regression failed.");
         return 2;
     }
+    (void)puts("M275 #83 raw tool argument regression passed.");
 
     if (!m275_test_nested_restore()) {
         (void)puts("M275: nested RMS-aware Git restore regression failed.");
         return 2;
     }
-
-    (void)puts("M275 #83 raw tool argument regression passed.");
     (void)puts("M275 #84 nested Git restore regression passed.");
+
     return 1;
 }
