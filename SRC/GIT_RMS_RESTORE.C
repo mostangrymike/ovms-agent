@@ -336,27 +336,44 @@ int git_rms_restore_head(const char *path)
     int ok;
 
     if (!git_rms_make_git_path(path, git_path, sizeof(git_path))) {
+        (void)fprintf(stderr,
+                      "GITRESTORE: repository path resolution failed for %s.\n",
+                      path != NULL ? path : "(null)");
         return 0;
     }
 
     head_text = git_rms_capture_head(git_path);
     if (head_text == NULL) {
+        (void)fprintf(stderr,
+                      "GITRESTORE: HEAD tree lookup failed for %s.\n",
+                      git_path);
         return 0;
     }
 
     ok = rms_replace_text_file(path, head_text);
     if (!ok) {
+        (void)fprintf(stderr,
+                      "GITRESTORE: local RMS replace failed for %s.\n",
+                      path);
         free(head_text);
         return 0;
     }
 
     current_text = git_rms_read_text(path);
     if (current_text == NULL) {
+        (void)fprintf(stderr,
+                      "GITRESTORE: post-write read failed for %s.\n",
+                      path);
         free(head_text);
         return 0;
     }
 
     ok = strcmp(current_text, head_text) == 0;
+    if (!ok) {
+        (void)fprintf(stderr,
+                      "GITRESTORE: post-write verification failed for %s.\n",
+                      path);
+    }
     free(current_text);
     free(head_text);
     return ok;
