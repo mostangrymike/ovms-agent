@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:25:00-05:00",
+  "updated_at": "2026-08-27T16:39:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -56,11 +56,29 @@
   },
   "m279": {
     "issue": 97,
-    "status": "SOURCE_CANDIDATE_READY_VAX_GATE_PENDING",
+    "status": "SECOND_SOURCE_CANDIDATE_VAX_GATE_PENDING",
     "branch": "m279-legacy-backlog-closure",
     "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "candidate_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
-    "candidate_tree": "237c3cb37ceae73bbd3eb6779ea26db503aac252",
+    "failed_candidate_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
+    "failed_candidate_tree": "237c3cb37ceae73bbd3eb6779ea26db503aac252",
+    "failed_gate": {
+      "build_status": "%X7FF9D67C",
+      "result": "FAIL",
+      "diagnostics": [
+        "implicit llm_auto_final_has_evidence",
+        "implicit llm_auto_allow_create",
+        "undeclared build_after_write"
+      ],
+      "note": "Focused M251 images run after the failed build were stale pre-build executables and are not acceptance evidence."
+    },
+    "candidate_head": "d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
+    "candidate_tree": "61a5b416aa3f2d1ccc22e28009d3cd917b9541e5",
+    "repair_delta_from_failed_candidate": [
+      "SRC/LLM_AGENT_LOOP_M259_CORE.C",
+      "SRC/LLM_PROMPTS.H",
+      "SRC/LLM_RESPONSE.C"
+    ],
+    "repair_note": "M279 write/create interception is now explicitly scoped to the agent loop and its macros are undefined after inclusion; LLM_AUTO.H is included at the actual M279 helper call sites. Runtime intent is unchanged.",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
     "source_outcomes": {
@@ -77,32 +95,20 @@
       "73": "refactor object invalidation recognizes [.BUILD] and flat-root layouts",
       "76": "stateless continuation filters unanswered sibling function calls; guarded edit reader separated from 64 KiB REVIEW limit"
     },
-    "static_audit": {
-      "changed_files": 25,
-      "new_files": "five .INC fragments included by existing translation units; no new linker object wiring",
-      "external_identifier_limit": "new link-visible names checked <=31 characters",
-      "rms_fixture": "70,000-byte large-edit regression uses 35,000 one-character lines"
-    },
-    "next_action": "Materialize exact candidate b95c6be05556aeb98122b3abd7a03912faabc5dd on the VAX with GITAUTH and GIT_RESTORE, run canonical @BUILD plus focused M251 regressions, verify clean status/core.filemode, then perform live provider/runtime acceptance before issue closure or reconciliation."
+    "next_action": "Advance the VAX checkout from failed head b95c6be... to repaired head d26f96ee..., RMS-restore only the three repair-delta files, rerun canonical @BUILD, and only if it succeeds run freshly linked focused M251 regressions."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "m278-github-service-completion",
-    "local_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
+    "current_branch": "m279-legacy-backlog-closure",
+    "local_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
     "local_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "local_branches": ["main", "m277-create-interoperability", "m278-github-service-completion"],
-    "remote_tracking_branches": ["origin/main", "origin/m277-create-interoperability", "origin/m278-github-service-completion"],
-    "local_tags": {
-      "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-      "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
-    },
-    "tracked_worktree": "clean after final M278 remote-tracking repair; this is the last recorded state before M279 VAX materialization",
+    "tracked_worktree": "clean after materializing failed first M279 candidate",
     "core_filemode": "false",
-    "published_agent": "M278 reconciliation-head accepted build image"
+    "published_agent": "M278 reconciliation-head accepted build image; failed M279 build did not replace it"
   },
   "github_remote_state": {
     "main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "active_m279_branch": "m279-legacy-backlog-closure@b95c6be05556aeb98122b3abd7a03912faabc5dd",
+    "active_m279_branch": "m279-legacy-backlog-closure@d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
     "retained_completed_development_branches": ["m277-create-interoperability", "m278-github-service-completion"],
     "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
   },
