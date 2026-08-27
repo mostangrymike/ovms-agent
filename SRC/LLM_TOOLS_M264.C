@@ -125,6 +125,276 @@ static int m273_tools_fflush(FILE *stream)
 #undef printf
 #undef puts
 
+#define M279_REVIEW_READ_MAX 65536L
+#define M279_EDIT_READ_MAX 1048576L
+
+static char *m279_read_edit_text(const char *path)
+{
+    FILE *file;
+    long length;
+    size_t actual;
+    char *data;
+
+    if (path == NULL || *path == '\0') {
+        return NULL;
+    }
+
+    file = fopen(path, "rb");
+    if (file == NULL) {
+        (void)printf("Unable to open %s: %s\n", path, strerror(errno));
+        return NULL;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0 ||
+        (length = ftell(file)) < 0L ||
+        fseek(file, 0L, SEEK_SET) != 0) {
+        (void)printf("Unable to size %s: %s\n", path, strerror(errno));
+        (void)fclose(file);
+        return NULL;
+    }
+
+    if (length > M279_EDIT_READ_MAX) {
+        (void)printf(
+            "File is too large for guarded edit (%ld bytes; limit %ld).\n",
+            length,
+            M279_EDIT_READ_MAX
+        );
+        (void)fclose(file);
+        return NULL;
+    }
+
+    data = (char *)malloc((size_t)length + 1U);
+    if (data == NULL) {
+        (void)puts("Insufficient memory for guarded edit.");
+        (void)fclose(file);
+        return NULL;
+    }
+
+    actual = fread(data, 1U, (size_t)length, file);
+    if (ferror(file)) {
+        (void)printf("Unable to read %s: %s\n", path, strerror(errno));
+        free(data);
+        (void)fclose(file);
+        return NULL;
+    }
+
+    if (fclose(file) != 0) {
+        free(data);
+        return NULL;
+    }
+
+    data[actual] = '\0';
+    return data;
+}
+
+int llm_m279_edit_read_ok(const char *path,
+                          unsigned long minimum)
+{
+    char *text;
+    int ok;
+
+    text = m279_read_edit_text(path);
+    if (text == NULL) {
+        return 0;
+    }
+
+    ok = (unsigned long)strlen(text) >= minimum;
+    free(text);
+    return ok;
+}
+
+static int m279_large_text_needed(const char *arguments)
+{
+    char *path;
+    FILE *file;
+    long length;
+    int large;
+
+    path = extract_string_argument(arguments, "path");
+    if (path == NULL) {
+        return 0;
+    }
+
+    file = fopen(path, "rb");
+    if (file == NULL) {
+        free(path);
+        return 0;
+    }
+
+    large = 0;
+    if (fseek(file, 0L, SEEK_END) == 0) {
+        length = ftell(file);
+        if (length > M279_REVIEW_READ_MAX) {
+            large = 1;
+        }
+    }
+
+    (void)fclose(file);
+    free(path);
+    return large;
+}
+
+static llm_replace_result m279_rep_text_large(
+    agent_state *state,
+    const char *arguments,
+    char **display_path)
+{
+    char *path;
+    char *old_text;
+    char *new_text;
+    char *content;
+    char *match;
+    char *second_match;
+    char *replacement;
+    size_t prefix_length;
+    size_t old_length;
+    size_t new_length;
+    size_t content_length;
+    size_t replacement_length;
+    char answer[32];
+    int applied;
+
+    (void)state;
+    *display_path = NULL;
+    path = extract_string_argument(arguments, "path");
+    old_text = extract_string_argument(arguments, "old_text");
+    new_text = extract_string_argument(arguments, "new_text");
+
+    if (path == NULL || old_text == NULL || new_text == NULL) {
+        free(path);
+        free(old_text);
+        free(new_text);
+        (void)puts("replace_text requires path, old_text, and new_text.");
+        return LLM_REPLACE_ERROR;
+    }
+
+    *display_path = llm_duplicate_text(path);
+
+    if (!llm_path_is_safe(path)) {
+        (void)printf("Unsafe or invalid project-relative path: %s\n", path);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    if (llm_path_is_sensitive(path)) {
+        (void)printf("Access denied for sensitive path: %s\n", path);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    if (*old_text == '\0') {
+        (void)puts("replace_text old_text must not be empty.");
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    content = m279_read_edit_text(path);
+    if (content == NULL) {
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    match = strstr(content, old_text);
+    if (match == NULL) {
+        (void)puts("Exact old_text was not found.");
+        free(content);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    second_match = strstr(match + strlen(old_text), old_text);
+    if (second_match != NULL) {
+        (void)puts("Exact old_text is not unique; patch refused.");
+        free(content);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    (void)printf("File: %s\n\n", path);
+    (void)puts("Current:");
+    (void)fputs(old_text, stdout);
+    if (old_text[strlen(old_text) - 1U] != '\n') {
+        (void)putchar('\n');
+    }
+
+    (void)puts("\nProposed:");
+    (void)fputs(new_text, stdout);
+    if (*new_text == '\0' ||
+        new_text[strlen(new_text) - 1U] != '\n') {
+        (void)putchar('\n');
+    }
+
+    (void)printf("\nApply patch [y/N]? ");
+    (void)fflush(stdout);
+    if (fgets(answer, sizeof(answer), stdin) == NULL ||
+        (answer[0] != 'y' && answer[0] != 'Y')) {
+        (void)puts("Patch cancelled.");
+        free(content);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_DECLINED;
+    }
+
+    prefix_length = (size_t)(match - content);
+    old_length = strlen(old_text);
+    new_length = strlen(new_text);
+    content_length = strlen(content);
+    replacement_length = prefix_length + new_length +
+        (content_length - prefix_length - old_length);
+
+    replacement = (char *)malloc(replacement_length + 1U);
+    if (replacement == NULL) {
+        (void)puts("Insufficient memory for transactional exact-text patch.");
+        free(content);
+        free(path);
+        free(old_text);
+        free(new_text);
+        return LLM_REPLACE_ERROR;
+    }
+
+    if (prefix_length > 0U) {
+        (void)memcpy(replacement, content, prefix_length);
+    }
+    if (new_length > 0U) {
+        (void)memcpy(replacement + prefix_length, new_text, new_length);
+    }
+    (void)memcpy(
+        replacement + prefix_length + new_length,
+        match + old_length,
+        content_length - prefix_length - old_length
+    );
+    replacement[replacement_length] = '\0';
+
+    applied = llm_write_complete_text_txn(path, replacement);
+
+    free(replacement);
+    free(content);
+    free(path);
+    free(old_text);
+    free(new_text);
+
+    if (!applied) {
+        (void)puts("Unable to write transactional exact-text patch.");
+        return LLM_REPLACE_ERROR;
+    }
+
+    (void)puts("Patch applied. A new OpenVMS file version was created.");
+    return LLM_REPLACE_APPLIED;
+}
+
 static int m264_guard_text(const char *arguments)
 {
     char *path;
@@ -146,7 +416,7 @@ static int m264_guard_text(const char *arguments)
         return 1;
     }
 
-    original = llm_read_text_file(path);
+    original = m279_read_edit_text(path);
     if (original == NULL) {
         free(path);
         free(old_text);
@@ -197,7 +467,7 @@ static char *m264_lines_candidate(const char *arguments,
         return NULL;
     }
 
-    content = llm_read_text_file(path);
+    content = m279_read_edit_text(path);
     if (content == NULL) {
         free(path);
         free(new_text);
@@ -271,7 +541,7 @@ static int m264_guard_candidate(const char *path,
     int safe;
 
     if (path == NULL || candidate == NULL) return 1;
-    original = llm_read_text_file(path);
+    original = m279_read_edit_text(path);
     if (original == NULL) return 1;
     safe = cobol_edit_safe(path, original, candidate,
                            reason, sizeof(reason));
@@ -288,6 +558,9 @@ llm_replace_result execute_replace_text_tool(
     char **display_path)
 {
     if (!m264_guard_text(arguments)) return LLM_REPLACE_ERROR;
+    if (m279_large_text_needed(arguments)) {
+        return m279_rep_text_large(state, arguments, display_path);
+    }
     return m263_rep_text(state, arguments, display_path);
 }
 
