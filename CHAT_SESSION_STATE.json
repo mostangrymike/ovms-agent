@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T14:48:00-05:00",
+  "updated_at": "2026-08-27T14:53:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -54,18 +54,22 @@
   },
   "m278": {
     "issue": 94,
-    "status": "VAX_CODE_HEAD_GREEN_AUTO_WIRE_PENDING",
+    "status": "FUNCTIONAL_COMPLETE_CODE_HEAD_VAX_GREEN_RECONCILIATION_PENDING",
     "branch": "m278-github-service-completion",
     "base_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
+    "reconciliation_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
+    "reconciliation": "DOC/M278_RECONCILIATION.MD",
     "scope_issues": [78],
-    "net_files": [
+    "closed_issues": [78, 95],
+    "net_code_files": [
       "GITHUB_BRIDGE.COM",
       "OVMS_AGENT.COM",
       "README.md",
       "SRC/m250_github_test.c"
     ],
     "canonical_acceptance": {
+      "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
       "build": "All regression tests passed; Build completed successfully",
       "build_status": "%X00000001",
       "focused_regression": "M250 guarded GitHub regression test passed",
@@ -77,19 +81,13 @@
       "full_gate": "PASS: AGENT/GITHUB/ISSUES help refused before FULL approval",
       "pr": "PASS: PR help and PR list succeeded",
       "issues": "PASS: issues help, list, and create succeeded",
-      "acceptance_issue": "#95 M278-SERVICE-BRIDGE-ACCEPTANCE created through OVMS Agent bridge and independently closed completed",
-      "cleanup": "PASS: request/response/header/body/API temporary files all absent after run",
+      "acceptance_issue": "#95 M278-SERVICE-BRIDGE-ACCEPTANCE created through OVMS Agent bridge, independently verified, and closed completed",
+      "cleanup": "PASS: request/response/header/body/API temporary files all absent after live run",
       "override_path": "PASS: pre-existing OVMS_AGENT_GITHUB_BRIDGE override remained usable",
-      "auto_wire": "PENDING: bridge logical was already defined before @OVMS_AGENT, so normal-launch auto-wire is not yet independently proven"
+      "auto_wire": "PASS: with bridge logical explicitly absent before @OVMS_AGENT, PR and issue help succeeded; logical remained absent in caller after EXIT"
     },
-    "candidate_summary": {
-      "launcher": "Normal @OVMS_AGENT launch auto-defines user-mode OVMS_AGENT_GITHUB_BRIDGE to the shipped checkout bridge only when no explicit bridge logical already resolves.",
-      "pr": "Retains the already VAX-proven PR help/list/create path and STREAM_LF request-body transport.",
-      "issues": "Adds issues help, issues list [open|closed|all], and issues create TITLE using the active saved GitHub profile, protected temporary header, STREAM_LF JSON body, and bridge all-version cleanup.",
-      "docs": "README documents auto-wiring, explicit override behavior, exact PR/issue grammar, one-token title constraint, and GitHub token permissions.",
-      "regression": "M250 GitHub regression verifies AGENT/GITHUB/ISSUES appears in the catalog and command registry."
-    },
-    "next_gate": "Explicitly deassign OVMS_AGENT_GITHUB_BRIDGE, verify NOTRAN, run @OVMS_AGENT, set FULL, and prove PR help succeeds through launcher auto-wire; then verify no persistent bridge logical and clean worktree before reconciliation."
+    "reconciliation_audit": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b is exactly one commit beyond the VAX-green code head and adds only DOC/M278_RECONCILIATION.MD (+201/-0)",
+    "next_gate": "Materialize only DOC/M278_RECONCILIATION.MD at reconciliation head, run canonical @BUILD, verify %X00000001, clean worktree and core.filemode=false; then promote through normal PR path and verify promoted merge tree equals separately VAX-accepted reconciliation tree."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
@@ -102,7 +100,7 @@
       "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
       "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
     },
-    "tracked_worktree": "clean at M278 code head after build/live service acceptance",
+    "tracked_worktree": "clean at VAX-green M278 code head; reconciliation doc not yet materialized",
     "core_filemode": "false",
     "published_agent": "M278 code-head accepted build image"
   },
@@ -111,9 +109,7 @@
     "m277_tag": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "m275_branch": "absent"
   },
-  "important_open_defects": {
-    "78": "M278 code head VAX-green; service behavior green; only clean no-logical launcher auto-wire proof remains before reconciliation/closure"
-  },
+  "important_open_defects": {},
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
