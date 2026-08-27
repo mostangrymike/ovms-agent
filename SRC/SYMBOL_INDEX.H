@@ -13,8 +13,20 @@ void symbol_callers(agent_state *state, const char *symbol);
 void symbol_show(agent_state *state, const char *symbol);
 void symbol_show_function(agent_state *state,
                           const char *symbol);
+
+/*
+ * COMMAND_SYMBOL.C includes command_internal.h before this header.  Keep the
+ * large legacy index translation unit untouched, but route the command-side
+ * SHOW/STRUCT call through the stricter M279 classifier.
+ */
+#ifdef OVMS_AGENT_COMMAND_INTERNAL_H
+#include "SYMBOL_SHOW_M279.INC"
+#define symbol_show_struct m279_show_struct
+#else
 void symbol_show_struct(agent_state *state,
                         const char *symbol);
+#endif
+
 void symbol_show_module(agent_state *state,
                         const char *module);
 void symbol_show_dependencies(agent_state *state,
@@ -88,8 +100,8 @@ int symbol_declaration_order_fix(agent_state *state,
                                  const char *module);
 
 int symbol_decl_fix_limited(agent_state *state,
-                                         const char *module,
-                                         unsigned int limit);
+                            const char *module,
+                            unsigned int limit);
 
 int symbol_decl_fix_auto(agent_state *state,
                          const char *module,
