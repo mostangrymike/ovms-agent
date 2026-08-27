@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:46:00-05:00",
+  "updated_at": "2026-08-27T16:47:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -12,26 +12,21 @@
     "issue": 97,
     "status": "THIRD_CANDIDATE_BUILD_GREEN_STATUS_CONFIRMATION_PENDING",
     "branch": "m279-legacy-backlog-closure",
-    "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
     "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "build_output": ["Building OVMS Agent Version 2...", "All regression tests passed.", "Build completed successfully.", "Run with: $ @OVMS_AGENT"],
-    "build_status_display_issue": "The saved DCL symbol M279_BUILD_STATUS was displayed using F$FAO !8XL, which produced %X7FF9D67C as a formatting artifact. Use SHOW SYMBOL M279_BUILD_STATUS. BUILD.COM sets FINAL_STATUS=1 and exits FINAL_STATUS on the observed success path.",
-    "worktree": "clean after build",
+    "build_output": "All regression tests passed; Build completed successfully",
+    "status_confirmation": "pending SHOW SYMBOL M279_BUILD_STATUS because prior F$FAO !8XL display was invalid for the saved DCL status symbol",
+    "worktree": "clean",
     "core_filemode": "false",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
-    "next_action": "SHOW SYMBOL M279_BUILD_STATUS. If %X00000001, run fresh M251_SYNTH_TEST, M251_REPAIR_GOAL_TEST, M251_CREATE_TEST and save/display each status with SHOW SYMBOL. Then continue live acceptance."
-  },
-  "important_open_defects": {
-    "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76]
+    "next_action": "SHOW SYMBOL M279_BUILD_STATUS; then fresh focused regressions with saved statuses displayed via SHOW SYMBOL; then live acceptance."
   },
   "standing_rules": [
-    "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
-    "GitHub is source/edit control plane; VAX/OpenVMS is compile/link/RMS/DCL/runtime acceptance authority.",
-    "Omit literal OVMS-AGENT> from lines intended for OVMS Agent.",
-    "Use GITAUTH for prompt-free Git network operations.",
+    "Read RULES.md on main and this state at chat start.",
+    "VAX/OpenVMS is canonical build/runtime authority.",
+    "Omit OVMS-AGENT> from agent command lines.",
+    "Use GITAUTH for Git network operations.",
     "Keep core.filemode=false.",
-    "Never call an untested GitHub head VAX-green.",
-    "Canonical acceptance requires All regression tests passed and final %X00000001."
+    "Canonical acceptance requires All regression tests passed and %X00000001."
   ]
 }
