@@ -7,6 +7,7 @@ void llm_auto_begin(int workflow);
 unsigned int llm_auto_turn_limit(int workflow);
 void llm_auto_note_turn(void);
 void llm_auto_note_tool(void);
+void llm_auto_note_applied(void);
 void llm_auto_note_decline(void);
 int llm_auto_final_has_evidence(int workflow);
 int llm_auto_allow_write(void);
