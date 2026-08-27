@@ -1,13 +1,13 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T13:47:00-05:00",
+  "updated_at": "2026-08-27T14:05:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
     "latest_code_milestone": "M276",
-    "note": "M276 promoted through PR #91. Promoted main tree ebdd40601eb3cc5292a2fc4179695971f6c53b37 exactly matches separately VAX-accepted reconciliation head 44e439bf10dfa26c4d1e865ead74708c57663552."
+    "note": "M276 promoted through PR #91. M277 functional scope is accepted on its development branch but is not promoted yet."
   },
   "m276": {
     "issue": 90,
@@ -23,41 +23,52 @@
   },
   "m277": {
     "issue": 92,
-    "status": "GITHUB_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "status": "FUNCTIONAL_COMPLETE_RECONCILIATION_PENDING_VAX_ACCEPTANCE",
     "branch": "m277-create-interoperability",
     "base_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "candidate_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
+    "code_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
+    "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
+    "reconciliation": "DOC/M277_RECONCILIATION.MD",
     "scope_issues": [79, 82],
+    "closed_issues": [79, 82],
     "out_of_scope": [78],
-    "net_files": [
+    "code_net_files": [
       "SRC/COMMAND_AGENT_M259.C",
       "SRC/LLM_CREATE_CONTEXT_M277.INC",
       "SRC/LLM_CREATE_CORE.INC",
       "SRC/LLM_PARITY_M258.C",
       "SRC/m251_create_test.c"
     ],
-    "candidate_summary": {
-      "79": "diagnostic-first: unrecognized AGENT/CREATE Responses remain fail-closed but now print sanitized type values found inside output[]; no speculative alternate tool-call parser until live Groq/Qwen shape is captured",
-      "82": "adds explicit AGENT/EXEC/RESUME/CREATE goal; rebuilds persistent context, requires workspace/full plus OVMS_AGENT_WRITE_ENABLED, records session goal/execution evidence, and delegates to existing guarded llm_agent_create primitive",
-      "regression": "existing M251 create regression now covers output-type diagnostic behavior and the persistent-create policy predicate"
+    "canonical_code_acceptance": {
+      "head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
+      "build": "All regression tests passed; Build completed successfully",
+      "build_status": "%X00000001",
+      "direct_m251_status": "%X00000001",
+      "core_filemode": "false",
+      "tracked_worktree": "clean"
     },
-    "github_audit": "main..candidate contains exactly five intended files; candidate is not VAX-green"
+    "live_acceptance": {
+      "79": "PASS: Groq qwen/qwen3.6-27b plain ASK succeeded and AGENT/CREATE emitted a standard recognized create_file proposal; proposal declined; probe file absent; fail-closed output-type diagnostic retained for future unrecognized shapes",
+      "82": "PASS: read-only policy refused; workspace with write support reached guarded create confirmation; workspace with OVMS_AGENT_WRITE_ENABLED deassigned refused before provider contact; persistent test session deleted; probe file absent; final worktree clean"
+    },
+    "reconciliation_audit": "reconciliation head is exactly one commit beyond code head and adds only DOC/M277_RECONCILIATION.MD (+173/-0); pending separate VAX build acceptance"
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "m276-agent-loop-hardening",
-    "local_head": "44e439bf10dfa26c4d1e865ead74708c57663552",
+    "current_branch": "m277-create-interoperability",
+    "local_head": "a8f538e8f9a93c7e83691b603b319ca72fa0694e",
     "local_main": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
-    "local_branches": ["main", "m275-backlog-hardening", "m276-agent-loop-hardening"],
-    "remote_tracking_branches": ["origin/main", "origin/m275-backlog-hardening", "origin/m276-agent-loop-hardening"],
-    "tracked_worktree": "clean after final M276 remote-tracking cleanup; M277 not yet materialized",
+    "local_branches_expected": ["main", "m275-backlog-hardening", "m276-agent-loop-hardening", "m277-create-interoperability"],
+    "tracked_worktree": "clean after M277 live acceptance cleanup",
     "core_filemode": "false",
-    "published_agent": "M276 reconciliation-head accepted build image"
+    "write_logical": "OVMS_AGENT_WRITE_ENABLED explicitly deassigned during final #82 gate",
+    "persistent_test_state": "test session 152C794B deleted; current session none; OVMS_AGENT_SESSION.CUR and OVMS_AGENT_SESSIONS.DAT test remnants removed",
+    "m277_reconciliation": "not yet materialized; sync pending"
   },
   "important_open_defects": {
     "78": "GitHub bridge setup/docs/service completeness; deferred from M277",
-    "79": "M277 diagnostic-first candidate pending VAX build/live Groq response capture",
-    "82": "M277 explicit persistent create candidate pending VAX build/live acceptance"
+    "79": "CLOSED in M277 after VAX build and live Groq/Qwen guarded-create acceptance",
+    "82": "CLOSED in M277 after VAX build and live persistent-session create policy/write-gate acceptance"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
