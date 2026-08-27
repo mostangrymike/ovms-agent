@@ -1,13 +1,13 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T11:18:00-05:00",
+  "updated_at": "2026-08-27T11:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "latest_code_milestone": "M275",
-    "note": "M275 is promoted to main. The promoted tree was VAX-accepted at reconciliation head 09435893ebb9be7a65270cb16dd125ae76196882; GitHub merge commit is 24fee6dc9a778c8ec9bf855cc8537717882e9312."
+    "note": "M275 is promoted to main. The promoted main commit has the same tree as VAX-accepted reconciliation head 09435893ebb9be7a65270cb16dd125ae76196882; the GitHub merge commit itself was not separately run on VAX."
   },
   "m274": {
     "issue": 49,
@@ -15,11 +15,13 @@
     "promotion_pr": 87,
     "promotion_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "reconciliation": "DOC/M274_RECONCILIATION.MD",
-    "tag": "m274 pending creation"
+    "tag": "m274",
+    "tag_target": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
+    "retained_development_branch": "m274-agent-stress-project"
   },
   "m275": {
     "issue": 88,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_TAG_PRUNE_PENDING",
+    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
     "code_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
@@ -27,6 +29,8 @@
     "promotion_pr": 89,
     "promotion_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "reconciliation": "DOC/M275_RECONCILIATION.MD",
+    "tag": "m275",
+    "tag_target": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
     "canonical_acceptance": {
       "reconciliation_head": "09435893ebb9be7a65270cb16dd125ae76196882",
       "build": "All regression tests passed; Build completed successfully",
@@ -42,14 +46,28 @@
     "closed_issues": [83, 84, 86],
     "cleanup": {
       "m274_netcfg": "tracked fixture removed and stale physical local content cleaned; M274 reconciliation/history preserved",
-      "remaining_repository_retention": "create lightweight tags m274 at 1fa959e0f577d220c0c17bde0e39ea904c90fb6a and m275 at 24fee6dc9a778c8ec9bf855cc8537717882e9312; delete temporary m274-phase4-build-purge, m274-phase6-reporting, m275-promotion-staging; delete older completed development branches m272-dead-file-cleanup and m273-ansi-presentation, retaining m274-agent-stress-project and m275-backlog-hardening"
+      "remote_retained_branches": [
+        "main",
+        "chat-session-state",
+        "m274-agent-stress-project",
+        "m275-backlog-hardening"
+      ],
+      "deleted_remote_branches": [
+        "m272-dead-file-cleanup",
+        "m273-ansi-presentation",
+        "m274-phase4-build-purge",
+        "m274-phase6-reporting",
+        "m275-promotion-staging"
+      ],
+      "retention_result": "complete; only the two most recently completed milestone development branches remain alongside main and chat-session-state"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
     "local_head": "09435893ebb9be7a65270cb16dd125ae76196882",
-    "tracked_worktree": "clean after final reconciliation VAX gate",
+    "local_main": "24fee6dc9a778c8ec9bf855cc8537717882e9312",
+    "tracked_worktree": "clean after tag publication and remote branch pruning",
     "core_filemode": "false",
     "published_agent": "M275 accepted build image"
   },
