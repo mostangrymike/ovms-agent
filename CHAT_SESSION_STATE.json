@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T15:01:00-05:00",
+  "updated_at": "2026-08-27T15:07:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -20,7 +20,7 @@
   },
   "m278": {
     "issue": 94,
-    "status": "PROMOTED_MAIN_VAX_GREEN_TAG_RETENTION_PENDING",
+    "status": "PROMOTED_MAIN_VAX_GREEN_TAG_REMOTE_RETENTION_COMPLETE_LOCAL_TRACKING_PENDING",
     "branch": "m278-github-service-completion",
     "base_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
@@ -50,17 +50,31 @@
       "acceptance_issue": "#95 created through bridge and independently closed completed"
     },
     "promotion_verification": "PR #96 head remained exact accepted reconciliation head; compare reconciliation..merge has zero changed files; merge tree equals accepted reconciliation tree",
-    "tag": "m278 pending",
-    "retention": "pending: advance VAX local main, create/push permanent m278 tag, verify m276 tag, prune completed m276-agent-loop-hardening, retain m277 and m278 development branches"
+    "tag": "m278",
+    "tag_target": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "retention": "Remote retention complete: m276-agent-loop-hardening deleted after verifying permanent m276 tag; m277-create-interoperability and m278-github-service-completion retained. Local m276 branch/ref removed. Only missing local item is origin/m278-github-service-completion remote-tracking ref."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m278-github-service-completion",
     "local_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
-    "local_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "tracked_worktree": "clean after M278 reconciliation acceptance",
+    "local_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "local_branches": ["main", "m277-create-interoperability", "m278-github-service-completion"],
+    "remote_tracking_branches": ["origin/main", "origin/m277-create-interoperability"],
+    "local_tags": {
+      "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+      "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
+    },
+    "tracked_worktree": "clean after M278 tag/retention commands",
     "core_filemode": "false",
-    "published_agent": "M278 reconciliation-head accepted build image"
+    "published_agent": "M278 reconciliation-head accepted build image",
+    "next_cleanup": "fetch explicit m278 development branch into refs/remotes/origin/m278-github-service-completion and verify branch -r/status"
+  },
+  "github_remote_state": {
+    "main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "retained_development_branches": ["m277-create-interoperability", "m278-github-service-completion"],
+    "m276_development_branch": "absent",
+    "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
   },
   "important_open_defects": {},
   "standing_rules": [
