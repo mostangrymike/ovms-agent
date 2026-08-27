@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:45:00-05:00",
+  "updated_at": "2026-08-27T16:46:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -12,21 +12,15 @@
     "issue": 97,
     "status": "THIRD_CANDIDATE_BUILD_GREEN_STATUS_CONFIRMATION_PENDING",
     "branch": "m279-legacy-backlog-closure",
+    "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
     "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "candidate_build_output": "All regression tests passed.; Build completed successfully.",
-    "candidate_worktree": "clean",
-    "candidate_core_filemode": "false",
-    "status_display_note": "F$FAO !8XL was incorrectly used to display a saved DCL status symbol and yielded %X7FF9D67C. Confirm with SHOW SYMBOL M279_BUILD_STATUS; BUILD.COM success path sets FINAL_STATUS=1 and exits FINAL_STATUS.",
+    "build_output": ["Building OVMS Agent Version 2...", "All regression tests passed.", "Build completed successfully.", "Run with: $ @OVMS_AGENT"],
+    "build_status_display_issue": "The saved DCL symbol M279_BUILD_STATUS was displayed using F$FAO !8XL, which produced %X7FF9D67C as a formatting artifact. Use SHOW SYMBOL M279_BUILD_STATUS. BUILD.COM sets FINAL_STATUS=1 and exits FINAL_STATUS on the observed success path.",
+    "worktree": "clean after build",
+    "core_filemode": "false",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
-    "next_action": "SHOW SYMBOL M279_BUILD_STATUS; if %X00000001, run freshly built focused M251 regressions and display their saved statuses with SHOW SYMBOL, then bounded live acceptance."
-  },
-  "local_openvms_state": {
-    "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
-    "current_branch": "m279-legacy-backlog-closure",
-    "local_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "tracked_worktree": "clean",
-    "core_filemode": "false"
+    "next_action": "SHOW SYMBOL M279_BUILD_STATUS. If %X00000001, run fresh M251_SYNTH_TEST, M251_REPAIR_GOAL_TEST, M251_CREATE_TEST and save/display each status with SHOW SYMBOL. Then continue live acceptance."
   },
   "important_open_defects": {
     "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76]
