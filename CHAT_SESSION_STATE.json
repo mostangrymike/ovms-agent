@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T11:06:00-05:00",
+  "updated_at": "2026-08-27T11:12:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -9,67 +9,60 @@
     "latest_code_milestone": "M274",
     "note": "M274 is promoted and VAX-green on main."
   },
-  "m274": {
-    "issue": 49,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN",
-    "promotion_pr": 87,
-    "promotion_head": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "reconciliation": "DOC/M274_RECONCILIATION.MD"
-  },
   "m275": {
     "issue": 88,
-    "status": "CANONICAL_BUILD_GREEN_LIVE_ACCEPTANCE_PENDING",
+    "status": "RECONCILIATION_HEAD_VAX_ACCEPTANCE_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-    "candidate_publication": "VAX_GREEN_BUILD_LIVE_CHECKS_PENDING",
+    "accepted_code_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
+    "remote_reconciliation_head": "09435893ebb9be7a65270cb16dd125ae76196882",
+    "reconciliation_file": "DOC/M275_RECONCILIATION.MD",
     "scope": [
-      "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
-      "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
+      "remove tracked m274_netcfg stress-test fixture while preserving M274 history and DOC/M274_RECONCILIATION.MD",
+      "fix #83 AGENT/TOOL/RUN live argument truncation and sanitization",
       "fix #84 GITRESTORE nested Git-tree/current-directory path handling",
       "fix #86 OpenVMS core.filemode normalization"
     ],
-    "canonical_build": {
+    "canonical_code_acceptance": {
       "head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-      "result": "All regression tests passed; Build completed successfully",
-      "status": "%X00000001",
-      "prebuild_git_status": "clean",
-      "prebuild_diff_check": "clean",
-      "postbuild_git_status": "clean",
-      "build_log_note": "successful-path OVMS_BUILD.LOG did not retain focused M265/M275 pass strings; canonical terminal output and final DCL status are acceptance evidence"
+      "build_output": "All regression tests passed; Build completed successfully",
+      "build_status": "%X00000001",
+      "tracked_worktree": "clean"
     },
-    "vax_evidence": {
-      "m275_83": "focused >768-byte plus literal || and TAB raw-argument regression is included in canonical green build; live production-path Agent verification pending",
-      "m275_84": "top/icase correction is included in canonical green build; live nested production-path GITRESTORE from [.TEST] pending",
-      "m275_86": "GIT_AUTH_SETUP previously demonstrated core.filemode true -> false with %X00000001; final current-head repeat/cleanliness confirmation pending"
+    "live_acceptance": {
+      "83": {
+        "status": "%X00000001",
+        "evidence": "newly published Agent AGENT/TOOL/RUN GREP with literal || returned matching source lines; canonical regressions cover >768-byte raw arguments plus TAB and pipe preservation",
+        "issue_state": "closed completed"
+      },
+      "84": {
+        "status": "%X00000001",
+        "evidence": "from SYS$SYSDEVICE:[MIKE.OVMS_AGENT.TEST], @[-]GIT_RESTORE GAP008_RMS.TXT restored and verified HEAD contents; git status remained clean",
+        "accepted_primitive": "git ls-files --full-name -- :(top,icase)<candidate> recovers exact Git-stored path spelling",
+        "issue_state": "closed completed"
+      },
+      "86": {
+        "status": "%X00000001",
+        "evidence": "forced repository-local core.filemode=true, @GIT_AUTH_SETUP normalized it to false without changing exact HEAD or dirtying the worktree",
+        "issue_state": "closed completed"
+      }
     },
-    "root_cause_84": {
-      "filesystem_git_case_mismatch": "rev-parse --show-prefix from TEST returns lowercase test/ while Git stores TEST/GAP008_RMS.TXT",
-      "ls_tree": "git ls-tree --name-only produced no visible names on this OpenVMS Git port",
-      "plain_ls_files_nested": "from [.TEST], plain git ls-files is empty because Git scopes through lowercase test/ before emitting paths",
-      "proven_fix_primitive": "from [.TEST], git ls-files --full-name -- :(top,icase)test/GAP008_RMS.TXT returns exact TEST/GAP008_RMS.TXT",
-      "conclusion": "top-level icase pathspec bypasses cwd case filtering and recovers exact Git-stored spelling"
+    "reconciliation": {
+      "head": "09435893ebb9be7a65270cb16dd125ae76196882",
+      "parent": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
+      "delta": "only DOC/M275_RECONCILIATION.MD, +95/-0",
+      "publication": "UNTESTED_RECONCILIATION_ONLY_HEAD",
+      "note": "does not supersede the accepted code head until separately VAX-accepted"
     },
-    "current_correction": {
-      "head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-      "commit": "Use top icase pathspec for OpenVMS restore lookup",
-      "delta_from_16a529d": "only SRC/GIT_RMS_RESTORE.C, +22/-34",
-      "approach": "safe combined candidate -> git ls-files --full-name -- :(top,icase)<candidate> -> require exactly one safe case-equivalent path -> existing cat-file/RMS replacement/post-write verification",
-      "canonical_vax_build": "green"
-    },
-    "next_action": "Run live production-path acceptance: #83 read-only AGENT/TOOL/RUN GREP with literal ||; #84 @[-]GIT_RESTORE GAP008_RMS.TXT from [.TEST]; #86 force core.filemode=true then rerun @GIT_AUTH_SETUP and verify false plus clean status.",
-    "cleanup": {
-      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed",
-      "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
-    }
+    "next_action": "Advance the VAX branch from 337233f to reconciliation head 0943589, materialize DOC/M275_RECONCILIATION.MD with GIT_RESTORE, run git diff --check main..HEAD and canonical @BUILD, capture final status, verify clean worktree. If green, open M275 promotion PR to main, merge, create lightweight tag m275, update #88/durable state, and apply branch retention rules."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
     "local_head": "337233fd389f5d8723ff98fe19d6a1ff4606f25a",
-    "tracked_worktree": "clean after canonical green build",
+    "tracked_worktree": "clean after live #83/#84/#86 acceptance",
     "core_filemode": "false",
-    "published_agent": "new green build image available at [.BUILD]OVMS_AGENT.EXE and used by OVMS_AGENT.COM/GIT_RESTORE.COM"
+    "published_agent": "M275 accepted code image from 337233f is installed in [.BUILD] and passed live production checks"
   },
   "important_open_defects": {
     "58": "extra post-write proposals can force rollback",
@@ -77,22 +70,18 @@
     "78": "GitHub bridge setup/docs/service completeness",
     "79": "Groq Qwen AGENT/CREATE response parsing",
     "81": "Groq Qwen intent-only final with zero tool evidence",
-    "82": "resumed workspace continuation cannot create files",
-    "83": "canonical green regression coverage complete; live production-path Agent verification pending",
-    "84": "canonical green regression coverage complete; live nested production-path GITRESTORE pending",
-    "86": "prior live setup normalization passed; final current-head confirmation pending"
+    "82": "resumed workspace continuation cannot create files"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
     "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
     "Omit literal OVMS-AGENT> from lines intended for OVMS Agent; all agent commands must be one physical input line.",
     "Use GITAUTH for prompt-free raw Git network operations; never configure credential.helper store/global/askpass.",
-    "Keep core.filemode=false on this VAX checkout until #86 is fully accepted.",
-    "Verify exact HEAD after VAX Git ref-changing operations; native success text alone is not acceptance evidence.",
+    "Keep repository-local core.filemode=false on this VAX checkout.",
+    "Verify exact HEAD after VAX Git ref-changing operations.",
     "DEC C/VAX C89: declarations at block starts; external/link-visible identifiers <=31 chars; no implicit declarations.",
     "Never call an untested GitHub head VAX-green.",
     "Canonical root acceptance requires All regression tests passed and final status %X00000001.",
-    "Until #83 is accepted, do not rely on older installed Agent images for arbitrary AGENT/TOOL/RUN source-edit payloads; the current green [.BUILD] image may now be used only for bounded acceptance checks.",
     "Never record credential values in durable state."
   ]
 }
