@@ -86,9 +86,15 @@ static int write_response_fixture(void)
     }
 
     if (fputs(
-            "{\"output\":[{\"type\":\"function_call\","
+            "{\"output\":["
+            "{\"type\":\"reasoning\",\"id\":\"rs_m279\"},"
+            "{\"type\":\"function_call\","
             "\"call_id\":\"call_m251_last\","
             "\"name\":\"search_file\","
+            "\"arguments\":\"{}\"},"
+            "{\"type\":\"function_call\","
+            "\"call_id\":\"call_m279_orphan\","
+            "\"name\":\"read_file\","
             "\"arguments\":\"{}\"}]}\n",
             file) == EOF) {
         (void)fclose(file);
@@ -226,11 +232,13 @@ int main(void)
         strstr(request, "\"model\":\"m251-test-model\"") != NULL &&
         strstr(request, "\"previous_response_id\"") == NULL &&
         strstr(request, "M251 synthesis goal") != NULL &&
+        strstr(request, "\"type\":\"reasoning\"") != NULL &&
         strstr(request,
             "\"type\":\"function_call\"") != NULL &&
         strstr(request,
             "\"type\":\"function_call_output\"") != NULL &&
         strstr(request, "\"call_id\":\"call_m251_last\"") != NULL &&
+        strstr(request, "call_m279_orphan") == NULL &&
         strstr(request, "\"output\":\"last tool result\"") != NULL &&
         strstr(request, "Produce the final answer now") != NULL &&
         strstr(request, "\"max_output_tokens\":2048") != NULL &&
@@ -250,5 +258,6 @@ int main(void)
     }
 
     (void)puts("M251 final synthesis request test passed.");
+    (void)puts("M279 sibling tool-call filtering test passed.");
     return EXIT_SUCCESS;
 }
