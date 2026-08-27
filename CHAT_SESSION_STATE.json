@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:34:00-05:00",
+  "updated_at": "2026-08-27T16:44:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -11,35 +11,37 @@
   },
   "m279": {
     "issue": 97,
-    "status": "THIRD_SOURCE_CANDIDATE_VAX_GATE_PENDING",
+    "status": "THIRD_CANDIDATE_BUILD_GREEN_STATUS_CONFIRMATION_PENDING",
     "branch": "m279-legacy-backlog-closure",
     "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
     "failed_candidates": [
       {
         "head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
-        "status": "%X7FF9D67C",
+        "result": "compile failure",
         "diagnostics": ["implicit llm_auto_final_has_evidence", "implicit llm_auto_allow_create", "undeclared build_after_write"]
       },
       {
         "head": "d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
-        "status": "%X7FF9D67C",
-        "diagnostics": ["implicit llm_api_url", "int converted to pointer to const char"],
-        "worktree_note": "git status showed MM for the prior three repair files because HEAD advanced while index still represented the previous candidate; RMS working files were restored."
+        "result": "compile failure",
+        "diagnostics": ["implicit llm_api_url", "int converted to pointer to const char"]
       }
     ],
     "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "candidate_delta_from_prior": ["SRC/LLM_REQUEST_AGENT.H"],
-    "candidate_note": "Adds LLM_CONFIG.H dependency so llm_api_url has its DEC C prototype. No runtime behavior change.",
+    "candidate_build_output": "Building OVMS Agent Version 2...; All regression tests passed.; Build completed successfully.; Run with: $ @OVMS_AGENT",
+    "candidate_worktree": "clean after build",
+    "candidate_core_filemode": "false",
+    "status_display_note": "The handoff used F$FAO with !8XL on a saved DCL status symbol and printed %X7FF9D67C. That is a formatting/display artifact, not the BUILD.COM final status. BUILD.COM initializes FINAL_STATUS=1, changes it only on failure, and exits FINAL_STATUS. Confirm the saved M279_BUILD_STATUS with SHOW SYMBOL rather than F$FAO.",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
-    "next_action": "Advance VAX HEAD from d26f96ee... to cad09a32..., run git reset --mixed --no-refresh HEAD to synchronize index without altering RMS-restored working files, RMS-restore SRC/LLM_REQUEST_AGENT.H, verify clean status, then rerun @BUILD before any focused regression images."
+    "next_action": "Run SHOW SYMBOL M279_BUILD_STATUS. If it is %X00000001, run freshly built M251_SYNTH_TEST, M251_REPAIR_GOAL_TEST, and M251_CREATE_TEST, saving each $STATUS and displaying with SHOW SYMBOL. Then proceed to bounded live/runtime acceptance."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m279-legacy-backlog-closure",
-    "observed_after_second_failed_gate": "MM SRC/LLM_AGENT_LOOP_M259_CORE.C; MM SRC/LLM_PROMPTS.H; MM SRC/LLM_RESPONSE.C",
+    "local_head": "cad09a3208b287916357db2e092ef56bb391298b",
+    "tracked_worktree": "clean after successful third-candidate build",
     "core_filemode": "false",
-    "published_agent": "M278 accepted image; failed M279 builds are not acceptance images"
+    "published_agent": "M279 third-candidate build reported all regressions passed and published OVMS_AGENT.EXE; canonical saved status confirmation still pending because the display command was malformed"
   },
   "important_open_defects": {
     "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
