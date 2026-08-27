@@ -3,6 +3,7 @@
 #include "llm_internal.h"
 #include "LLM_REQUEST_BUILD.H"
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_REQUEST_LIMIT.INC"
 
 int write_build_initial_request(
     const char *model,
@@ -34,8 +35,16 @@ int write_build_initial_request(
         fputs(",\"tool_choice\":{" 
               "\"type\":\"function\","
               "\"name\":\"run_build\""
-              "},\"store\":false,"
-              "\"parallel_tool_calls\":false}\n", file) == EOF) {
+              "},\"store\":false", file) == EOF) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
+    if (success &&
+        fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 
@@ -85,8 +94,16 @@ int write_build_followup_request(
         !json_write_escaped(file, tool_output) ||
         fputs("\"}],", file) == EOF ||
         !write_build_agent_tools(file) ||
-        fputs(",\"store\":false,"
-              "\"parallel_tool_calls\":false}\n", file) == EOF) {
+        fputs(",\"store\":false", file) == EOF) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
+    if (success &&
+        fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 
