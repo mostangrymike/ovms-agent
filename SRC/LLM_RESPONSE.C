@@ -36,11 +36,68 @@ int save_response_id(const char *json)
     return 1;
 }
 
+int llm_response_empty_completed(const char *json,
+                                 long *output_tokens)
+{
+    const char *status_value;
+    const char *position;
+    char *status;
+    char *items;
+    long tokens;
+    int completed;
+    int empty;
+
+    if (output_tokens != NULL) {
+        *output_tokens = 0L;
+    }
+
+    if (json == NULL) {
+        return 0;
+    }
+
+    status_value = find_string_value(json, "status");
+    if (status_value == NULL) {
+        return 0;
+    }
+
+    status = json_decode_string(status_value, NULL);
+    if (status == NULL) {
+        return 0;
+    }
+
+    completed = strcmp(status, "completed") == 0;
+    free(status);
+    if (!completed) {
+        return 0;
+    }
+
+    items = extract_output_items_json(json);
+    if (items == NULL) {
+        return 0;
+    }
+
+    position = skip_space(items);
+    empty = *position == '\0';
+    free(items);
+    if (!empty) {
+        return 0;
+    }
+
+    tokens = 0L;
+    (void)extract_integer_argument(json, "output_tokens", &tokens);
+    if (output_tokens != NULL) {
+        *output_tokens = tokens;
+    }
+
+    return 1;
+}
+
 int display_clean_response(void)
 {
     char *json;
     const char *text_value;
     char *decoded;
+    long output_tokens;
 
     json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
@@ -58,6 +115,25 @@ int display_clean_response(void)
             ansi_term_puts(decoded);
         }
         free(decoded);
+        free(json);
+        return 1;
+    }
+
+    if (llm_response_empty_completed(json, &output_tokens)) {
+        ansi_term_puts("");
+        if (output_tokens > 0L) {
+            ansi_term_printf(
+                "Provider completed the response with an empty output array "
+                "after reporting %ld output tokens; no assistant text was "
+                "returned.\n",
+                output_tokens
+            );
+        } else {
+            ansi_term_puts(
+                "Provider completed the response with an empty output array; "
+                "no assistant text was returned."
+            );
+        }
         free(json);
         return 1;
     }
