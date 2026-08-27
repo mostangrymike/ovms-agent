@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "LLM_PLAN_SENSITIVE.INC"
+#undef strchr
 
 #define LLM_GOAL_GUARD_TEXT_ONLY 1
 #include "LLM_GOAL_GUARD.INC"
@@ -94,9 +95,9 @@ int llm_plan_clear_files()
 int llm_plan_is_noop_text(const char *text);
 
 char *llm_build_goal_prompt(const char *goal,
-                               const char *build_output);
+                            const char *build_output);
 char *llm_build_repair_prompt(const char *goal,
-                                 const char *build_output);
+                              const char *build_output);
 
 int main(void)
 {
@@ -161,6 +162,19 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (!m279_plan_local_file("main.c") ||
+        !m279_plan_local_file("diff.h") ||
+        !m279_plan_local_file("BUILD.COM") ||
+        m279_plan_local_file("Files") ||
+        m279_plan_local_file("e.g") ||
+        m279_plan_local_file("notes.pdf") ||
+        m279_plan_strchr("main.c", '/') == NULL) {
+        (void)puts(
+            "M279 failed: flat-root plan filename recognition is invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
     if (!llm_plan_is_noop_text("operation_count=0\n") ||
         !llm_plan_is_noop_text(
             "header\noperation_count=0\r\nfooter\n") ||
@@ -220,6 +234,18 @@ int main(void)
     }
 
     if (!goal_guard_text_ok(
+            "Replace incidental NULL handling with an explicit result.",
+            "return NULL;\n",
+            "return result;\n",
+            reason,
+            sizeof(reason))) {
+        (void)puts(
+            "M279 failed: generic NULL sentinel became a protected goal term."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!goal_guard_text_ok(
             "User goal:\nPreserve LIST behavior.\n\n"
             "Current failed build result:\n%COBOL-E-BUILD failed\n",
             "COBOL diagnostic cleanup text\n",
@@ -236,5 +262,6 @@ int main(void)
     (void)puts("M251.9 credential screening regression passed.");
     (void)puts("M251.9 no-op repair regression passed.");
     (void)puts("M251.10 repair goal-preservation regression passed.");
+    (void)puts("M279 flat-root plan and NULL guard regression passed.");
     return EXIT_SUCCESS;
 }
