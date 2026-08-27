@@ -44,7 +44,7 @@ int main(void)
     if (!llm_github_text(output, sizeof(output)) ||
         !has(output, "AGENT/GITHUB/PUSH") ||
         !has(output, "AGENT/GITHUB/CHECK") ||
-        !has(output, "SHARE") ||
+        !has(output, "AGENT/GITHUB/ISSUES") ||
         !has(output, "OVMS_AGENT_GITHUB_BRIDGE")) {
         (void)puts("M250 failed: GitHub catalog.");
         return 2;
@@ -130,6 +130,11 @@ int main(void)
     entry = command_find("AGENT/GITHUB/PUSH");
     if (entry == NULL || entry->handler == NULL) {
         (void)puts("M250 failed: AGENT/GITHUB/PUSH registration.");
+        return 2;
+    }
+    entry = command_find("AGENT/GITHUB/ISSUES");
+    if (entry == NULL || entry->handler == NULL) {
+        (void)puts("M250 failed: AGENT/GITHUB/ISSUES registration.");
         return 2;
     }
     entry = command_find("AGENT/GITHUB/PR");
