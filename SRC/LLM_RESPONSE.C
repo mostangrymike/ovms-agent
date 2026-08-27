@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_AUTO.H"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_RESPONSE.H"
 #include "LLM_TRANSPORT.H"
