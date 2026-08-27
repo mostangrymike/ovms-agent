@@ -1,51 +1,35 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:44:00-05:00",
+  "updated_at": "2026-08-27T16:45:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "latest_code_milestone": "M278",
-    "note": "M278 promoted through PR #96; promoted tree equals separately VAX-accepted M278 reconciliation tree."
+    "latest_code_milestone": "M278"
   },
   "m279": {
     "issue": 97,
     "status": "THIRD_CANDIDATE_BUILD_GREEN_STATUS_CONFIRMATION_PENDING",
     "branch": "m279-legacy-backlog-closure",
-    "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "failed_candidates": [
-      {
-        "head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
-        "result": "compile failure",
-        "diagnostics": ["implicit llm_auto_final_has_evidence", "implicit llm_auto_allow_create", "undeclared build_after_write"]
-      },
-      {
-        "head": "d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
-        "result": "compile failure",
-        "diagnostics": ["implicit llm_api_url", "int converted to pointer to const char"]
-      }
-    ],
     "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "candidate_build_output": "Building OVMS Agent Version 2...; All regression tests passed.; Build completed successfully.; Run with: $ @OVMS_AGENT",
-    "candidate_worktree": "clean after build",
+    "candidate_build_output": "All regression tests passed.; Build completed successfully.",
+    "candidate_worktree": "clean",
     "candidate_core_filemode": "false",
-    "status_display_note": "The handoff used F$FAO with !8XL on a saved DCL status symbol and printed %X7FF9D67C. That is a formatting/display artifact, not the BUILD.COM final status. BUILD.COM initializes FINAL_STATUS=1, changes it only on failure, and exits FINAL_STATUS. Confirm the saved M279_BUILD_STATUS with SHOW SYMBOL rather than F$FAO.",
+    "status_display_note": "F$FAO !8XL was incorrectly used to display a saved DCL status symbol and yielded %X7FF9D67C. Confirm with SHOW SYMBOL M279_BUILD_STATUS; BUILD.COM success path sets FINAL_STATUS=1 and exits FINAL_STATUS.",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
-    "next_action": "Run SHOW SYMBOL M279_BUILD_STATUS. If it is %X00000001, run freshly built M251_SYNTH_TEST, M251_REPAIR_GOAL_TEST, and M251_CREATE_TEST, saving each $STATUS and displaying with SHOW SYMBOL. Then proceed to bounded live/runtime acceptance."
+    "next_action": "SHOW SYMBOL M279_BUILD_STATUS; if %X00000001, run freshly built focused M251 regressions and display their saved statuses with SHOW SYMBOL, then bounded live acceptance."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m279-legacy-backlog-closure",
     "local_head": "cad09a3208b287916357db2e092ef56bb391298b",
-    "tracked_worktree": "clean after successful third-candidate build",
-    "core_filemode": "false",
-    "published_agent": "M279 third-candidate build reported all regressions passed and published OVMS_AGENT.EXE; canonical saved status confirmation still pending because the display command was malformed"
+    "tracked_worktree": "clean",
+    "core_filemode": "false"
   },
   "important_open_defects": {
-    "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
-    "note": "No M279 defect is closed until VAX/live acceptance."
+    "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76]
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
