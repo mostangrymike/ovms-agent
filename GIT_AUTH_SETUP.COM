@@ -56,6 +56,12 @@ $! authentication only through its short-lived repository-scoped config.
 $ git config --global --unset-all credential.helper
 $ git config --global --unset credential.useHttpPath
 $
+$! OpenVMS does not provide a useful Unix executable-bit distinction for
+$! ordinary repository files. Keep mode-only RMS materialization drift from
+$! making an otherwise content-identical checkout appear modified.
+$ git config --local core.filemode false
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
 $ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
