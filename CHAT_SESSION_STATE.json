@@ -1,129 +1,57 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T16:39:00-05:00",
+  "updated_at": "2026-08-27T16:34:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
     "latest_code_milestone": "M278",
-    "note": "M278 promoted through PR #96. Promoted main tree 873f3204dfe05c6b6b0e282a322b8c02a5e688c7 exactly matches separately VAX-accepted reconciliation head 7cfcad5969123add7d5de060c52a1c1ba3b7d52b. The merge commit itself was not separately VAX-run."
-  },
-  "m277": {
-    "issue": 92,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
-    "branch": "m277-create-interoperability",
-    "reconciliation_head": "3b26ef10924010b93c71cef8957d5c6c00ce0fec",
-    "promotion_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "tag": "m277",
-    "tag_target": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
-  },
-  "m278": {
-    "issue": 94,
-    "status": "COMPLETE_PROMOTED_MAIN_VAX_GREEN_RETENTION_COMPLETE",
-    "branch": "m278-github-service-completion",
-    "base_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-    "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
-    "reconciliation_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
-    "reconciliation_tree": "873f3204dfe05c6b6b0e282a322b8c02a5e688c7",
-    "promotion_pr": 96,
-    "promotion_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "promotion_tree": "873f3204dfe05c6b6b0e282a322b8c02a5e688c7",
-    "scope_issues": [78],
-    "closed_issues": [78],
-    "acceptance_issue": 95,
-    "canonical_acceptance": {
-      "code_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
-      "reconciliation_head": "7cfcad5969123add7d5de060c52a1c1ba3b7d52b",
-      "build": "All regression tests passed; Build completed successfully",
-      "status": "%X00000001",
-      "focused_regression": "M250 guarded GitHub regression test passed; %X00000001",
-      "core_filemode": "false",
-      "tracked_worktree": "clean"
-    },
-    "live_acceptance": {
-      "full_gate": "PASS",
-      "pr_help_list": "PASS",
-      "issues_help_list_create": "PASS",
-      "launcher_auto_wire": "PASS: with OVMS_AGENT_GITHUB_BRIDGE deassigned before launch, PR and issue help succeeded and the logical remained absent after exit",
-      "cleanup": "PASS: all bridge/request/response temporary artifacts absent after live run",
-      "acceptance_issue": "#95 created through bridge and independently closed completed"
-    },
-    "promotion_verification": "PR #96 head remained exact accepted reconciliation head; compare reconciliation..merge has zero changed files; merge tree equals accepted reconciliation tree",
-    "tag": "m278",
-    "tag_target": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "retention": "Complete: permanent m278 tag created and pushed; m276-agent-loop-hardening deleted after verifying permanent m276 tag; m277-create-interoperability and m278-github-service-completion retained; VAX local branches and remote-tracking refs match GitHub."
+    "note": "M278 promoted through PR #96; promoted tree equals separately VAX-accepted M278 reconciliation tree."
   },
   "m279": {
     "issue": 97,
-    "status": "SECOND_SOURCE_CANDIDATE_VAX_GATE_PENDING",
+    "status": "THIRD_SOURCE_CANDIDATE_VAX_GATE_PENDING",
     "branch": "m279-legacy-backlog-closure",
     "base_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "failed_candidate_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
-    "failed_candidate_tree": "237c3cb37ceae73bbd3eb6779ea26db503aac252",
-    "failed_gate": {
-      "build_status": "%X7FF9D67C",
-      "result": "FAIL",
-      "diagnostics": [
-        "implicit llm_auto_final_has_evidence",
-        "implicit llm_auto_allow_create",
-        "undeclared build_after_write"
-      ],
-      "note": "Focused M251 images run after the failed build were stale pre-build executables and are not acceptance evidence."
-    },
-    "candidate_head": "d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
-    "candidate_tree": "61a5b416aa3f2d1ccc22e28009d3cd917b9541e5",
-    "repair_delta_from_failed_candidate": [
-      "SRC/LLM_AGENT_LOOP_M259_CORE.C",
-      "SRC/LLM_PROMPTS.H",
-      "SRC/LLM_RESPONSE.C"
+    "failed_candidates": [
+      {
+        "head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
+        "status": "%X7FF9D67C",
+        "diagnostics": ["implicit llm_auto_final_has_evidence", "implicit llm_auto_allow_create", "undeclared build_after_write"]
+      },
+      {
+        "head": "d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
+        "status": "%X7FF9D67C",
+        "diagnostics": ["implicit llm_api_url", "int converted to pointer to const char"],
+        "worktree_note": "git status showed MM for the prior three repair files because HEAD advanced while index still represented the previous candidate; RMS working files were restored."
+      }
     ],
-    "repair_note": "M279 write/create interception is now explicitly scoped to the agent loop and its macros are undefined after inclusion; LLM_AUTO.H is included at the actual M279 helper call sites. Runtime intent is unchanged.",
+    "candidate_head": "cad09a3208b287916357db2e092ef56bb391298b",
+    "candidate_delta_from_prior": ["SRC/LLM_REQUEST_AGENT.H"],
+    "candidate_note": "Adds LLM_CONFIG.H dependency so llm_api_url has its DEC C prototype. No runtime behavior change.",
     "scope_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
     "closed_issues": [],
-    "source_outcomes": {
-      "53": "failed AGENT/BUILD output persisted for AGENT/REPAIR/PLAN handoff",
-      "54": "AGENT/WRITE advertises transactional create_file with distinct bounded create budget",
-      "55": "flat-root known project filenames accepted by persisted-plan scope validator",
-      "56": "shared provider-neutral max_output_tokens cap, default 2048",
-      "59": "completed empty Responses output classified with token-use diagnostic",
-      "60": "structured patch approval reads live session approval policy",
-      "65": "command-side SHOW/STRUCT uses conservative brace-required type definition classifier",
-      "67": "Groq openai/gpt-oss-* agent tool requests fail locally on Responses transport; exact allowlist preserved",
-      "70": "JSON-like assistant text naming an advertised tool is diagnosed but never executed",
-      "71": "incidental NULL excluded from goal-protected code tokens",
-      "73": "refactor object invalidation recognizes [.BUILD] and flat-root layouts",
-      "76": "stateless continuation filters unanswered sibling function calls; guarded edit reader separated from 64 KiB REVIEW limit"
-    },
-    "next_action": "Advance the VAX checkout from failed head b95c6be... to repaired head d26f96ee..., RMS-restore only the three repair-delta files, rerun canonical @BUILD, and only if it succeeds run freshly linked focused M251 regressions."
+    "next_action": "Advance VAX HEAD from d26f96ee... to cad09a32..., run git reset --mixed --no-refresh HEAD to synchronize index without altering RMS-restored working files, RMS-restore SRC/LLM_REQUEST_AGENT.H, verify clean status, then rerun @BUILD before any focused regression images."
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m279-legacy-backlog-closure",
-    "local_head": "b95c6be05556aeb98122b3abd7a03912faabc5dd",
-    "local_main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "tracked_worktree": "clean after materializing failed first M279 candidate",
+    "observed_after_second_failed_gate": "MM SRC/LLM_AGENT_LOOP_M259_CORE.C; MM SRC/LLM_PROMPTS.H; MM SRC/LLM_RESPONSE.C",
     "core_filemode": "false",
-    "published_agent": "M278 reconciliation-head accepted build image; failed M279 build did not replace it"
-  },
-  "github_remote_state": {
-    "main": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "active_m279_branch": "m279-legacy-backlog-closure@d26f96ee5e33acffdf9ca19f45905d2c0468e1dc",
-    "retained_completed_development_branches": ["m277-create-interoperability", "m278-github-service-completion"],
-    "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc"
+    "published_agent": "M278 accepted image; failed M279 builds are not acceptance images"
   },
   "important_open_defects": {
     "m279_scope": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76],
-    "note": "All have source-side M279 outcomes, but none are accepted or closed until VAX/live evidence is recorded."
+    "note": "No M279 defect is closed until VAX/live acceptance."
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
-    "GitHub is the development control plane/source of truth; VAX/OpenVMS is authoritative for DEC C/VAX, RMS, DCL, runtime, and generated/uncommitted acceptance.",
-    "Omit literal OVMS-AGENT> from lines intended for OVMS Agent; all agent commands must be one physical input line.",
-    "Use GITAUTH for prompt-free raw Git network operations; never configure credential.helper store/global/askpass.",
-    "Keep core.filemode=false on this VAX checkout.",
+    "GitHub is source/edit control plane; VAX/OpenVMS is compile/link/RMS/DCL/runtime acceptance authority.",
+    "Omit literal OVMS-AGENT> from lines intended for OVMS Agent.",
+    "Use GITAUTH for prompt-free Git network operations.",
+    "Keep core.filemode=false.",
     "Never call an untested GitHub head VAX-green.",
-    "Canonical root acceptance requires All regression tests passed and final status %X00000001.",
-    "Maintain permanent lightweight milestone tags and retain only the two most recently completed milestone development branches after promotion."
+    "Canonical acceptance requires All regression tests passed and final %X00000001."
   ]
 }
