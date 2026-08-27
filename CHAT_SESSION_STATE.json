@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T10:03:00-05:00",
+  "updated_at": "2026-08-27T10:13:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -18,11 +18,11 @@
   },
   "m275": {
     "issue": 88,
-    "status": "ACTIVE_SECOND_84_CORRECTION_VAX_RETEST_PENDING",
+    "status": "ACTIVE_84_DIAGNOSTIC_VAX_RETEST_PENDING",
     "branch": "m275-backlog-hardening",
     "base_main": "1fa959e0f577d220c0c17bde0e39ea904c90fb6a",
-    "remote_candidate_head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-    "candidate_publication": "UNTESTED_GITHUB_CANDIDATE",
+    "remote_candidate_head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+    "candidate_publication": "UNTESTED_GITHUB_DIAGNOSTIC",
     "scope": [
       "remove tracked m274_netcfg stress-test fixture while preserving M274 history/reconciliation",
       "fix #83 AGENT/TOOL/RUN live argument truncation/sanitization",
@@ -45,30 +45,44 @@
         "m265_regression": "passed",
         "tracked_worktree_after_failure": "clean",
         "untracked": "SRC/OVMS_AGENT_TRANSCRIPT.DAT only",
-        "inference": "raw #83 splitter subtest reached the later #84 test, but production image still not accepted because build stopped before final link"
+        "inference": "raw #83 splitter subtest reached the later #84 test, but production image still not accepted because build stopped before final publish"
+      },
+      {
+        "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
+        "build_status": "%X00000002",
+        "failure": "M275 nested RMS-aware Git restore regression still failed after fgetname(...,1) plus generated DCL SET DEFAULT correction",
+        "m265_regression": "passed",
+        "m275_83_regression": "passed and printed before #84 failure",
+        "pre_build_worktree": "clean",
+        "post_build_worktree": "not rechecked before entering OVMS Agent",
+        "manual_agent_test": "GITRESTORE LLM_TOOL_ARGS_M275.H from [MIKE.OVMS_AGENT.SRC] used the previously published executable and reproduced old #84 behavior; not candidate evidence"
       }
     ],
-    "current_correction": {
+    "failed_correction": {
       "head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
-      "delta_from_f4b5": "only SRC/GIT_RMS_RESTORE.C and M275 regression diagnostics",
       "git_capture": "resolve caller C current directory with a probe file plus fgetname(...,1), emit DCL SET DEFAULT to that exact OpenVMS directory, then run git rev-parse --show-prefix",
-      "reason": "system() DCL subprocess is not guaranteed to inherit a C RTL chdir, so stable temp files alone did not make Git observe the nested directory",
-      "regression_output": "#83 success is now printed immediately before #84 runs so later failures do not hide the raw-argument result"
+      "result": "VAX rejected; exact internal failing stage remains unknown"
+    },
+    "current_diagnostic": {
+      "head": "b2e93ad32cfec13fae91df96b4cf5c2c63dab386",
+      "base": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
+      "delta": "only SRC/GIT_RMS_RESTORE.C, +17/-0",
+      "semantics": "no restore behavior change; boolean API preserved",
+      "purpose": "surface whether #84 fails at repository path resolution, HEAD tree lookup with resolved tree path, local RMS replace, post-write read, or post-write verification"
     },
     "cleanup": {
-      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed; no netcfg paths remain in git status",
+      "m274_netcfg": "tracked fixture removed on branch and physical local directory/content removed; no netcfg paths remained in pre-build git status",
       "historical_record": "DOC/M274_RECONCILIATION.MD preserved"
     }
   },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m275-backlog-hardening",
-    "local_head": "f4b5ad33a0780e459aae18ba2da83ca2ebcdfe3e",
-    "tracked_worktree": "clean after second failed M275 regression",
+    "local_head": "afed98c202451b5556dc6f4344080cc1fc1a33eb",
+    "pre_third_build_worktree": "clean",
+    "post_third_build_worktree": "not yet rechecked",
     "core_filemode": "false",
-    "untracked": [
-      "SRC/OVMS_AGENT_TRANSCRIPT.DAT"
-    ],
+    "manual_agent_context": "last shown project root SYS$SYSDEVICE:[MIKE.OVMS_AGENT.SRC]; old published executable still active because @BUILD failed before final publish",
     "m274_netcfg": "removed locally and from candidate branch"
   },
   "important_open_defects": {
@@ -78,8 +92,8 @@
     "79": "Groq Qwen AGENT/CREATE response parsing",
     "81": "Groq Qwen intent-only final with zero tool evidence",
     "82": "resumed workspace continuation cannot create files",
-    "83": "M275 raw-dispatch candidate pending full VAX build and live Agent verification",
-    "84": "second M275 correction at afed98c pending VAX retest",
+    "83": "M275 raw-dispatch regression passes in candidate test; full VAX build and live Agent verification still pending",
+    "84": "afed98c rejected by VAX; diagnostic-only head b2e93ad pending VAX retest",
     "86": "live setup normalization passed; full branch acceptance pending"
   },
   "standing_rules": [
