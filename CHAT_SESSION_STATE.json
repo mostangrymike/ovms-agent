@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T14:31:00-05:00",
+  "updated_at": "2026-08-27T14:42:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -52,6 +52,29 @@
     "tag_target": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "retention": "Complete: m275-backlog-hardening deleted remotely and locally; m276-agent-loop-hardening and m277-create-interoperability retained; final VAX remote-tracking refs match GitHub."
   },
+  "m278": {
+    "issue": 94,
+    "status": "GITHUB_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "branch": "m278-github-service-completion",
+    "base_main": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+    "candidate_head": "5cfee3bb35ba595eae7d8795c54ff323059be088",
+    "scope_issues": [78],
+    "net_files": [
+      "GITHUB_BRIDGE.COM",
+      "OVMS_AGENT.COM",
+      "README.md",
+      "SRC/m250_github_test.c"
+    ],
+    "candidate_summary": {
+      "launcher": "Normal @OVMS_AGENT launch auto-defines user-mode OVMS_AGENT_GITHUB_BRIDGE to the shipped checkout bridge only when no explicit bridge logical already resolves.",
+      "pr": "Retains the already VAX-proven PR help/list/create path and STREAM_LF request-body transport.",
+      "issues": "Adds issues help, issues list [open|closed|all], and issues create TITLE using the active saved GitHub profile, protected temporary header, STREAM_LF JSON body, and bridge all-version cleanup.",
+      "docs": "README documents auto-wiring, explicit override behavior, exact PR/issue grammar, one-token title constraint, and GitHub token permissions.",
+      "regression": "M250 GitHub regression now verifies AGENT/GITHUB/ISSUES appears in the catalog and command registry."
+    },
+    "github_audit": "main..candidate contains exactly four intended files; candidate is not VAX-green",
+    "next_gate": "RMS-aware restore of four files, canonical @BUILD plus direct M250 regression, then live auto-wire/PR help+list/issues help+list/create and temporary-artifact cleanup checks."
+  },
   "local_openvms_state": {
     "checkout": "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]",
     "current_branch": "m277-create-interoperability",
@@ -63,17 +86,17 @@
       "m276": "c9aacd6ac7b2942f7bf3cb07c9740395caa6e780",
       "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e"
     },
-    "tracked_worktree": "clean after final M277 remote-tracking cleanup",
+    "tracked_worktree": "clean after final M277 remote-tracking cleanup; M278 not yet materialized",
     "core_filemode": "false",
     "published_agent": "M277 reconciliation-head accepted build image"
   },
   "github_remote_state": {
-    "branches": ["main", "chat-session-state", "m276-agent-loop-hardening", "m277-create-interoperability"],
+    "branches": ["main", "chat-session-state", "m276-agent-loop-hardening", "m277-create-interoperability", "m278-github-service-completion"],
     "m277_tag": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
     "m275_branch": "absent"
   },
   "important_open_defects": {
-    "78": "GitHub bridge setup/docs/service completeness; deferred from M277"
+    "78": "M278 candidate pending VAX build/live acceptance: shipped GitHub bridge setup/docs/issues service completion"
   },
   "standing_rules": [
     "At a new chat start read RULES.md from main and CHAT_SESSION_STATE.json from chat-session-state, then verify live GitHub state.",
