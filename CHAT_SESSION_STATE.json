@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T10:33:00-05:00",
+  "updated_at": "2026-08-28T10:34:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -33,10 +33,23 @@
   },
   "m281": {
     "issue": 107,
-    "status": "ACTIVE_GITHUB_CANDIDATE_PENDING_VAX_BUILD",
+    "status": "ACTIVE_CORRECTIVE_CANDIDATE_PENDING_VAX_BUILD",
     "branch": "m281-settings-auto-limits",
     "baseline_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "candidate_head": "0d53197741ec39597cd9d953c513f0e301d1fe78",
+    "candidate_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+    "failed_candidate": {
+      "head": "0d53197741ec39597cd9d953c513f0e301d1fe78",
+      "vax_status": "%X1789A0C0",
+      "diagnostic": "DEC C implicit declaration and linker undefined symbol for llm_auto_env_limit / LLM_AUTO_ENV_LIMIT.",
+      "root_cause": "SRC/LLM_AUTO_CREATE_M279.INC still uses the private environment parser for the separate OVMS_AGENT_AUTO_CREATES ceiling; M281 had removed that helper while migrating only turn/write limits.",
+      "worktree_after_failure": "clean",
+      "core_filemode": "false"
+    },
+    "corrective_commit": {
+      "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+      "delta_from_failed_candidate": "Only SRC/LLM_AUTO_CORE.INC, +30/-0.",
+      "behavior": "Retain llm_auto_env_limit only for the M279 OVMS_AGENT_AUTO_CREATES path; auto_turns and auto_writes remain SETTINGS-backed with legacy logical precedence."
+    },
     "goal": "Persist autonomous turn and write limits in SETTINGS while preserving OVMS_AGENT_AUTO_TURNS and OVMS_AGENT_AUTO_WRITES as higher-precedence legacy logical overrides.",
     "requirements": {
       "defaults": "12 turns, 3 writes",
@@ -56,12 +69,11 @@
     ],
     "github_review": {
       "main_unchanged": true,
-      "branch_ahead_by": 5,
-      "link_surface": "LLM_AUTO.OBJ is linked through LLM_MODULES.OPT, which already includes SETTINGS.OBJ; no separate focused LLM_AUTO.OBJ linker consumer was found.",
+      "link_surface": "LLM_AUTO.OBJ is linked through LLM_MODULES.OPT, which already includes SETTINGS.OBJ.",
       "settings_regression": "Existing M280_SETTINGS_TEST build path compiles and runs the expanded persistence regression before COMMAND_SETTINGS.C.",
-      "identifier_audit": "No new linker-visible identifiers; new helper names in COMMAND_SETTINGS.C are static."
+      "identifier_audit": "No new linker-visible identifiers; new COMMAND_SETTINGS helpers and restored llm_auto_env_limit are static."
     },
-    "next_action": "On VAX, fetch exact candidate 0d53197741ec39597cd9d953c513f0e301d1fe78, materialize only the five-file M281 delta with RMS-aware restore, verify clean worktree/core.filemode=false, then run canonical @BUILD and save status. Do not call candidate VAX-green until that exact build passes."
+    "next_action": "On VAX fetch exact corrective head ece9d5525882242141f5f62b556ec4ab71393d12, advance local M281 ref from failed head 0d53197741ec39597cd9d953c513f0e301d1fe78, RMS-restore only SRC/LLM_AUTO_CORE.INC, verify clean worktree/core.filemode=false, then rerun canonical @BUILD and save status. Do not call candidate VAX-green until that exact build passes."
   },
   "m280": {
     "issue": 105,
@@ -114,6 +126,7 @@
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
+    "GitHub is the default repository editing control plane; ask the user only for VAX compile/link/RMS/live acceptance when needed.",
     "VAX/OpenVMS is canonical build/runtime authority.",
     "Omit OVMS-AGENT> from agent command lines.",
     "Use GITAUTH for Git network operations.",
