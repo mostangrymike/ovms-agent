@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T11:38:00-05:00",
+  "updated_at": "2026-08-28T11:44:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -8,78 +8,85 @@
     "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
     "latest_milestone": "M282",
     "latest_code_milestone": "M281",
-    "vax_green": false,
-    "code_vax_green": true,
-    "accepted_tree_vax_validated": true,
-    "merge_sha_itself_vax_run": false,
-    "acceptance_note": "M282 changed documentation/rules only. Promoted main tree 19a1e998559114a81115eed256490429ead35974 is identical to the separately VAX HELP-validated M282 feature tree; the merge SHA itself was not separately run on VAX."
+    "vax_green_code_baseline": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+    "m282_content_tree_vax_validated": true
   },
   "github_hygiene": {
+    "status": "COMPLETE",
     "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
+      "m281-settings-auto-limits",
+      "m282-vms-help-reference"
+    ],
+    "retained_completed_branches": [
+      "m281-settings-auto-limits",
+      "m282-vms-help-reference"
+    ],
+    "pruned_completed_branches": [
       "m279-legacy-backlog-closure",
-      "m280-interactive-settings",
-      "m281-settings-auto-limits",
-      "m282-vms-help-reference"
+      "m280-interactive-settings"
     ],
-    "desired_retained_completed_branches": [
-      "m281-settings-auto-limits",
-      "m282-vms-help-reference"
-    ],
-    "pending_housekeeping": [
-      "Create permanent lightweight tag m281 at 846fea9e0cd2247a47fe4ed8dae7da3a542579e8.",
-      "Create permanent lightweight tag m282 at 4944547fe52700cfcb0e7213947d16a1ce1c8e28.",
-      "Delete completed branch m279-legacy-backlog-closure after already-verified permanent m279 tag.",
-      "Delete completed branch m280-interactive-settings after already-verified permanent m280 tag; M281 and M282 are now the two most recent completed milestone branches."
-    ],
-    "connector_limitation": "Current GitHub connector exposes branch create/update but no tag-create or branch-delete mutation. Do not fake either action; complete them through GitHub when an appropriate mutation becomes available."
+    "verified_tags": {
+      "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
+      "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+      "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
+    },
+    "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+    "m278_remote_branch_present": false,
+    "note": "GitHub branch retention and permanent tags are now compliant through M282."
+  },
+  "vax_hygiene": {
+    "status": "FINAL_LOCAL_REF_CLEANUP_PENDING",
+    "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+    "branch": "main",
+    "git_diff_name_only": "empty",
+    "git_status_short": "empty",
+    "core_filemode": "false",
+    "m282_help_test_library": "absent",
+    "temporary_m281_save_files": "cleanup commands executed",
+    "remaining": [
+      "Delete obsolete local m278-github-service-completion after local ancestry check.",
+      "Delete stale local remote-tracking refs origin/m278-github-service-completion and origin/m279-legacy-backlog-closure.",
+      "Populate local remote-tracking refs for retained m281-settings-auto-limits and m282-vms-help-reference, then verify branch listings."
+    ]
   },
   "m282": {
     "issue": 109,
-    "status": "COMPLETED_PROMOTED_VAX_HELP_TREE_VALIDATED_HOUSEKEEPING_PENDING",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m282-vms-help-reference",
     "baseline_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-    "vax_accepted_feature_head": "5a53306cee8e989ed547f8eee0db885ae1c4ac27",
-    "accepted_tree": "19a1e998559114a81115eed256490429ead35974",
+    "vax_validated_feature_head": "5a53306cee8e989ed547f8eee0db885ae1c4ac27",
+    "validated_tree": "19a1e998559114a81115eed256490429ead35974",
     "promotion_pr": 110,
     "promoted_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
     "promotion_tree": "19a1e998559114a81115eed256490429ead35974",
-    "tree_equivalence": "VAX HELP-validated feature head and promoted merge have identical tree SHA 19a1e998559114a81115eed256490429ead35974.",
-    "merge_sha_itself_vax_run": false,
-    "goal": "Create a root-level OpenVMS HELP source documenting every current user-facing command and persistent setting, including both behavior and when/why the user would choose it, and make HELP maintenance a standing project rule.",
+    "tree_equivalence": "The promoted merge and separately VAX HELP-validated feature head have identical tree SHA 19a1e998559114a81115eed256490429ead35974.",
+    "acceptance": {
+      "library_create": "LIBRARY/HELP/CREATE=(KEYSIZE:64) succeeded with odd OpenVMS status %X10000001.",
+      "help_hierarchy": "Representative root, SETTINGS, normal command, nested automation, refactor, and repair-history HELP topic hierarchy was confirmed working on canonical VAX.",
+      "git_status_short": "empty",
+      "git_diff_name_only": "empty",
+      "core_filemode": "false",
+      "full_product_build_required": false
+    },
+    "goal": "Create a root-level OpenVMS HELP source documenting every current user-facing command and persistent setting, including both behavior and when/why the user would choose it.",
     "candidate_delta": [
       "OVMS_AGENT.HLP",
       "RULES.md"
     ],
-    "github_review": {
-      "compare_scope": "Exactly two files from M281 baseline: OVMS_AGENT.HLP added (1356 lines) and RULES.md +6 lines.",
-      "command_inventory": "Covers registered core, project, provider, GitHub profile, SETTINGS, symbol/refactor, and agent commands plus specially dispatched RUN, CHANGESET, AGENT/REPAIR, LIST/ALL and M259 AGENT/IMAGE, AGENT/AUTOPILOT, AGENT/EXEC/RESUME/CREATE.",
-      "settings_inventory": "Documents all 10 SETTINGS entries, aliases, defaults/ranges where applicable, legacy logical override behavior, and practical use cases.",
-      "standing_rule": "Any command or persistent SETTINGS addition/removal/rename/option or material behavior change must update OVMS_AGENT.HLP in the same change; HELP entries must explain both what and when/why."
-    },
-    "vax_acceptance": {
-      "rms_restore": "OVMS_AGENT.HLP and RULES.md restored and verified from exact candidate head.",
-      "help_library_create": "LIBRARY/HELP/CREATE=(KEYSIZE:64) accepted OVMS_AGENT.HLP with status %X10000001 (odd/success).",
-      "help_navigation": "User confirmed the HELP topic hierarchy and representative lookups work when the alternate library is referenced with a fully qualified filespec.",
-      "git_status_short": "empty",
-      "git_diff_name_only": "empty",
-      "core_filemode": "false",
-      "full_product_build_required": false,
-      "cleanup_note": "Final generated-HLB delete attempt used an extra ;* against an already versioned parsed filespec and failed with RMS syntax error; cleanup-only and unrelated to HELP acceptance or Git state."
-    },
     "tag": {
       "name": "m282",
-      "target": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-      "created": false,
-      "reason_pending": "GitHub connector currently has no tag-create mutation."
+      "sha": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+      "remote_verified": true
     }
   },
   "m281": {
     "issue": 107,
-    "status": "COMPLETED_PROMOTED_VAX_GREEN_HOUSEKEEPING_PENDING",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m281-settings-auto-limits",
     "baseline_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
     "failed_candidate": {
@@ -111,34 +118,31 @@
     },
     "tag": {
       "name": "m281",
-      "target": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "created": false,
-      "reason_pending": "GitHub connector currently has no tag-create mutation."
+      "sha": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+      "remote_verified": true
     }
   },
   "m280": {
     "issue": 105,
-    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNE_PENDING",
+    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNED",
     "branch": "m280-interactive-settings",
     "promoted_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
     "tag": {
       "name": "m280",
       "sha": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "remote_verified": true
-    },
-    "branch_prune_pending_reason": "M281 and M282 are now the two most recent completed milestone branches; connector currently has no branch-delete mutation."
+    }
   },
   "m279": {
     "issue": 97,
-    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNE_PENDING",
+    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNED",
     "branch": "m279-legacy-backlog-closure",
     "promoted_main": "5feaae97699c3eb124144bdbef978564f619f42a",
     "tag": {
       "name": "m279",
       "sha": "5feaae97699c3eb124144bdbef978564f619f42a",
       "remote_verified": true
-    },
-    "branch_prune_pending_reason": "GitHub connector currently has no branch-delete mutation."
+    }
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
