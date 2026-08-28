@@ -1,18 +1,19 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:34:00-05:00",
+  "updated_at": "2026-08-28T12:44:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "de5837a121860b7cf3167d97df67099d771a3bef",
-    "latest_milestone": "M284_PROMOTED_PENDING_FINAL_MAIN_ACCEPTANCE",
+    "head": "129e69f97b11c3e381403deabc6ba2feacc059b5",
+    "latest_milestone": "M285",
     "latest_code_milestone": "M284",
-    "vax_green_code_baseline": "7123f7a484545292c276ee7b0789df442e15076f",
-    "note": "M284 candidate 7123f7a is VAX-green; promoted merge de5837a is tree-equivalent but not yet itself VAX-run."
+    "vax_green_code_baseline": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "main_sha_itself_vax_run": false,
+    "note": "M284 release commit de5837a is exact-main VAX-green. M285 only renames historical documentation paths/case with identical blobs; promoted M285 main 129e69f was not separately product-built."
   },
   "github_hygiene": {
-    "status": "M284_PROMOTED_FINAL_MAIN_ACCEPTANCE_PENDING",
+    "status": "M284_M285_TAG_AND_RETENTION_HYGIENE_PENDING",
     "open_product_issues": [113],
     "open_prs": [],
     "branches": [
@@ -20,13 +21,17 @@
       "chat-session-state",
       "m282-vms-help-reference",
       "m283-root-docs",
-      "m284-v1-release"
+      "m284-v1-release",
+      "m285-doc-case-consolidation"
     ],
-    "retained_completed_branches": [
+    "target_retained_completed_branches": [
+      "m284-v1-release",
+      "m285-doc-case-consolidation"
+    ],
+    "pending_prune": [
       "m282-vms-help-reference",
       "m283-root-docs"
     ],
-    "active_milestone_branch": "m284-v1-release",
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
       "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
@@ -34,51 +39,49 @@
       "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
       "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
       "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400"
+    },
+    "pending_tags": {
+      "m284": "de5837a121860b7cf3167d97df67099d771a3bef",
+      "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
+      "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5"
     }
   },
   "vax_hygiene": {
-    "status": "CLEAN_ON_VAX_ACCEPTED_M284_CANDIDATE_PENDING_PROMOTED_MAIN_SYNC",
-    "head": "7123f7a484545292c276ee7b0789df442e15076f",
-    "branch": "m284-v1-release",
+    "status": "CLEAN_ON_EXACT_VAX_GREEN_1_0_RELEASE_PENDING_M285_REF_SYNC",
+    "head": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "branch": "main",
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false"
   },
+  "m285": {
+    "issue": 115,
+    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAG_HYGIENE_PENDING",
+    "branch": "m285-doc-case-consolidation",
+    "baseline_main": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "reviewed_head": "db424e1ee60429a9383990bf5524d2bbde3c2dbb",
+    "reviewed_tree": "730c073e366b016bd39ffe24f6c1527fd74722ae",
+    "promotion_pr": 116,
+    "promoted_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
+    "tree_equivalence": "GitHub compare from reviewed head db424e1 to promoted merge 129e69f reports one commit ahead and zero changed files.",
+    "acceptance": {
+      "type": "GitHub exact tree/path audit",
+      "full_product_build_required": false,
+      "reason": "Exactly ten documentation-path case renames with 0 additions and 0 deletions; all original blob SHAs preserved; no source/build/runtime files changed.",
+      "canonical_directory": "DOC",
+      "lowercase_doc_present": false
+    }
+  },
   "m284": {
     "issue": 113,
-    "status": "PROMOTED_MAIN_PENDING_EXACT_MAIN_VAX_ACCEPTANCE_AND_RELEASE_TAGS",
+    "status": "EXACT_PROMOTED_MAIN_VAX_GREEN_RELEASE_TAGS_HYGIENE_PENDING",
     "branch": "m284-v1-release",
-    "baseline_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
     "accepted_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
-    "accepted_candidate_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
     "promotion_pr": 114,
     "promoted_main": "de5837a121860b7cf3167d97df67099d771a3bef",
     "promoted_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
-    "tree_equivalence": "GitHub compare from accepted candidate 7123f7a to promoted merge de5837a reports one commit ahead and zero changed files.",
-    "goal": "Declare and ship OVMS Agent 1.0.0 as a feature-frozen release-hardening milestone.",
-    "final_delta": [
-      "BUILD.COM",
-      "BUILD.md",
-      "CHANGELOG.md",
-      "CONTRIBUTING.md",
-      "INSTALL.md",
-      "LICENSE",
-      "README.md",
-      "RULES.md",
-      "SECURITY.md",
-      "SRC/AGENT.H"
-    ],
-    "version": {
-      "semantic": "1.0.0",
-      "source": "SRC/AGENT.H",
-      "build_banner": "Building OVMS Agent Version 1.0.0..."
-    },
-    "license": {
-      "type": "MIT",
-      "file": "LICENSE"
-    },
-    "candidate_acceptance": {
-      "head": "7123f7a484545292c276ee7b0789df442e15076f",
+    "exact_main_acceptance": {
+      "head": "de5837a121860b7cf3167d97df67099d771a3bef",
       "build_status": "%X00000001",
       "build_banner": "Building OVMS Agent Version 1.0.0...",
       "regressions": "All regression tests passed.",
@@ -86,34 +89,18 @@
       "startup": "Version 1.0.0",
       "version_command": "OVMS Agent 1.0.0",
       "launch_status": "%X00000001",
-      "oneshot_note": "Bare VERSION is intentionally invalid in one-shot mode; SRC/MAIN.C requires DCL <command>."
+      "worktree": "clean",
+      "core_filemode": "false"
     },
-    "release_audit": {
-      "todo": "none found",
-      "fixme": "none found",
-      "credential_prefix_audit": "clean; sk- occurrences are intentional screening/test/history text"
+    "release": {
+      "semantic": "1.0.0",
+      "license": "MIT",
+      "tag_target": "de5837a121860b7cf3167d97df67099d771a3bef"
     },
     "pending": [
-      "Sync VAX checkout to exact promoted main de5837a121860b7cf3167d97df67099d771a3bef.",
-      "Run full canonical @BUILD and normal startup/VERSION on exact promoted main.",
-      "Create permanent lightweight tags m284 and v1.0.0 on promoted main only after exact-main VAX acceptance.",
-      "Retain M283 and M284 branches and prune M282 after tag verification.",
-      "Close issue #113 completed after release tags and hygiene are verified."
+      "Create lightweight m284 and v1.0.0 tags at de5837a121860b7cf3167d97df67099d771a3bef.",
+      "Close issue #113 after tag verification and branch-retention hygiene."
     ]
-  },
-  "m283": {
-    "issue": 111,
-    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
-    "branch": "m283-root-docs",
-    "promoted_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-    "tag": {"name":"m283","sha":"4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400","remote_verified":true}
-  },
-  "m282": {
-    "issue": 109,
-    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED_PRUNE_AFTER_M284",
-    "branch": "m282-vms-help-reference",
-    "promoted_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-    "tag": {"name":"m282","sha":"4944547fe52700cfcb0e7213947d16a1ce1c8e28","remote_verified":true}
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
@@ -126,6 +113,7 @@
     "Do not call an untested GitHub candidate or promoted merge VAX-green.",
     "Promotion wording must distinguish a separately VAX-accepted code/content head from a GitHub merge SHA unless the merge SHA itself was run on VAX.",
     "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change.",
-    "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning."
+    "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning.",
+    "Use uppercase DOC as the canonical repository documentation-history directory; do not recreate lowercase doc."
   ]
 }
