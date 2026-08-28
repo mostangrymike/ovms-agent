@@ -30,6 +30,8 @@ $ git clone https://github.com/mostangrymike/ovms-agent.git
 $ SET DEFAULT [.OVMS-AGENT]
 ```
 
+For a specific stable release, check out the corresponding semantic release tag (for example `v1.0.0`) rather than an arbitrary development branch.
+
 OpenVMS Git/RMS behavior varies by Git version and target architecture. If an existing accepted OVMS Agent checkout is being updated rather than installed fresh, follow the RMS-aware workflow documented in `CONTRIBUTING.md` instead of assuming a Unix-style reset or checkout will materialize files correctly.
 
 ## Build
@@ -40,10 +42,10 @@ Run the project build procedure from the repository root:
 $ @BUILD
 ```
 
-A successful build ends with:
+A successful 1.0.0 build ends with:
 
 ```text
-Building OVMS Agent Version 2...
+Building OVMS Agent Version 1.0.0...
 All regression tests passed.
 Build completed successfully.
 Run with: $ @OVMS_AGENT
@@ -62,6 +64,18 @@ $ @OVMS_AGENT
 ```
 
 `OVMS_AGENT.COM` resolves the executable relative to its own checkout, verifies that the built image exists, supplies the shipped GitHub service bridge when no explicit bridge override is already defined, enables the stream-pipe behavior needed by the network transport for the image activation, and then runs OVMS Agent.
+
+For a release installation, verify the image after the first successful build:
+
+```text
+VERSION
+```
+
+For the 1.0.0 release this should report:
+
+```text
+OVMS Agent 1.0.0
+```
 
 Exit the interactive program with:
 
@@ -149,6 +163,7 @@ Useful first commands are:
 
 ```text
 HELP
+VERSION
 SETTINGS
 ROOT
 TREE
@@ -165,9 +180,9 @@ For detailed command semantics and practical usage guidance, see `OVMS_AGENT.HLP
 Treat an upgrade as a source-control operation, not as an in-place replacement of random built files:
 
 1. Preserve your `SYS$LOGIN` provider/settings/GitHub profile files.
-2. Update the repository checkout.
+2. Update the repository checkout or check out the desired release tag.
 3. Materialize changed tracked files using the RMS-aware procedure appropriate to your environment.
 4. Run `@BUILD` when source/build inputs changed.
-5. Launch with `@OVMS_AGENT`.
+5. Launch with `@OVMS_AGENT` and verify `VERSION`.
 
 Generated `[.BUILD]` artifacts are disposable. Persistent user configuration is intentionally kept outside the repository checkout.
