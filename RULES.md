@@ -170,6 +170,12 @@ This file records durable operating rules learned during development of OVMS Age
 - Never delete a branch that contains unique unpromoted work. Before pruning, verify the milestone is accepted, its issue is closed/completed when applicable, the accepted tree is represented on `main`, and the important SHAs are recorded in durable state.
 - Ref-only tag creation and remote branch deletion do not materialize or stage OpenVMS worktree files and therefore do not use the risky RMS checkout/index path; do not combine branch pruning with VAX source staging or publication.
 
+## 17. OpenVMS HELP Documentation
+
+- **Keep the root-level `OVMS_AGENT.HLP` synchronized with the live user interface.** Whenever a user-facing command or persistent SETTINGS entry is added, removed, renamed, gains or loses options, or materially changes behavior, update the corresponding HELP topics in the same change or milestone.
+- Every command and setting topic in `OVMS_AGENT.HLP` must explain both **what the feature does** and **when or why a user would normally use it**; a syntax-only or one-line description is not sufficient.
+- Keep `OVMS_AGENT.HLP` as valid OpenVMS HELP source that can be loaded into a HELP library on the canonical OpenVMS acceptance system.
+
 ---
 
 When a conflict appears between this file and a newer explicit user instruction, the newer explicit instruction wins. Update this file to reflect the new standing rule once the correction is established.

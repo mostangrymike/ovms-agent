@@ -1,0 +1,1356 @@
+1 OVMS_AGENT
+ OVMS Agent command and settings reference.
+
+ This HELP source documents the current interactive command surface and the
+ persistent SETTINGS choices.  Each entry explains what the feature does and
+ when or why you would normally use it.
+
+ The source is intended to be loaded into an OpenVMS HELP library with the
+ OpenVMS Librarian.  M282 acceptance validates the exact Librarian syntax and
+ representative lookups on the canonical VAX system.
+
+ Additional information available:
+  INTRODUCTION   How to choose among the major command families.
+  SETTINGS       Persistent configuration and legacy logical overrides.
+  COMMANDS       Complete interactive command reference.
+  SAFETY         Choosing read-only, workspace, full, and bounded automation.
+
+2 INTRODUCTION
+ OVMS Agent has overlapping ways to inspect, plan, change, build, and operate a
+ project.  Choose the narrowest command that fits the task.
+
+ For ordinary inspection, use project commands such as READ, GREP, STATUS,
+ GITSTATUS, GITDIFF, and the symbol-analysis commands.  For AI-assisted work
+ without changes, use ASK, CHAT, REVIEW, AGENT, or AGENT/PLAN.  For controlled
+ writes, use AGENT/WRITE, a structured refactoring command, CHANGESET, or an
+ approved saved-plan execution path.  Use DCL only when a direct OpenVMS
+ command is actually required and the full approval and execution gates are
+ intentionally enabled.
+
+ Persistent operational configuration belongs in SETTINGS.  Legacy
+ OVMS_AGENT_* logical names remain compatible and, when defined, override the
+ corresponding saved setting.
+
+2 SAFETY
+ Use the least-permissive mechanism that can complete the task.
+
+ read-only approval
+   Best for inspection, planning, explanations, searches, and diagnostics when
+   no project file should change.
+
+ workspace approval
+   Best when a planned operation needs controlled changes inside the approved
+   project workspace.  It does not imply unrestricted DCL or external writes.
+
+ full approval
+   Use only when an operation deliberately requires the highest normal policy
+   tier, such as DCL or another explicitly FULL-gated operation.
+
+ Guarded writes and DCL execution are separate SETTINGS gates.  Enabling a gate
+ does not bypass approval policy.  SETTINGS identifies a legacy logical
+ override so you can tell when a saved value is not the effective value.
+
+ AGENT/AUTOPILOT has a hard safety floor.  It is limited to bounded local
+ workspace repair/build behavior and never turns FULL-gated external work or
+ arbitrary DCL into automatic work.
+
+2 SETTINGS
+ Command forms:
+   SETTINGS
+   SETTINGS SHOW
+   SETTINGS GET name
+   SETTINGS SET name value
+   SETTINGS TOGGLE guarded_writes|dcl_execution
+   SETTINGS RESET
+   SETTINGS RELOAD
+
+ Use SETTINGS with no arguments for the numbered interactive menu.  Use SHOW
+ for a noninteractive snapshot, GET when troubleshooting or scripts need one
+ value, SET for an explicit saved value, TOGGLE for the two Boolean execution
+ gates, RESET to restore saved defaults, and RELOAD after the settings file was
+ changed outside the current process.
+
+ Saved settings normally come from SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT.  A
+ defined legacy logical takes precedence over its saved value.  SETTINGS shows
+ the effective source and warns when a saved value is changed while a legacy
+ logical still overrides it.
+
+ Interactive menu:
+   1  guarded_writes
+   2  dcl_execution
+   3  provider
+   4  model
+   5  max_output_tokens
+   6  approval_policy
+   7  net_allow
+   8  net_deny
+   9  auto_turns
+  10  auto_writes
+
+ Interactive menu commands:
+   R or RELOAD    Reload saved settings.
+   D or DEFAULTS  Restore saved defaults after confirmation.
+   Q or QUIT      Leave the SETTINGS menu.
+
+ SETTINGS RESET does not delete provider profiles and does not change the
+ selected model.
+
+3 GUARDED_WRITES
+ Setting: guarded_writes
+ Aliases: writes, write
+ Legacy logical: OVMS_AGENT_WRITE_ENABLED
+ Default: OFF
+
+ Performs:
+   Enables the project write gate used by guarded file-changing workflows.
+
+ Use when:
+   Turn it ON when you intentionally want approved workspace changes.  Keep it
+   OFF during audits, exploration, review, or any session where accidental file
+   modification should be impossible.
+
+ Accepted SET values include ON/OFF, YES/NO, TRUE/FALSE, and 1/0.
+
+3 DCL_EXECUTION
+ Setting: dcl_execution
+ Alias: dcl
+ Legacy logical: OVMS_AGENT_DCL_ENABLED
+ Default: OFF
+
+ Performs:
+   Enables the DCL execution gate.  DCL still requires its approval and write
+   prerequisites.
+
+ Use when:
+   Turn it ON only when the task genuinely needs an OpenVMS command to execute.
+   Leave it OFF for ordinary source inspection, planning, Git status, and
+   project editing because narrower dedicated commands exist for those jobs.
+
+ Accepted SET values include ON/OFF, YES/NO, TRUE/FALSE, and 1/0.
+
+3 PROVIDER
+ Setting: provider
+ Alias: provider_profile
+
+ Performs:
+   Selects the active persistent AI provider profile.
+
+ Use when:
+   Change it when moving between providers, endpoints, or accounts represented
+   by different saved profiles.  Use PROVIDER ADD first if the desired profile
+   does not exist.
+
+ Provider profiles are managed separately from ordinary SETTINGS defaults.
+
+3 MODEL
+ Setting: model
+
+ Performs:
+   Selects the model name for the active provider profile.
+
+ Use when:
+   Change it when the same provider offers multiple compatible models and you
+   want a different capability, latency, context, or cost tradeoff without
+   creating another provider profile.
+
+ The selected model is not reset by SETTINGS RESET.
+
+3 MAX_OUTPUT_TOKENS
+ Setting: max_output_tokens
+ Aliases: output_tokens, tokens
+ Legacy logical: OVMS_AGENT_MAX_OUTPUT_TOKENS
+ Default: 2048
+ Range: 64 through 32768
+
+ Performs:
+   Caps the requested LLM output token budget.
+
+ Use when:
+   Raise it for long plans, reviews, or explanations that are being cut off.
+   Lower it when concise output, lower provider usage, or shorter latency is
+   more important.
+
+3 APPROVAL_POLICY
+ Setting: approval_policy
+ Alias: approval
+ Legacy logical: OVMS_AGENT_APPROVAL_POLICY
+ Default: read-only
+ Values: read-only, workspace, full
+
+ Performs:
+   Sets the normal session approval tier used by guarded agent operations.
+
+ Use when:
+   Choose read-only for analysis and planning, workspace for intentional
+   controlled project edits, and full only when a command explicitly requires
+   the highest policy tier.  Do not use full merely to make routine commands
+   more convenient.
+
+3 NET_ALLOW
+ Setting: net_allow
+ Alias: network_allow
+ Legacy logical: OVMS_AGENT_NET_ALLOW
+ Default: empty
+
+ Performs:
+   Stores the allowed-domain policy text used by network-aware guarded work.
+
+ Use when:
+   Outbound access must be restricted to an explicit set of approved domains.
+   Enter NONE through SETTINGS to clear the saved value.
+
+3 NET_DENY
+ Setting: net_deny
+ Alias: network_deny
+ Legacy logical: OVMS_AGENT_NET_DENY
+ Default: empty
+
+ Performs:
+   Stores the denied-domain policy text used by network-aware guarded work.
+
+ Use when:
+   Specific hosts or domains must remain inaccessible even when broader network
+   access is otherwise permitted.  Enter NONE to clear the saved value.
+
+3 AUTO_TURNS
+ Setting: auto_turns
+ Aliases: autonomous_turns, agent_turns
+ Legacy logical: OVMS_AGENT_AUTO_TURNS
+ Default: 12
+ Range: 1 through 32
+
+ Performs:
+   Limits autonomous model/tool turns in one bounded autonomous run.
+
+ Use when:
+   Lower it for small tasks or earlier human review.  Raise it for legitimate
+   multi-step local work that cannot finish within the default turn budget.
+
+ Saved changes apply to the next autonomous run without restarting OVMS Agent.
+ A legacy logical override wins over the saved value.  Regression-test-only
+ overrides remain higher precedence inside tests.
+
+3 AUTO_WRITES
+ Setting: auto_writes
+ Aliases: autonomous_writes, write_actions
+ Legacy logical: OVMS_AGENT_AUTO_WRITES
+ Default: 3
+ Range: 1 through 8
+
+ Performs:
+   Limits autonomous write actions in one bounded autonomous run.
+
+ Use when:
+   Keep it low for narrowly scoped repairs.  Raise it only when a planned local
+   task legitimately requires several distinct guarded writes and you still
+   want a hard stop before broader change.
+
+ Saved changes apply to the next autonomous run without restarting OVMS Agent.
+ A legacy logical override wins over the saved value.  Regression-test-only
+ overrides remain higher precedence inside tests.
+
+2 COMMANDS
+ The command topics are grouped by purpose.  Slash commands are written
+ literally in each entry; HELP topic keys use underscores for simple OpenVMS
+ HELP navigation.
+
+ Available command groups:
+   CORE        General commands, settings, profiles, DCL, and change sets.
+   PROJECT     Repository and file inspection/edit commands.
+   SYMBOLS     C symbol analysis and structured refactoring.
+   LLM         ASK, CHAT, REVIEW, and primary agent workflows.
+   REPAIR      Repair planning and persisted repair-history analysis.
+   TOOLS       Built-in tools, MCP, language guidance, and parity reports.
+   GITHUB      Guarded GitHub and local Git-context commands.
+   SESSIONS    Persistent session and transcript/result commands.
+   AUTOMATION  Autonomous-loop and AUTOPILOT commands.
+   CONTEXT     Project instructions and bounded repository context.
+   PATCHING    Structured multi-hunk patch commands.
+
+3 CORE
+ General commands and persistent profile/configuration commands.
+
+4 HELP
+ Command: HELP
+ Performs: Lists the currently registered OVMS Agent commands.
+ Use when: You do not remember a command name or want a quick live inventory.
+
+4 VERSION
+ Command: VERSION
+ Performs: Displays the OVMS Agent version string.
+ Use when: Reporting a defect, comparing systems, or verifying the installed image.
+
+4 QUIT
+ Command: QUIT
+ Performs: Stops OVMS Agent.
+ Use when: Leaving the interactive program normally.
+
+4 EXIT
+ Command: EXIT
+ Performs: Alias for QUIT.
+ Use when: EXIT is more natural to you; it has the same effect as QUIT.
+
+4 SETTINGS_CMD
+ Command: SETTINGS [SHOW|GET name|SET name value|TOGGLE name|RESET|RELOAD]
+ Performs: Views or changes persistent OVMS Agent settings.
+ Use when: Configuring normal behavior instead of defining legacy logical names.
+ See the SETTINGS topic for every individual setting.
+
+4 MODEL_CMD
+ Command: MODEL [model-name]
+ Performs: Shows or sets the model of the active AI provider.
+ Use when: Staying on the same provider profile but choosing another supported model.
+
+4 PROVIDER_CMD
+ Command: PROVIDER [LIST|SHOW [name]|USE name|ADD name|DELETE name]
+ Performs: Manages persistent AI provider profiles.
+ Use when: Adding a provider, switching endpoints/accounts, inspecting a profile,
+ or removing one.  ADD prompts for service address, model, and API key.
+
+4 GITHUB_PROFILE
+ Command: GITHUB [LIST|SHOW [name]|USE name|ADD name|DELETE name]
+ Performs: Manages persistent GitHub profiles.
+ Use when: Configuring or switching the repository/user/branch/token profile used
+ by guarded GitHub integration.
+
+4 DCL
+ Command: DCL <single DCL command>
+ Performs: Runs one DCL command through the full-policy path, captures output,
+ records the OpenVMS status, and logs the operation.
+ Use when: A direct OpenVMS command is genuinely required and full approval,
+ guarded writes, and DCL execution have intentionally been enabled.
+ Notes: Commands beginning EXIT, LOGOUT, STOP, GOTO, CALL, RETURN, SUBROUTINE,
+ SPAWN, SUBMIT, or PIPE are refused, as are @ command procedures.  This path is
+ intentionally more powerful than RUN.
+
+4 RUN
+ Command: RUN "command"
+ Performs: Runs one narrowly allow-listed read-oriented DCL command after
+ confirmation when DCL execution is enabled.
+ Use when: You need simple local inspection such as SHOW, DIRECTORY, SEARCH,
+ TYPE, DIFFERENCES, or read-only Git status/diff/log/show without broader DCL.
+ Notes: RUN refuses known mutating/system verbs, redirection, command procedures,
+ command chaining, and other unsafe syntax.
+
+4 CHANGESET
+ Command: CHANGESET BEGIN | ADD path "replacement text" | SHOW | APPLY | CANCEL
+ Performs: Builds a transactional multi-file change set with confirmation and
+ rollback protection.
+ Use when: Several exact replacements or creations must succeed as one guarded
+ unit instead of leaving a partially applied set of edits.
+
+5 CHANGESET_BEGIN
+ Command: CHANGESET BEGIN
+ Performs: Starts an empty transactional change set.
+ Use when: Preparing several exact file operations that should be applied together.
+
+5 CHANGESET_ADD
+ Command: CHANGESET ADD path "replacement text"
+ Performs: Adds one replacement or creation to the active change set.
+ Use when: Another exact operation belongs in the same all-or-rollback transaction.
+
+5 CHANGESET_SHOW
+ Command: CHANGESET SHOW
+ Performs: Lists the staged operations.
+ Use when: Reviewing the complete transaction before APPLY.
+
+5 CHANGESET_APPLY
+ Command: CHANGESET APPLY
+ Performs: Confirms and applies the staged operations transactionally, rolling
+ completed work back if the full transaction cannot finish.
+ Use when: The staged operations are correct and guarded writes are intentionally enabled.
+
+5 CHANGESET_CANCEL
+ Command: CHANGESET CANCEL
+ Performs: Discards the active change set without applying it.
+ Use when: The staged operations are obsolete, incorrect, or no longer needed.
+
+3 PROJECT
+ Repository, file, search, build, and direct project-edit commands.
+
+4 ROOT
+ Command: ROOT
+ Performs: Displays the configured project root.
+ Use when: Confirming which tree relative-path commands will operate on.
+
+4 STATUS
+ Command: STATUS
+ Performs: Displays general project/agent status.
+ Use when: Doing a quick environment check or diagnosing root/gate/configuration trouble.
+
+4 LIST
+ Command: LIST [path]
+ Performs: Lists a project directory using the normal filtered view.
+ Use when: Browsing a directory without extra files exposed by LIST/ALL.
+
+4 LIST_ALL
+ Command: LIST/ALL [path]
+ Performs: Lists a directory using the include-all view.
+ Use when: Normal LIST may be hiding files and you need the fullest inventory.
+
+4 TREE
+ Command: TREE [path]
+ Performs: Displays a bounded project directory tree.
+ Use when: Understanding layout before choosing source, test, or build files.
+
+4 READ
+ Command: READ file [start [count]]
+ Performs: Reads a bounded line range from a project file.
+ Use when: You know the file and need exact context without dumping the whole file.
+
+4 BUILD
+ Command: BUILD
+ Performs: Runs the project BUILD.COM, captures output, and preserves failed
+ build output for diagnosis.
+ Use when: Validating changes or reproducing a build problem on OpenVMS.
+
+4 GITSTATUS
+ Command: GITSTATUS
+ Performs: Displays Git working-tree status.
+ Use when: Checking for intended and unintended local changes before or after edits.
+
+4 GITDIFF
+ Command: GITDIFF
+ Performs: Displays uncommitted source changes.
+ Use when: Reviewing the exact local patch before accepting or committing work.
+
+4 EDIT
+ Command: EDIT file
+ Performs: Invokes the guarded interactive edit workflow for one project file.
+ Use when: A manual interactive edit is more appropriate than PATCH or an agent change.
+
+4 GREP
+ Command: GREP "text" [path] [/CONTEXT=n] [/LIMIT=n] [/CASE=value]
+          [/COUNT] [/FILES] [/NAME=pattern] [/EXCLUDE=pattern]
+          [/DEPTH=n] [/WORD]
+ Performs: Searches project files with bounded recursion and filtering controls.
+ Use when: Repository-wide discovery needs more control than single-file SEARCH.
+ Notes: CONTEXT is 0-20, LIMIT is 1-100, DEPTH is 0-16, and CASE accepts
+ SENSITIVE or INSENSITIVE.  COUNT and FILES are mutually exclusive and cannot
+ be combined with nonzero CONTEXT.
+
+4 SEARCH
+ Command: SEARCH file "text"
+ Performs: Searches one named file for text.
+ Use when: The target file is already known and GREP would be unnecessarily broad.
+
+4 PATCH
+ Command: PATCH file "old" "new"
+ Performs: Replaces one exact text occurrence through the direct patch command.
+ Use when: A small deterministic replacement is known exactly.
+
+3 SYMBOLS
+ C symbol-index inspection, dependency analysis, and structured refactoring.
+
+4 REINDEX
+ Command: REINDEX
+ Performs: Rebuilds the persistent C symbol index.
+ Use when: Source changed and symbol/dependency queries may be stale.
+
+4 INDEX_STATUS
+ Command: INDEX/STATUS
+ Performs: Shows symbol-index statistics.
+ Use when: Confirming that an index exists and checking its basic scale/health.
+
+4 INDEX_CHECK
+ Command: INDEX/CHECK
+ Performs: Checks whether the symbol index is current.
+ Use when: Files may have changed since the last index and analysis must be trusted.
+
+4 WHERE
+ Command: WHERE symbol
+ Performs: Finds a C symbol definition.
+ Use when: You know an identifier but not where it is defined.
+
+4 CALLERS
+ Command: CALLERS symbol
+ Performs: Finds C call sites for a symbol.
+ Use when: Preparing to change a function interface or behavior.
+
+4 SYMBOL
+ Command: SYMBOL symbol
+ Performs: Shows definitions and call references together.
+ Use when: A compact definition-plus-usage view is more useful than separate queries.
+
+4 SHOW_FUNCTION
+ Command: SHOW/FUNCTION symbol
+ Performs: Displays a complete C function body.
+ Use when: A symbol lookup found the function and you need its full implementation.
+
+4 SHOW_STRUCT
+ Command: SHOW/STRUCT symbol
+ Performs: Displays a struct, union, or enum definition.
+ Use when: Reasoning about data layout, fields, or type coupling.
+
+4 SHOW_MODULE
+ Command: SHOW/MODULE file.c
+ Performs: Summarizes one local C or header module.
+ Use when: Understanding a module before editing or moving code.
+
+4 DEPENDENCIES
+ Command: DEPENDENCIES file.c
+ Performs: Shows local dependencies of a module.
+ Use when: Preparing include, module-boundary, or ownership changes.
+
+4 WHO_USES
+ Command: WHO/USES symbol
+ Performs: Finds local uses of a C identifier.
+ Use when: Rename/delete work needs broader usage evidence than call sites alone.
+
+4 MODULE_GRAPH
+ Command: MODULE/GRAPH file.c
+ Performs: Shows direct project-module dependencies for one module.
+ Use when: Inspecting coupling around a particular module.
+
+4 MODULE_GRAPH_ALL
+ Command: MODULE/GRAPH/ALL
+ Performs: Shows the project-wide module graph.
+ Use when: Reviewing architecture or choosing refactoring boundaries.
+
+4 IMPACT
+ Command: IMPACT symbol
+ Performs: Shows direct change impact for a symbol.
+ Use when: Estimating affected code before modifying a shared symbol.
+
+4 MODULE_REVERSE
+ Command: MODULE/REVERSE file.c
+ Performs: Shows modules that depend on a module.
+ Use when: Considering changes or removal and you need reverse dependencies.
+
+4 PATH
+ Command: PATH source target
+ Performs: Finds a dependency path between two endpoints.
+ Use when: Understanding how apparently distant components are connected.
+
+4 CLUSTER
+ Command: CLUSTER
+ Performs: Identifies strongly connected module groups.
+ Use when: Finding tightly coupled areas that may need to be refactored together.
+
+4 CYCLE
+ Command: CYCLE
+ Performs: Shows a project dependency cycle.
+ Use when: Diagnosing circular architecture or include/build coupling.
+
+4 CYCLE_MODULE
+ Command: CYCLE/MODULE file.c
+ Performs: Shows a dependency cycle reachable from one module.
+ Use when: A particular module is suspected of participating in a cycle.
+
+4 ARCHITECTURE
+ Command: ARCHITECTURE
+ Performs: Summarizes project architecture metrics.
+ Use when: Doing a high-level structural health review before a larger refactor.
+
+4 UNUSED
+ Command: UNUSED
+ Performs: Finds likely unused functions and modules.
+ Use when: Identifying cleanup candidates.  Treat results as evidence to review,
+ not automatic deletion authority.
+
+4 UNUSED_DETAIL
+ Command: UNUSED/DETAIL symbol
+ Performs: Explains unused-code evidence for one symbol.
+ Use when: UNUSED identifies a candidate and you want supporting evidence first.
+
+4 RENAME
+ Command: RENAME old_name new_name
+ Performs: Previews an exact project-wide identifier rename.
+ Use when: Renaming a C identifier; preview first so all proposed edits can be reviewed.
+
+4 RENAME_APPLY
+ Command: RENAME/APPLY old_name new_name
+ Performs: Applies a confirmed project-wide identifier rename.
+ Use when: The RENAME preview is correct and write prerequisites are satisfied.
+
+4 RENAME_VERIFY
+ Command: RENAME/VERIFY old_name new_name
+ Performs: Applies a rename, reindexes, builds, and rolls back on failure.
+ Use when: You want rename execution tied directly to verification and rollback.
+
+4 EXTRACT_FUNCTION
+ Command: EXTRACT/FUNCTION file.c START:END new_name
+ Performs: Previews extracting a source range into a new function.
+ Use when: A contiguous block should become a helper and you want to inspect the
+ transformation before writing.
+
+4 EXTRACT_FUNCTION_APPLY
+ Command: EXTRACT/FUNCTION/APPLY file.c START:END new_name
+ Performs: Applies one guarded function extraction.
+ Use when: The extraction preview is correct and the selected range is suitable.
+
+4 EXTRACT_FUNCTION_VERIFY
+ Command: EXTRACT/FUNCTION/VERIFY file.c START:END new_name
+ Performs: Checks extraction semantics without writing.
+ Use when: You want stronger validation of a candidate before applying it.
+
+4 INLINE_FUNCTION
+ Command: INLINE/FUNCTION symbol
+ Performs: Previews inlining a local C function.
+ Use when: A small helper may no longer justify a separate function.
+
+4 INLINE_FUNCTION_APPLY
+ Command: INLINE/FUNCTION/APPLY symbol
+ Performs: Applies one guarded local function inline.
+ Use when: The inline preview is satisfactory and the helper is an appropriate candidate.
+
+4 DELETE_FUNCTION
+ Command: DELETE/FUNCTION symbol
+ Performs: Previews deleting a function that appears unused.
+ Use when: UNUSED evidence suggests a safe removal candidate.
+
+4 DELETE_FUNCTION_APPLY
+ Command: DELETE/FUNCTION/APPLY symbol
+ Performs: Deletes one unused function with verification.
+ Use when: The delete preview and unused evidence are satisfactory.
+
+4 MOVE_FUNCTION
+ Command: MOVE/FUNCTION symbol destination.c
+ Performs: Previews moving a function between modules.
+ Use when: Responsibility belongs in another module and dependency effects need review.
+
+4 MOVE_FUNCTION_APPLY
+ Command: MOVE/FUNCTION/APPLY symbol destination.c
+ Performs: Moves one function between modules with verification.
+ Use when: The move preview is correct and module ownership is understood.
+
+4 DECLARATIONS_CHECK
+ Command: DECLARATIONS/CHECK [file.c]
+ Performs: Audits static-helper declaration order.
+ Use when: DEC C reports implicit declarations or C89 declaration order is suspect.
+
+4 DECLARATIONS_FIX
+ Command: DECLARATIONS/FIX [file.c]
+ Performs: Inserts missing static-helper prototypes.
+ Use when: Verified declaration-order issues should be repaired without moving functions.
+
+4 DECLARATIONS_FIX_AUTO
+ Command: DECLARATIONS/FIX/AUTO [file.c]
+ Performs: Repairs declaration order in verified batches.
+ Use when: Several validated declaration-order problems need bounded automatic repair.
+
+4 DECLARATIONS_DIAGNOSE
+ Command: DECLARATIONS/DIAGNOSE [file.c]
+ Performs: Explains declaration-fix generation.
+ Use when: You need to understand why a prototype repair is or is not proposed.
+
+3 LLM
+ Direct LLM interaction and primary agent workflows.
+
+4 ASK
+ Command: ASK prompt
+ Performs: Sends one prompt to the configured LLM without maintaining CHAT context.
+ Use when: You have a one-off question or transformation that needs no conversation history.
+
+4 CHAT
+ Command: CHAT prompt
+ Performs: Continues a stateful LLM conversation.
+ Use when: Follow-up questions depend on earlier CHAT context.
+
+4 CHAT_RESET
+ Command: CHAT/RESET
+ Performs: Clears the current LLM conversation.
+ Use when: Earlier CHAT context is no longer relevant or is contaminating a new task.
+
+4 REVIEW
+ Command: REVIEW file
+ Performs: Asks the configured LLM to review a source file.
+ Use when: You want focused code-review feedback without a write workflow.
+
+4 AGENT
+ Command: AGENT goal
+ Performs: Runs the read-only AI agent against the project.
+ Use when: A goal needs tool/file investigation but no project writes.
+
+4 AGENT_WRITE
+ Command: AGENT/WRITE goal
+ Performs: Runs the guarded write agent.
+ Use when: An AI-directed goal legitimately requires project edits and write/policy
+ gates are intentionally enabled.
+
+4 AGENT_BUILD
+ Command: AGENT/BUILD goal
+ Performs: Runs controlled project build analysis.
+ Use when: The task centers on building, interpreting failures, and identifying fixes.
+
+4 AGENT_FIX
+ Command: AGENT/FIX goal
+ Performs: Applies one confirmed fix and builds.
+ Use when: A supervised single correction is understood and should be verified immediately.
+
+4 AGENT_RETRY
+ Command: AGENT/RETRY goal
+ Performs: Retries one supervised fix using prior build diagnostics.
+ Use when: The previous supervised fix/build failed and saved diagnostics should guide
+ one more bounded attempt.
+
+4 AGENT_SELFTEST
+ Command: AGENT/SELFTEST
+ Performs: Runs non-destructive agent checks.
+ Use when: Verifying installation/configuration or preparing acceptance evidence.
+
+4 AGENT_STATUS
+ Command: AGENT/STATUS
+ Performs: Shows agent capabilities and recent workflow state.
+ Use when: Deciding what is available or diagnosing why a workflow is unavailable.
+
+4 AGENT_VERIFY
+ Command: AGENT/VERIFY
+ Performs: Runs safety checks and a controlled build.
+ Use when: You want both guard checks and build evidence before accepting a tree.
+
+4 AGENT_CREATE
+ Command: AGENT/CREATE goal
+ Performs: Creates one new confirmed project file through the guarded creation path.
+ Use when: The desired result is specifically one new file rather than general editing.
+
+4 AGENT_IMAGE
+ Command: AGENT/IMAGE image-path goal
+ Performs: Runs a read-only agent with a local image supplied as context.
+ Use when: Analysis depends on a screenshot, diagram, scan, or other local visual evidence.
+
+4 AGENT_PLAN
+ Command: AGENT/PLAN goal
+ Performs: Creates and saves a read-only implementation plan.
+ Use when: A nontrivial change should be reviewed separately from execution.
+
+4 AGENT_PLAN_SHOW
+ Command: AGENT/PLAN/SHOW
+ Performs: Displays the saved implementation plan.
+ Use when: Reviewing exactly what has been planned before approval or execution.
+
+4 AGENT_PLAN_CLEAR
+ Command: AGENT/PLAN/CLEAR
+ Performs: Clears the saved plan after confirmation.
+ Use when: The plan is obsolete, incorrect, or should not be executed.
+
+4 AGENT_PLAN_VALIDATE
+ Command: AGENT/PLAN/VALIDATE
+ Performs: Validates saved-plan file fingerprints.
+ Use when: Executing an older plan and target files may have changed underneath it.
+
+4 AGENT_APPROVE
+ Command: AGENT/APPROVE
+ Performs: Approves the current saved plan for this session.
+ Use when: The saved plan has been reviewed and validated and guarded execution is intended.
+
+4 AGENT_EXECUTE_DRY_RUN
+ Command: AGENT/EXECUTE/DRY_RUN
+ Performs: Validates and stages a saved plan without writing.
+ Use when: You want a final no-write proof that the plan is still executable.
+
+4 AGENT_EXECUTE
+ Command: AGENT/EXECUTE
+ Performs: Executes one validated saved-plan operation.
+ Use when: A reviewed/approved plan should be executed step by step rather than free-form.
+
+4 AGENT_APPROVAL
+ Command: AGENT/APPROVAL
+ Performs: Shows the current agent approval policy.
+ Use when: Troubleshooting permission refusals or checking a workflow prerequisite.
+
+4 AGENT_APPROVAL_SET
+ Command: AGENT/APPROVAL/SET policy
+ Performs: Sets the session approval policy.
+ Use when: A temporary session policy change is needed without relying only on SETTINGS.
+
+4 AGENT_APPROVAL_RESET
+ Command: AGENT/APPROVAL/RESET
+ Performs: Resets the session approval policy.
+ Use when: A temporary policy change should be removed.
+
+4 AGENT_CONTEXT
+ Command: AGENT/CONTEXT
+ Performs: Shows the current agent execution context.
+ Use when: Verifying root, policy, provider, and other context the agent is actually using.
+
+4 AGENT_EXEC
+ Command: AGENT/EXEC goal
+ Performs: Runs a goal using the current approval policy.
+ Use when: You want the policy-aware execution framework to choose allowed guarded work.
+
+4 AGENT_EXEC_DRY
+ Command: AGENT/EXEC/DRY goal
+ Performs: Creates a read-only implementation plan through the execution framework.
+ Use when: Previewing what AGENT/EXEC would attempt without making changes.
+
+4 AGENT_EXEC_RESUME
+ Command: AGENT/EXEC/RESUME goal
+ Performs: Executes a goal in the current persistent session.
+ Use when: Continuing a task that should retain current persistent session context.
+
+4 AGENT_EXEC_FORK
+ Command: AGENT/EXEC/FORK goal
+ Performs: Forks the current session and executes a goal in the fork.
+ Use when: Exploring an alternative approach without disturbing the original session line.
+
+4 AGENT_EXEC_RESUME_CREATE
+ Command: AGENT/EXEC/RESUME/CREATE goal
+ Performs: Resumes persistent context and creates one guarded file.
+ Use when: A continuing session specifically needs one new file while retaining context.
+
+4 OBSERVABILITY
+ Activity, persistent state, and local history commands.
+
+5 AGENT_LOG
+ Command: AGENT/LOG
+ Performs: Displays the structured local activity log.
+ Use when: Auditing recent agent actions or diagnosing a workflow sequence.
+
+5 AGENT_LOG_OLD
+ Command: AGENT/LOG/OLD
+ Performs: Displays the rotated activity log.
+ Use when: The event you need has rolled out of the active log.
+
+5 AGENT_LOG_CLEAR
+ Command: AGENT/LOG/CLEAR
+ Performs: Clears the active activity log after confirmation.
+ Use when: Intentionally starting a fresh audit window and old evidence is no longer needed.
+
+5 AGENT_METRICS
+ Command: AGENT/METRICS
+ Performs: Summarizes structured activity metrics.
+ Use when: You want aggregate activity rather than the full event log.
+
+5 AGENT_STATE
+ Command: AGENT/STATE
+ Performs: Displays validated persistent workflow state.
+ Use when: Resuming work or diagnosing saved plan/repair/workflow state.
+
+5 AGENT_MEMORY
+ Command: AGENT/MEMORY
+ Performs: Shows recent stored agent history.
+ Use when: Recent durable context is needed without reading the full structured log.
+
+5 AGENT_STATE_CLEAR
+ Command: AGENT/STATE/CLEAR
+ Performs: Clears persisted workflow state after confirmation.
+ Use when: Saved workflow state is intentionally abandoned or known to be unusable.
+
+3 REPAIR
+ Supervised repair workflow and persisted repair-history analysis.
+
+4 AGENT_REPAIR
+ Command: AGENT/REPAIR goal
+ Performs: Runs the dedicated repair workflow for a goal.
+ Use when: A build/project failure should be handled by the repair path rather than a
+ generic write agent.
+
+4 REPAIR_PLAN
+ Command: AGENT/REPAIR/PLAN
+ Performs: Creates a repair plan from the last failed build.
+ Use when: Captured build diagnostics should be turned into an explicit repair plan.
+
+4 REPAIR_STATUS
+ Command: AGENT/REPAIR/STATUS
+ Performs: Summarizes the most recent persisted repair run.
+ Use when: You need a quick answer to what happened in the latest repair attempt.
+
+4 REPAIR_HISTORY
+ Command: AGENT/REPAIR/HISTORY
+ Performs: Shows recent persisted repair runs.
+ Use when: Comparing attempts or investigating repeated failures.
+
+4 REPAIR_HISTORY_FAILURES
+ Command: AGENT/REPAIR/HISTORY/FAILURES
+ Performs: Shows failed recent repair runs.
+ Use when: Success records are noise and only unsuccessful attempts matter.
+
+4 REPAIR_SHOW
+ Command: AGENT/REPAIR/SHOW plan-hash
+ Performs: Shows one persisted repair run by plan hash.
+ Use when: A known repair plan must be inspected in detail.
+
+4 REPAIR_EXPORT
+ Command: AGENT/REPAIR/EXPORT
+ Performs: Exports recent repair history to text.
+ Use when: Evidence must be archived, shared, or reviewed outside OVMS Agent.
+
+4 REPAIR_STATS
+ Command: AGENT/REPAIR/STATS
+ Performs: Shows aggregate statistics for recent repair runs.
+ Use when: Assessing repair reliability across multiple attempts.
+
+4 REPAIR_CONFIG
+ Command: AGENT/REPAIR/CONFIG
+ Performs: Shows resolved repair-history configuration.
+ Use when: Retention/location/limits appear wrong or need verification.
+
+4 REPAIR_HISTORY_INFO
+ Command: AGENT/REPAIR/HISTORY/INFO
+ Performs: Shows repair-history metadata.
+ Use when: Checking the history store itself rather than an individual run.
+
+4 REPAIR_HISTORY_CHECK
+ Command: AGENT/REPAIR/HISTORY/CHECK
+ Performs: Checks repair-history integrity.
+ Use when: History output looks damaged, incomplete, or inconsistent.
+
+4 REPAIR_HISTORY_DIAG
+ Command: AGENT/REPAIR/HISTORY/DIAG
+ Performs: Shows combined repair-history diagnostics.
+ Use when: Configuration, integrity, and history evidence are needed together.
+
+4 REPAIR_HISTORY_COUNT
+ Command: AGENT/REPAIR/HISTORY/COUNT
+ Performs: Shows concise persisted repair counts.
+ Use when: A script or quick diagnostic needs counts rather than full records.
+
+4 REPAIR_HISTORY_LATEST
+ Command: AGENT/REPAIR/HISTORY/LATEST
+ Performs: Shows the newest repair run.
+ Use when: Only the most recent run matters.
+
+4 REPAIR_HISTORY_OLDEST
+ Command: AGENT/REPAIR/HISTORY/OLDEST
+ Performs: Shows the oldest retained repair run.
+ Use when: Investigating the beginning of the retained history window.
+
+4 REPAIR_HISTORY_OUTCOME
+ Command: AGENT/REPAIR/HISTORY/OUTCOME outcome
+ Performs: Filters recent runs by final outcome.
+ Use when: Analyzing only successes, failures, or another supported outcome class.
+
+4 REPAIR_HISTORY_ATTEMPTS
+ Command: AGENT/REPAIR/HISTORY/ATTEMPTS count
+ Performs: Filters repair runs by attempt count.
+ Use when: Comparing first-try work with retry-heavy repairs.
+
+4 REPAIR_HISTORY_PLAN
+ Command: AGENT/REPAIR/HISTORY/PLAN hash-prefix
+ Performs: Filters history by plan-hash prefix.
+ Use when: Several records may belong to a known repair plan.
+
+4 REPAIR_HISTORY_SINCE
+ Command: AGENT/REPAIR/HISTORY/SINCE timestamp
+ Performs: Filters repair runs by start timestamp.
+ Use when: Limiting analysis to a recent incident or acceptance window.
+
+4 REPAIR_HISTORY_REPORT
+ Command: AGENT/REPAIR/HISTORY/REPORT
+ Performs: Shows a formatted recent repair report.
+ Use when: Human-readable review is preferable to terse raw records.
+
+4 REPAIR_HISTORY_SUMMARY
+ Command: AGENT/REPAIR/HISTORY/SUMMARY
+ Performs: Shows a compact recent repair summary.
+ Use when: You want an overview before drilling into individual runs.
+
+4 REPAIR_HISTORY_CSV
+ Command: AGENT/REPAIR/HISTORY/CSV
+ Performs: Exports recent repair history as CSV.
+ Use when: Spreadsheet/statistical analysis or machine processing is desired.
+
+4 REPAIR_HISTORY_KV
+ Command: AGENT/REPAIR/HISTORY/KV
+ Performs: Exports repair history as key/value text.
+ Use when: Simple machine parsing is easier than CSV.
+
+4 REPAIR_HISTORY_COMPARE
+ Command: AGENT/REPAIR/HISTORY/COMPARE
+ Performs: Compares the newest two repair runs.
+ Use when: A retry changed behavior and the immediate before/after matters.
+
+4 REPAIR_HISTORY_STREAK
+ Command: AGENT/REPAIR/HISTORY/STREAK
+ Performs: Shows the current repair outcome streak.
+ Use when: Looking for consecutive successes or repeated failures.
+
+4 REPAIR_HISTORY_RECOVERY
+ Command: AGENT/REPAIR/HISTORY/RECOVERY
+ Performs: Summarizes two-attempt repair recovery.
+ Use when: Evaluating whether second attempts recover from first-attempt failure.
+
+4 REPAIR_HISTORY_TREND
+ Command: AGENT/REPAIR/HISTORY/TREND
+ Performs: Shows recent repair success trend.
+ Use when: Checking whether repair reliability is improving or degrading.
+
+4 REPAIR_HISTORY_FIRST
+ Command: AGENT/REPAIR/HISTORY/FIRST n
+ Performs: Shows the oldest N repair runs.
+ Use when: Sampling the beginning of retained history.
+
+4 REPAIR_HISTORY_LAST
+ Command: AGENT/REPAIR/HISTORY/LAST n
+ Performs: Shows the newest N repair runs.
+ Use when: Sampling only the most recent activity.
+
+4 REPAIR_HISTORY_RANGE
+ Command: AGENT/REPAIR/HISTORY/RANGE start count
+ Performs: Shows a newest-first history slice.
+ Use when: Paging through large history in bounded chunks.
+
+4 REPAIR_HISTORY_INDEX
+ Command: AGENT/REPAIR/HISTORY/INDEX n
+ Performs: Shows one newest-first indexed repair run.
+ Use when: Another history command gives an index and you want that exact record.
+
+4 REPAIR_HISTORY_CLEAR
+ Command: AGENT/REPAIR/HISTORY/CLEAR
+ Performs: Clears persisted repair history with explicit confirmation.
+ Use when: History is intentionally being discarded and is no longer needed for audit.
+
+3 TOOLS
+ Built-in/external tools, MCP, language guidance, and parity reporting.
+
+4 AGENT_TOOLS
+ Command: AGENT/TOOLS
+ Performs: Lists agent tools and safety classifications.
+ Use when: Discovering available tools or checking their safety tier before execution.
+
+4 AGENT_TOOLS_EXT
+ Command: AGENT/TOOLS/EXT
+ Performs: Lists current built-in and external parity tools.
+ Use when: Checking which capabilities are native versus integrated externally.
+
+4 AGENT_TOOLS_INFO
+ Command: AGENT/TOOLS/INFO tool-name
+ Performs: Shows metadata for one tool.
+ Use when: You know the tool name and need its policy or capability details.
+
+4 AGENT_TOOL_RUN
+ Command: AGENT/TOOL/RUN tool arguments
+ Performs: Runs one approved built-in tool directly.
+ Use when: Deterministic tool invocation is preferable to model planning.
+
+4 AGENT_TOOL_LAST
+ Command: AGENT/TOOL/LAST
+ Performs: Shows the last persisted tool invocation.
+ Use when: Inspecting the most recent tool evidence after an unexpected result.
+
+4 AGENT_TOOL_HISTORY
+ Command: AGENT/TOOL/HISTORY
+ Performs: Shows recent persisted tool invocations.
+ Use when: Auditing a sequence of direct or model-driven tool calls.
+
+4 AGENT_TOOL_CLEAR
+ Command: AGENT/TOOL/CLEAR
+ Performs: Clears persisted tool/session transcript history.
+ Use when: Stored tool evidence is intentionally being reset.
+
+4 AGENT_MCP
+ Command: AGENT/MCP
+ Performs: Lists configured MCP tool servers.
+ Use when: Discovering external MCP integrations before inspecting or calling one.
+
+4 AGENT_MCP_INFO
+ Command: AGENT/MCP/INFO server
+ Performs: Shows one configured MCP tool server.
+ Use when: Checking one server's configuration or capabilities.
+
+4 AGENT_MCP_CALL
+ Command: AGENT/MCP/CALL ...
+ Performs: Validates and plans one guarded MCP call.
+ Use when: An external operation needs policy validation and review before execution.
+
+4 AGENT_MCP_EXEC
+ Command: AGENT/MCP/EXEC ...
+ Performs: Executes and records one approved MCP call.
+ Use when: The MCP call has been reviewed/approved and external execution is intended.
+
+4 AGENT_LANG
+ Command: AGENT/LANG
+ Performs: Lists OpenVMS programming-language support.
+ Use when: Determining whether the agent has specific guidance for a project language.
+
+4 AGENT_LANG_INFO
+ Command: AGENT/LANG/INFO language
+ Performs: Shows guidance for one OpenVMS programming language.
+ Use when: Compiler/platform conventions for that language matter to an edit.
+
+4 AGENT_LANG_DETECT
+ Command: AGENT/LANG/DETECT file
+ Performs: Detects language from an OpenVMS source filename.
+ Use when: The file's extension or naming convention is unfamiliar.
+
+4 AGENT_LANG_POLICY
+ Command: AGENT/LANG/POLICY
+ Performs: Shows multilingual policy injected into agent context.
+ Use when: Diagnosing how language-specific guidance affects agent behavior.
+
+4 AGENT_PARITY
+ Command: AGENT/PARITY
+ Performs: Shows legacy Codex-parity capability status.
+ Use when: Reviewing historical capability-gap coverage.
+
+4 AGENT_PARITY_FINAL
+ Command: AGENT/PARITY/FINAL
+ Performs: Shows the final practical Codex-parity report.
+ Use when: You want the consolidated parity assessment.
+
+3 GITHUB
+ Guarded GitHub integration and local Git-context commands.
+
+4 AGENT_GITHUB
+ Command: AGENT/GITHUB
+ Performs: Shows guarded GitHub integration and policy.
+ Use when: Reviewing supported GitHub actions and their safety requirements.
+
+4 AGENT_GITHUB_STATUS
+ Command: AGENT/GITHUB/STATUS
+ Performs: Shows local Git working-tree status through the guarded integration.
+ Use when: Preparing a GitHub operation and a live local status check is needed.
+
+4 AGENT_GITHUB_REMOTE
+ Command: AGENT/GITHUB/REMOTE
+ Performs: Shows configured Git remotes.
+ Use when: Verifying which repository an upcoming network action will target.
+
+4 AGENT_GITHUB_CHECK
+ Command: AGENT/GITHUB/CHECK
+ Performs: Checks OpenVMS Git network prerequisites.
+ Use when: Authentication, Git/Curl setup, or connectivity may be wrong.
+
+4 AGENT_GITHUB_FETCH
+ Command: AGENT/GITHUB/FETCH ...
+ Performs: Fetches from a GitHub remote.
+ Use when: Updating remote refs without intentionally integrating them into the tree.
+
+4 AGENT_GITHUB_PULL
+ Command: AGENT/GITHUB/PULL ...
+ Performs: Pulls a GitHub remote/branch through guarded integration.
+ Use when: An accepted workflow intentionally needs remote changes integrated locally.
+
+4 AGENT_GITHUB_PUSH
+ Command: AGENT/GITHUB/PUSH ...
+ Performs: Pushes to a GitHub remote/branch through the guarded path.
+ Use when: Local acceptance is complete and publication is explicitly authorized.
+
+4 AGENT_GITHUB_CLONE
+ Command: AGENT/GITHUB/CLONE ...
+ Performs: Clones a validated GitHub repository.
+ Use when: Creating a new local checkout from a known approved repository.
+
+4 AGENT_GITHUB_ISSUES
+ Command: AGENT/GITHUB/ISSUES ...
+ Performs: Uses the configured GitHub bridge for issue operations.
+ Use when: Project tracking requires GitHub issue work through OVMS Agent.
+
+4 AGENT_GITHUB_PR
+ Command: AGENT/GITHUB/PR ...
+ Performs: Uses the configured GitHub bridge for pull-request operations.
+ Use when: Reviewing or managing PR workflow through OVMS Agent.
+
+4 AGENT_GIT_STATUS
+ Command: AGENT/GIT/STATUS
+ Performs: Shows cached bounded Git working-tree status.
+ Use when: Inspecting the Git status that is available to agent context.
+
+4 AGENT_GIT_DIFF
+ Command: AGENT/GIT/DIFF
+ Performs: Shows cached bounded unstaged Git diff.
+ Use when: Inspecting the diff currently available to the agent/model.
+
+4 AGENT_GIT_CHANGED
+ Command: AGENT/GIT/CHANGED
+ Performs: Shows changed paths from Git status.
+ Use when: A concise changed-file inventory is enough.
+
+4 AGENT_GIT_CONTEXT
+ Command: AGENT/GIT/CONTEXT
+ Performs: Shows Git context injected into agent runs.
+ Use when: Diagnosing why the model believes certain changes are present.
+
+4 AGENT_GIT_REFRESH
+ Command: AGENT/GIT/REFRESH
+ Performs: Refreshes cached Git status and diff.
+ Use when: Local files changed and agent-visible Git context is stale.
+
+3 SESSIONS
+ Persistent session, transcript, and result-evidence management.
+
+4 SESSION_NEW
+ Command: AGENT/SESSION/NEW name
+ Performs: Creates and selects a persistent session.
+ Use when: Starting a long-running task that should survive process restarts.
+
+4 SESSION_LIST
+ Command: AGENT/SESSION/LIST
+ Performs: Lists persistent agent sessions.
+ Use when: Finding an existing task/session to resume.
+
+4 SESSION_SHOW
+ Command: AGENT/SESSION/SHOW [name]
+ Performs: Shows one persistent session.
+ Use when: Inspecting metadata/state before resuming, forking, renaming, or deleting it.
+
+4 SESSION_RESUME
+ Command: AGENT/SESSION/RESUME name
+ Performs: Resumes an active persistent session.
+ Use when: Continuing previously saved work with its prior context.
+
+4 SESSION_FORK
+ Command: AGENT/SESSION/FORK ...
+ Performs: Forks a persistent session.
+ Use when: Exploring an alternative path while preserving the original history.
+
+4 SESSION_RENAME
+ Command: AGENT/SESSION/RENAME ...
+ Performs: Renames a persistent session.
+ Use when: Its current name no longer describes the task.
+
+4 SESSION_ARCHIVE
+ Command: AGENT/SESSION/ARCHIVE ...
+ Performs: Archives a persistent session.
+ Use when: Work is complete/inactive but history should be retained.
+
+4 SESSION_UNARCHIVE
+ Command: AGENT/SESSION/UNARCHIVE ...
+ Performs: Unarchives a persistent session.
+ Use when: Archived work becomes active again.
+
+4 SESSION_DELETE
+ Command: AGENT/SESSION/DELETE ...
+ Performs: Deletes a persistent session.
+ Use when: The session and retained context are intentionally no longer needed.
+
+4 SESSION_CURRENT
+ Command: AGENT/SESSION/CURRENT
+ Performs: Shows the current persistent session.
+ Use when: Unsure which session subsequent context-aware commands will affect.
+
+4 SESSION_HISTORY
+ Command: AGENT/SESSION/HISTORY [name]
+ Performs: Shows the persistent transcript for a session.
+ Use when: Reviewing conversational/task history before continuing or auditing work.
+
+4 SESSION_RESULTS
+ Command: AGENT/SESSION/RESULTS [name]
+ Performs: Shows normalized tool evidence for a session.
+ Use when: Results/evidence matter more than the conversational transcript.
+
+4 SESSION_RESULTS_LAST
+ Command: AGENT/SESSION/RESULTS/LAST [name]
+ Performs: Shows the latest normalized tool result for a session.
+ Use when: You need only the newest evidence record.
+
+4 SESSION_RESULTS_CLEAR
+ Command: AGENT/SESSION/RESULTS/CLEAR ...
+ Performs: Clears normalized tool evidence for a session.
+ Use when: Stored result evidence is intentionally being reset.
+
+4 SESSION_EXPORT
+ Command: AGENT/SESSION/EXPORT ...
+ Performs: Exports one persistent session transcript.
+ Use when: Offline review, archival, sharing, or milestone evidence is needed.
+
+4 SESSION_EXEC
+ Command: AGENT/SESSION/EXEC ...
+ Performs: Resumes a session and executes a goal.
+ Use when: Continuing a persistent task and immediately running new work in its context.
+
+3 AUTOMATION
+ Autonomous-loop status/limits and bounded AUTOPILOT.
+
+4 AUTO_STATUS
+ Command: AGENT/AUTO/STATUS
+ Performs: Shows last autonomous-loop counters and stop reason.
+ Use when: Reviewing how many turns/writes were consumed and why the run stopped.
+
+4 AUTO_LIMITS
+ Command: AGENT/AUTO/LIMITS
+ Performs: Shows effective autonomous turn/write limits and their value sources.
+ Use when: Verifying hard budgets before a run, especially with legacy logical overrides.
+
+4 AUTO_RESET
+ Command: AGENT/AUTO/RESET
+ Performs: Resets autonomous-loop status counters.
+ Use when: Starting a fresh measurement window and previous counters are irrelevant.
+
+4 AUTOPILOT
+ Command: AGENT/AUTOPILOT goal
+ Performs: Runs the bounded local build/repair/rebuild loop using the established
+ guarded workspace safety floor.
+ Use when: A well-scoped local repair benefits from repeated plan/fix/build
+ iterations with hard turn/write budgets and an explicit terminal state.
+ Notes: AUTOPILOT never satisfies FULL approval and cannot automate push,
+ GitHub writes, MCP/external operations, or arbitrary DCL.  It stops as
+ CLEAN_BUILD, RETRY_BUDGET_EXHAUSTED, or GOAL_GUARD_REJECTED and leaves a
+ human-review artifact.
+
+3 CONTEXT
+ Restored session context, project instructions, and bounded repository mapping.
+
+4 CONTEXT_SHOW
+ Command: AGENT/CONTEXT/SHOW
+ Performs: Shows restored context for the current persistent session.
+ Use when: Verifying what state was recovered after resume/restart.
+
+4 INSTRUCTIONS
+ Command: AGENT/INSTRUCTIONS
+ Performs: Shows project-instruction discovery status.
+ Use when: Checking whether repository instruction files were found and loaded.
+
+4 INSTRUCTIONS_STATUS
+ Command: AGENT/INSTRUCTIONS/STATUS
+ Performs: Explicit status form of project-instruction discovery.
+ Use when: A script or operator wants the status operation to be unambiguous.
+
+4 INSTRUCTIONS_SHOW
+ Command: AGENT/INSTRUCTIONS/SHOW
+ Performs: Shows loaded project instructions.
+ Use when: Inspecting the exact rules that will constrain agent behavior.
+
+4 INSTRUCTIONS_RELOAD
+ Command: AGENT/INSTRUCTIONS/RELOAD
+ Performs: Reloads project instructions from disk.
+ Use when: Instruction files changed and future agent runs should use them immediately.
+
+4 PROJECT_MAP
+ Command: AGENT/PROJECT/MAP
+ Performs: Shows a bounded repository map.
+ Use when: A compact structural view is needed for human/model context.
+
+4 PROJECT_FILES
+ Command: AGENT/PROJECT/FILES
+ Performs: Shows a bounded repository file inventory.
+ Use when: Discovering files without an unbounded tree dump.
+
+4 PROJECT_SOURCES
+ Command: AGENT/PROJECT/SOURCES
+ Performs: Shows likely source files.
+ Use when: Locating production code while excluding obvious tests/control files.
+
+4 PROJECT_TESTS
+ Command: AGENT/PROJECT/TESTS
+ Performs: Shows likely regression/test files.
+ Use when: Finding validation coverage relevant to a change.
+
+4 PROJECT_BUILD
+ Command: AGENT/PROJECT/BUILD
+ Performs: Shows likely build/control files.
+ Use when: Diagnosing how the project compiles or which procedures drive acceptance.
+
+4 PROJECT_CONTEXT
+ Command: AGENT/PROJECT/CONTEXT
+ Performs: Shows repository context injected into agent runs.
+ Use when: Diagnosing model assumptions about project structure.
+
+4 PROJECT_REFRESH
+ Command: AGENT/PROJECT/REFRESH
+ Performs: Refreshes the cached repository map.
+ Use when: Files were added, removed, or reorganized and context is stale.
+
+3 PATCHING
+ Structured multi-hunk agent patch workflow.
+
+4 AGENT_PATCH
+ Command: AGENT/PATCH patch-file
+ Performs: Applies one prevalidated structured multi-hunk patch file.
+ Use when: A reviewed structured patch should be applied through the guarded path.
+
+4 AGENT_PATCH_DRY
+ Command: AGENT/PATCH/DRY patch-file
+ Performs: Validates a structured patch without writing.
+ Use when: Doing the first applicability check before a multi-hunk patch.
+
+4 AGENT_PATCH_VALIDATE
+ Command: AGENT/PATCH/VALIDATE patch-file
+ Performs: Validates every structured patch hunk without writing.
+ Use when: Detailed whole-patch applicability evidence is needed before mutation.
+
+4 AGENT_PATCH_LAST
+ Command: AGENT/PATCH/LAST
+ Performs: Shows the most recent structured patch result.
+ Use when: Inspecting the recorded outcome immediately after validation/application.
