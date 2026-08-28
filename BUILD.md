@@ -12,16 +12,16 @@ $ @BUILD
 
 The procedure determines the project directory from its own filespec, creates `[.TEST]` and `[.BUILD]` when needed, bounds old generated file versions in `[.BUILD]`, compiles and links the program and its supporting test images, runs the regression suite, restores the caller's default directory, and returns the final OpenVMS status.
 
-A successful build ends with:
+A successful 1.0.0 build ends with:
 
 ```text
-Building OVMS Agent Version 2...
+Building OVMS Agent Version 1.0.0...
 All regression tests passed.
 Build completed successfully.
 Run with: $ @OVMS_AGENT
 ```
 
-For milestone acceptance, save and display the final status explicitly when requested. The established successful build status is:
+For milestone and release acceptance, save and display the final status explicitly when requested. The established successful build status is:
 
 ```text
 %X00000001
@@ -130,6 +130,8 @@ The accepted workflow is:
 6. Save the final status.
 7. Verify `git status --short` and `git diff --name-only` are empty and `core.filemode=false`.
 8. Promote only after the acceptance evidence is complete.
+
+For a release candidate, also verify the runtime `VERSION` command and normal startup banner report the intended semantic version before promotion.
 
 See `CONTRIBUTING.md` for the full milestone workflow.
 
