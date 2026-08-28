@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T09:59:51-05:00",
+  "updated_at": "2026-08-28T10:08:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -9,24 +9,57 @@
     "latest_code_milestone": "M280"
   },
   "pre_feature_baseline": {
-    "status": "SUPERSEDED_BY_M280",
+    "status": "READY_FOR_NEW_FEATURE",
     "branch": "main",
-    "head": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "tag": "m279"
+    "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+    "tag": "m280",
+    "github_hygiene": {
+      "open_issues": 0,
+      "open_prs": 0,
+      "branches": ["main", "chat-session-state", "m279-legacy-backlog-closure", "m280-interactive-settings"],
+      "retention": "M279 and M280 are the two retained completed milestone branches; M278 development branch pruned after permanent m278 tag verification."
+    },
+    "vax_hygiene": {
+      "branch": "main",
+      "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+      "git_status_short": "empty",
+      "git_diff_name_only": "empty",
+      "core_filemode": "false"
+    },
+    "vax_baseline_build": {
+      "output": "All regression tests passed; Build completed successfully",
+      "saved_status": "%X00000001"
+    },
+    "next_action": "When the user supplies the next feature, create a GitHub tracking issue and a new milestone development branch from canonical main 717e54fb88003deba0efc2b253b72caedf2feaa8, then materialize only the required branch delta on VAX with RMS-aware restore before acceptance testing."
   },
   "m280": {
     "issue": 105,
-    "status": "COMPLETED_PROMOTED_PENDING_TAG_AND_RETENTION_CLEANUP",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m280-interactive-settings",
     "baseline_main": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "vax_accepted_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
+    "vax_accepted_feature_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
     "promoted_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
     "promotion_pr": 106,
-    "promotion_tree_check": "Promoted merge is one commit beyond accepted M280 head with zero changed files; promoted main therefore has the separately VAX-accepted tree. Merge SHA itself was not separately VAX-run.",
+    "promotion_tree_check": "Promoted merge is one commit beyond accepted feature head with zero changed files, and the promoted merge SHA 717e54fb88003deba0efc2b253b72caedf2feaa8 was subsequently run on VAX with the full canonical build passing.",
+    "tag": {
+      "name": "m280",
+      "sha": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+      "remote_verified": true
+    },
+    "retention": {
+      "retained_completed_branches": ["m279-legacy-backlog-closure", "m280-interactive-settings"],
+      "pruned_completed_branch": "m278-github-service-completion",
+      "remote_prune_verified": true,
+      "permanent_tags": {
+        "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+        "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
+        "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8"
+      }
+    },
     "accepted_evidence": {
-      "build": "All regression tests passed; Build completed successfully",
-      "saved_status": "%X00000001",
+      "feature_head_build": "All regression tests passed; Build completed successfully; M280_BUILD_STATUS=%X00000001",
       "runtime": "Focused SETTINGS runtime acceptance complete: numbered menu, provider/approval submenus, RETURN-to-keep behavior, immediate toggles, value persistence across restart, noninteractive SHOW/GET/SET/TOGGLE, and legacy logical override precedence/warnings.",
+      "promoted_main_build": "All regression tests passed; Build completed successfully; M280_MAIN_STATUS=%X00000001",
       "tracked_diff": "empty",
       "git_status_short": "empty",
       "core_filemode": "false",
@@ -35,18 +68,13 @@
     "prior_acceptance_failures": [
       "3222e1d4a8f09e0ff9d28242b500691672287a52: M251_ROOT_TEST.EXE link exposed SETTINGS integration references",
       "61f2b4cc44ca1b34ce0e7779282587bf0930e44d: M251_KEY_TEST.EXE isolated link lacked SETTINGS_EFFECTIVE_BOOL fallback stub"
-    ],
-    "next_action": "Create and verify permanent lightweight tag m280 at promoted main 717e54fb88003deba0efc2b253b72caedf2feaa8 using the established GITAUTH VAX path, then apply branch retention: keep completed M279 and M280 branches and prune completed M278 only after verifying tag m278. Finally synchronize the clean VAX checkout to promoted main if desired and record final hygiene."
+    ]
   },
   "m279": {
     "issue": 97,
     "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m279-legacy-backlog-closure",
-    "vax_green_code_head": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
-    "vax_accepted_reconciliation_head": "89bab2473c56b46bf463318a641c1f69d52a402d",
     "promoted_main": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "promotion_pr": 104,
-    "promotion_tree_check": "Promoted merge is one commit beyond accepted reconciliation head with zero changed files; promoted main therefore has the separately VAX-accepted tree. Merge SHA itself was not separately VAX-run.",
     "tag": {
       "name": "m279",
       "sha": "5feaae97699c3eb124144bdbef978564f619f42a",
