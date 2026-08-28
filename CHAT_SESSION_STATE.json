@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T10:34:00-05:00",
+  "updated_at": "2026-08-28T10:35:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -33,10 +33,19 @@
   },
   "m281": {
     "issue": 107,
-    "status": "ACTIVE_CORRECTIVE_CANDIDATE_PENDING_VAX_BUILD",
+    "status": "ACTIVE_VAX_GREEN_BUILD_PENDING_RUNTIME_ACCEPTANCE",
     "branch": "m281-settings-auto-limits",
     "baseline_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
     "candidate_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+    "latest_vax_green_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+    "vax_build_acceptance": {
+      "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+      "output": "All regression tests passed; Build completed successfully",
+      "saved_status": "%X00000001",
+      "git_status_short": "empty",
+      "git_diff_name_only": "empty",
+      "core_filemode": "false"
+    },
     "failed_candidate": {
       "head": "0d53197741ec39597cd9d953c513f0e301d1fe78",
       "vax_status": "%X1789A0C0",
@@ -73,7 +82,7 @@
       "settings_regression": "Existing M280_SETTINGS_TEST build path compiles and runs the expanded persistence regression before COMMAND_SETTINGS.C.",
       "identifier_audit": "No new linker-visible identifiers; new COMMAND_SETTINGS helpers and restored llm_auto_env_limit are static."
     },
-    "next_action": "On VAX fetch exact corrective head ece9d5525882242141f5f62b556ec4ab71393d12, advance local M281 ref from failed head 0d53197741ec39597cd9d953c513f0e301d1fe78, RMS-restore only SRC/LLM_AUTO_CORE.INC, verify clean worktree/core.filemode=false, then rerun canonical @BUILD and save status. Do not call candidate VAX-green until that exact build passes."
+    "next_action": "Run focused live SETTINGS acceptance on exact VAX-green head ece9d5525882242141f5f62b556ec4ab71393d12, preserving/restoring SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT. Verify entries 9/10, GET/SET, range rejection, same-session AGENT/AUTO/LIMITS effect, persistence across restart, and legacy OVMS_AGENT_AUTO_TURNS/OVMS_AGENT_AUTO_WRITES override reporting/warnings. Then recheck clean worktree before reconciliation/promotion."
   },
   "m280": {
     "issue": 105,
