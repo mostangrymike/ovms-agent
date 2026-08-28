@@ -42,11 +42,40 @@ guarded GitHub operations
 
 persistent AI provider and GitHub profiles
 
+interactive persistent user settings
+
 multilingual OpenVMS development support
 
 The current language-awareness layer explicitly supports C, OpenVMS commands, MACRO-32, Fortran, BASIC, Pascal, COBOL, and BLISS.
 
 OVMS Agent does not assume that every compiler is installed. The project's own BUILD.COM remains authoritative for how a project is built.
+
+Interactive Settings
+
+Normal users can configure OVMS Agent from inside the program instead of defining OpenVMS logical names by hand.
+
+Run:
+
+SETTINGS
+
+The numbered menu currently covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, and network allow/deny lists. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
+
+Ordinary settings are saved automatically in:
+
+SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT
+
+Provider and model changes continue to use the existing provider-profile store in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT`, so provider credentials and model state are not duplicated.
+
+Useful noninteractive forms are:
+
+SETTINGS SHOW
+SETTINGS GET name
+SETTINGS SET name value
+SETTINGS TOGGLE name
+SETTINGS RESET
+SETTINGS RELOAD
+
+Existing `OVMS_AGENT_*` logical-name settings remain compatible for callers and automation that already use them. When a supported legacy logical is defined, it overrides the corresponding saved ordinary setting; SETTINGS marks that condition instead of silently replacing the explicit environment.
 
 AI Provider Configuration
 
@@ -127,6 +156,7 @@ QUIT
 First Commands to Try
 
 HELP
+SETTINGS
 ROOT
 TREE
 STATUS
