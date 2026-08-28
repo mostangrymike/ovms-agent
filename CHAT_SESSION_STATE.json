@@ -1,34 +1,35 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T11:48:00-05:00",
+  "updated_at": "2026-08-28T12:08:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-    "latest_milestone": "M282",
+    "head": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
+    "latest_milestone": "M283",
     "latest_code_milestone": "M281",
     "vax_green_code_baseline": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-    "m282_content_tree_vax_validated": true
+    "documentation_only_since_code_baseline": ["M282", "M283"]
   },
   "github_hygiene": {
-    "status": "COMPLETE",
+    "status": "M283_PROMOTED_HOUSEKEEPING_PENDING",
     "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
       "m281-settings-auto-limits",
-      "m282-vms-help-reference"
+      "m282-vms-help-reference",
+      "m283-root-docs"
     ],
-    "retained_completed_branches": [
-      "m281-settings-auto-limits",
-      "m282-vms-help-reference"
+    "desired_retained_completed_branches": [
+      "m282-vms-help-reference",
+      "m283-root-docs"
     ],
-    "pruned_completed_branches": [
-      "m278-github-service-completion",
-      "m279-legacy-backlog-closure",
-      "m280-interactive-settings"
+    "pending_housekeeping": [
+      "Create permanent lightweight tag m283 at promoted main 4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400.",
+      "After verifying m283 tag, delete completed branch m281-settings-auto-limits; retain M282 and M283 as the two most recent completed milestone branches.",
+      "Synchronize the VAX checkout/ref set to promoted M283 main and the retained M282/M283 branch set."
     ],
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
@@ -36,11 +37,10 @@
       "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
       "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
-    },
-    "note": "GitHub branch retention and permanent tags are compliant through M282. No open product issues or pull requests remain."
+    }
   },
   "vax_hygiene": {
-    "status": "COMPLETE",
+    "status": "CLEAN_AT_M282_PENDING_REF_SYNC_TO_M283",
     "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
     "branch": "main",
     "local_branches": [
@@ -56,39 +56,52 @@
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false",
-    "m282_help_test_library": "absent",
-    "m281_settings_107_save": "absent",
-    "m281_turns_save": "absent",
-    "verified_local_tags": {
-      "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
+    "remaining": [
+      "Fetch promoted M283 main and move local main ref to 4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400.",
+      "Create/push m283 tag and prune M281 branch/ref after remote verification.",
+      "Populate local/remote-tracking M283 and remove local/remote-tracking M281 after remote branch deletion."
+    ]
+  },
+  "m283": {
+    "issue": 111,
+    "status": "COMPLETED_PROMOTED_HOUSEKEEPING_PENDING",
+    "branch": "m283-root-docs",
+    "baseline_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+    "reviewed_head": "9b2a33f975cadc8bdc2ef122b322ae3c0791523c",
+    "reviewed_tree": "b8c3da340e6a1c2a84a30437d200f6af4807c470",
+    "promotion_pr": 112,
+    "promoted_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
+    "promotion_tree": "b8c3da340e6a1c2a84a30437d200f6af4807c470",
+    "tree_equivalence": "GitHub compare from reviewed head 9b2a33f... to promoted merge 4d4598e... reports one commit ahead and zero changed files; promoted main is exactly the reviewed documentation tree.",
+    "acceptance": {
+      "type": "GitHub exact-content documentation review",
+      "full_product_build_required": false,
+      "vax_runtime_gate_required": false,
+      "reason": "M283 changes only Markdown/reference files; no source, build procedure, launcher, linker options, OVMS_AGENT.HLP, or runtime configuration behavior changed."
     },
-    "remaining": []
+    "delta": [
+      "ARCHITECTURE.md",
+      "BUILD.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "INSTALL.md",
+      "README.md",
+      "SECURITY.md"
+    ],
+    "goal": "Add a conventional root documentation set grounded in the actual OVMS Agent OpenVMS/VAX development and operating workflow.",
+    "tag": {
+      "name": "m283",
+      "target": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
+      "created": false,
+      "reason_pending": "Current GitHub connector still exposes no tag-create mutation."
+    }
   },
   "m282": {
     "issue": 109,
     "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m282-vms-help-reference",
-    "baseline_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-    "vax_validated_feature_head": "5a53306cee8e989ed547f8eee0db885ae1c4ac27",
-    "validated_tree": "19a1e998559114a81115eed256490429ead35974",
-    "promotion_pr": 110,
     "promoted_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-    "promotion_tree": "19a1e998559114a81115eed256490429ead35974",
-    "tree_equivalence": "The promoted merge and separately VAX HELP-validated feature head have identical tree SHA 19a1e998559114a81115eed256490429ead35974.",
-    "acceptance": {
-      "library_create": "LIBRARY/HELP/CREATE=(KEYSIZE:64) succeeded with odd OpenVMS status %X10000001.",
-      "help_hierarchy": "Representative root, SETTINGS, normal command, nested automation, refactor, and repair-history HELP topic hierarchy was confirmed working on canonical VAX.",
-      "git_status_short": "empty",
-      "git_diff_name_only": "empty",
-      "core_filemode": "false",
-      "full_product_build_required": false
-    },
-    "goal": "Create a root-level OpenVMS HELP source documenting every current user-facing command and persistent setting, including both behavior and when/why the user would choose it.",
-    "candidate_delta": [
-      "OVMS_AGENT.HLP",
-      "RULES.md"
-    ],
+    "validated_tree": "19a1e998559114a81115eed256490429ead35974",
     "tag": {
       "name": "m282",
       "sha": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
@@ -97,61 +110,13 @@
   },
   "m281": {
     "issue": 107,
-    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_TAGGED_PRUNE_PENDING_AFTER_M283",
     "branch": "m281-settings-auto-limits",
-    "baseline_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "failed_candidate": {
-      "head": "0d53197741ec39597cd9d953c513f0e301d1fe78",
-      "vax_status": "%X1789A0C0",
-      "diagnostic": "DEC C implicit declaration and linker undefined symbol for llm_auto_env_limit / LLM_AUTO_ENV_LIMIT.",
-      "root_cause": "SRC/LLM_AUTO_CREATE_M279.INC still uses the private environment parser for the separate OVMS_AGENT_AUTO_CREATES ceiling; M281 had removed that helper while migrating only turn/write limits."
-    },
-    "vax_accepted_feature_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
-    "promotion_pr": 108,
     "promoted_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-    "promotion_tree": "07628e67386d470e9c81bb0926c5dbe8ce243858",
-    "feature_head_acceptance": {
-      "build": "All regression tests passed; Build completed successfully",
-      "saved_status": "%X00000001",
-      "runtime": "Complete: SETTINGS entries 9/10, immediate changes, GET/SET, range rejection, restart persistence, no-logical defaults/saved values, and legacy logical override precedence/warnings.",
-      "git_status_short": "empty",
-      "git_diff_name_only": "empty",
-      "core_filemode": "false"
-    },
-    "promoted_main_acceptance": {
-      "head": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "branch": "main",
-      "build": "All regression tests passed; Build completed successfully",
-      "saved_status": "%X00000001",
-      "git_status_short": "empty",
-      "git_diff_name_only": "empty",
-      "core_filemode": "false"
-    },
+    "vax_accepted_feature_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
     "tag": {
       "name": "m281",
       "sha": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "remote_verified": true
-    }
-  },
-  "m280": {
-    "issue": 105,
-    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNED",
-    "branch": "m280-interactive-settings",
-    "promoted_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "tag": {
-      "name": "m280",
-      "sha": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-      "remote_verified": true
-    }
-  },
-  "m279": {
-    "issue": 97,
-    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNED",
-    "branch": "m279-legacy-backlog-closure",
-    "promoted_main": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "tag": {
-      "name": "m279",
-      "sha": "5feaae97699c3eb124144bdbef978564f619f42a",
       "remote_verified": true
     }
   },
