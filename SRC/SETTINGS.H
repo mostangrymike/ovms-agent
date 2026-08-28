@@ -24,5 +24,6 @@ long settings_effective_long(const char *key,
                              long maximum);
 const char *settings_value_source(const char *key,
                                   const char *logical_name);
+void settings_test_path(const char *path);
 
 #endif /* OVMS_AGENT_SETTINGS_H */
