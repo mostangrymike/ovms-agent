@@ -54,6 +54,11 @@ static int goal_guard_word_eq(const char *text,
     return 1;
 }
 
+static int goal_guard_incidental(const char *text, size_t length)
+{
+    return goal_guard_word_eq(text, length, "NULL");
+}
+
 static int goal_guard_remove_intent(const char *goal_start,
                                     const char *token_start)
 {
@@ -202,6 +207,7 @@ static int goal_guard_text_ok(const char *goal,
 
         if (goal_guard_code_token(token_start, token_length) &&
             token_length < 128U &&
+            !goal_guard_incidental(token_start, token_length) &&
             !goal_guard_remove_intent(goal_start, token_start)) {
             char token[128];
 

@@ -18,3 +18,4 @@
 #undef llm_auto_finish
 
 #include "LLM_AUTOPILOT_AUTO.INC"
+#include "LLM_AUTO_CREATE_M279.INC"

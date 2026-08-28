@@ -3,6 +3,7 @@
 #include "llm_internal.h"
 #include "LLM_IMAGE.H"
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_REQUEST_LIMIT.INC"
 
 int write_agent_image_req(const char *model,
                           const char *instructions,
@@ -37,6 +38,10 @@ int write_agent_image_req(const char *model,
         success = allow_write ?
             write_agent_tools_with_replace(file) :
             write_agent_tools(file);
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
     }
 
     if (success &&

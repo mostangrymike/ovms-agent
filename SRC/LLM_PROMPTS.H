@@ -7,21 +7,70 @@ const char *llm_prompt_write(void);
 const char *llm_prompt_create(void);
 
 /*
- * The agent loop includes the internal header before this header. Keep the
- * supervised-repair guard file-local and intercept only replacement calls
- * made by that loop.
+ * The M279 supervised-write interception is implementation-local to the
+ * agent loop. Other internal translation units also include this public
+ * prompt header, so they must not inherit macros that capture the loop's
+ * build_after_write or descriptor locals.
  */
-#if defined(LLM_INTERNAL_H)
+#if defined(LLM_AGENT_LOOP_PROMPT_GUARD)
+#include "LLM_AUTO.H"
 #include "LLM_GOAL_GUARD.INC"
+
+static int llm_guard_write_kind(
+    const llm_tool_descriptor *descriptor,
+    int build_after_write)
+{
+    if (llm_tool_is_replace(descriptor)) {
+        return 1;
+    }
+
+    return !build_after_write &&
+           descriptor != NULL &&
+           descriptor->kind == LLM_TOOL_CREATE_FILE;
+}
+
+static int llm_guard_allow_write(
+    const llm_tool_descriptor *descriptor,
+    int build_after_write)
+{
+    if (!build_after_write &&
+        descriptor != NULL &&
+        descriptor->kind == LLM_TOOL_CREATE_FILE) {
+        return llm_auto_allow_create();
+    }
+
+    return llm_auto_allow_write();
+}
 
 static llm_replace_result llm_guard_rep_text(
     const char *goal_text,
     int enforce,
+    const llm_tool_descriptor *descriptor,
     agent_state *state,
     const char *arguments,
     char **display_path)
 {
     char reason[256];
+
+    if (!enforce &&
+        descriptor != NULL &&
+        descriptor->kind == LLM_TOOL_CREATE_FILE) {
+        llm_create_result create_result;
+
+        (void)state;
+        create_result = execute_create_file_tool(
+            arguments,
+            display_path
+        );
+
+        if (create_result == LLM_CREATE_CREATED) {
+            return LLM_REPLACE_APPLIED;
+        }
+        if (create_result == LLM_CREATE_DECLINED) {
+            return LLM_REPLACE_DECLINED;
+        }
+        return LLM_REPLACE_ERROR;
+    }
 
     if (enforce &&
         !goal_guard_args_ok(
@@ -86,9 +135,15 @@ static llm_replace_result llm_guard_rep_lines(
     return execute_replace_lines_tool(state, arguments, display_path);
 }
 
+#define llm_tool_is_replace(descriptor) \
+    llm_guard_write_kind(descriptor, build_after_write)
+
+#define llm_auto_allow_write() \
+    llm_guard_allow_write(descriptor, build_after_write)
+
 #define execute_replace_text_tool(state, arguments, display_path) \
     llm_guard_rep_text( \
-        goal, build_after_write, state, arguments, display_path)
+        goal, build_after_write, descriptor, state, arguments, display_path)
 
 #define execute_replace_lines_tool(state, arguments, display_path) \
     llm_guard_rep_lines( \

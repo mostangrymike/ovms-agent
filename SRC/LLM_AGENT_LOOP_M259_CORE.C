@@ -69,6 +69,12 @@ int llm_test_agent_image_req(const char *model,
     return result;
 }
 
+#define LLM_AGENT_LOOP_PROMPT_GUARD 1
 #define write_agent_request_mode m259_agent_request
 #include "LLM_AGENT_LOOP.C"
 #undef write_agent_request_mode
+#undef execute_replace_lines_tool
+#undef execute_replace_text_tool
+#undef llm_auto_allow_write
+#undef llm_tool_is_replace
+#undef LLM_AGENT_LOOP_PROMPT_GUARD

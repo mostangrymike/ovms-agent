@@ -30,6 +30,18 @@ static int schema_read_tools(FILE *file)
     ) != EOF;
 }
 
+static int schema_create_tool(FILE *file)
+{
+    return fputs(
+        "{\"type\":\"function\",\"name\":\"create_file\","
+        "\"description\":\"Create one new project-relative text file. The destination must not already exist.\","
+        "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
+        "\"content\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\",\"content\"],\"additionalProperties\":false},\"strict\":true}",
+        file
+    ) != EOF;
+}
+
 int write_agent_tools(FILE *file)
 {
     if (file == NULL) return 0;
@@ -44,7 +56,7 @@ int write_agent_tools_with_replace(FILE *file)
     if (fputs("\"tools\":[", file) == EOF) return 0;
     if (!schema_read_tools(file)) return 0;
 
-    return fputs(
+    if (fputs(
         ",{\"type\":\"function\",\"name\":\"replace_text\","
         "\"description\":\"Replace one exact, unique text block in a project-relative file.\","
         "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
@@ -65,9 +77,12 @@ int write_agent_tools_with_replace(FILE *file)
         "All hunks are validated against the original file before any write.\","
         "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
         "\"patch\":{\"type\":\"string\"}},"
-        "\"required\":[\"path\",\"patch\"],\"additionalProperties\":false},\"strict\":true}]",
+        "\"required\":[\"path\",\"patch\"],\"additionalProperties\":false},\"strict\":true},",
         file
-    ) != EOF;
+    ) == EOF) return 0;
+
+    if (!schema_create_tool(file)) return 0;
+    return fputc(']', file) != EOF;
 }
 
 int write_agent_tools_with_create(FILE *file)
@@ -75,14 +90,9 @@ int write_agent_tools_with_create(FILE *file)
     if (file == NULL) return 0;
     if (fputs("\"tools\":[", file) == EOF) return 0;
     if (!schema_read_tools(file)) return 0;
-    return fputs(
-        ",{\"type\":\"function\",\"name\":\"create_file\","
-        "\"description\":\"Create one new project-relative text file. The destination must not already exist.\","
-        "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
-        "\"content\":{\"type\":\"string\"}},"
-        "\"required\":[\"path\",\"content\"],\"additionalProperties\":false},\"strict\":true}]",
-        file
-    ) != EOF;
+    if (fputc(',', file) == EOF) return 0;
+    if (!schema_create_tool(file)) return 0;
+    return fputc(']', file) != EOF;
 }
 
 int write_build_agent_tools(FILE *file)

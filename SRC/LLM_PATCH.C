@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "LLM_PATCH.H"
 #include "ANSI_TERM.H"
+#include "llm_internal.h"
 
 static int m273_patch_marker(const char *line, const char *marker)
 {
@@ -60,9 +62,24 @@ static void m273_patch_preview(const char *path)
     (void)fclose(file);
 }
 
+static char *m279_patch_getenv(const char *name)
+{
+    const char *policy;
+
+    if (name != NULL &&
+        strcmp(name, "OVMS_AGENT_APPROVAL_POLICY") == 0) {
+        policy = llm_approval_name();
+        return (char *)(policy != NULL ? policy : "read-only");
+    }
+
+    return getenv(name);
+}
+
+#define getenv m279_patch_getenv
 #define llm_patch_apply_cmd m273_patch_apply_core
 #include "LLM_PATCH_CORE.INC"
 #undef llm_patch_apply_cmd
+#undef getenv
 
 void llm_patch_apply_cmd(const char *arguments)
 {

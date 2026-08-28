@@ -4,6 +4,12 @@
 
 #include "llm_internal.h"
 #include "LLM_REQUEST_AGENT.H"
+#include "LLM_RESPONSE.H"
+
+#define M279_LARGE_EDIT_TEST "M279_LARGE_EDIT.TMP"
+
+int llm_m279_edit_read_ok(const char *path,
+                          unsigned long minimum);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -85,9 +91,15 @@ static int write_response_fixture(void)
     }
 
     if (fputs(
-            "{\"output\":[{\"type\":\"function_call\","
+            "{\"output\":["
+            "{\"type\":\"reasoning\",\"id\":\"rs_m279\"},"
+            "{\"type\":\"function_call\","
             "\"call_id\":\"call_m251_last\","
             "\"name\":\"search_file\","
+            "\"arguments\":\"{}\"},"
+            "{\"type\":\"function_call\","
+            "\"call_id\":\"call_m279_orphan\","
+            "\"name\":\"read_file\","
             "\"arguments\":\"{}\"}]}\n",
             file) == EOF) {
         (void)fclose(file);
@@ -116,6 +128,131 @@ static int test_nonempty_output(void)
     return ok;
 }
 
+static int test_empty_completed(void)
+{
+    static const char empty_response[] =
+        "{\"status\":\"completed\",\"output\":[],"
+        "\"usage\":{\"output_tokens\":7,\"total_tokens\":26}}";
+    static const char nonempty_response[] =
+        "{\"status\":\"completed\",\"output\":[{"
+        "\"type\":\"message\"}],\"usage\":{\"output_tokens\":7}}";
+    long tokens;
+
+    tokens = 0L;
+    if (!llm_response_empty_completed(empty_response, &tokens) ||
+        tokens != 7L) {
+        return 0;
+    }
+
+    tokens = 0L;
+    return !llm_response_empty_completed(nonempty_response, &tokens);
+}
+
+static int test_tool_like_text(void)
+{
+    static const char read_text[] =
+        "[[{\"name\":\"read_file_range\",\"parameters\":{"
+        "\"path\":\"SRC/X.C\",\"start_line\":1,\"end_line\":2}}]]";
+    static const char write_text[] =
+        "{\"name\":\"replace_text\",\"arguments\":{"
+        "\"path\":\"SRC/X.C\",\"old_text\":\"a\","
+        "\"new_text\":\"b\"}}";
+    char name[64];
+
+    if (!llm_text_tool_like(read_text, name, sizeof(name)) ||
+        strcmp(name, "read_file_range") != 0) {
+        return 0;
+    }
+
+    if (!llm_text_tool_like(write_text, name, sizeof(name)) ||
+        strcmp(name, "replace_text") != 0) {
+        return 0;
+    }
+
+    if (llm_text_tool_like(
+            "I will use read_file_range next.",
+            name,
+            sizeof(name))) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static int test_tool_model_compat(void)
+{
+    if (llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-120b")) {
+        return 0;
+    }
+
+    if (llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-20b")) {
+        return 0;
+    }
+
+    if (!llm_m279_tool_model_ok(
+            "https://api.groq.com/openai/v1",
+            "qwen/qwen3-32b")) {
+        return 0;
+    }
+
+    if (!llm_m279_tool_model_ok(
+            "https://openrouter.ai/api/v1",
+            "openai/gpt-oss-120b")) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static int request_has_default_limit(void)
+{
+    char *request;
+    int ok;
+
+    request = read_request();
+    if (request == NULL) {
+        return 0;
+    }
+
+    ok = strstr(request, "\"max_output_tokens\":2048") != NULL;
+    free(request);
+    return ok;
+}
+
+static int test_large_edit_reader(void)
+{
+    FILE *file;
+    unsigned long index;
+    int ok;
+
+    remove_all(M279_LARGE_EDIT_TEST);
+    file = fopen(M279_LARGE_EDIT_TEST, "wb");
+    if (file == NULL) {
+        return 0;
+    }
+
+    for (index = 0UL; index < 35000UL; ++index) {
+        if (fputs("A\n", file) == EOF) {
+            (void)fclose(file);
+            remove_all(M279_LARGE_EDIT_TEST);
+            return 0;
+        }
+    }
+
+    if (fclose(file) != 0) {
+        remove_all(M279_LARGE_EDIT_TEST);
+        return 0;
+    }
+
+    ok = llm_m279_edit_read_ok(M279_LARGE_EDIT_TEST, 70000UL);
+    remove_all(M279_LARGE_EDIT_TEST);
+    return ok;
+}
+
 int main(void)
 {
     char *request;
@@ -124,6 +261,34 @@ int main(void)
     if (!test_nonempty_output()) {
         (void)puts(
             "M251 failed: empty output_text masked later synthesis."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_empty_completed()) {
+        (void)puts(
+            "M279 failed: completed empty response classification was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_tool_like_text()) {
+        (void)puts(
+            "M279 failed: tool-like assistant text classifier was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_tool_model_compat()) {
+        (void)puts(
+            "M279 failed: provider tool-transport compatibility matrix invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_large_edit_reader()) {
+        (void)puts(
+            "M279 failed: guarded edit reader retained REVIEW size ceiling."
         );
         return EXIT_FAILURE;
     }
@@ -140,6 +305,14 @@ int main(void)
             NULL,
             0)) {
         (void)puts("M251 failed: initial local-context request failed.");
+        remove_all(LLM_REQUEST_FILE);
+        return EXIT_FAILURE;
+    }
+
+    if (!request_has_default_limit()) {
+        (void)puts(
+            "M279 failed: agent request omitted default output-token cap."
+        );
         remove_all(LLM_REQUEST_FILE);
         return EXIT_FAILURE;
     }
@@ -175,13 +348,16 @@ int main(void)
         strstr(request, "\"model\":\"m251-test-model\"") != NULL &&
         strstr(request, "\"previous_response_id\"") == NULL &&
         strstr(request, "M251 synthesis goal") != NULL &&
+        strstr(request, "\"type\":\"reasoning\"") != NULL &&
         strstr(request,
             "\"type\":\"function_call\"") != NULL &&
         strstr(request,
             "\"type\":\"function_call_output\"") != NULL &&
         strstr(request, "\"call_id\":\"call_m251_last\"") != NULL &&
+        strstr(request, "call_m279_orphan") == NULL &&
         strstr(request, "\"output\":\"last tool result\"") != NULL &&
         strstr(request, "Produce the final answer now") != NULL &&
+        strstr(request, "\"max_output_tokens\":2048") != NULL &&
         strstr(request, "\"parallel_tool_calls\":false") != NULL &&
         strstr(request, "\"tools\"") == NULL &&
         strstr(request, "\"tool_choice\"") == NULL;
@@ -198,5 +374,9 @@ int main(void)
     }
 
     (void)puts("M251 final synthesis request test passed.");
+    (void)puts("M279 sibling tool-call filtering test passed.");
+    (void)puts("M279 tool-like assistant text test passed.");
+    (void)puts("M279 GPT-OSS transport guard test passed.");
+    (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }

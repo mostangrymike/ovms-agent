@@ -1,8 +1,24 @@
 #include <stdio.h>
 
 #include "llm_internal.h"
+#include "LLM_REQUEST_AGENT.H"
 #include "LLM_REQUEST_BUILD.H"
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_REQUEST_LIMIT.INC"
+
+static int m279_build_model_check(const char *model)
+{
+    if (llm_m279_tool_model_ok(llm_api_url(), model)) {
+        return 1;
+    }
+
+    (void)puts(
+        "Groq GPT-OSS agent tool workflows are not supported through the "
+        "Responses transport. Use a Groq model with working Responses tool "
+        "calls or another provider."
+    );
+    return 0;
+}
 
 int write_build_initial_request(
     const char *model,
@@ -11,6 +27,10 @@ int write_build_initial_request(
 {
     FILE *file;
     int success;
+
+    if (!m279_build_model_check(model)) {
+        return 0;
+    }
 
     file = fopen(LLM_REQUEST_FILE, "w");
 
@@ -34,8 +54,16 @@ int write_build_initial_request(
         fputs(",\"tool_choice\":{" 
               "\"type\":\"function\","
               "\"name\":\"run_build\""
-              "},\"store\":false,"
-              "\"parallel_tool_calls\":false}\n", file) == EOF) {
+              "},\"store\":false", file) == EOF) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
+    if (success &&
+        fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 
@@ -61,6 +89,10 @@ int write_build_followup_request(
     FILE *file;
     int success;
 
+    if (!m279_build_model_check(model)) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
 
     if (file == NULL) {
@@ -85,8 +117,16 @@ int write_build_followup_request(
         !json_write_escaped(file, tool_output) ||
         fputs("\"}],", file) == EOF ||
         !write_build_agent_tools(file) ||
-        fputs(",\"store\":false,"
-              "\"parallel_tool_calls\":false}\n", file) == EOF) {
+        fputs(",\"store\":false", file) == EOF) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
+    if (success &&
+        fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
 

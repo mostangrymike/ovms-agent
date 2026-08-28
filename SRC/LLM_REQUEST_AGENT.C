@@ -8,13 +8,42 @@
 #include "LLM_AGENT_CTX.H"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_AUTO.H"
+#include "LLM_REQUEST_LIMIT.INC"
 
 #define LLM_AGENT_GOAL_MAX 32768U
 
 static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
 
+int llm_m279_tool_model_ok(const char *url,
+                           const char *model)
+{
+    static const char groq_host[] = "api.groq.com";
+    static const char gpt_oss[] = "openai/gpt-oss-";
+
+    if (url == NULL || model == NULL) {
+        return 1;
+    }
+
+    return strstr(url, groq_host) == NULL ||
+           strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) != 0;
+}
+
+static int llm_m279_tool_model_check(const char *model)
+{
+    if (llm_m279_tool_model_ok(llm_api_url(), model)) {
+        return 1;
+    }
+
+    (void)puts(
+        "Groq GPT-OSS agent tool workflows are not supported through the "
+        "Responses transport. Use a Groq model with working Responses tool "
+        "calls or another provider."
+    );
+    return 0;
+}
+
 static int llm_update_local_ctx(const char *call_id,
-                                   const char *tool_output)
+                                const char *tool_output)
 {
     char *json;
     char *items;
@@ -44,9 +73,9 @@ static int llm_update_local_ctx(const char *call_id,
 }
 
 static int llm_write_local_input(FILE *file,
-                                    const char *user_prompt,
-                                    const char *call_id,
-                                    const char *tool_output)
+                                 const char *user_prompt,
+                                 const char *call_id,
+                                 const char *tool_output)
 {
     size_t goal_length;
 
@@ -88,6 +117,10 @@ int write_create_agent_request(
 
     (void)previous_id;
 
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
@@ -122,6 +155,10 @@ int write_create_agent_request(
         }
     }
 
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
     if (success &&
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
@@ -151,6 +188,10 @@ int write_agent_request_mode(const char *model,
     int success;
 
     (void)previous_id;
+
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
 
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
@@ -187,6 +228,11 @@ int write_agent_request_mode(const char *model,
             success = 0;
         }
     }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
     if (success &&
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
@@ -253,7 +299,15 @@ int write_agent_final_request(
         fputs("\",\"instructions\":\"", file) == EOF ||
         !json_write_escaped(file, instructions) ||
         fputs("\",\"input\":", file) == EOF ||
-        !llm_agent_ctx_write_final(file, llm_agent_goal) ||
+        !llm_agent_ctx_write_final(file, llm_agent_goal)) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
+        success = 0;
+    }
+
+    if (success &&
         fputs(",\"parallel_tool_calls\":false}\n", file) == EOF) {
         success = 0;
     }
@@ -282,6 +336,10 @@ int write_agent_request(const char *model,
 
     (void)previous_id;
 
+    if (!llm_m279_tool_model_check(model)) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
@@ -305,6 +363,10 @@ int write_agent_request(const char *model,
     }
 
     if (success && !write_agent_tools(file)) {
+        success = 0;
+    }
+
+    if (success && !llm_write_output_limit(file)) {
         success = 0;
     }
 

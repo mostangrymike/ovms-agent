@@ -13,8 +13,20 @@ void symbol_callers(agent_state *state, const char *symbol);
 void symbol_show(agent_state *state, const char *symbol);
 void symbol_show_function(agent_state *state,
                           const char *symbol);
+
+/*
+ * COMMAND_SYMBOL.C includes command_internal.h before this header.  Keep the
+ * large legacy index translation unit untouched, but route the command-side
+ * SHOW/STRUCT call through the stricter M279 classifier.
+ */
+#ifdef OVMS_AGENT_COMMAND_INTERNAL_H
+#include "SYMBOL_SHOW_M279.INC"
+#define symbol_show_struct m279_show_struct
+#else
 void symbol_show_struct(agent_state *state,
                         const char *symbol);
+#endif
+
 void symbol_show_module(agent_state *state,
                         const char *module);
 void symbol_show_dependencies(agent_state *state,
@@ -88,8 +100,8 @@ int symbol_declaration_order_fix(agent_state *state,
                                  const char *module);
 
 int symbol_decl_fix_limited(agent_state *state,
-                                         const char *module,
-                                         unsigned int limit);
+                            const char *module,
+                            unsigned int limit);
 
 int symbol_decl_fix_auto(agent_state *state,
                          const char *module,
@@ -98,5 +110,33 @@ int symbol_decl_fix_auto(agent_state *state,
 void symbol_decl_fix_diagnose(agent_state *state,
                               const char *module,
                               unsigned int limit);
+
+/*
+ * RENAME/APPLY and RENAME/VERIFY historically wrote C source directly with
+ * stdio and rolled back by assuming an older file version existed. Route only
+ * the command-side entry points through an RMS/version-safe M279 transaction.
+ * Include this before SYMBOL_SYSTEM_M279.INC installs its system() macro.
+ * The fragment's legacy two-argument fgetname shape is adapted locally to
+ * DEC C's native three-argument, pointer-returning interface.
+ */
+#ifdef OVMS_AGENT_COMMAND_INTERNAL_H
+#include <stdio.h>
+int m279_fgetname_ok(FILE *file, char *spec)
+{
+    return fgetname(file, spec, 1) != NULL;
+}
+#define fgetname m279_fgetname_ok
+#include "SYMBOL_RENAME_M279.INC"
+#undef fgetname
+#define symbol_rename_apply m279_rename_apply
+#define symbol_rename_verify m279_rename_verify
+#endif
+
+/*
+ * Refactor verification in SYMBOL_INDEX.C uses system() for controlled build
+ * and object invalidation.  The M279 wrapper delegates every command except
+ * the legacy [.BUILD] object-delete form, which gains flat-root awareness.
+ */
+#include "SYMBOL_SYSTEM_M279.INC"
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
