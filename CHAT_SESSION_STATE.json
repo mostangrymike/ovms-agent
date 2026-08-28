@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:26:00-05:00",
+  "updated_at": "2026-08-28T12:47:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -12,7 +12,7 @@
     "documentation_only_since_code_baseline": ["M282", "M283"]
   },
   "github_hygiene": {
-    "status": "ACTIVE_M284",
+    "status": "ACTIVE_M284_FINAL_CANDIDATE",
     "open_product_issues": [113],
     "open_prs": [],
     "branches": [
@@ -36,31 +36,24 @@
     }
   },
   "vax_hygiene": {
-    "status": "CLEAN_AT_M283_PENDING_M284_ACCEPTANCE",
-    "head": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-    "branch": "main",
-    "local_branches": [
-      "main",
-      "m282-vms-help-reference",
-      "m283-root-docs"
-    ],
-    "remote_tracking_refs": [
-      "origin/main",
-      "origin/m282-vms-help-reference",
-      "origin/m283-root-docs"
-    ],
+    "status": "CLEAN_ON_M284_FINAL_CANDIDATE_PENDING_BUILD",
+    "head": "7123f7a484545292c276ee7b0789df442e15076f",
+    "branch": "m284-v1-release",
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false"
   },
   "m284": {
     "issue": 113,
-    "status": "ACTIVE_RELEASE_CANDIDATE_PENDING_VAX_BANNER_COMMIT_AND_ACCEPTANCE",
+    "status": "FINAL_RELEASE_CANDIDATE_PENDING_VAX_ACCEPTANCE",
     "branch": "m284-v1-release",
     "baseline_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
     "github_head_before_vax_banner": "0ae6a61dd21828374b1852ac54139c97ef685540",
+    "final_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
+    "final_candidate_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
     "goal": "Declare and ship OVMS Agent 1.0.0 as a feature-frozen release-hardening milestone.",
-    "github_delta_before_vax_banner": [
+    "final_delta": [
+      "BUILD.COM",
       "BUILD.md",
       "CHANGELOG.md",
       "CONTRIBUTING.md",
@@ -74,6 +67,7 @@
     "version": {
       "semantic": "1.0.0",
       "source": "SRC/AGENT.H",
+      "build_banner": "Building OVMS Agent Version 1.0.0...",
       "startup_and_version_command_expected": "1.0.0"
     },
     "license": {
@@ -91,10 +85,10 @@
     },
     "help": "OVMS_AGENT.HLP reviewed; no command/SETTINGS behavior changed and no HELP edit is required.",
     "architecture": "ARCHITECTURE.md reviewed; no release correction required.",
-    "pending_vax_exception": "BUILD.COM is approximately 60 KB and the GitHub connector only supports whole-file replacement. Make only the hard-coded build banner change from Version 2 to Version 1.0.0 on VAX, commit/push it to m284-v1-release, then independently re-audit GitHub before acceptance.",
+    "github_verification": "Remote branch independently verified at exact 7123f7a...; final banner commit changes only BUILD.COM; compare from M283 baseline shows exactly the ten intended release-hardening files.",
     "acceptance_required": [
-      "Exact final candidate head after BUILD.COM banner commit is present on GitHub.",
-      "Full canonical @BUILD on VAX.",
+      "Full canonical @BUILD on exact 7123f7a484545292c276ee7b0789df442e15076f.",
+      "Build output starts with Building OVMS Agent Version 1.0.0....",
       "Output includes All regression tests passed. and Build completed successfully.",
       "Saved final build status is %X00000001.",
       "Normal startup banner reports Version 1.0.0.",
