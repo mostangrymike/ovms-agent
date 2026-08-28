@@ -48,8 +48,7 @@ void symbol_cycle_all(agent_state *state);
 void symbol_cycle_module(agent_state *state,
                          const char *module);
 void symbol_architecture(agent_state *state);
-void symbol_unused(agent_state *state,
-                   const char *symbol);
+void symbol_unused(agent_state *state);
 void symbol_unused_detail(agent_state *state,
                           const char *symbol);
 void symbol_rename_preview(agent_state *state,
@@ -121,8 +120,8 @@ void symbol_decl_fix_diagnose(agent_state *state,
 
 /*
  * RENAME/APPLY and RENAME/VERIFY historically wrote C source directly with
- * stdio and rolled back by assuming a ; -1 version existed.  Route only the
- * command-side entry points through an RMS/version-safe M279 transaction.
+ * stdio and rolled back by assuming an older file version existed. Route only
+ * the command-side entry points through an RMS/version-safe M279 transaction.
  * The legacy symbol translation unit remains untouched.
  */
 #ifdef OVMS_AGENT_COMMAND_INTERNAL_H
