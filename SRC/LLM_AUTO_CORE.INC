@@ -22,6 +22,36 @@ static unsigned int llm_auto_last_writes = 0U;
 static int llm_auto_last_workflow = LLM_WORKFLOW_NONE;
 static char llm_auto_last_reason[32] = "none";
 
+/*
+ * M279's separate create-action ceiling remains a legacy logical-only knob.
+ * M281 moves only turn/write limits into SETTINGS, so retain this parser for
+ * OVMS_AGENT_AUTO_CREATES rather than changing M279 behavior implicitly.
+ */
+static unsigned int llm_auto_env_limit(const char *name,
+                                       unsigned int fallback,
+                                       unsigned int maximum)
+{
+    const char *value;
+    char *end;
+    unsigned long parsed;
+
+    value = getenv(name);
+
+    if (value == NULL || *value == '\0') {
+        return fallback;
+    }
+
+    end = NULL;
+    parsed = strtoul(value, &end, 10);
+
+    if (end == value || *end != '\0' ||
+        parsed == 0UL || parsed > (unsigned long)maximum) {
+        return fallback;
+    }
+
+    return (unsigned int)parsed;
+}
+
 static unsigned int llm_auto_turn_cfg(void)
 {
     if (llm_auto_turn_override != 0U) {
