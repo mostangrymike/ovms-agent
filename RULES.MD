@@ -36,6 +36,7 @@ This file records durable operating rules learned during development of OVMS Age
 ## 4. Filename and Naming Conventions
 
 - **Repository filenames should be UPPERCASE by default.** Use lowercase only when uppercase creates a concrete external, portability, or tooling blocker.
+- **Root-level repository filenames must be fully uppercase, including filename extensions, unless a concrete external/tooling requirement makes that impossible.**
 - Do not mass-rename unrelated historical files merely for case normalization during another milestone. Normalize opportunistically when files are otherwise being renamed, then perform a dedicated audit when appropriate.
 - Generic architecture names should use **LLM**, not **OpenAI**, when the concept is provider-neutral.
 - Preserve `OpenAI` naming only when it represents genuinely OpenAI-specific protocol, configuration, compatibility, or provider semantics.
@@ -121,7 +122,7 @@ This file records durable operating rules learned during development of OVMS Age
 - Update durable chat state when a new VAX-green checkpoint or materially changed resume instruction has been established.
 - Do not mark an untested GitHub head as `latest_vax_green_head`.
 - The resume workflow should read durable state first, then verify the live GitHub branch and tracking issue before acting.
-- **Maintain this `RULES.md` file whenever a new standing project rule is learned, corrected, or superseded.**
+- **Maintain this `RULES.MD` file whenever a new standing project rule is learned, corrected, or superseded.**
 
 ## 12. M267-Specific Rules
 
@@ -183,7 +184,7 @@ This file records durable operating rules learned during development of OVMS Age
 - Every public semantic release receives a permanent `vX.Y.Z` tag on the same canonical promoted `main` commit as its milestone `mNNN` tag; semantic release tags complement rather than replace milestone tags.
 - A semantic release candidate that changes product/build/runtime inputs requires the normal canonical OpenVMS/VAX acceptance plus an explicit startup and `VERSION` check proving the intended semantic version from the exact candidate.
 - Do not create or advertise the final semantic release tag until the milestone candidate has passed its required acceptance and has been promoted to canonical `main`.
-- Keep `CHANGELOG.md`, `README.md`, installation/build guidance, supported security release information, and genuine live version-bearing metadata synchronized with the release in the same milestone.
+- Keep `CHANGELOG.MD`, `README.MD`, installation/build guidance, supported security release information, and genuine live version-bearing metadata synchronized with the release in the same milestone.
 
 ---
 

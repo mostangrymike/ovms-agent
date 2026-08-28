@@ -11,10 +11,10 @@ Contributions should preserve that split instead of treating OpenVMS as a Unix-l
 
 Read:
 
-- `README.md` for the project overview.
-- `ARCHITECTURE.md` for subsystem boundaries.
-- `BUILD.md` for canonical build and regression behavior.
-- `RULES.md` for durable project-specific engineering rules.
+- `README.MD` for the project overview.
+- `ARCHITECTURE.MD` for subsystem boundaries.
+- `BUILD.MD` for canonical build and regression behavior.
+- `RULES.MD` for durable project-specific engineering rules.
 - `OVMS_AGENT.HLP` when changing user-facing commands or persistent settings.
 
 Significant work should have a GitHub issue before implementation. Milestone work normally uses an `mNNN-description` development branch based on the current promoted `main`.
@@ -147,15 +147,17 @@ Syntax-only documentation is not sufficient.
 
 Update the documentation file that owns the changed contract:
 
-- installation/environment changes -> `INSTALL.md`;
-- build/test changes -> `BUILD.md`;
-- contributor/workflow/rule changes -> `CONTRIBUTING.md` and, when durable, `RULES.md`;
-- security boundary/credential/approval changes -> `SECURITY.md`;
-- subsystem boundaries or data-flow changes -> `ARCHITECTURE.md`;
-- user-visible milestone/release changes -> `CHANGELOG.md`;
+- installation/environment changes -> `INSTALL.MD`;
+- build/test changes -> `BUILD.MD`;
+- contributor/workflow/rule changes -> `CONTRIBUTING.MD` and, when durable, `RULES.MD`;
+- security boundary/credential/approval changes -> `SECURITY.MD`;
+- subsystem boundaries or data-flow changes -> `ARCHITECTURE.MD`;
+- user-visible milestone/release changes -> `CHANGELOG.MD`;
 - command/SETTINGS changes -> `OVMS_AGENT.HLP`.
 
-Keep `README.md` concise enough to remain an overview and navigation page rather than duplicating every specialist document.
+Keep `README.MD` concise enough to remain an overview and navigation page rather than duplicating every specialist document.
+
+Root-level repository filenames are expected to be fully uppercase, including extensions, unless an external or tooling requirement makes lowercase unavoidable.
 
 ## Secrets and test data
 
@@ -168,7 +170,7 @@ Never commit:
 - private configuration files from `SYS$LOGIN`;
 - captured production secrets in logs or test fixtures.
 
-See `SECURITY.md` for the credential and reporting policy.
+See `SECURITY.MD` for the credential and reporting policy.
 
 ## Pull requests
 

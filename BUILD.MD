@@ -133,7 +133,7 @@ The accepted workflow is:
 
 For a release candidate, also verify the runtime `VERSION` command and normal startup banner report the intended semantic version before promotion.
 
-See `CONTRIBUTING.md` for the full milestone workflow.
+See `CONTRIBUTING.MD` for the full milestone workflow.
 
 ## Build failures
 

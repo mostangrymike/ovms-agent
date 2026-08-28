@@ -54,7 +54,7 @@ Generated objects, test images, logs, option-file copies, and the final executab
 
 The build structure reflects architectural boundaries: command-facing code and LLM/agent code are assembled as coherent module groups, while core project/edit/util modules are linked with them into the final image.
 
-See `BUILD.md` for detailed build behavior.
+See `BUILD.MD` for detailed build behavior.
 
 ## Interactive command layer
 
@@ -310,20 +310,20 @@ The architecture relies on several independent boundaries:
 - short-lived credential transport;
 - transactional rollback.
 
-See `SECURITY.md` for the security policy and reporting guidance.
+See `SECURITY.MD` for the security policy and reporting guidance.
 
 ## Documentation ownership
 
 The root documentation is intentionally divided by contract:
 
-- `README.md` — overview and navigation;
-- `INSTALL.md` — prerequisites/setup/first run;
-- `BUILD.md` — build/regression mechanics;
-- `CONTRIBUTING.md` — engineering and milestone workflow;
-- `SECURITY.md` — credential and authority boundaries;
-- `ARCHITECTURE.md` — subsystem/data-flow model;
-- `CHANGELOG.md` — user-visible milestone history;
+- `README.MD` — overview and navigation;
+- `INSTALL.MD` — prerequisites/setup/first run;
+- `BUILD.MD` — build/regression mechanics;
+- `CONTRIBUTING.MD` — engineering and milestone workflow;
+- `SECURITY.MD` — credential and authority boundaries;
+- `ARCHITECTURE.MD` — subsystem/data-flow model;
+- `CHANGELOG.MD` — user-visible milestone history;
 - `OVMS_AGENT.HLP` — command and SETTINGS reference;
-- `RULES.md` — durable project-development rules.
+- `RULES.MD` — durable project-development rules.
 
 When architecture changes, update the document that owns the affected contract instead of allowing the README to become the only source of truth.

@@ -6,11 +6,12 @@ The changelog is maintained from M278 forward. Earlier milestone history remains
 
 ## Unreleased
 
-No unreleased user-visible changes are currently queued. Feature development is frozen during the 1.0.0 release candidate.
+- M286 normalizes the remaining mixed-case root documentation filenames to fully uppercase names and reformats `README.MD` as conventional Markdown.
+- No product command, SETTINGS, build, or runtime behavior changes are included in M286.
 
 ## 1.0.0 — 2026-08-28 (M284)
 
-Planned release tags: `m284`, `v1.0.0`
+Tags: `m284`, `v1.0.0`
 
 - Declared the first stable semantic release of OVMS Agent.
 - Set the runtime and `VERSION` command semantic version to `1.0.0`.
@@ -24,8 +25,8 @@ Planned release tags: `m284`, `v1.0.0`
 
 Tag: `m283`
 
-- Added `INSTALL.md`, `BUILD.md`, `CONTRIBUTING.md`, `SECURITY.md`, `ARCHITECTURE.md`, and `CHANGELOG.md` at the project root.
-- Added a concise documentation index to `README.md` and corrected its SETTINGS summary to include the M281 autonomous-limit entries.
+- Added `INSTALL.MD`, `BUILD.MD`, `CONTRIBUTING.MD`, `SECURITY.MD`, `ARCHITECTURE.MD`, and `CHANGELOG.MD` at the project root.
+- Added a concise documentation index to `README.MD` and corrected its SETTINGS summary to include the M281 autonomous-limit entries.
 - Established clearer ownership between README overview content, OpenVMS HELP command/settings reference, build/install guidance, contributor workflow, architecture, and security policy.
 - Promoted the reviewed documentation tree without changing source, build, launcher, HELP, or runtime behavior.
 
