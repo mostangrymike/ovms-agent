@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T17:18:00-05:00",
+  "updated_at": "2026-08-27T21:12:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,28 +10,31 @@
   },
   "m279": {
     "issue": 97,
-    "status": "LIVE_TRANCHE_PARTIAL_FOLLOWUP_CANDIDATE_VAX_GATE_PENDING",
+    "status": "RENAME_RMS_REPAIR_CANDIDATE_VAX_GATE_PENDING",
     "branch": "m279-legacy-backlog-closure",
-    "vax_green_head": "b2984a061e7aa4d85b9c1104e23ecd2f96ae4760",
-    "vax_green_evidence": {
+    "latest_vax_green_head": "5b158f62abd830f6756c6733dd918e5b85ef8a41",
+    "latest_vax_green_evidence": {
       "build": "All regression tests passed; Build completed successfully; %X00000001",
-      "worktree": "clean",
-      "core_filemode": "false",
-      "prior_focused_regressions": "cad09a32 fresh M251 synth/repair-goal/create tests each %X00000001; b2984a06 differs only in LLM_PROMPTS.C"
+      "tracked_source": "clean before disposable refactor test",
+      "core_filemode": "false"
     },
-    "closed_issues": [53, 55, 56, 59, 60, 67, 71, 76],
-    "remaining_issues": [54, 65, 70, 73],
-    "live_acceptance": {
-      "53": "PASS: AGENT/BUILD failure persisted %CC-E-UNDECLARED; immediate AGENT/REPAIR/PLAN found diagnostic, source context, and saved one-operation plan",
-      "60": "PASS: session workspace approval allowed structured patch apply without duplicate approval logical; write gate remained separate; target became M279_NEW",
-      "67": "PASS: live Groq openai/gpt-oss-120b agent workflow failed locally with explicit Responses-transport unsupported message before malformed Harmony provider error",
-      "54": "PARTIAL: one AGENT/WRITE transaction created HELLO.C and BUILD.COM through create_file, but provider invented invalid /INACTIVE and /DELCFG qualifiers; build status %X10038240"
+    "closed_product_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 76],
+    "closed_stale_issues": [52, 61, 62, 63, 64, 66],
+    "closed_tracking_issues": [99],
+    "remaining_product_issues": [73, 101],
+    "issue_101": {
+      "title": "RENAME/APPLY and RENAME/VERIFY are not RMS/version-safe on flat-root source",
+      "discovery": "Live #73 gate on flat-root DCL/RMS MAIN.C failed while writing source; rollback blindly attempted main.c;-1 and was incomplete.",
+      "distinction_from_72": "rename_make_vms_filespec already supports flat-root paths; current failure is later direct stdio write plus blind previous-version rollback.",
+      "blocks": [73]
     },
-    "candidate_head": "5b158f62abd830f6756c6733dd918e5b85ef8a41",
-    "candidate_delta_from_vax_green_head": ["SRC/LLM_PROMPTS.C"],
-    "candidate_note": "Second #54 prompt hardening: generated BUILD.COM must use conservative DEC C/DCL syntax, never invent qualifiers, and should prefer `$ CC FOO.C`, `$ LINK FOO`, `$ EXIT $STATUS` for a simple one-file program unless project evidence requires more.",
-    "symbol_acceptance_note": "M274 target REINDEX unexpectedly returned 0 source files, so #65 result there was inconclusive. M279 SHOW/STRUCT classifier scans SRC or flat root directly and does not depend on REINDEX. Retest #65 in a disposable flat-root fixture containing both a real `struct rule_ctx { ... };` definition and a local `struct rule_ctx ctx;` declaration. Run REINDEX in that fixture as a separate #62 regression sanity check before reopening #62.",
-    "next_action": "Advance VAX from b2984a06 to 5b158f62, RMS-restore only SRC/LLM_PROMPTS.C, rerun canonical @BUILD. Then rerun #54 scaffold, run disposable #65/#62 sanity fixture, and complete #70/#73 acceptance."
+    "unaccepted_candidate_head": "adf5e0a5f5f66940a81b135569121cf31aca5a01",
+    "candidate_delta_from_vax_green": {
+      "files": ["SRC/SYMBOL_INDEX.H", "SRC/SYMBOL_RENAME_M279.INC"],
+      "note": "Adds 12 command-side hook lines plus a separate RMS/version-safe rename transaction implementation; legacy 405 KB SYMBOL_INDEX.C is untouched."
+    },
+    "next_action": "Advance VAX from 5b158f62 to adf5e0a5, restore SYMBOL_INDEX.H and SYMBOL_RENAME_M279.INC, run canonical @BUILD. If green, recreate M279_REFACTOR_TEST from scratch, rerun REINDEX and RENAME/VERIFY helper renamed_helper, require successful new-version write, no main.c;-1 rollback failure, no [.BUILD]MAIN.OBJ search failure, controlled build PASS, and runtime M279_REFACTOR_7. Close #101 and #73 only on that evidence; then re-audit all live open GitHub issues before M279 reconciliation.",
+    "vax_disposable_state": "Tracked OVMS Agent source remains based on 5b158f62; multiple untracked acceptance directories exist under the checkout, including M279_REFACTOR_TEST. Recreate the refactor fixture rather than trusting its latest MAIN.C version after the failed legacy rename."
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
@@ -39,6 +42,7 @@
     "Omit OVMS-AGENT> from agent command lines.",
     "Use GITAUTH for Git network operations.",
     "Keep core.filemode=false.",
-    "Canonical acceptance requires All regression tests passed and %X00000001."
+    "Canonical acceptance requires All regression tests passed and %X00000001.",
+    "Do not call an untested GitHub candidate VAX-green."
   ]
 }
