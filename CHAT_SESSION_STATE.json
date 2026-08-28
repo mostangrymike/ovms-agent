@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T21:22:00-05:00",
+  "updated_at": "2026-08-27T21:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,37 +10,29 @@
   },
   "m279": {
     "issue": 97,
-    "status": "RENAME_RMS_REPAIR_FGETNAME_FOLLOWUP_VAX_GATE_PENDING",
+    "status": "RECONCILIATION_HEAD_VAX_GATE_PENDING",
     "branch": "m279-legacy-backlog-closure",
-    "latest_vax_green_head": "5b158f62abd830f6756c6733dd918e5b85ef8a41",
-    "latest_vax_green_evidence": {
+    "vax_green_code_head": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
+    "vax_green_evidence": {
       "build": "All regression tests passed; Build completed successfully; %X00000001",
-      "tracked_source": "clean before disposable refactor test",
-      "core_filemode": "false"
+      "tracked_diff": "empty",
+      "core_filemode": "false",
+      "refactor_positive": "#73 PASS: flat-root MAIN.OBJ invalidated, controlled build PASS, runtime M279_REFACTOR_7 / %X00000001",
+      "refactor_rollback": "#101 PASS: intentional renamed-build failure removed only new source version; MAIN.C;1 restored, rollback reindex/build PASS, runtime M279_ROLLBACK_7 / %X00000001"
     },
-    "closed_product_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 76],
+    "closed_product_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76, 101],
     "closed_stale_issues": [52, 61, 62, 63, 64, 66],
-    "closed_tracking_issues": [99],
-    "remaining_product_issues": [73, 101],
-    "issue_101": {
-      "title": "RENAME/APPLY and RENAME/VERIFY are not RMS/version-safe on flat-root source",
-      "discovery": "Live #73 gate on flat-root DCL/RMS MAIN.C failed while writing source; rollback blindly attempted main.c;-1 and was incomplete.",
-      "distinction_from_72": "rename_make_vms_filespec already supports flat-root paths; current failure is later direct stdio write plus blind previous-version rollback.",
-      "blocks": [73]
+    "closed_tracking_issues": [98, 99],
+    "open_tracking_issues": [97, 100],
+    "issue_audit": "Complete live repository audit after #101 closure found only #97 and #100 open. #74 was explicitly rechecked and is already closed completed. Accidental connector placeholder issues #102/#103 were immediately closed not_planned and are excluded from product/backlog counts.",
+    "reconciliation_head": "89bab2473c56b46bf463318a641c1f69d52a402d",
+    "reconciliation_delta": {
+      "base": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
+      "files": ["DOC/M279_RECONCILIATION.MD"],
+      "note": "Exactly one documentation-only commit; 154-line new reconciliation record; no code changed."
     },
-    "failed_candidate": {
-      "head": "adf5e0a5f5f66940a81b135569121cf31aca5a01",
-      "vax_build_status": "%X10B91262",
-      "diagnostic": "%CC-E-NOTCOMPAT: M279 rename fragment redeclared fgetname as int while DEC C stdio declares pointer-to-char; compile stopped before runtime.",
-      "post_failure_worktree": "git diff --name-only empty; core.filemode=false"
-    },
-    "unaccepted_candidate_head": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
-    "candidate_delta_from_vax_green": {
-      "files": ["SRC/SYMBOL_INDEX.H", "SRC/SYMBOL_RENAME_M279.INC"],
-      "note": "Relative to failed adf5e0a5 candidate, only SYMBOL_INDEX.H changes (+9 lines) to adapt the fragment's legacy two-argument fgetname usage to DEC C native fgetname(file, buffer, 1) != NULL. Relative to VAX-green 5b158f62, #101 still changes only these two files; legacy 405 KB SYMBOL_INDEX.C remains untouched."
-    },
-    "next_action": "Advance VAX branch from adf5e0a5 to 7200ab54, restore only SRC/SYMBOL_INDEX.H, run canonical @BUILD. If green, recreate M279_REFACTOR_TEST from scratch, rerun REINDEX and RENAME/VERIFY helper renamed_helper, require successful new-version write, no main.c;-1 rollback failure, no [.BUILD]MAIN.OBJ search failure, controlled build PASS, and runtime M279_REFACTOR_7. Close #101 and #73 only on that evidence; then re-audit all live open GitHub issues before M279 reconciliation.",
-    "vax_disposable_state": "Tracked OVMS Agent files are clean at failed candidate adf5e0a5 after build failure; multiple untracked acceptance directories exist including M279_REFACTOR_TEST. Recreate refactor fixture before runtime retest."
+    "next_action": "Advance VAX from 7200ab54 to reconciliation head 89bab247, RMS-restore only DOC/M279_RECONCILIATION.MD, verify one-file delta and empty tracked diff, run canonical @BUILD, save status with SHOW SYMBOL, require All regression tests passed and %X00000001. If accepted, close #100, mark #97 ready for promotion, open/merge M279 PR, verify promoted merge tree equals accepted reconciliation tree, tag m279, then apply retention rules.",
+    "vax_disposable_state": "Multiple untracked M279 acceptance directories remain under the checkout; they are intentionally disposable and do not count as tracked-source dirt."
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
@@ -49,6 +41,7 @@
     "Use GITAUTH for Git network operations.",
     "Keep core.filemode=false.",
     "Canonical acceptance requires All regression tests passed and %X00000001.",
-    "Do not call an untested GitHub candidate VAX-green."
+    "Do not call an untested GitHub candidate VAX-green.",
+    "Promotion wording must distinguish a separately VAX-accepted reconciliation head from a GitHub merge SHA unless the merge SHA itself was run on VAX."
   ]
 }
