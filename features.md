@@ -8,6 +8,18 @@ OVMS Agent can inspect an OpenVMS project, show its directory tree, read files, 
 
 The project map recognizes C and COBOL source files. COBOL files ending in `.COB`, `.COBOL`, or `.CBL` are treated as source code. `.CPY` copy files are treated as supporting files so they remain available as context without being confused with primary source files.
 
+## Interactive settings
+
+`SETTINGS` provides a numbered interactive configuration menu so normal users do not need to define OpenVMS logical names to change ordinary OVMS Agent behavior.
+
+The current menu covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, and network allow/deny lists. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
+
+Ordinary settings are saved automatically in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT` and are loaded on later launches. Provider and model changes continue to use the existing provider-profile store in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT` so provider credentials and model state are not duplicated.
+
+`SETTINGS SHOW`, `SETTINGS GET name`, `SETTINGS SET name value`, `SETTINGS TOGGLE name`, `SETTINGS RESET`, and `SETTINGS RELOAD` provide noninteractive equivalents where useful.
+
+Existing `OVMS_AGENT_*` logical-name configuration remains compatible. When a supported legacy logical is defined, it overrides the corresponding saved ordinary setting and the SETTINGS display marks that condition instead of silently replacing the caller's explicit environment.
+
 ## AI provider profiles
 
 OVMS Agent can switch artificial intelligence services without rebuilding the program.
