@@ -12,11 +12,11 @@ The project map recognizes C and COBOL source files. COBOL files ending in `.COB
 
 `SETTINGS` provides a numbered interactive configuration menu so normal users do not need to define OpenVMS logical names to change ordinary OVMS Agent behavior.
 
-The current menu covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, and network allow/deny lists. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
+The current menu covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, network allow/deny lists, and the autonomous model/tool-turn and write-action limits. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
 
 Ordinary settings are saved automatically in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT` and are loaded on later launches. Provider and model changes continue to use the existing provider-profile store in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT` so provider credentials and model state are not duplicated.
 
-`SETTINGS SHOW`, `SETTINGS GET name`, `SETTINGS SET name value`, `SETTINGS TOGGLE name`, `SETTINGS RESET`, and `SETTINGS RELOAD` provide noninteractive equivalents where useful.
+`SETTINGS SHOW`, `SETTINGS GET name`, `SETTINGS SET name value`, `SETTINGS TOGGLE name`, `SETTINGS RESET`, and `SETTINGS RELOAD` provide noninteractive equivalents where useful. The autonomous limits use the names `auto_turns` and `auto_writes`; saved changes apply to the next autonomous agent run without restarting OVMS Agent.
 
 Existing `OVMS_AGENT_*` logical-name configuration remains compatible. When a supported legacy logical is defined, it overrides the corresponding saved ordinary setting and the SETTINGS display marks that condition instead of silently replacing the caller's explicit environment.
 
