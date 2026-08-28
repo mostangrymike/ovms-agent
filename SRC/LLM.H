@@ -36,6 +36,8 @@ void llm_load_state(void);
 void llm_show_state(void);
 void llm_show_memory(void);
 void llm_clear_state(void);
+int llm_set_approval(const char *arguments);
+const char *llm_approval_name(void);
 
 
 #endif
