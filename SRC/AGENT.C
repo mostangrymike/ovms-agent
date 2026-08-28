@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "agent.h"
-#include "LLM.H"
 #include "llm_config.h"
 #include "SETTINGS.H"
 
@@ -80,8 +79,6 @@ int agent_initialize(agent_state *state)
 {
     const char *api_key;
     const char *inherited_root;
-    const char *approval_logical;
-    const char *approval_saved;
     const llm_provider *provider;
     int quiet;
 
@@ -103,15 +100,6 @@ int agent_initialize(agent_state *state)
         "guarded_writes", "OVMS_AGENT_WRITE_ENABLED", 0);
     state->dcl_enabled = settings_effective_bool(
         "dcl_execution", "OVMS_AGENT_DCL_ENABLED", 0);
-
-    approval_logical = getenv("OVMS_AGENT_APPROVAL_POLICY");
-    if ((approval_logical == NULL || *approval_logical == '\0') &&
-        settings_is_saved("approval_policy")) {
-        approval_saved = settings_get("approval_policy");
-        if (approval_saved != NULL && *approval_saved != '\0') {
-            (void)llm_set_approval(approval_saved);
-        }
-    }
 
     if (getcwd(state->project_root_text,
                sizeof(state->project_root_text)) == NULL) {
