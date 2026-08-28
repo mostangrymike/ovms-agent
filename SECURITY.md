@@ -146,9 +146,9 @@ A useful report includes:
 
 ## Supported versions
 
-Security fixes are expected to land on the current maintained `main` line first unless a separate supported release/backport policy is explicitly established.
+The current stable release line is `1.0.x`. Security fixes are expected to land on maintained `main` first and, when appropriate, be released as a compatible `1.0.x` patch release.
 
-Permanent milestone tags provide historical reference points, but the existence of a tag does not imply indefinite security maintenance for that milestone.
+Older milestone-only tags remain historical reference points and are not separate supported security branches unless an explicit backport policy is announced. A future minor or major release may replace the supported stable line; this section should be updated when that happens.
 
 ## Security documentation responsibility
 
