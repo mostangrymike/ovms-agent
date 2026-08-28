@@ -116,9 +116,18 @@ void symbol_decl_fix_diagnose(agent_state *state,
  * stdio and rolled back by assuming an older file version existed. Route only
  * the command-side entry points through an RMS/version-safe M279 transaction.
  * Include this before SYMBOL_SYSTEM_M279.INC installs its system() macro.
+ * The fragment's legacy two-argument fgetname shape is adapted locally to
+ * DEC C's native three-argument, pointer-returning interface.
  */
 #ifdef OVMS_AGENT_COMMAND_INTERNAL_H
+#include <stdio.h>
+int m279_fgetname_ok(FILE *file, char *spec)
+{
+    return fgetname(file, spec, 1) != NULL;
+}
+#define fgetname m279_fgetname_ok
 #include "SYMBOL_RENAME_M279.INC"
+#undef fgetname
 #define symbol_rename_apply m279_rename_apply
 #define symbol_rename_verify m279_rename_verify
 #endif
