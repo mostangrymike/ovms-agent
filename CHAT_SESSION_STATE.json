@@ -1,58 +1,42 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T09:35:54-05:00",
+  "updated_at": "2026-08-28T09:59:51-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "latest_code_milestone": "M279"
+    "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+    "latest_code_milestone": "M280"
   },
   "pre_feature_baseline": {
-    "status": "READY_FOR_NEW_FEATURE",
+    "status": "SUPERSEDED_BY_M280",
     "branch": "main",
     "head": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "tag": "m279",
-    "github_hygiene": {
-      "open_issues": 0,
-      "open_prs": 0,
-      "branches": ["main", "chat-session-state", "m278-github-service-completion", "m279-legacy-backlog-closure"],
-      "retention": "M278 and M279 are the two retained completed milestone branches; m277 branch pruned after permanent tag verification."
-    },
-    "vax_hygiene": {
-      "disposable_acceptance_trees_removed": true,
-      "vax_hygiene_clean_symbol": 1,
-      "git_status_short": "empty",
-      "git_diff_name_only": "empty",
-      "core_filemode": "false"
-    },
-    "vax_baseline_build": {
-      "output": "All regression tests passed; Build completed successfully",
-      "saved_status": "%X00000001"
-    },
-    "next_action": "When the user supplies the new feature, create a GitHub tracking issue and a new milestone development branch from canonical main 5feaae97699c3eb124144bdbef978564f619f42a, then materialize only the required branch delta on VAX with RMS-aware restore before acceptance testing."
+    "tag": "m279"
   },
   "m280": {
     "issue": 105,
-    "status": "ACTIVE_VAX_GREEN_BUILD_PENDING_RUNTIME_ACCEPTANCE",
+    "status": "COMPLETED_PROMOTED_PENDING_TAG_AND_RETENTION_CLEANUP",
     "branch": "m280-interactive-settings",
     "baseline_main": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "vax_green_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
-    "vax_green_parent": "61f2b4cc44ca1b34ce0e7779282587bf0930e44d",
+    "vax_accepted_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
+    "promoted_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+    "promotion_pr": 106,
+    "promotion_tree_check": "Promoted merge is one commit beyond accepted M280 head with zero changed files; promoted main therefore has the separately VAX-accepted tree. Merge SHA itself was not separately VAX-run.",
     "accepted_evidence": {
-      "fetch_head_match": true,
-      "materialized_delta": "SRC/m251_key_test.c only from 61f2b4cc44ca1b34ce0e7779282587bf0930e44d..0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
       "build": "All regression tests passed; Build completed successfully",
       "saved_status": "%X00000001",
+      "runtime": "Focused SETTINGS runtime acceptance complete: numbered menu, provider/approval submenus, RETURN-to-keep behavior, immediate toggles, value persistence across restart, noninteractive SHOW/GET/SET/TOGGLE, and legacy logical override precedence/warnings.",
       "tracked_diff": "empty",
       "git_status_short": "empty",
-      "core_filemode": "false"
+      "core_filemode": "false",
+      "identifier_audit": "New SETTINGS-facing external identifiers are <=31 characters."
     },
     "prior_acceptance_failures": [
       "3222e1d4a8f09e0ff9d28242b500691672287a52: M251_ROOT_TEST.EXE link exposed SETTINGS integration references",
       "61f2b4cc44ca1b34ce0e7779282587bf0930e44d: M251_KEY_TEST.EXE isolated link lacked SETTINGS_EFFECTIVE_BOOL fallback stub"
     ],
-    "next_action": "Run focused user-facing SETTINGS runtime acceptance on exact VAX-green head 0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf, covering the numbered interactive path, immediate toggle/value behavior, persistence across restart, noninteractive SHOW/GET/SET/TOGGLE forms, and legacy logical override reporting while preserving/restoring the user's pre-existing settings/provider/model state. Do not promote until runtime acceptance and reconciliation are complete."
+    "next_action": "Create and verify permanent lightweight tag m280 at promoted main 717e54fb88003deba0efc2b253b72caedf2feaa8 using the established GITAUTH VAX path, then apply branch retention: keep completed M279 and M280 branches and prune completed M278 only after verifying tag m278. Finally synchronize the clean VAX checkout to promoted main if desired and record final hygiene."
   },
   "m279": {
     "issue": 97,
@@ -67,29 +51,7 @@
       "name": "m279",
       "sha": "5feaae97699c3eb124144bdbef978564f619f42a",
       "remote_verified": true
-    },
-    "retention": {
-      "retained_completed_branches": ["m278-github-service-completion", "m279-legacy-backlog-closure"],
-      "pruned_completed_branch": "m277-create-interoperability",
-      "remote_prune_verified": true,
-      "permanent_tags": {
-        "m277": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
-        "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-        "m279": "5feaae97699c3eb124144bdbef978564f619f42a"
-      }
-    },
-    "accepted_evidence": {
-      "reconciliation_build": "All regression tests passed; Build completed successfully; M279_RECON_STATUS=%X00000001",
-      "tracked_diff": "empty",
-      "core_filemode": "false",
-      "refactor_positive": "#73 PASS: flat-root MAIN.OBJ invalidated, controlled build PASS, runtime M279_REFACTOR_7 / %X00000001",
-      "refactor_rollback": "#101 PASS: intentional renamed-build failure removed only new source version; MAIN.C;1 restored, rollback reindex/build PASS, runtime M279_ROLLBACK_7 / %X00000001"
-    },
-    "closed_product_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76, 101],
-    "closed_stale_issues": [52, 61, 62, 63, 64, 66],
-    "closed_tracking_issues": [97, 98, 99, 100],
-    "issue_audit": "No live open issues remained at completion. #74 was explicitly rechecked and already closed completed. Accidental connector placeholder issues #102/#103 were immediately closed not_planned and excluded from product/backlog counts.",
-    "vax_local_note": "VAX checkout is now fully cleaned: stale remote-tracking ref removed and all disposable M274/M279 acceptance directories deleted."
+    }
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
