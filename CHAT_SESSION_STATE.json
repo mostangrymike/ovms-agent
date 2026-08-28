@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T10:59:00-05:00",
+  "updated_at": "2026-08-28T11:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,14 +10,15 @@
     "vax_green": true
   },
   "github_hygiene": {
-    "open_product_issues": [],
+    "open_product_issues": [109],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
       "m279-legacy-backlog-closure",
       "m280-interactive-settings",
-      "m281-settings-auto-limits"
+      "m281-settings-auto-limits",
+      "m282-vms-help-reference"
     ],
     "desired_retained_completed_branches": [
       "m280-interactive-settings",
@@ -28,6 +29,26 @@
       "Delete completed branch m279-legacy-backlog-closure after already-verified permanent m279 tag."
     ],
     "connector_limitation": "Current GitHub connector exposes branch create/update but no tag-create or branch-delete mutation. Do not fake either action; complete them through GitHub when an appropriate mutation becomes available."
+  },
+  "m282": {
+    "issue": 109,
+    "status": "ACTIVE_GITHUB_CANDIDATE_PENDING_VAX_HELP_VALIDATION",
+    "branch": "m282-vms-help-reference",
+    "baseline_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+    "candidate_head": "5a53306cee8e989ed547f8eee0db885ae1c4ac27",
+    "goal": "Create a root-level OpenVMS HELP source documenting every current user-facing command and persistent setting, including both behavior and when/why the user would choose it.",
+    "candidate_delta": [
+      "OVMS_AGENT.HLP",
+      "RULES.md"
+    ],
+    "github_review": {
+      "compare_scope": "Exactly two files from baseline: OVMS_AGENT.HLP added (1356 lines) and RULES.md +6 lines.",
+      "command_inventory": "Covers registered core, project, provider, GitHub profile, SETTINGS, symbol/refactor, and agent commands plus specially dispatched RUN, CHANGESET, AGENT/REPAIR, LIST/ALL and M259 AGENT/IMAGE, AGENT/AUTOPILOT, AGENT/EXEC/RESUME/CREATE.",
+      "settings_inventory": "Documents all 10 SETTINGS entries, aliases, defaults/ranges where applicable, legacy logical override behavior, and practical use cases.",
+      "standing_rule": "Any command or persistent SETTINGS addition/removal/rename/option or material behavior change must update OVMS_AGENT.HLP in the same change; HELP entries must explain both what and when/why."
+    },
+    "acceptance_required": "Materialize OVMS_AGENT.HLP and RULES.md on VAX with RMS-aware restore; compile/load OVMS_AGENT.HLP into an OpenVMS HELP library with LIBRARY/HELP syntax accepted by the target; exercise representative overview, command, nested command, and settings topics; verify branch HEAD and clean worktree/core.filemode=false. Full @BUILD is not required because no source/build input changed unless HELP validation reveals an unexpected coupling.",
+    "next_action": "Run focused OpenVMS HELP-library validation on exact candidate head 5a53306cee8e989ed547f8eee0db885ae1c4ac27."
   },
   "m281": {
     "issue": 107,
@@ -44,7 +65,6 @@
     "promotion_pr": 108,
     "promoted_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
     "promotion_tree": "07628e67386d470e9c81bb0926c5dbe8ce243858",
-    "tree_equivalence": "Accepted feature head and promoted merge have identical tree SHA 07628e67386d470e9c81bb0926c5dbe8ce243858.",
     "feature_head_acceptance": {
       "build": "All regression tests passed; Build completed successfully",
       "saved_status": "%X00000001",
@@ -62,29 +82,12 @@
       "git_diff_name_only": "empty",
       "core_filemode": "false"
     },
-    "goal": "Persist autonomous turn and write limits in SETTINGS while preserving OVMS_AGENT_AUTO_TURNS and OVMS_AGENT_AUTO_WRITES as higher-precedence legacy logical overrides.",
-    "requirements": {
-      "defaults": "12 turns, 3 writes",
-      "ranges": "1-32 turns, 1-8 writes",
-      "interactive": "numbered SETTINGS entries 9 and 10 with prompted value changes",
-      "noninteractive": "SETTINGS GET/SET auto_turns and auto_writes, with natural aliases",
-      "runtime": "saved values affect the next autonomous run without restart",
-      "test_override": "llm_auto_test_limits remains highest-precedence test-only override",
-      "compatibility": "DEC C/VAX C89; no new linker-visible identifiers introduced"
-    },
     "tag": {
       "name": "m281",
       "target": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
       "created": false,
       "reason_pending": "GitHub connector currently has no tag-create mutation."
-    },
-    "candidate_delta": [
-      "SRC/COMMAND_SETTINGS.C",
-      "SRC/LLM_AUTO_CORE.INC",
-      "SRC/M280_SETTINGS_TEST.C",
-      "SRC/SETTINGS.C",
-      "features.md"
-    ]
+    }
   },
   "m280": {
     "issue": 105,
@@ -116,8 +119,9 @@
     "Omit OVMS-AGENT> from agent command lines.",
     "Use GITAUTH for Git network operations.",
     "Keep core.filemode=false.",
-    "Canonical acceptance requires All regression tests passed and %X00000001.",
+    "Canonical acceptance requires All regression tests passed and %X00000001 when a product build is required.",
     "Do not call an untested GitHub candidate or promoted merge VAX-green.",
-    "Promotion wording must distinguish a separately VAX-accepted code head from a GitHub merge SHA unless the merge SHA itself was run on VAX."
+    "Promotion wording must distinguish a separately VAX-accepted code/content head from a GitHub merge SHA unless the merge SHA itself was run on VAX.",
+    "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change, including what the feature does and when/why to use it."
   ]
 }
