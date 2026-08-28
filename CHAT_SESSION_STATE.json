@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T11:44:00-05:00",
+  "updated_at": "2026-08-28T11:48:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -26,33 +26,44 @@
       "m282-vms-help-reference"
     ],
     "pruned_completed_branches": [
+      "m278-github-service-completion",
       "m279-legacy-backlog-closure",
       "m280-interactive-settings"
     ],
     "verified_tags": {
+      "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
       "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
       "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
       "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
     },
-    "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "m278_remote_branch_present": false,
-    "note": "GitHub branch retention and permanent tags are now compliant through M282."
+    "note": "GitHub branch retention and permanent tags are compliant through M282. No open product issues or pull requests remain."
   },
   "vax_hygiene": {
-    "status": "FINAL_LOCAL_REF_CLEANUP_PENDING",
+    "status": "COMPLETE",
     "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
     "branch": "main",
+    "local_branches": [
+      "main",
+      "m281-settings-auto-limits",
+      "m282-vms-help-reference"
+    ],
+    "remote_tracking_refs": [
+      "origin/main",
+      "origin/m281-settings-auto-limits",
+      "origin/m282-vms-help-reference"
+    ],
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false",
     "m282_help_test_library": "absent",
-    "temporary_m281_save_files": "cleanup commands executed",
-    "remaining": [
-      "Delete obsolete local m278-github-service-completion after local ancestry check.",
-      "Delete stale local remote-tracking refs origin/m278-github-service-completion and origin/m279-legacy-backlog-closure.",
-      "Populate local remote-tracking refs for retained m281-settings-auto-limits and m282-vms-help-reference, then verify branch listings."
-    ]
+    "m281_settings_107_save": "absent",
+    "m281_turns_save": "absent",
+    "verified_local_tags": {
+      "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
+    },
+    "remaining": []
   },
   "m282": {
     "issue": 109,
