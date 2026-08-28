@@ -1,30 +1,34 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:49:00-05:00",
+  "updated_at": "2026-08-28T13:08:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
-  "rules_file": "RULES.md on main",
+  "rules_file": "RULES.MD on main",
   "current_main": {
-    "head": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "latest_milestone": "M285",
+    "head": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
+    "latest_milestone": "M286",
     "latest_code_milestone": "M284",
-    "vax_green_code_baseline": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "vax_green_candidate_baseline": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
     "main_sha_itself_vax_run": false,
-    "note": "M284 release commit de5837a is exact-main VAX-green and is tagged m284 and v1.0.0. M285 main 129e69f is doc-only path/case consolidation, locally synchronized and clean, and was not separately product-built."
+    "note": "M286 candidate 23d973a is full-build VAX-green. Promoted main f7c5f663 has the exact same tree 1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699, but the merge SHA itself was not separately run on VAX."
   },
   "github_hygiene": {
-    "status": "M284_COMPLETE_M285_TAG_PENDING",
+    "status": "M286_PROMOTED_M285_M286_TAG_AND_RETENTION_HYGIENE_PENDING",
     "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
       "m284-v1-release",
-      "m285-doc-case-consolidation"
+      "m285-doc-case-consolidation",
+      "m286-root-uppercase-readme"
     ],
-    "retained_completed_branches": [
-      "m284-v1-release",
-      "m285-doc-case-consolidation"
+    "target_retained_completed_branches": [
+      "m285-doc-case-consolidation",
+      "m286-root-uppercase-readme"
+    ],
+    "pending_prune": [
+      "m284-v1-release"
     ],
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
@@ -37,68 +41,73 @@
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef"
     },
     "pending_tags": {
-      "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5"
+      "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5",
+      "m286": "f7c5f663b5d82981b3f9e603bb2dd73badc56281"
     }
   },
   "vax_hygiene": {
-    "status": "CLEAN_ON_M285_MAIN_TAG_PENDING",
-    "head": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "branch": "main",
+    "status": "CLEAN_ON_M286_ACCEPTED_CANDIDATE_PENDING_MAIN_REF_SYNC",
+    "head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
+    "branch": "m286-root-uppercase-readme",
+    "build_status": "%X00000001",
+    "regressions": "All regression tests passed.",
+    "build_complete": "Build completed successfully.",
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false"
+  },
+  "m286": {
+    "issue": 117,
+    "status": "COMPLETED_PROMOTED_VAX_VALIDATED_TREE_TAG_HYGIENE_PENDING",
+    "branch": "m286-root-uppercase-readme",
+    "baseline_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
+    "accepted_candidate_head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
+    "accepted_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
+    "promotion_pr": 118,
+    "promoted_main": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
+    "promoted_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
+    "issue_closed_completed": true,
+    "acceptance": {
+      "full_product_build_required": true,
+      "reason": "COMMAND_MODULES.OPT is a real linker options input and was case-renamed from command_modules.opt; contents remained identical.",
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build_complete": "Build completed successfully.",
+      "worktree": "clean",
+      "core_filemode": "false"
+    },
+    "root_naming": {
+      "all_root_filenames_uppercase": true,
+      "canonical_readme": "README.MD",
+      "canonical_features": "FEATURES.MD",
+      "canonical_command_options": "COMMAND_MODULES.OPT",
+      "canonical_rules": "RULES.MD",
+      "canonical_doc_directory": "DOC"
+    }
   },
   "m285": {
     "issue": 115,
     "status": "COMPLETED_PROMOTED_DOC_ONLY_TAG_PENDING",
     "branch": "m285-doc-case-consolidation",
-    "baseline_main": "de5837a121860b7cf3167d97df67099d771a3bef",
-    "reviewed_head": "db424e1ee60429a9383990bf5524d2bbde3c2dbb",
-    "reviewed_tree": "730c073e366b016bd39ffe24f6c1527fd74722ae",
-    "promotion_pr": 116,
     "promoted_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "tree_equivalence": "GitHub compare from reviewed head db424e1 to promoted merge 129e69f reports one commit ahead and zero changed files.",
-    "acceptance": {
-      "type": "GitHub exact tree/path audit",
-      "full_product_build_required": false,
-      "reason": "Exactly ten documentation-path case renames with 0 additions and 0 deletions; all original blob SHAs preserved; no source/build/runtime files changed.",
-      "canonical_directory": "DOC",
-      "lowercase_doc_present": false
-    },
     "pending": [
       "Create and verify lightweight tag m285 at 129e69f97b11c3e381403deabc6ba2feacc059b5."
     ]
   },
   "m284": {
     "issue": 113,
-    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_RETAINED",
+    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_PRUNE_ELIGIBLE",
     "branch": "m284-v1-release",
-    "accepted_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
-    "promotion_pr": 114,
     "promoted_main": "de5837a121860b7cf3167d97df67099d771a3bef",
-    "promoted_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
-    "exact_main_acceptance": {
-      "head": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "build_status": "%X00000001",
-      "build_banner": "Building OVMS Agent Version 1.0.0...",
-      "regressions": "All regression tests passed.",
-      "build_complete": "Build completed successfully.",
-      "startup": "Version 1.0.0",
-      "version_command": "OVMS Agent 1.0.0",
-      "launch_status": "%X00000001",
-      "worktree": "clean",
-      "core_filemode": "false"
-    },
     "release": {
       "semantic": "1.0.0",
       "license": "MIT",
       "m284_tag": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "v1.0.0_tag": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "issue_closed_completed": true
+      "v1.0.0_tag": "de5837a121860b7cf3167d97df67099d771a3bef"
     }
   },
   "standing_rules": [
-    "Read RULES.md on main and this state at chat start.",
+    "Read RULES.MD on main and this state at chat start.",
     "GitHub is the default repository editing control plane; ask the user only for VAX compile/link/RMS/live acceptance when needed.",
     "VAX/OpenVMS is canonical build/runtime authority.",
     "Omit OVMS-AGENT> from agent command lines.",
@@ -109,6 +118,7 @@
     "Promotion wording must distinguish a separately VAX-accepted code/content head from a GitHub merge SHA unless the merge SHA itself was run on VAX.",
     "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change.",
     "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning.",
-    "Use uppercase DOC as the canonical repository documentation-history directory; do not recreate lowercase doc."
+    "Use uppercase DOC as the canonical repository documentation-history directory; do not recreate lowercase doc.",
+    "Root-level repository filenames must be uppercase unless a concrete external tooling requirement makes uppercase invalid; canonical root docs use uppercase .MD extensions."
   ]
 }
