@@ -14,6 +14,15 @@ const char *llm_api_key(void)
     return NULL;
 }
 
+int settings_effective_bool(const char *key,
+                            const char *logical_name,
+                            int fallback)
+{
+    (void)key;
+    (void)logical_name;
+    return fallback;
+}
+
 int main(void)
 {
     if (agent_api_key_present(NULL)) {
