@@ -18,6 +18,7 @@ Use the root documentation by purpose:
 - `CHANGELOG.md` - user-visible milestone/release history and the current Unreleased section.
 - `OVMS_AGENT.HLP` - complete OpenVMS HELP source for commands and persistent SETTINGS, including when and why to use each feature.
 - `RULES.md` - durable project-development rules and acceptance discipline.
+- `LICENSE` - MIT License terms for use, modification, and redistribution.
 
 What OVMS Agent Can Do
 
@@ -151,9 +152,9 @@ Clone or copy the repository to an OpenVMS directory, set that directory as the 
 
 $ @BUILD
 
-A successful build should end with:
+A successful 1.0.0 build should end with:
 
-Building OVMS Agent Version 2...
+Building OVMS Agent Version 1.0.0...
 All regression tests passed.
 Build completed successfully.
 Run with: $ @OVMS_AGENT
@@ -262,6 +263,6 @@ The goal is to make AI-assisted development feel native on OpenVMS rather than b
 
 License
 
-This project was developed with extensive assistance from OpenAI-generated code.
+OVMS Agent is distributed under the MIT License. See `LICENSE` for the complete terms.
 
-No open-source license has currently been selected. See the repository's LICENSE file if one is added in the future.
+This project was developed with extensive assistance from OpenAI-generated code.
