@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:08:00-05:00",
+  "updated_at": "2026-08-28T12:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -12,59 +12,61 @@
     "documentation_only_since_code_baseline": ["M282", "M283"]
   },
   "github_hygiene": {
-    "status": "M283_PROMOTED_HOUSEKEEPING_PENDING",
+    "status": "COMPLETE",
     "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
-      "m281-settings-auto-limits",
       "m282-vms-help-reference",
       "m283-root-docs"
     ],
-    "desired_retained_completed_branches": [
+    "retained_completed_branches": [
       "m282-vms-help-reference",
       "m283-root-docs"
     ],
-    "pending_housekeeping": [
-      "Create permanent lightweight tag m283 at promoted main 4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400.",
-      "After verifying m283 tag, delete completed branch m281-settings-auto-limits; retain M282 and M283 as the two most recent completed milestone branches.",
-      "Synchronize the VAX checkout/ref set to promoted M283 main and the retained M282/M283 branch set."
+    "pruned_completed_branches": [
+      "m278-github-service-completion",
+      "m279-legacy-backlog-closure",
+      "m280-interactive-settings",
+      "m281-settings-auto-limits"
     ],
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
       "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
       "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28"
-    }
+      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+      "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400"
+    },
+    "note": "GitHub branch retention and permanent tags are compliant through M283."
   },
   "vax_hygiene": {
-    "status": "CLEAN_AT_M282_PENDING_REF_SYNC_TO_M283",
-    "head": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+    "status": "COMPLETE",
+    "head": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
     "branch": "main",
     "local_branches": [
       "main",
-      "m281-settings-auto-limits",
-      "m282-vms-help-reference"
+      "m282-vms-help-reference",
+      "m283-root-docs"
     ],
     "remote_tracking_refs": [
       "origin/main",
-      "origin/m281-settings-auto-limits",
-      "origin/m282-vms-help-reference"
+      "origin/m282-vms-help-reference",
+      "origin/m283-root-docs"
     ],
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
     "core_filemode": "false",
-    "remaining": [
-      "Fetch promoted M283 main and move local main ref to 4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400.",
-      "Create/push m283 tag and prune M281 branch/ref after remote verification.",
-      "Populate local/remote-tracking M283 and remove local/remote-tracking M281 after remote branch deletion."
-    ]
+    "verified_local_tags": {
+      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
+      "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400"
+    },
+    "remaining": []
   },
   "m283": {
     "issue": 111,
-    "status": "COMPLETED_PROMOTED_HOUSEKEEPING_PENDING",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m283-root-docs",
     "baseline_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
     "reviewed_head": "9b2a33f975cadc8bdc2ef122b322ae3c0791523c",
@@ -91,9 +93,8 @@
     "goal": "Add a conventional root documentation set grounded in the actual OVMS Agent OpenVMS/VAX development and operating workflow.",
     "tag": {
       "name": "m283",
-      "target": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-      "created": false,
-      "reason_pending": "Current GitHub connector still exposes no tag-create mutation."
+      "sha": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
+      "remote_verified": true
     }
   },
   "m282": {
@@ -110,7 +111,7 @@
   },
   "m281": {
     "issue": 107,
-    "status": "COMPLETED_PROMOTED_TAGGED_PRUNE_PENDING_AFTER_M283",
+    "status": "COMPLETED_PROMOTED_TAGGED_BRANCH_PRUNED",
     "branch": "m281-settings-auto-limits",
     "promoted_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
     "vax_accepted_feature_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
