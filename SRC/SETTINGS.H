@@ -8,6 +8,7 @@ int settings_reload(void);
 int settings_save(void);
 int settings_reset(void);
 const char *settings_get(const char *key);
+int settings_is_saved(const char *key);
 int settings_set(const char *key, const char *value);
 int settings_set_bool(const char *key, int enabled);
 int settings_set_long(const char *key, long value);
