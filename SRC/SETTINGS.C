@@ -9,6 +9,7 @@
 #define SETTINGS_FILE "SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT"
 #define SETTINGS_LINE_MAX 1200U
 #define SETTINGS_VALUE_MAX 1024U
+#define SETTINGS_PATH_MAX 1024U
 
 typedef struct setting_entry {
     const char *key;
@@ -27,6 +28,13 @@ static setting_entry setting_entries[] = {
 };
 
 static int settings_loaded;
+static char settings_test_file[SETTINGS_PATH_MAX];
+
+static const char *settings_file_name(void)
+{
+    return settings_test_file[0] != '\0' ?
+        settings_test_file : SETTINGS_FILE;
+}
 
 static size_t settings_count(void)
 {
@@ -130,7 +138,7 @@ int settings_load(void)
     }
 
     settings_defaults();
-    file = fopen(SETTINGS_FILE, "r");
+    file = fopen(settings_file_name(), "r");
     if (file == NULL) {
         settings_loaded = 1;
         return 1;
@@ -183,7 +191,7 @@ int settings_save(void)
         return 0;
     }
 
-    file = fopen(SETTINGS_FILE, "w");
+    file = fopen(settings_file_name(), "w");
     if (file == NULL) {
         return 0;
     }
@@ -202,7 +210,7 @@ int settings_save(void)
         return 0;
     }
 
-    if (chmod(SETTINGS_FILE, 0600) != 0) {
+    if (chmod(settings_file_name(), 0600) != 0) {
         return 0;
     }
 
@@ -377,4 +385,15 @@ const char *settings_value_source(const char *key,
     }
 
     return "default";
+}
+
+void settings_test_path(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        settings_test_file[0] = '\0';
+    } else {
+        settings_copy(settings_test_file,
+                      sizeof(settings_test_file), path);
+    }
+    settings_loaded = 0;
 }
