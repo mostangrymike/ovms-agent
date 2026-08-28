@@ -176,6 +176,15 @@ This file records durable operating rules learned during development of OVMS Age
 - Every command and setting topic in `OVMS_AGENT.HLP` must explain both **what the feature does** and **when or why a user would normally use it**; a syntax-only or one-line description is not sufficient.
 - Keep `OVMS_AGENT.HLP` as valid OpenVMS HELP source that can be loaded into a HELP library on the canonical OpenVMS acceptance system.
 
+## 18. Semantic Releases
+
+- Beginning with OVMS Agent 1.0.0, public releases use semantic versioning in the form `MAJOR.MINOR.PATCH`.
+- Use a patch release for backward-compatible fixes, a minor release for backward-compatible features, and a major release for intentional incompatible changes.
+- Every public semantic release receives a permanent `vX.Y.Z` tag on the same canonical promoted `main` commit as its milestone `mNNN` tag; semantic release tags complement rather than replace milestone tags.
+- A semantic release candidate that changes product/build/runtime inputs requires the normal canonical OpenVMS/VAX acceptance plus an explicit startup and `VERSION` check proving the intended semantic version from the exact candidate.
+- Do not create or advertise the final semantic release tag until the milestone candidate has passed its required acceptance and has been promoted to canonical `main`.
+- Keep `CHANGELOG.md`, `README.md`, installation/build guidance, supported security release information, and genuine live version-bearing metadata synchronized with the release in the same milestone.
+
 ---
 
 When a conflict appears between this file and a newer explicit user instruction, the newer explicit instruction wins. Update this file to reflect the new standing rule once the correction is established.
