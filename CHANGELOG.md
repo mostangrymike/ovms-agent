@@ -1,15 +1,33 @@
 # Changelog
 
-This file records user-visible OVMS Agent milestone changes. The project uses permanent lightweight `mNNN` Git tags for canonical promoted milestone commits.
+This file records user-visible OVMS Agent milestone changes. The project uses permanent lightweight `mNNN` Git tags for canonical promoted milestone commits and semantic `vX.Y.Z` tags for public releases.
 
 The changelog is maintained from M278 forward. Earlier milestone history remains available through the repository's Git history, issues, and permanent tags.
 
 ## Unreleased
 
-### Documentation
+No unreleased user-visible changes are currently queued. Feature development is frozen during the 1.0.0 release candidate.
 
-- Added a conventional root-level documentation set: `INSTALL.md`, `BUILD.md`, `CONTRIBUTING.md`, `SECURITY.md`, `ARCHITECTURE.md`, and `CHANGELOG.md`.
+## 1.0.0 — 2026-08-28 (M284)
+
+Planned release tags: `m284`, `v1.0.0`
+
+- Declared the first stable semantic release of OVMS Agent.
+- Set the runtime and `VERSION` command semantic version to `1.0.0`.
+- Added the MIT License for public use, modification, and redistribution.
+- Aligned installation, build, README, changelog, and release guidance with the 1.0.0 contract.
+- Added release acceptance guidance requiring the full canonical OpenVMS/VAX build, regression suite, successful OpenVMS status, and startup/`VERSION` smoke test from the exact candidate.
+- Performed a release-blocker audit for stale version strings, TODO/FIXME markers, and obvious committed credential material.
+- Added no new user-facing commands or persistent SETTINGS; M284 is a release-hardening milestone rather than a feature milestone.
+
+## M283 — Root project documentation set
+
+Tag: `m283`
+
+- Added `INSTALL.md`, `BUILD.md`, `CONTRIBUTING.md`, `SECURITY.md`, `ARCHITECTURE.md`, and `CHANGELOG.md` at the project root.
+- Added a concise documentation index to `README.md` and corrected its SETTINGS summary to include the M281 autonomous-limit entries.
 - Established clearer ownership between README overview content, OpenVMS HELP command/settings reference, build/install guidance, contributor workflow, architecture, and security policy.
+- Promoted the reviewed documentation tree without changing source, build, launcher, HELP, or runtime behavior.
 
 ## M282 — OpenVMS HELP reference
 
@@ -69,8 +87,8 @@ Tag: `m278`
 For future milestones:
 
 - add user-visible changes under `Unreleased` while work is in progress;
-- on promotion, move the accepted entries into a new `MNNN` section;
-- identify the permanent milestone tag;
+- on promotion, move the accepted entries into a new `MNNN` section or semantic release section as appropriate;
+- identify permanent milestone and semantic release tags;
 - describe behavior and compatibility changes, not every internal commit;
 - include documentation/security/build changes when they affect how users or contributors operate the project;
 - avoid claiming a GitHub merge SHA was VAX-run unless that exact merge SHA was actually accepted on VAX.
