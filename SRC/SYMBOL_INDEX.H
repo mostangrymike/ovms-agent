@@ -112,22 +112,22 @@ void symbol_decl_fix_diagnose(agent_state *state,
                               unsigned int limit);
 
 /*
- * Refactor verification in SYMBOL_INDEX.C uses system() for controlled build
- * and object invalidation.  The M279 wrapper delegates every command except
- * the legacy [.BUILD] object-delete form, which gains flat-root awareness.
- */
-#include "SYMBOL_SYSTEM_M279.INC"
-
-/*
  * RENAME/APPLY and RENAME/VERIFY historically wrote C source directly with
  * stdio and rolled back by assuming an older file version existed. Route only
  * the command-side entry points through an RMS/version-safe M279 transaction.
- * The legacy symbol translation unit remains untouched.
+ * Include this before SYMBOL_SYSTEM_M279.INC installs its system() macro.
  */
 #ifdef OVMS_AGENT_COMMAND_INTERNAL_H
 #include "SYMBOL_RENAME_M279.INC"
 #define symbol_rename_apply m279_rename_apply
 #define symbol_rename_verify m279_rename_verify
 #endif
+
+/*
+ * Refactor verification in SYMBOL_INDEX.C uses system() for controlled build
+ * and object invalidation.  The M279 wrapper delegates every command except
+ * the legacy [.BUILD] object-delete form, which gains flat-root awareness.
+ */
+#include "SYMBOL_SYSTEM_M279.INC"
 
 #endif /* OVMS_AGENT_SYMBOL_INDEX_H */
