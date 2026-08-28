@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:44:00-05:00",
+  "updated_at": "2026-08-28T12:49:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -10,27 +10,21 @@
     "latest_code_milestone": "M284",
     "vax_green_code_baseline": "de5837a121860b7cf3167d97df67099d771a3bef",
     "main_sha_itself_vax_run": false,
-    "note": "M284 release commit de5837a is exact-main VAX-green. M285 only renames historical documentation paths/case with identical blobs; promoted M285 main 129e69f was not separately product-built."
+    "note": "M284 release commit de5837a is exact-main VAX-green and is tagged m284 and v1.0.0. M285 main 129e69f is doc-only path/case consolidation, locally synchronized and clean, and was not separately product-built."
   },
   "github_hygiene": {
-    "status": "M284_M285_TAG_AND_RETENTION_HYGIENE_PENDING",
-    "open_product_issues": [113],
+    "status": "M284_COMPLETE_M285_TAG_PENDING",
+    "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
-      "m282-vms-help-reference",
-      "m283-root-docs",
       "m284-v1-release",
       "m285-doc-case-consolidation"
     ],
-    "target_retained_completed_branches": [
+    "retained_completed_branches": [
       "m284-v1-release",
       "m285-doc-case-consolidation"
-    ],
-    "pending_prune": [
-      "m282-vms-help-reference",
-      "m283-root-docs"
     ],
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
@@ -38,17 +32,17 @@
       "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
       "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-      "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400"
+      "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
+      "m284": "de5837a121860b7cf3167d97df67099d771a3bef",
+      "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef"
     },
     "pending_tags": {
-      "m284": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5"
     }
   },
   "vax_hygiene": {
-    "status": "CLEAN_ON_EXACT_VAX_GREEN_1_0_RELEASE_PENDING_M285_REF_SYNC",
-    "head": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "status": "CLEAN_ON_M285_MAIN_TAG_PENDING",
+    "head": "129e69f97b11c3e381403deabc6ba2feacc059b5",
     "branch": "main",
     "git_diff_name_only": "empty",
     "git_status_short": "empty",
@@ -56,7 +50,7 @@
   },
   "m285": {
     "issue": 115,
-    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAG_HYGIENE_PENDING",
+    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAG_PENDING",
     "branch": "m285-doc-case-consolidation",
     "baseline_main": "de5837a121860b7cf3167d97df67099d771a3bef",
     "reviewed_head": "db424e1ee60429a9383990bf5524d2bbde3c2dbb",
@@ -70,11 +64,14 @@
       "reason": "Exactly ten documentation-path case renames with 0 additions and 0 deletions; all original blob SHAs preserved; no source/build/runtime files changed.",
       "canonical_directory": "DOC",
       "lowercase_doc_present": false
-    }
+    },
+    "pending": [
+      "Create and verify lightweight tag m285 at 129e69f97b11c3e381403deabc6ba2feacc059b5."
+    ]
   },
   "m284": {
     "issue": 113,
-    "status": "EXACT_PROMOTED_MAIN_VAX_GREEN_RELEASE_TAGS_HYGIENE_PENDING",
+    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_RETAINED",
     "branch": "m284-v1-release",
     "accepted_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
     "promotion_pr": 114,
@@ -95,12 +92,10 @@
     "release": {
       "semantic": "1.0.0",
       "license": "MIT",
-      "tag_target": "de5837a121860b7cf3167d97df67099d771a3bef"
-    },
-    "pending": [
-      "Create lightweight m284 and v1.0.0 tags at de5837a121860b7cf3167d97df67099d771a3bef.",
-      "Close issue #113 after tag verification and branch-retention hygiene."
-    ]
+      "m284_tag": "de5837a121860b7cf3167d97df67099d771a3bef",
+      "v1.0.0_tag": "de5837a121860b7cf3167d97df67099d771a3bef",
+      "issue_closed_completed": true
+    }
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
