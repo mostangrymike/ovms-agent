@@ -105,7 +105,8 @@ int agent_initialize(agent_state *state)
         "dcl_execution", "OVMS_AGENT_DCL_ENABLED", 0);
 
     approval_logical = getenv("OVMS_AGENT_APPROVAL_POLICY");
-    if (approval_logical == NULL || *approval_logical == '\0') {
+    if ((approval_logical == NULL || *approval_logical == '\0') &&
+        settings_is_saved("approval_policy")) {
         approval_saved = settings_get("approval_policy");
         if (approval_saved != NULL && *approval_saved != '\0') {
             (void)llm_set_approval(approval_saved);
