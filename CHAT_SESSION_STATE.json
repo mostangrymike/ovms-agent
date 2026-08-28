@@ -1,43 +1,43 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T10:35:00-05:00",
+  "updated_at": "2026-08-28T10:53:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "latest_code_milestone": "M280"
+    "head": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+    "latest_code_milestone": "M281"
   },
   "pre_feature_baseline": {
-    "status": "BASELINE_FOR_M281",
-    "branch": "main",
-    "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "tag": "m280",
+    "status": "M281_PROMOTED_PENDING_MAIN_VAX_ACCEPTANCE",
+    "previous_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+    "promoted_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+    "previous_tag": "m280",
     "github_hygiene": {
-      "open_product_issues": [107],
-      "open_prs": 0,
+      "open_product_issues": [],
+      "open_prs": [],
       "branches": ["main", "chat-session-state", "m279-legacy-backlog-closure", "m280-interactive-settings", "m281-settings-auto-limits"],
-      "retention": "M279 and M280 remain the two retained completed milestone branches while M281 is active."
+      "retention": "M279 and M280 remain retained completed branches until M281 tag/final acceptance is complete; then prune M279 and retain M280/M281."
     },
     "vax_hygiene": {
-      "branch": "main",
-      "head": "717e54fb88003deba0efc2b253b72caedf2feaa8",
+      "branch": "m281-settings-auto-limits",
+      "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
       "git_status_short": "empty",
       "git_diff_name_only": "empty",
       "core_filemode": "false"
-    },
-    "vax_baseline_build": {
-      "output": "All regression tests passed; Build completed successfully",
-      "saved_status": "%X00000001"
     }
   },
   "m281": {
     "issue": 107,
-    "status": "ACTIVE_VAX_GREEN_BUILD_PENDING_RUNTIME_ACCEPTANCE",
+    "status": "PROMOTED_TREE_EQUIVALENT_PENDING_MAIN_VAX_ACCEPTANCE",
     "branch": "m281-settings-auto-limits",
     "baseline_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "candidate_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+    "vax_accepted_feature_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
     "latest_vax_green_head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+    "promoted_main": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
+    "promotion_pr": 108,
+    "promotion_tree": "07628e67386d470e9c81bb0926c5dbe8ce243858",
+    "promotion_tree_check": "Accepted feature head ece9d5525882242141f5f62b556ec4ab71393d12 and promoted merge 846fea9e0cd2247a47fe4ed8dae7da3a542579e8 have identical tree SHA 07628e67386d470e9c81bb0926c5dbe8ce243858. Merge SHA itself has not yet been run on VAX.",
     "vax_build_acceptance": {
       "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
       "output": "All regression tests passed; Build completed successfully",
@@ -46,13 +46,19 @@
       "git_diff_name_only": "empty",
       "core_filemode": "false"
     },
+    "runtime_acceptance": {
+      "status": "COMPLETE",
+      "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
+      "evidence": "SETTINGS menu entries 9/10 present; interactive changes immediate; noninteractive GET/SET supported; invalid 0-turn and 9-write values rejected; auto_writes saved value survived restart; legacy turn/write logicals overrode saved values with warnings; supplemental no-logical probe showed auto_turns default 12 then saved 13 immediately and after restart; AGENT/AUTO/LIMITS reported saved/logical sources correctly.",
+      "final_git_status_short": "empty",
+      "final_git_diff_name_only": "empty",
+      "core_filemode": "false"
+    },
     "failed_candidate": {
       "head": "0d53197741ec39597cd9d953c513f0e301d1fe78",
       "vax_status": "%X1789A0C0",
       "diagnostic": "DEC C implicit declaration and linker undefined symbol for llm_auto_env_limit / LLM_AUTO_ENV_LIMIT.",
-      "root_cause": "SRC/LLM_AUTO_CREATE_M279.INC still uses the private environment parser for the separate OVMS_AGENT_AUTO_CREATES ceiling; M281 had removed that helper while migrating only turn/write limits.",
-      "worktree_after_failure": "clean",
-      "core_filemode": "false"
+      "root_cause": "SRC/LLM_AUTO_CREATE_M279.INC still uses the private environment parser for the separate OVMS_AGENT_AUTO_CREATES ceiling; M281 had removed that helper while migrating only turn/write limits."
     },
     "corrective_commit": {
       "head": "ece9d5525882242141f5f62b556ec4ab71393d12",
@@ -76,55 +82,22 @@
       "SRC/SETTINGS.C",
       "features.md"
     ],
-    "github_review": {
-      "main_unchanged": true,
-      "link_surface": "LLM_AUTO.OBJ is linked through LLM_MODULES.OPT, which already includes SETTINGS.OBJ.",
-      "settings_regression": "Existing M280_SETTINGS_TEST build path compiles and runs the expanded persistence regression before COMMAND_SETTINGS.C.",
-      "identifier_audit": "No new linker-visible identifiers; new COMMAND_SETTINGS helpers and restored llm_auto_env_limit are static."
-    },
-    "next_action": "Run focused live SETTINGS acceptance on exact VAX-green head ece9d5525882242141f5f62b556ec4ab71393d12, preserving/restoring SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT. Verify entries 9/10, GET/SET, range rejection, same-session AGENT/AUTO/LIMITS effect, persistence across restart, and legacy OVMS_AGENT_AUTO_TURNS/OVMS_AGENT_AUTO_WRITES override reporting/warnings. Then recheck clean worktree before reconciliation/promotion."
+    "next_action": "On VAX fetch origin main, advance local refs/heads/main from 717e54fb88003deba0efc2b253b72caedf2feaa8 or current accepted branch state to promoted merge 846fea9e0cd2247a47fe4ed8dae7da3a542579e8 without rematerializing files because the merge tree is identical to accepted feature head, switch HEAD to main, verify zero diff between ece9d552... and HEAD plus clean worktree/core.filemode=false, then run canonical @BUILD and save status. If exact main passes, tag m281 at 846fea9e..., verify remote tag, prune M279 branch after verifying m279 tag, and finalize durable state."
   },
   "m280": {
     "issue": 105,
     "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m280-interactive-settings",
-    "baseline_main": "5feaae97699c3eb124144bdbef978564f619f42a",
-    "vax_accepted_feature_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
     "promoted_main": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-    "promotion_pr": 106,
-    "promotion_tree_check": "Promoted merge is one commit beyond accepted feature head with zero changed files, and the promoted merge SHA 717e54fb88003deba0efc2b253b72caedf2feaa8 was subsequently run on VAX with the full canonical build passing.",
     "tag": {
       "name": "m280",
       "sha": "717e54fb88003deba0efc2b253b72caedf2feaa8",
       "remote_verified": true
-    },
-    "retention": {
-      "retained_completed_branches": ["m279-legacy-backlog-closure", "m280-interactive-settings"],
-      "pruned_completed_branch": "m278-github-service-completion",
-      "remote_prune_verified": true,
-      "permanent_tags": {
-        "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-        "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
-        "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8"
-      }
-    },
-    "accepted_evidence": {
-      "feature_head_build": "All regression tests passed; Build completed successfully; M280_BUILD_STATUS=%X00000001",
-      "runtime": "Focused SETTINGS runtime acceptance complete: numbered menu, provider/approval submenus, RETURN-to-keep behavior, immediate toggles, value persistence across restart, noninteractive SHOW/GET/SET/TOGGLE, and legacy logical override precedence/warnings.",
-      "promoted_main_build": "All regression tests passed; Build completed successfully; M280_MAIN_STATUS=%X00000001",
-      "tracked_diff": "empty",
-      "git_status_short": "empty",
-      "core_filemode": "false",
-      "identifier_audit": "New SETTINGS-facing external identifiers are <=31 characters."
-    },
-    "prior_acceptance_failures": [
-      "3222e1d4a8f09e0ff9d28242b500691672287a52: M251_ROOT_TEST.EXE link exposed SETTINGS integration references",
-      "61f2b4cc44ca1b34ce0e7779282587bf0930e44d: M251_KEY_TEST.EXE isolated link lacked SETTINGS_EFFECTIVE_BOOL fallback stub"
-    ]
+    }
   },
   "m279": {
     "issue": 97,
-    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED_PENDING_M281_FINALIZATION",
     "branch": "m279-legacy-backlog-closure",
     "promoted_main": "5feaae97699c3eb124144bdbef978564f619f42a",
     "tag": {
@@ -141,7 +114,7 @@
     "Use GITAUTH for Git network operations.",
     "Keep core.filemode=false.",
     "Canonical acceptance requires All regression tests passed and %X00000001.",
-    "Do not call an untested GitHub candidate VAX-green.",
-    "Promotion wording must distinguish a separately VAX-accepted reconciliation head from a GitHub merge SHA unless the merge SHA itself was run on VAX."
+    "Do not call an untested GitHub candidate or promoted merge VAX-green.",
+    "Promotion wording must distinguish a separately VAX-accepted reconciliation/code head from a GitHub merge SHA unless the merge SHA itself was run on VAX."
   ]
 }
