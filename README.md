@@ -6,6 +6,19 @@ It is designed to bring modern AI-assisted software development workflows to Ope
 
 The project is written primarily in C and is intended to run directly on OpenVMS without requiring a Unix compatibility layer for normal operation.
 
+Project Documentation
+
+Use the root documentation by purpose:
+
+- `INSTALL.md` - prerequisites, installation, first run, provider setup, and authenticated Git setup.
+- `BUILD.md` - authoritative build procedure, generated artifacts, diagnostics, regressions, and VAX acceptance.
+- `CONTRIBUTING.md` - GitHub-first development workflow, RMS-aware VAX acceptance, compatibility rules, and milestone hygiene.
+- `SECURITY.md` - credentials, approval boundaries, DCL/write/network safety, GitHub authentication, and vulnerability reporting.
+- `ARCHITECTURE.md` - subsystem boundaries, persistence, guarded writes, LLM/provider flow, repair/autonomous execution, and Git/GitHub integration.
+- `CHANGELOG.md` - user-visible milestone/release history and the current Unreleased section.
+- `OVMS_AGENT.HLP` - complete OpenVMS HELP source for commands and persistent SETTINGS, including when and why to use each feature.
+- `RULES.md` - durable project-development rules and acceptance discipline.
+
 What OVMS Agent Can Do
 
 OVMS Agent provides an interactive OpenVMS programming assistant with features such as:
@@ -58,7 +71,7 @@ Run:
 
 SETTINGS
 
-The numbered menu currently covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, and network allow/deny lists. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
+The numbered menu currently covers guarded writes, DCL execution, the active provider profile, the active model, the maximum output-token limit, approval policy, network allow/deny lists, autonomous model/tool turns, and autonomous write actions. Entering the number of an ON/OFF setting toggles it immediately. Settings that need a value prompt for that value, and provider or approval choices use numbered submenus.
 
 Ordinary settings are saved automatically in:
 
