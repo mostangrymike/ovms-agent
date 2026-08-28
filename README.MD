@@ -21,6 +21,7 @@ It brings modern AI-assisted software-development workflows to OpenVMS while res
 | [`CONTRIBUTING.MD`](CONTRIBUTING.MD) | GitHub-first development workflow, RMS-aware VAX acceptance, compatibility rules, and milestone hygiene. |
 | [`SECURITY.MD`](SECURITY.MD) | Credentials, approval boundaries, DCL/write/network safety, GitHub authentication, and vulnerability reporting. |
 | [`ARCHITECTURE.MD`](ARCHITECTURE.MD) | Subsystem boundaries, persistence, guarded writes, provider flow, repair/autonomous execution, and Git/GitHub integration. |
+| [`FEATURES.MD`](FEATURES.MD) | Plain-language catalog of current OVMS Agent capabilities. |
 | [`CHANGELOG.MD`](CHANGELOG.MD) | User-visible milestone/release history and the current unreleased section. |
 | [`OVMS_AGENT.HLP`](OVMS_AGENT.HLP) | Complete OpenVMS HELP source for commands and persistent SETTINGS, including when and why to use each feature. |
 | [`RULES.MD`](RULES.MD) | Durable project-development rules and acceptance discipline. |
