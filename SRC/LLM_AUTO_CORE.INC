@@ -1,5 +1,6 @@
 #include "llm_internal.h"
 #include "rms_write.h"
+#include "SETTINGS.H"
 
 #define LLM_AUTO_TURNS_DEFAULT 12U
 #define LLM_AUTO_TURNS_MAX 32U
@@ -21,9 +22,14 @@ static unsigned int llm_auto_last_writes = 0U;
 static int llm_auto_last_workflow = LLM_WORKFLOW_NONE;
 static char llm_auto_last_reason[32] = "none";
 
+/*
+ * M279's separate create-action ceiling remains a legacy logical-only knob.
+ * M281 moves only turn/write limits into SETTINGS, so retain this parser for
+ * OVMS_AGENT_AUTO_CREATES rather than changing M279 behavior implicitly.
+ */
 static unsigned int llm_auto_env_limit(const char *name,
-                                           unsigned int fallback,
-                                           unsigned int maximum)
+                                       unsigned int fallback,
+                                       unsigned int maximum)
 {
     const char *value;
     char *end;
@@ -52,10 +58,12 @@ static unsigned int llm_auto_turn_cfg(void)
         return llm_auto_turn_override;
     }
 
-    return llm_auto_env_limit(
+    return (unsigned int)settings_effective_long(
+        "auto_turns",
         "OVMS_AGENT_AUTO_TURNS",
-        LLM_AUTO_TURNS_DEFAULT,
-        LLM_AUTO_TURNS_MAX
+        (long)LLM_AUTO_TURNS_DEFAULT,
+        1L,
+        (long)LLM_AUTO_TURNS_MAX
     );
 }
 
@@ -65,10 +73,12 @@ static unsigned int llm_auto_write_cfg(void)
         return llm_auto_write_override;
     }
 
-    return llm_auto_env_limit(
+    return (unsigned int)settings_effective_long(
+        "auto_writes",
         "OVMS_AGENT_AUTO_WRITES",
-        LLM_AUTO_WRITES_DEFAULT,
-        LLM_AUTO_WRITES_MAX
+        (long)LLM_AUTO_WRITES_DEFAULT,
+        1L,
+        (long)LLM_AUTO_WRITES_MAX
     );
 }
 
@@ -215,24 +225,32 @@ int llm_auto_bounded_completed(void)
 
 int llm_auto_limits_text(char *output, size_t output_size)
 {
+    const char *turn_source;
+    const char *write_source;
     int written;
 
     if (output == NULL || output_size == 0U) {
         return 0;
     }
 
+    turn_source = settings_value_source(
+        "auto_turns", "OVMS_AGENT_AUTO_TURNS");
+    write_source = settings_value_source(
+        "auto_writes", "OVMS_AGENT_AUTO_WRITES");
+
     written = snprintf(
         output, output_size,
         "OVMS Agent autonomous limits\n"
         "----------------------------\n"
-        "Model/tool turns: %u (max %u)\n"
-        "Write actions:    %u (max %u)\n"
-        "Turn variable:    OVMS_AGENT_AUTO_TURNS\n"
-        "Write variable:   OVMS_AGENT_AUTO_WRITES\n",
+        "Model/tool turns: %u (max %u, %s)\n"
+        "Write actions:    %u (max %u, %s)\n"
+        "Configure with SETTINGS: auto_turns and auto_writes.\n",
         llm_auto_turn_cfg(),
         LLM_AUTO_TURNS_MAX,
+        turn_source,
         llm_auto_write_cfg(),
-        LLM_AUTO_WRITES_MAX
+        LLM_AUTO_WRITES_MAX,
+        write_source
     );
 
     return written >= 0 && (size_t)written < output_size;

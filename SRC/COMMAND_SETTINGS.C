@@ -11,6 +11,10 @@
 #define SET_INPUT_MAX 1024U
 #define SET_TOKEN_MIN 64L
 #define SET_TOKEN_MAX 32768L
+#define SET_AUTO_TURNS_MIN 1L
+#define SET_AUTO_TURNS_MAX 32L
+#define SET_AUTO_WRITES_MIN 1L
+#define SET_AUTO_WRITES_MAX 8L
 
 #define SET_KIND_UNKNOWN 0
 #define SET_KIND_WRITES 1
@@ -21,6 +25,8 @@
 #define SET_KIND_APPROVAL 6
 #define SET_KIND_NET_ALLOW 7
 #define SET_KIND_NET_DENY 8
+#define SET_KIND_AUTO_TURNS 9
+#define SET_KIND_AUTO_WRITES 10
 
 static int set_equal_ci(const char *left, const char *right)
 {
@@ -111,6 +117,16 @@ static int set_kind(const char *name)
         set_equal_ci(name, "network_deny")) {
         return SET_KIND_NET_DENY;
     }
+    if (set_equal_ci(name, "auto_turns") ||
+        set_equal_ci(name, "autonomous_turns") ||
+        set_equal_ci(name, "agent_turns")) {
+        return SET_KIND_AUTO_TURNS;
+    }
+    if (set_equal_ci(name, "auto_writes") ||
+        set_equal_ci(name, "autonomous_writes") ||
+        set_equal_ci(name, "write_actions")) {
+        return SET_KIND_AUTO_WRITES;
+    }
     return SET_KIND_UNKNOWN;
 }
 
@@ -125,6 +141,8 @@ static const char *set_kind_name(int kind)
     case SET_KIND_APPROVAL: return "approval_policy";
     case SET_KIND_NET_ALLOW: return "net_allow";
     case SET_KIND_NET_DENY: return "net_deny";
+    case SET_KIND_AUTO_TURNS: return "auto_turns";
+    case SET_KIND_AUTO_WRITES: return "auto_writes";
     default: return "unknown";
     }
 }
@@ -186,6 +204,8 @@ static const char *set_text_display(const char *value)
 static void set_show_menu(const agent_state *state)
 {
     long tokens;
+    long auto_turns;
+    long auto_writes;
     const char *allow;
     const char *deny;
 
@@ -195,6 +215,18 @@ static void set_show_menu(const agent_state *state)
         2048L,
         SET_TOKEN_MIN,
         SET_TOKEN_MAX);
+    auto_turns = settings_effective_long(
+        "auto_turns",
+        "OVMS_AGENT_AUTO_TURNS",
+        12L,
+        SET_AUTO_TURNS_MIN,
+        SET_AUTO_TURNS_MAX);
+    auto_writes = settings_effective_long(
+        "auto_writes",
+        "OVMS_AGENT_AUTO_WRITES",
+        3L,
+        SET_AUTO_WRITES_MIN,
+        SET_AUTO_WRITES_MAX);
     allow = settings_effective_text(
         "net_allow", "OVMS_AGENT_NET_ALLOW", "");
     deny = settings_effective_text(
@@ -242,6 +274,15 @@ static void set_show_menu(const agent_state *state)
     (void)printf("  8. Denied network domains          %s",
                  set_text_display(deny));
     set_source_suffix("net_deny", "OVMS_AGENT_NET_DENY");
+    (void)putchar('\n');
+    (void)puts("");
+    (void)puts("  Automation");
+    (void)puts("  ----------");
+    (void)printf("  9. Autonomous model/tool turns     %ld", auto_turns);
+    set_source_suffix("auto_turns", "OVMS_AGENT_AUTO_TURNS");
+    (void)putchar('\n');
+    (void)printf(" 10. Autonomous write actions        %ld", auto_writes);
+    set_source_suffix("auto_writes", "OVMS_AGENT_AUTO_WRITES");
     (void)putchar('\n');
     (void)puts("");
     (void)puts("Enter a setting number to change it.");
@@ -427,6 +468,45 @@ static int set_prompt_tokens(void)
     return 1;
 }
 
+static int set_prompt_long(const char *key,
+                           const char *logical_name,
+                           const char *prompt,
+                           const char *description,
+                           long fallback,
+                           long minimum,
+                           long maximum)
+{
+    char input[64];
+    char *end;
+    long value;
+
+    (void)printf("Current value: %ld\n",
+        settings_effective_long(
+            key, logical_name, fallback, minimum, maximum));
+    (void)printf("Allowed range: %ld-%ld\n", minimum, maximum);
+    (void)puts("Press RETURN to keep the current value.");
+    if (!set_read(prompt, input, sizeof(input)) || input[0] == '\0') {
+        return 0;
+    }
+
+    end = NULL;
+    value = strtol(input, &end, 10);
+    if (end == input || end == NULL || *end != '\0' ||
+        value < minimum || value > maximum) {
+        (void)printf("Invalid %s.\n", description);
+        return 0;
+    }
+
+    if (!settings_set_long(key, value)) {
+        (void)puts("Unable to save setting.");
+        return 0;
+    }
+
+    (void)printf("%s set to: %ld\n", description, value);
+    set_warn_override(key, logical_name);
+    return 1;
+}
+
 static int set_prompt_approval(void)
 {
     char input[64];
@@ -603,8 +683,22 @@ static void set_interactive(agent_state *state)
                 "net_deny", "OVMS_AGENT_NET_DENY",
                 "Denied domains> ");
             break;
+        case 9:
+            (void)set_prompt_long(
+                "auto_turns", "OVMS_AGENT_AUTO_TURNS",
+                "Autonomous model/tool turns> ",
+                "Autonomous model/tool turns",
+                12L, SET_AUTO_TURNS_MIN, SET_AUTO_TURNS_MAX);
+            break;
+        case 10:
+            (void)set_prompt_long(
+                "auto_writes", "OVMS_AGENT_AUTO_WRITES",
+                "Autonomous write actions> ",
+                "Autonomous write actions",
+                3L, SET_AUTO_WRITES_MIN, SET_AUTO_WRITES_MAX);
+            break;
         default:
-            (void)puts("Setting number must be 1 through 8.");
+            (void)puts("Setting number must be 1 through 10.");
             break;
         }
     }
@@ -660,6 +754,22 @@ static void set_show_one(const agent_state *state, int kind)
             "net_deny", "OVMS_AGENT_NET_DENY", "");
         source = settings_value_source("net_deny", "OVMS_AGENT_NET_DENY");
         (void)printf("net_deny=%s source=%s\n", value, source);
+        break;
+    case SET_KIND_AUTO_TURNS:
+        number = settings_effective_long(
+            "auto_turns", "OVMS_AGENT_AUTO_TURNS",
+            12L, SET_AUTO_TURNS_MIN, SET_AUTO_TURNS_MAX);
+        source = settings_value_source(
+            "auto_turns", "OVMS_AGENT_AUTO_TURNS");
+        (void)printf("auto_turns=%ld source=%s\n", number, source);
+        break;
+    case SET_KIND_AUTO_WRITES:
+        number = settings_effective_long(
+            "auto_writes", "OVMS_AGENT_AUTO_WRITES",
+            3L, SET_AUTO_WRITES_MIN, SET_AUTO_WRITES_MAX);
+        source = settings_value_source(
+            "auto_writes", "OVMS_AGENT_AUTO_WRITES");
+        (void)printf("auto_writes=%ld source=%s\n", number, source);
         break;
     default:
         (void)puts("Unknown setting name.");
@@ -751,6 +861,32 @@ static int set_noninteractive(agent_state *state,
             return 0;
         }
         set_warn_override("net_deny", "OVMS_AGENT_NET_DENY");
+        return 1;
+    case SET_KIND_AUTO_TURNS:
+        if (value == NULL || *value == '\0') {
+            return 0;
+        }
+        end = NULL;
+        number = strtol(value, &end, 10);
+        if (end == value || end == NULL || *end != '\0' ||
+            number < SET_AUTO_TURNS_MIN || number > SET_AUTO_TURNS_MAX ||
+            !settings_set_long("auto_turns", number)) {
+            return 0;
+        }
+        set_warn_override("auto_turns", "OVMS_AGENT_AUTO_TURNS");
+        return 1;
+    case SET_KIND_AUTO_WRITES:
+        if (value == NULL || *value == '\0') {
+            return 0;
+        }
+        end = NULL;
+        number = strtol(value, &end, 10);
+        if (end == value || end == NULL || *end != '\0' ||
+            number < SET_AUTO_WRITES_MIN || number > SET_AUTO_WRITES_MAX ||
+            !settings_set_long("auto_writes", number)) {
+            return 0;
+        }
+        set_warn_override("auto_writes", "OVMS_AGENT_AUTO_WRITES");
         return 1;
     default:
         return 0;
