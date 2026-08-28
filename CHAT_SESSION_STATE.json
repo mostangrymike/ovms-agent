@@ -1,12 +1,36 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T22:08:00-05:00",
+  "updated_at": "2026-08-27T22:36:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
     "head": "5feaae97699c3eb124144bdbef978564f619f42a",
     "latest_code_milestone": "M279"
+  },
+  "pre_feature_baseline": {
+    "status": "READY_FOR_NEW_FEATURE",
+    "branch": "main",
+    "head": "5feaae97699c3eb124144bdbef978564f619f42a",
+    "tag": "m279",
+    "github_hygiene": {
+      "open_issues": 0,
+      "open_prs": 0,
+      "branches": ["main", "chat-session-state", "m278-github-service-completion", "m279-legacy-backlog-closure"],
+      "retention": "M278 and M279 are the two retained completed milestone branches; m277 branch pruned after permanent tag verification."
+    },
+    "vax_hygiene": {
+      "disposable_acceptance_trees_removed": true,
+      "vax_hygiene_clean_symbol": 1,
+      "git_status_short": "empty",
+      "git_diff_name_only": "empty",
+      "core_filemode": "false"
+    },
+    "vax_baseline_build": {
+      "output": "All regression tests passed; Build completed successfully",
+      "saved_status": "%X00000001"
+    },
+    "next_action": "When the user supplies the new feature, create a GitHub tracking issue and a new milestone development branch from canonical main 5feaae97699c3eb124144bdbef978564f619f42a, then materialize only the required branch delta on VAX with RMS-aware restore before acceptance testing."
   },
   "m279": {
     "issue": 97,
@@ -43,7 +67,7 @@
     "closed_stale_issues": [52, 61, 62, 63, 64, 66],
     "closed_tracking_issues": [97, 98, 99, 100],
     "issue_audit": "No live open issues remained at completion. #74 was explicitly rechecked and already closed completed. Accidental connector placeholder issues #102/#103 were immediately closed not_planned and excluded from product/backlog counts.",
-    "vax_local_note": "A stale local remote-tracking ref origin/m277-create-interoperability may remain even though GitHub no longer has that branch; remove locally with git branch -dr origin/m277-create-interoperability if desired. Disposable untracked acceptance directories may also remain."
+    "vax_local_note": "VAX checkout is now fully cleaned: stale remote-tracking ref removed and all disposable M274/M279 acceptance directories deleted."
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
