@@ -238,6 +238,15 @@ const char *settings_get(const char *key)
     return entry != NULL ? entry->value : NULL;
 }
 
+int settings_is_saved(const char *key)
+{
+    setting_entry *entry;
+
+    (void)settings_load();
+    entry = settings_find(key);
+    return entry != NULL && entry->saved;
+}
+
 int settings_set(const char *key, const char *value)
 {
     setting_entry *entry;
