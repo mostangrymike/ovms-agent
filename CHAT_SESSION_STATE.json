@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T22:36:00-05:00",
+  "updated_at": "2026-08-28T09:35:54-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
@@ -31,6 +31,28 @@
       "saved_status": "%X00000001"
     },
     "next_action": "When the user supplies the new feature, create a GitHub tracking issue and a new milestone development branch from canonical main 5feaae97699c3eb124144bdbef978564f619f42a, then materialize only the required branch delta on VAX with RMS-aware restore before acceptance testing."
+  },
+  "m280": {
+    "issue": 105,
+    "status": "ACTIVE_VAX_GREEN_BUILD_PENDING_RUNTIME_ACCEPTANCE",
+    "branch": "m280-interactive-settings",
+    "baseline_main": "5feaae97699c3eb124144bdbef978564f619f42a",
+    "vax_green_head": "0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
+    "vax_green_parent": "61f2b4cc44ca1b34ce0e7779282587bf0930e44d",
+    "accepted_evidence": {
+      "fetch_head_match": true,
+      "materialized_delta": "SRC/m251_key_test.c only from 61f2b4cc44ca1b34ce0e7779282587bf0930e44d..0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf",
+      "build": "All regression tests passed; Build completed successfully",
+      "saved_status": "%X00000001",
+      "tracked_diff": "empty",
+      "git_status_short": "empty",
+      "core_filemode": "false"
+    },
+    "prior_acceptance_failures": [
+      "3222e1d4a8f09e0ff9d28242b500691672287a52: M251_ROOT_TEST.EXE link exposed SETTINGS integration references",
+      "61f2b4cc44ca1b34ce0e7779282587bf0930e44d: M251_KEY_TEST.EXE isolated link lacked SETTINGS_EFFECTIVE_BOOL fallback stub"
+    ],
+    "next_action": "Run focused user-facing SETTINGS runtime acceptance on exact VAX-green head 0a0bca0fa4dd59b69bd0b3105d7c4107b1f2abaf, covering the numbered interactive path, immediate toggle/value behavior, persistence across restart, noninteractive SHOW/GET/SET/TOGGLE forms, and legacy logical override reporting while preserving/restoring the user's pre-existing settings/provider/model state. Do not promote until runtime acceptance and reconciliation are complete."
   },
   "m279": {
     "issue": 97,
