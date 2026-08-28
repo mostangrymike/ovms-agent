@@ -28,6 +28,8 @@ int main(void)
     settings_test_path(M280_SETTINGS_FILE);
 
     if (!m280_expect(settings_reload(), "initial reload") ||
+        !m280_expect(!settings_is_saved("approval_policy"),
+                     "unsaved approval default") ||
         !m280_expect(
             settings_effective_bool("guarded_writes", NULL, 0) == 0,
             "default guarded writes") ||
@@ -58,6 +60,8 @@ int main(void)
     }
 
     if (!m280_expect(settings_reload(), "reload saved settings") ||
+        !m280_expect(settings_is_saved("approval_policy"),
+                     "saved approval presence") ||
         !m280_expect(
             settings_effective_bool("guarded_writes", NULL, 0) == 1,
             "persist guarded writes") ||
@@ -84,6 +88,8 @@ int main(void)
 
     if (!m280_expect(settings_reset(), "reset defaults") ||
         !m280_expect(settings_reload(), "reload defaults") ||
+        !m280_expect(settings_is_saved("approval_policy"),
+                     "reset defaults are saved") ||
         !m280_expect(
             settings_effective_bool("guarded_writes", NULL, 1) == 0,
             "reset guarded writes") ||
