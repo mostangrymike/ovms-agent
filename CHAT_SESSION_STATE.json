@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T12:47:00-05:00",
+  "updated_at": "2026-08-28T12:34:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-    "latest_milestone": "M283",
-    "latest_code_milestone": "M281",
-    "vax_green_code_baseline": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-    "documentation_only_since_code_baseline": ["M282", "M283"]
+    "head": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "latest_milestone": "M284_PROMOTED_PENDING_FINAL_MAIN_ACCEPTANCE",
+    "latest_code_milestone": "M284",
+    "vax_green_code_baseline": "7123f7a484545292c276ee7b0789df442e15076f",
+    "note": "M284 candidate 7123f7a is VAX-green; promoted merge de5837a is tree-equivalent but not yet itself VAX-run."
   },
   "github_hygiene": {
-    "status": "ACTIVE_M284_FINAL_CANDIDATE",
+    "status": "M284_PROMOTED_FINAL_MAIN_ACCEPTANCE_PENDING",
     "open_product_issues": [113],
     "open_prs": [],
     "branches": [
@@ -26,6 +26,7 @@
       "m282-vms-help-reference",
       "m283-root-docs"
     ],
+    "active_milestone_branch": "m284-v1-release",
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
       "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
@@ -36,7 +37,7 @@
     }
   },
   "vax_hygiene": {
-    "status": "CLEAN_ON_M284_FINAL_CANDIDATE_PENDING_BUILD",
+    "status": "CLEAN_ON_VAX_ACCEPTED_M284_CANDIDATE_PENDING_PROMOTED_MAIN_SYNC",
     "head": "7123f7a484545292c276ee7b0789df442e15076f",
     "branch": "m284-v1-release",
     "git_diff_name_only": "empty",
@@ -45,12 +46,15 @@
   },
   "m284": {
     "issue": 113,
-    "status": "FINAL_RELEASE_CANDIDATE_PENDING_VAX_ACCEPTANCE",
+    "status": "PROMOTED_MAIN_PENDING_EXACT_MAIN_VAX_ACCEPTANCE_AND_RELEASE_TAGS",
     "branch": "m284-v1-release",
     "baseline_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-    "github_head_before_vax_banner": "0ae6a61dd21828374b1852ac54139c97ef685540",
-    "final_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
-    "final_candidate_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
+    "accepted_candidate_head": "7123f7a484545292c276ee7b0789df442e15076f",
+    "accepted_candidate_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
+    "promotion_pr": 114,
+    "promoted_main": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "promoted_tree": "8a9fa4f91ae11b4726775b00accb3193e7d46f3f",
+    "tree_equivalence": "GitHub compare from accepted candidate 7123f7a to promoted merge de5837a reports one commit ahead and zero changed files.",
     "goal": "Declare and ship OVMS Agent 1.0.0 as a feature-frozen release-hardening milestone.",
     "final_delta": [
       "BUILD.COM",
@@ -67,39 +71,34 @@
     "version": {
       "semantic": "1.0.0",
       "source": "SRC/AGENT.H",
-      "build_banner": "Building OVMS Agent Version 1.0.0...",
-      "startup_and_version_command_expected": "1.0.0"
+      "build_banner": "Building OVMS Agent Version 1.0.0..."
     },
     "license": {
       "type": "MIT",
       "file": "LICENSE"
     },
+    "candidate_acceptance": {
+      "head": "7123f7a484545292c276ee7b0789df442e15076f",
+      "build_status": "%X00000001",
+      "build_banner": "Building OVMS Agent Version 1.0.0...",
+      "regressions": "All regression tests passed.",
+      "build_complete": "Build completed successfully.",
+      "startup": "Version 1.0.0",
+      "version_command": "OVMS Agent 1.0.0",
+      "launch_status": "%X00000001",
+      "oneshot_note": "Bare VERSION is intentionally invalid in one-shot mode; SRC/MAIN.C requires DCL <command>."
+    },
     "release_audit": {
       "todo": "none found",
       "fixme": "none found",
-      "github_token_prefixes": "none found",
-      "private_key_marker": "none found",
-      "slack_token_prefix": "none found",
-      "google_api_key_prefix": "none found",
-      "sk_prefix": "intentional sensitive-screening/test/history references only"
+      "credential_prefix_audit": "clean; sk- occurrences are intentional screening/test/history text"
     },
-    "help": "OVMS_AGENT.HLP reviewed; no command/SETTINGS behavior changed and no HELP edit is required.",
-    "architecture": "ARCHITECTURE.md reviewed; no release correction required.",
-    "github_verification": "Remote branch independently verified at exact 7123f7a...; final banner commit changes only BUILD.COM; compare from M283 baseline shows exactly the ten intended release-hardening files.",
-    "acceptance_required": [
-      "Full canonical @BUILD on exact 7123f7a484545292c276ee7b0789df442e15076f.",
-      "Build output starts with Building OVMS Agent Version 1.0.0....",
-      "Output includes All regression tests passed. and Build completed successfully.",
-      "Saved final build status is %X00000001.",
-      "Normal startup banner reports Version 1.0.0.",
-      "VERSION reports OVMS Agent 1.0.0.",
-      "Final worktree is clean and core.filemode=false."
-    ],
-    "promotion_after_acceptance": [
-      "Open PR and merge exact accepted head to main.",
-      "Create permanent m284 and v1.0.0 tags on canonical promoted main.",
-      "Retain M283 and M284 milestone branches and prune M282 after tags/ancestry verification.",
-      "GitHub connector has no release-create mutation; semantic tags are canonical even if no GitHub Release object can be created in-chat."
+    "pending": [
+      "Sync VAX checkout to exact promoted main de5837a121860b7cf3167d97df67099d771a3bef.",
+      "Run full canonical @BUILD and normal startup/VERSION on exact promoted main.",
+      "Create permanent lightweight tags m284 and v1.0.0 on promoted main only after exact-main VAX acceptance.",
+      "Retain M283 and M284 branches and prune M282 after tag verification.",
+      "Close issue #113 completed after release tags and hygiene are verified."
     ]
   },
   "m283": {
@@ -107,22 +106,14 @@
     "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
     "branch": "m283-root-docs",
     "promoted_main": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-    "tag": {
-      "name": "m283",
-      "sha": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-      "remote_verified": true
-    }
+    "tag": {"name":"m283","sha":"4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400","remote_verified":true}
   },
   "m282": {
     "issue": 109,
-    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_TAGGED_RETAINED_PRUNE_AFTER_M284",
     "branch": "m282-vms-help-reference",
     "promoted_main": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-    "tag": {
-      "name": "m282",
-      "sha": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-      "remote_verified": true
-    }
+    "tag": {"name":"m282","sha":"4944547fe52700cfcb0e7213947d16a1ce1c8e28","remote_verified":true}
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
@@ -134,7 +125,7 @@
     "Canonical acceptance requires All regression tests passed and %X00000001 when a product build is required.",
     "Do not call an untested GitHub candidate or promoted merge VAX-green.",
     "Promotion wording must distinguish a separately VAX-accepted code/content head from a GitHub merge SHA unless the merge SHA itself was run on VAX.",
-    "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change, including what the feature does and when/why to use it.",
+    "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change.",
     "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning."
   ]
 }
