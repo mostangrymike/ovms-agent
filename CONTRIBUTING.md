@@ -49,6 +49,8 @@ Before replacing a whole repository file:
 
 GitHub search results are discovery hints only. Fetch the exact live file before making a correctness decision from a search result.
 
+If the available GitHub mutation path requires replacing an impractically large file for a tiny change, a narrowly scoped VAX-side edit may be used as an exception. In that case, keep the edit deterministic, commit/push it back to the milestone branch, and re-audit the resulting exact GitHub head before acceptance.
+
 ## OpenVMS/RMS materialization
 
 Native Git worktree/index operations on OpenVMS can report success without correctly materializing RMS files. Do not assume `git pull`, `git reset`, or ordinary checkout behavior is sufficient merely because it worked on another platform.
@@ -126,6 +128,8 @@ Focused regressions may add evidence but do not replace a required full build.
 
 If a change is documentation-only and does not feed compilation/runtime, use the narrowest relevant validation and document explicitly why a full build was unnecessary.
 
+For a semantic release candidate, also verify that normal startup and the `VERSION` command report the intended `X.Y.Z` value from the exact candidate head.
+
 ## User-facing commands and SETTINGS
 
 `OVMS_AGENT.HLP` is part of the user interface contract.
@@ -179,9 +183,19 @@ A pull request should state:
 
 Do not describe an untested GitHub merge SHA as VAX-green merely because its tree matches an accepted candidate. Use precise wording.
 
-## Milestone tags and branch retention
+## Milestone and release tags
 
 Each completed milestone receives a permanent lightweight `mNNN` tag on its canonical promoted `main` commit.
+
+Public semantic releases additionally receive a `vX.Y.Z` tag on the same canonical promoted commit. From 1.0.0 onward, use semantic versioning as the release contract:
+
+- `X.Y.Z` patch releases for backward-compatible fixes;
+- `X.Y.0` minor releases for backward-compatible features;
+- `X.0.0` major releases for intentional incompatible changes.
+
+A semantic release tag does not replace the milestone tag; both identify different aspects of the same promoted checkpoint.
+
+## Branch retention
 
 Keep:
 
