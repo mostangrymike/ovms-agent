@@ -1,38 +1,38 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-27T21:55:00-05:00",
+  "updated_at": "2026-08-27T22:00:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.md on main",
   "current_main": {
-    "head": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-    "latest_code_milestone": "M278"
+    "head": "5feaae97699c3eb124144bdbef978564f619f42a",
+    "latest_code_milestone": "M279"
   },
   "m279": {
     "issue": 97,
-    "status": "RECONCILIATION_HEAD_VAX_GATE_PENDING",
+    "status": "PROMOTED_TAG_AND_RETENTION_SYNC_PENDING",
     "branch": "m279-legacy-backlog-closure",
     "vax_green_code_head": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
-    "vax_green_evidence": {
+    "vax_accepted_reconciliation_head": "89bab2473c56b46bf463318a641c1f69d52a402d",
+    "reconciliation_acceptance": {
+      "delta": "DOC/M279_RECONCILIATION.MD only",
       "build": "All regression tests passed; Build completed successfully; %X00000001",
       "tracked_diff": "empty",
-      "core_filemode": "false",
-      "refactor_positive": "#73 PASS: flat-root MAIN.OBJ invalidated, controlled build PASS, runtime M279_REFACTOR_7 / %X00000001",
-      "refactor_rollback": "#101 PASS: intentional renamed-build failure removed only new source version; MAIN.C;1 restored, rollback reindex/build PASS, runtime M279_ROLLBACK_7 / %X00000001"
+      "core_filemode": "false"
     },
+    "promotion_pr": 104,
+    "promoted_main": "5feaae97699c3eb124144bdbef978564f619f42a",
+    "promotion_tree_check": "compare accepted reconciliation head 89bab247... to promoted merge 5feaae97... reports one commit ahead and zero changed files; promoted main therefore has the same separately VAX-accepted tree. Merge SHA itself was not separately VAX-run.",
     "closed_product_issues": [53, 54, 55, 56, 59, 60, 65, 67, 70, 71, 73, 76, 101],
     "closed_stale_issues": [52, 61, 62, 63, 64, 66],
-    "closed_tracking_issues": [98, 99],
-    "open_tracking_issues": [97, 100],
-    "issue_audit": "Complete live repository audit after #101 closure found only #97 and #100 open. #74 was explicitly rechecked and is already closed completed. Accidental connector placeholder issues #102/#103 were immediately closed not_planned and are excluded from product/backlog counts.",
-    "reconciliation_head": "89bab2473c56b46bf463318a641c1f69d52a402d",
-    "reconciliation_delta": {
-      "base": "7200ab5492b9f22c25ef547b15b4058110ad47b1",
-      "files": ["DOC/M279_RECONCILIATION.MD"],
-      "note": "Exactly one documentation-only commit; 154-line new reconciliation record; no code changed."
+    "closed_tracking_issues": [97, 98, 99, 100],
+    "issue_audit": "No live open product issues remained before promotion. #74 was explicitly rechecked and already closed completed. Accidental connector placeholder issues #102/#103 were immediately closed not_planned and excluded from product/backlog counts.",
+    "retention_precheck": {
+      "m277_tag": "9b58ba6e6c8f5337e4bfd284ace47bed26f6cc0e",
+      "m278_tag": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
+      "completed_branches_present": ["m277-create-interoperability", "m278-github-service-completion", "m279-legacy-backlog-closure"]
     },
-    "next_action": "Advance VAX from 7200ab54 to reconciliation head 89bab247, RMS-restore only DOC/M279_RECONCILIATION.MD, verify one-file delta and empty tracked diff, run canonical @BUILD, save status with SHOW SYMBOL, require All regression tests passed and %X00000001. If accepted, close #100, mark #97 ready for promotion, open/merge M279 PR, verify promoted merge tree equals accepted reconciliation tree, tag m279, then apply retention rules.",
-    "vax_disposable_state": "Multiple untracked M279 acceptance directories remain under the checkout; they are intentionally disposable and do not count as tracked-source dirt."
+    "next_action": "On VAX fetch promoted main, update local main ref to 5feaae97 without changing the current M279 worktree, create lightweight tag m279 at promoted main and push it, verify remote tag, then prune m277-create-interoperability locally/remotely because permanent m277 is verified and M278/M279 are the two most recent completed development branches. Keep m278-github-service-completion and m279-legacy-backlog-closure. Fetch --prune and verify refs/core.filemode."
   },
   "standing_rules": [
     "Read RULES.md on main and this state at chat start.",
