@@ -51,10 +51,6 @@ static const char *set_appr_canonical(const char *value)
         return "full";
     }
 
-    if (set_appr_equal_ci(value, "autopilot")) {
-        return "autopilot";
-    }
-
     return NULL;
 }
 
