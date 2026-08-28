@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T13:08:00-05:00",
+  "updated_at": "2026-08-28T13:12:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -10,25 +10,21 @@
     "latest_code_milestone": "M284",
     "vax_green_candidate_baseline": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
     "main_sha_itself_vax_run": false,
-    "note": "M286 candidate 23d973a is full-build VAX-green. Promoted main f7c5f663 has the exact same tree 1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699, but the merge SHA itself was not separately run on VAX."
+    "note": "M286 candidate 23d973a is full-build VAX-green. Promoted main f7c5f663 has the exact same tree 1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699, but the merge SHA itself was not separately run on VAX. Local VAX main is synchronized to f7c5f663 with a clean worktree."
   },
   "github_hygiene": {
-    "status": "M286_PROMOTED_M285_M286_TAG_AND_RETENTION_HYGIENE_PENDING",
+    "status": "COMPLETE",
     "open_product_issues": [],
     "open_prs": [],
     "branches": [
       "main",
       "chat-session-state",
-      "m284-v1-release",
       "m285-doc-case-consolidation",
       "m286-root-uppercase-readme"
     ],
-    "target_retained_completed_branches": [
+    "retained_completed_branches": [
       "m285-doc-case-consolidation",
       "m286-root-uppercase-readme"
-    ],
-    "pending_prune": [
-      "m284-v1-release"
     ],
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
@@ -38,17 +34,19 @@
       "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
       "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
       "m284": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef"
-    },
-    "pending_tags": {
+      "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5",
       "m286": "f7c5f663b5d82981b3f9e603bb2dd73badc56281"
-    }
+    },
+    "pending_tags": {}
   },
   "vax_hygiene": {
-    "status": "CLEAN_ON_M286_ACCEPTED_CANDIDATE_PENDING_MAIN_REF_SYNC",
-    "head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
-    "branch": "m286-root-uppercase-readme",
+    "status": "CLEAN_ON_M286_PROMOTED_MAIN",
+    "head": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
+    "branch": "main",
+    "accepted_candidate_head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
+    "accepted_candidate_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
+    "promoted_main_tree_equivalent": true,
     "build_status": "%X00000001",
     "regressions": "All regression tests passed.",
     "build_complete": "Build completed successfully.",
@@ -58,7 +56,7 @@
   },
   "m286": {
     "issue": 117,
-    "status": "COMPLETED_PROMOTED_VAX_VALIDATED_TREE_TAG_HYGIENE_PENDING",
+    "status": "COMPLETED_PROMOTED_VAX_VALIDATED_TREE_TAGGED_RETAINED",
     "branch": "m286-root-uppercase-readme",
     "baseline_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
     "accepted_candidate_head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
@@ -66,6 +64,7 @@
     "promotion_pr": 118,
     "promoted_main": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
     "promoted_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
+    "tag": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
     "issue_closed_completed": true,
     "acceptance": {
       "full_product_build_required": true,
@@ -87,17 +86,14 @@
   },
   "m285": {
     "issue": 115,
-    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAG_PENDING",
+    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAGGED_RETAINED",
     "branch": "m285-doc-case-consolidation",
     "promoted_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "pending": [
-      "Create and verify lightweight tag m285 at 129e69f97b11c3e381403deabc6ba2feacc059b5."
-    ]
+    "tag": "129e69f97b11c3e381403deabc6ba2feacc059b5"
   },
   "m284": {
     "issue": 113,
-    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_PRUNE_ELIGIBLE",
-    "branch": "m284-v1-release",
+    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_BRANCH_PRUNED",
     "promoted_main": "de5837a121860b7cf3167d97df67099d771a3bef",
     "release": {
       "semantic": "1.0.0",
