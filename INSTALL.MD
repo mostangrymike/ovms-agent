@@ -32,7 +32,7 @@ $ SET DEFAULT [.OVMS-AGENT]
 
 For a specific stable release, check out the corresponding semantic release tag (for example `v1.0.0`) rather than an arbitrary development branch.
 
-OpenVMS Git/RMS behavior varies by Git version and target architecture. If an existing accepted OVMS Agent checkout is being updated rather than installed fresh, follow the RMS-aware workflow documented in `CONTRIBUTING.md` instead of assuming a Unix-style reset or checkout will materialize files correctly.
+OpenVMS Git/RMS behavior varies by Git version and target architecture. If an existing accepted OVMS Agent checkout is being updated rather than installed fresh, follow the RMS-aware workflow documented in `CONTRIBUTING.MD` instead of assuming a Unix-style reset or checkout will materialize files correctly.
 
 ## Build
 
@@ -53,7 +53,7 @@ Run with: $ @OVMS_AGENT
 
 The executable is placed under `[.BUILD]`. Do not move individual object files or bypass the supplied build procedures unless you are deliberately working on the build system itself.
 
-For build internals and diagnostic options, see `BUILD.md`.
+For build internals and diagnostic options, see `BUILD.MD`.
 
 ## Start OVMS Agent
 
