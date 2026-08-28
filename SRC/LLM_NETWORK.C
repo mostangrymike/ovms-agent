@@ -1,4 +1,5 @@
 #include "llm_internal.h"
+#include "SETTINGS.H"
 
 #define M258_NET_HOST_MAX 256U
 #define M258_NET_RULE_MAX 1024U
@@ -137,8 +138,10 @@ int llm_net_check(const char *url, char *detail, size_t detail_size)
         return 0;
     }
 
-    allow = getenv("OVMS_AGENT_NET_ALLOW");
-    deny = getenv("OVMS_AGENT_NET_DENY");
+    allow = settings_effective_text(
+        "net_allow", "OVMS_AGENT_NET_ALLOW", "");
+    deny = settings_effective_text(
+        "net_deny", "OVMS_AGENT_NET_DENY", "");
     allowed = 0;
     reason = "default deny";
 
@@ -169,8 +172,10 @@ int llm_net_policy_text(char *output, size_t output_size)
     int written;
 
     if (output == NULL || output_size == 0U) return 0;
-    allow = getenv("OVMS_AGENT_NET_ALLOW");
-    deny = getenv("OVMS_AGENT_NET_DENY");
+    allow = settings_effective_text(
+        "net_allow", "OVMS_AGENT_NET_ALLOW", "");
+    deny = settings_effective_text(
+        "net_deny", "OVMS_AGENT_NET_DENY", "");
     written = snprintf(output, output_size,
         "OVMS Agent network policy\n"
         "-------------------------\n"

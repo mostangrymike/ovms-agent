@@ -7,6 +7,16 @@ $ FINAL_STATUS = 1
 $
 $ WRITE SYS$OUTPUT "Compiling modular LLM subsystem..."
 $
+$! M280 persistent settings are shared by startup, request, and network
+$! consumers. Compile the object here so a clean LLM build never depends on
+$! a stale object from the later command-module phase.
+$ CC/OBJECT=[.BUILD]SETTINGS.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/INCLUDE=([.SRC]) -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+[.SRC]SETTINGS.C
+$ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
+$
 $! M273 terminal presentation module and hard plain-output regressions.
 $ @BUILD_M273_ANSI
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR

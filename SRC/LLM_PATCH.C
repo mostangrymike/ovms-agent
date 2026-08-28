@@ -4,6 +4,7 @@
 
 #include "LLM_PATCH.H"
 #include "ANSI_TERM.H"
+#include "SETTINGS.H"
 #include "llm_internal.h"
 
 static int m273_patch_marker(const char *line, const char *marker)
@@ -70,6 +71,13 @@ static char *m279_patch_getenv(const char *name)
         strcmp(name, "OVMS_AGENT_APPROVAL_POLICY") == 0) {
         policy = llm_approval_name();
         return (char *)(policy != NULL ? policy : "read-only");
+    }
+
+    if (name != NULL &&
+        strcmp(name, "OVMS_AGENT_WRITE_ENABLED") == 0) {
+        return (char *)(settings_effective_bool(
+            "guarded_writes", "OVMS_AGENT_WRITE_ENABLED", 0) ?
+            "ON" : "OFF");
     }
 
     return getenv(name);

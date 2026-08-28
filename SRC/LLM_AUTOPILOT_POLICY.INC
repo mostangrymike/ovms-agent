@@ -24,7 +24,7 @@ const char *llm_approval_name(void)
         return "autopilot";
     }
 
-    return llm_approval_name_base();
+    return m280_approval_name_base();
 }
 
 int llm_approval_text(char *output, size_t output_size)
@@ -32,7 +32,7 @@ int llm_approval_text(char *output, size_t output_size)
     int written;
 
     if (!m268_autopilot_policy) {
-        return llm_approval_text_base(output, output_size);
+        return m280_approval_text_base(output, output_size);
     }
 
     if (output == NULL || output_size == 0U) {

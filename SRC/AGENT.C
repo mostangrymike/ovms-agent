@@ -6,6 +6,7 @@
 
 #include "agent.h"
 #include "llm_config.h"
+#include "SETTINGS.H"
 
 static int agent_value_is_true(const char *value)
 {
@@ -77,8 +78,6 @@ int agent_root_matches(const char *root)
 int agent_initialize(agent_state *state)
 {
     const char *api_key;
-    const char *dcl_enabled;
-    const char *write_enabled;
     const char *inherited_root;
     const llm_provider *provider;
     int quiet;
@@ -93,14 +92,14 @@ int agent_initialize(agent_state *state)
 
     inherited_root = getenv("OVMS_AGENT_ROOT");
     api_key = llm_api_key();
-    dcl_enabled = getenv("OVMS_AGENT_DCL_ENABLED");
-    write_enabled = getenv("OVMS_AGENT_WRITE_ENABLED");
     quiet = agent_value_is_true(getenv("OVMS_AGENT_QUIET"));
 
     state->api_key_defined =
         agent_api_key_present(api_key);
-    state->write_enabled = agent_value_is_true(write_enabled);
-    state->dcl_enabled = agent_value_is_true(dcl_enabled);
+    state->write_enabled = settings_effective_bool(
+        "guarded_writes", "OVMS_AGENT_WRITE_ENABLED", 0);
+    state->dcl_enabled = settings_effective_bool(
+        "dcl_execution", "OVMS_AGENT_DCL_ENABLED", 0);
 
     if (getcwd(state->project_root_text,
                sizeof(state->project_root_text)) == NULL) {
