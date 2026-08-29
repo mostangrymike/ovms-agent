@@ -45,6 +45,41 @@ static int llm_lang_has_text(const char *text, const char *needle)
     return 0;
 }
 
+static int llm_lang_word_char(char ch)
+{
+    return isalnum((unsigned char)ch) || ch == '_';
+}
+
+static int llm_lang_has_word(const char *text, const char *word)
+{
+    const char *scan;
+    const char *match;
+    const char *want;
+
+    if (text == NULL || word == NULL || *word == '\0') {
+        return 0;
+    }
+
+    for (scan = text; *scan != '\0'; ++scan) {
+        if (scan != text && llm_lang_word_char(scan[-1])) {
+            continue;
+        }
+
+        match = scan;
+        want = word;
+        while (*match != '\0' && *want != '\0' &&
+               llm_lang_char_eq(*match, *want)) {
+            ++match;
+            ++want;
+        }
+        if (*want == '\0' && !llm_lang_word_char(*match)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static int llm_lang_ext_end(char ch)
 {
     return ch == '\0' || isspace((unsigned char)ch) ||
@@ -78,61 +113,70 @@ static int llm_lang_has_ext(const char *text, const char *extension)
     return 0;
 }
 
-static const char *llm_lang_from_text(const char *text)
+static const char *llm_lang_from_ext(const char *text)
 {
     if (text == NULL || *text == '\0') {
         return NULL;
     }
 
-    if (llm_lang_has_text(text, "COBOL") ||
-        llm_lang_has_ext(text, ".COB") ||
-        llm_lang_has_ext(text, ".CBL")) {
-        return "COBOL";
-    }
-    if (llm_lang_has_text(text, "FORTRAN") ||
-        llm_lang_has_ext(text, ".F90") ||
+    if (llm_lang_has_ext(text, ".COB") ||
+        llm_lang_has_ext(text, ".CBL")) return "COBOL";
+    if (llm_lang_has_ext(text, ".F90") ||
         llm_lang_has_ext(text, ".FOR") ||
-        llm_lang_has_ext(text, ".F77")) {
-        return "FORTRAN";
-    }
-    if (llm_lang_has_text(text, "PASCAL") ||
-        llm_lang_has_ext(text, ".PAS")) {
-        return "PASCAL";
-    }
-    if (llm_lang_has_text(text, "BASIC") ||
-        llm_lang_has_ext(text, ".BAS")) {
-        return "BASIC";
-    }
+        llm_lang_has_ext(text, ".F77")) return "FORTRAN";
+    if (llm_lang_has_ext(text, ".PAS")) return "PASCAL";
+    if (llm_lang_has_ext(text, ".BAS")) return "BASIC";
+    if (llm_lang_has_ext(text, ".CPP") ||
+        llm_lang_has_ext(text, ".CXX")) return "CXX";
+    if (llm_lang_has_ext(text, ".PY")) return "PYTHON";
+    if (llm_lang_has_ext(text, ".PL")) return "PERL";
+    if (llm_lang_has_ext(text, ".JAVA")) return "JAVA";
+    if (llm_lang_has_ext(text, ".MAR")) return "MACRO32";
+    if (llm_lang_has_ext(text, ".COM")) return "DCL";
+    if (llm_lang_has_ext(text, ".C")) return "C";
+
+    return NULL;
+}
+
+static const char *llm_lang_from_prompt(const char *text)
+{
+    const char *language;
+
+    language = llm_lang_from_ext(text);
+    if (language != NULL) return language;
+    if (llm_lang_has_word(text, "COBOL")) return "COBOL";
+    if (llm_lang_has_word(text, "FORTRAN")) return "FORTRAN";
+    if (llm_lang_has_word(text, "PASCAL")) return "PASCAL";
     if (llm_lang_has_text(text, "C++") ||
-        llm_lang_has_text(text, "CXX") ||
-        llm_lang_has_ext(text, ".CPP") ||
-        llm_lang_has_ext(text, ".CXX")) {
-        return "CXX";
-    }
-    if (llm_lang_has_text(text, "PYTHON") ||
-        llm_lang_has_ext(text, ".PY")) {
-        return "PYTHON";
-    }
-    if (llm_lang_has_text(text, "PERL") ||
-        llm_lang_has_ext(text, ".PL")) {
-        return "PERL";
-    }
-    if (llm_lang_has_text(text, "JAVA") ||
-        llm_lang_has_ext(text, ".JAVA")) {
-        return "JAVA";
-    }
-    if (llm_lang_has_text(text, "MACRO-32") ||
-        llm_lang_has_text(text, "MACRO32") ||
-        llm_lang_has_ext(text, ".MAR")) {
-        return "MACRO32";
-    }
-    if (llm_lang_has_text(text, "DCL") ||
-        llm_lang_has_ext(text, ".COM")) {
-        return "DCL";
-    }
-    if (llm_lang_has_ext(text, ".C")) {
-        return "C";
-    }
+        llm_lang_has_word(text, "CXX")) return "CXX";
+    if (llm_lang_has_word(text, "PYTHON")) return "PYTHON";
+    if (llm_lang_has_word(text, "PERL")) return "PERL";
+    if (llm_lang_has_word(text, "JAVA")) return "JAVA";
+    if (llm_lang_has_word(text, "MACRO-32") ||
+        llm_lang_has_word(text, "MACRO32")) return "MACRO32";
+    if (llm_lang_has_word(text, "DCL")) return "DCL";
+
+    return NULL;
+}
+
+static const char *llm_lang_from_root(const char *text)
+{
+    const char *language;
+
+    language = llm_lang_from_ext(text);
+    if (language != NULL) return language;
+    if (llm_lang_has_word(text, "COBOL")) return "COBOL";
+    if (llm_lang_has_word(text, "FORTRAN")) return "FORTRAN";
+    if (llm_lang_has_word(text, "PASCAL")) return "PASCAL";
+    if (llm_lang_has_word(text, "BASIC")) return "BASIC";
+    if (llm_lang_has_word(text, "CXX")) return "CXX";
+    if (llm_lang_has_word(text, "PYTHON")) return "PYTHON";
+    if (llm_lang_has_word(text, "PERL")) return "PERL";
+    if (llm_lang_has_word(text, "JAVA")) return "JAVA";
+    if (llm_lang_has_word(text, "MACRO-32") ||
+        llm_lang_has_word(text, "MACRO32")) return "MACRO32";
+    if (llm_lang_has_word(text, "DCL")) return "DCL";
+    if (llm_lang_has_word(text, "C")) return "C";
 
     return NULL;
 }
@@ -142,12 +186,12 @@ const char *llm_lang_detect(const char *prompt,
 {
     const char *language;
 
-    language = llm_lang_from_text(prompt);
+    language = llm_lang_from_prompt(prompt);
     if (language != NULL) {
         return language;
     }
 
-    return llm_lang_from_text(project_root);
+    return llm_lang_from_root(project_root);
 }
 
 static char *llm_lang_dup(const char *text)
