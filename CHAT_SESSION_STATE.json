@@ -1,31 +1,99 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-28T13:12:00-05:00",
+  "updated_at": "2026-08-29T11:58:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current_main": {
-    "head": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
-    "latest_milestone": "M286",
-    "latest_code_milestone": "M284",
-    "vax_green_candidate_baseline": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
-    "main_sha_itself_vax_run": false,
-    "note": "M286 candidate 23d973a is full-build VAX-green. Promoted main f7c5f663 has the exact same tree 1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699, but the merge SHA itself was not separately run on VAX. Local VAX main is synchronized to f7c5f663 with a clean worktree."
+    "head": "fc73ad048b02adc7c5e8acf6cd3bc090e32fc535",
+    "latest_milestone": "M288",
+    "latest_code_milestone": "M288",
+    "accepted_candidate_head": "4964e0045cc5010116a23df260d20f22e820f2c5",
+    "accepted_candidate_tree": "c17877f8aeca7ee9128c3fe8f255d590dd44c5df",
+    "promoted_main_tree": "c17877f8aeca7ee9128c3fe8f255d590dd44c5df",
+    "main_sha_itself_native_run": false,
+    "note": "M288 exact candidate 4964e0045cc5010116a23df260d20f22e820f2c5 passed full OpenVMS V9.2-3 x86-64 build/regression and live COBOL knowledge-pack acceptance. Canonical promoted main fc73ad048b02adc7c5e8acf6cd3bc090e32fc535 is a GitHub merge commit with exactly the same tree c17877f8aeca7ee9128c3fe8f255d590dd44c5df; the merge SHA itself was not separately built on OpenVMS."
+  },
+  "m288": {
+    "issue": 142,
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TREE_TAG_PENDING",
+    "branch": "m288-language-knowledge-packs",
+    "baseline_main": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
+    "accepted_candidate_head": "4964e0045cc5010116a23df260d20f22e820f2c5",
+    "accepted_tree": "c17877f8aeca7ee9128c3fe8f255d590dd44c5df",
+    "draft_pr_superseded": 143,
+    "promotion_pr": 145,
+    "promoted_main": "fc73ad048b02adc7c5e8acf6cd3bc090e32fc535",
+    "promoted_tree": "c17877f8aeca7ee9128c3fe8f255d590dd44c5df",
+    "issue_closed_completed": true,
+    "tag": null,
+    "acceptance": {
+      "host": "OpenVMS V9.2-3 x86-64",
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build_complete": "Build completed successfully.",
+      "live_language_report": "Language knowledge: COBOL (4097 bytes).",
+      "live_answer": "Plain COBOL uses OpenVMS terminal reference format (/NOANSI_FORMAT) by default.",
+      "candidate_exact_sha_built": true,
+      "promoted_main_tree_equivalent": true
+    },
+    "feature": {
+      "shared_pack_directory": "LANGUAGE",
+      "initial_packs": ["COBOL", "FORTRAN"],
+      "launcher_logical": "OVMS_AGENT_LANGUAGE_DIR",
+      "pack_limit_bytes": 16384,
+      "automatic_detection": "strong task/file extension first, project-directory fallback",
+      "paths": "ASK/CHAT and agent read/write/create/build/image request paths",
+      "help_synchronized": true
+    },
+    "git_acceptance_lessons": {
+      "guide": "DOC/OPENVMS_GIT_QUIRKS.MD",
+      "followup_issue": 144,
+      "observed": [
+        "Explicit GITAUTH fetch can populate FETCH_HEAD while later porcelain/ref output is blank or unusable.",
+        "ODS-5 DCL literal .git uses [.^.GIT] and extensionless control files need a trailing period.",
+        "git reset --mixed --no-refresh FETCH_HEAD returned %X1035A00A and changed neither visible ref nor index.",
+        "git checkout -B ... FETCH_HEAD returned %X1035A00A and changed neither HEAD, branch ref, nor index.",
+        "git read-tree FETCH_HEAD succeeded and replaced the RMS-visible index.",
+        "git update-ref plus git symbolic-ref succeeded when verified through RMS-visible control files.",
+        "GIT_RESTORE then materialized changed candidate files reliably in short batches.",
+        "Restoring only a new candidate changed-file list can leave stale files from an earlier experimental branch, producing a hybrid tree; SRC/M251_SYNTH_TEST.C had to be restored from current HEAD before the canonical build passed."
+      ]
+    }
+  },
+  "m287_wc_campaign": {
+    "issue": 119,
+    "status": "ACTIVE_RESUMED_AFTER_M288",
+    "goal": "Use OVMS Agent itself on OpenVMS to create Unix-like wc in every installed language except C, accumulating agent/language gaps without stopping the campaign.",
+    "contract": "lines/words/bytes; -l/-w/-c; canonical line/word/byte order for multiple options; one or more files with total for more than one; SYS$INPUT with no args where normal; ASCII/text only; POSIX logical bytes = RMS record data + LF per record; no GNU extras.",
+    "completed": {
+      "fortran": {
+        "repository": "mostangrymike/vms-fortran-sandbox",
+        "source_commit": "3bec0abf6c9a2aa1e4562cdc37eb4dc7fb0bd8aa",
+        "status": "native contract complete"
+      },
+      "cobol": {
+        "repository": "mostangrymike/vms-cobol-sandbox",
+        "source_commit": "7555a1e89f12d619f32ed74ca3a35c3239f91aaf",
+        "status": "native contract complete"
+      }
+    },
+    "basic": "attempted/blocked; keep evidence in vms-basic-sandbox and continue campaign",
+    "next_language": "Pascal",
+    "remaining_order": ["Pascal", "C++", "Python", "Perl", "Java", "DCL", "MACRO32"],
+    "sandbox_policy": "Use durable per-language vms-<language>-sandbox repositories. Language/compiler-specific defects belong in the language sandbox; generic OVMS Agent defects belong in ovms-agent. Campaign implementation content must be generated by OVMS Agent, not hand-authored externally.",
+    "known_generic_gap": "#131 guarded agent has no native compiler execution; when encountered, capture evidence and use external DCL compile/link as bridge/acceptance rather than stopping campaign."
+  },
+  "open_followups": {
+    "platform_knowledge": 144,
+    "wc_campaign": 119,
+    "note": "#144 should extend M288-style bounded knowledge injection to validated OpenVMS Git/RMS/DCL lessons; do not fold speculative or unvalidated behavior into packs."
   },
   "github_hygiene": {
-    "status": "COMPLETE",
-    "open_product_issues": [],
-    "open_prs": [],
-    "branches": [
-      "main",
-      "chat-session-state",
-      "m285-doc-case-consolidation",
-      "m286-root-uppercase-readme"
-    ],
-    "retained_completed_branches": [
-      "m285-doc-case-consolidation",
-      "m286-root-uppercase-readme"
-    ],
+    "status": "M288_PROMOTED_CLEANUP_PENDING",
+    "permanent_branches": ["main", "chat-session-state"],
+    "retained_completed_branch_target_after_m288": ["m286-root-uppercase-readme", "m288-language-knowledge-packs"],
+    "branch_prune_pending": "m285-doc-case-consolidation should be removed after m288 tag/promotion cleanup if branch-retention tooling is available; retain permanent m285 tag.",
     "verified_tags": {
       "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
       "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
@@ -38,83 +106,36 @@
       "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5",
       "m286": "f7c5f663b5d82981b3f9e603bb2dd73badc56281"
     },
-    "pending_tags": {}
+    "pending_tags": {
+      "m288": "fc73ad048b02adc7c5e8acf6cd3bc090e32fc535"
+    }
   },
-  "vax_hygiene": {
-    "status": "CLEAN_ON_M286_PROMOTED_MAIN",
-    "head": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
-    "branch": "main",
-    "accepted_candidate_head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
-    "accepted_candidate_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
-    "promoted_main_tree_equivalent": true,
+  "openvms_acceptance_worktree": {
+    "status": "M288_CANDIDATE_NATIVE_GREEN_LOCAL_HEAD_ON_M288_BRANCH",
+    "head": "4964e0045cc5010116a23df260d20f22e820f2c5",
+    "branch": "m288-language-knowledge-packs",
+    "index_loaded_with": "git read-tree FETCH_HEAD",
+    "refs_established_with": "git update-ref and git symbolic-ref",
+    "rms_materialization": "GIT_RESTORE in short verified batches plus restoration of stale SRC/M251_SYNTH_TEST.C",
     "build_status": "%X00000001",
     "regressions": "All regression tests passed.",
     "build_complete": "Build completed successfully.",
-    "git_diff_name_only": "empty",
-    "git_status_short": "empty",
-    "core_filemode": "false"
-  },
-  "m286": {
-    "issue": 117,
-    "status": "COMPLETED_PROMOTED_VAX_VALIDATED_TREE_TAGGED_RETAINED",
-    "branch": "m286-root-uppercase-readme",
-    "baseline_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "accepted_candidate_head": "23d973a42f27c3ebabe5afde5d02b3d2fa8b8a36",
-    "accepted_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
-    "promotion_pr": 118,
-    "promoted_main": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
-    "promoted_tree": "1d7f4a251e15a9cb7454c975a0f17ebd3eb5a699",
-    "tag": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
-    "issue_closed_completed": true,
-    "acceptance": {
-      "full_product_build_required": true,
-      "reason": "COMMAND_MODULES.OPT is a real linker options input and was case-renamed from command_modules.opt; contents remained identical.",
-      "build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build_complete": "Build completed successfully.",
-      "worktree": "clean",
-      "core_filemode": "false"
-    },
-    "root_naming": {
-      "all_root_filenames_uppercase": true,
-      "canonical_readme": "README.MD",
-      "canonical_features": "FEATURES.MD",
-      "canonical_command_options": "COMMAND_MODULES.OPT",
-      "canonical_rules": "RULES.MD",
-      "canonical_doc_directory": "DOC"
-    }
-  },
-  "m285": {
-    "issue": 115,
-    "status": "COMPLETED_PROMOTED_DOC_ONLY_TAGGED_RETAINED",
-    "branch": "m285-doc-case-consolidation",
-    "promoted_main": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-    "tag": "129e69f97b11c3e381403deabc6ba2feacc059b5"
-  },
-  "m284": {
-    "issue": 113,
-    "status": "COMPLETED_RELEASED_VAX_GREEN_TAGGED_BRANCH_PRUNED",
-    "promoted_main": "de5837a121860b7cf3167d97df67099d771a3bef",
-    "release": {
-      "semantic": "1.0.0",
-      "license": "MIT",
-      "m284_tag": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "v1.0.0_tag": "de5837a121860b7cf3167d97df67099d771a3bef"
-    }
+    "note": "Do not assume local OpenVMS main is synchronized to canonical GitHub merge yet. Git porcelain/checkout/reset are unreliable on this checkout; consult DOC/OPENVMS_GIT_QUIRKS.MD and verify RMS-visible control files/content."
   },
   "standing_rules": [
     "Read RULES.MD on main and this state at chat start.",
-    "GitHub is the default repository editing control plane; ask the user only for VAX compile/link/RMS/live acceptance when needed.",
-    "VAX/OpenVMS is canonical build/runtime authority.",
-    "Omit OVMS-AGENT> from agent command lines.",
-    "Use GITAUTH for Git network operations.",
+    "GitHub is the default repository editing control plane; OpenVMS is canonical compile/link/RMS/runtime acceptance authority.",
+    "Omit OVMS-AGENT> from agent command lines provided for paste.",
+    "Use GITAUTH for authenticated Git network operations; it already invokes Git.",
     "Keep core.filemode=false.",
-    "Canonical acceptance requires All regression tests passed and %X00000001 when a product build is required.",
-    "Do not call an untested GitHub candidate or promoted merge VAX-green.",
-    "Promotion wording must distinguish a separately VAX-accepted code/content head from a GitHub merge SHA unless the merge SHA itself was run on VAX.",
-    "Keep root-level OVMS_AGENT.HLP synchronized with every user-facing command and persistent SETTINGS change in the same milestone/change.",
+    "Never trust Git status/porcelain/ref output or $STATUS alone on OpenVMS when RMS-visible files/control files can verify the fact directly.",
+    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing a new OpenVMS Git materialization workflow.",
+    "Canonical product acceptance requires All regression tests passed., Build completed successfully., and %X00000001 when source/build/runtime inputs changed.",
+    "Do not call an untested GitHub candidate or promoted merge native-green; distinguish exact-SHA acceptance from tree-equivalent promotion.",
+    "Keep root-level OVMS_AGENT.HLP synchronized with every user-visible command/persistent-setting/material behavior change in the same milestone.",
     "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning.",
-    "Use uppercase DOC as the canonical repository documentation-history directory; do not recreate lowercase doc.",
-    "Root-level repository filenames must be uppercase unless a concrete external tooling requirement makes uppercase invalid; canonical root docs use uppercase .MD extensions."
+    "Use uppercase DOC as the canonical documentation-history directory; root-level repository filenames are uppercase unless an external constraint requires otherwise.",
+    "DEC C/VAX-facing external identifiers remain <=31 characters and C89/DEC C compatible unless a subsystem specifically requires otherwise.",
+    "For the WC campaign, do not hand-author target-language implementations externally; make OVMS Agent generate them, capture gaps, and continue with DCL/native compiler bridge when the agent cannot execute the compiler itself."
   ]
 }
