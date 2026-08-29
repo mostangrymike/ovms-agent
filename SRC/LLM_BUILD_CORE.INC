@@ -173,6 +173,7 @@ void llm_agent_build(agent_state *state, const char *goal)
 
     if (!write_build_followup_request(model,
                                             instructions,
+                                            goal,
                                             context_items,
                                             call_id,
                                             tool_output)) {
