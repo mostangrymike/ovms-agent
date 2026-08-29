@@ -19,6 +19,17 @@ static int expect_lang(const char *prompt,
     return 1;
 }
 
+static int expect_none(const char *prompt,
+                       const char *root,
+                       const char *name)
+{
+    if (llm_lang_detect(prompt, root) != NULL) {
+        (void)printf("M288 failed: %s\n", name);
+        return 0;
+    }
+    return 1;
+}
+
 int main(void)
 {
     char *merged;
@@ -30,7 +41,15 @@ int main(void)
         !expect_lang("Fix the program", "SYS$DISK:[MIKE.VMS-FORTRAN-SANDBOX]",
                      "FORTRAN", "sandbox-name detection") ||
         !expect_lang("Compile HELLO.CPP", "SYS$DISK:[TMP]",
-                     "CXX", "C++ extension detection")) {
+                     "CXX", "C++ extension detection") ||
+        !expect_lang("Do a basic review of MAIN.C", "SYS$DISK:[TMP]",
+                     "C", "extension outranks ordinary adjective") ||
+        !expect_lang("Create the program", "SYS$DISK:[MIKE.VMS-BASIC-SANDBOX]",
+                     "BASIC", "BASIC sandbox detection") ||
+        !expect_none("Do a basic review", "SYS$DISK:[TMP]",
+                     "ordinary basic adjective") ||
+        !expect_none("Review this JavaScript", "SYS$DISK:[TMP]",
+                     "JavaScript is not Java")) {
         return EXIT_FAILURE;
     }
 
