@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "llm_internal.h"
 #include "LLM_REQUEST_AGENT.H"
 #include "LLM_REQUEST_BUILD.H"
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_LANGUAGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
 
 static int m279_build_model_check(const char *model)
@@ -26,10 +28,22 @@ int write_build_initial_request(
     const char *user_prompt)
 {
     FILE *file;
+    char *effective_instructions;
     int success;
 
     if (!m279_build_model_check(model)) {
         return 0;
+    }
+
+    effective_instructions = llm_lang_merge(instructions, user_prompt);
+    if (effective_instructions == NULL) {
+        return 0;
+    }
+
+    if (llm_lang_last()[0] != '\0') {
+        (void)printf("Language knowledge: %s (%lu bytes).\n",
+                     llm_lang_last(),
+                     (unsigned long)llm_lang_last_bytes());
     }
 
     file = fopen(LLM_REQUEST_FILE, "w");
@@ -38,6 +52,7 @@ int write_build_initial_request(
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -46,7 +61,7 @@ int write_build_initial_request(
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputs("\",\"input\":\"", file) == EOF ||
         !json_write_escaped(file, user_prompt) ||
         fputs("\",", file) == EOF ||
@@ -70,6 +85,7 @@ int write_build_initial_request(
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write initial build-agent request.");
@@ -82,14 +98,21 @@ int write_build_initial_request(
 int write_build_followup_request(
     const char *model,
     const char *instructions,
+    const char *user_prompt,
     const char *context_items,
     const char *call_id,
     const char *tool_output)
 {
     FILE *file;
+    char *effective_instructions;
     int success;
 
     if (!m279_build_model_check(model)) {
+        return 0;
+    }
+
+    effective_instructions = llm_lang_merge(instructions, user_prompt);
+    if (effective_instructions == NULL) {
         return 0;
     }
 
@@ -99,6 +122,7 @@ int write_build_followup_request(
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -107,7 +131,7 @@ int write_build_followup_request(
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputs("\",\"input\":[", file) == EOF ||
         fputs(context_items, file) == EOF ||
         fputs(",{\"type\":\"function_call_output\","
@@ -133,6 +157,7 @@ int write_build_followup_request(
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write build-agent follow-up request.");

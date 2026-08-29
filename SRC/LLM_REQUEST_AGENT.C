@@ -8,6 +8,7 @@
 #include "LLM_AGENT_CTX.H"
 #include "LLM_JSON_PARSE.H"
 #include "LLM_AUTO.H"
+#include "LLM_LANGUAGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
 
 #define LLM_AGENT_GOAL_MAX 32768U
@@ -40,6 +41,21 @@ static int llm_m279_tool_model_check(const char *model)
         "calls or another provider."
     );
     return 0;
+}
+
+static char *llm_m288_instructions(const char *instructions,
+                                   const char *user_prompt,
+                                   int report)
+{
+    char *merged;
+
+    merged = llm_lang_merge(instructions, user_prompt);
+    if (merged != NULL && report && llm_lang_last()[0] != '\0') {
+        (void)printf("Language knowledge: %s (%lu bytes).\n",
+                     llm_lang_last(),
+                     (unsigned long)llm_lang_last_bytes());
+    }
+    return merged;
 }
 
 static int llm_update_local_ctx(const char *call_id,
@@ -113,6 +129,7 @@ int write_create_agent_request(
     const char *tool_output)
 {
     FILE *file;
+    char *effective_instructions;
     int success;
 
     (void)previous_id;
@@ -121,11 +138,18 @@ int write_create_agent_request(
         return 0;
     }
 
+    effective_instructions = llm_m288_instructions(
+        instructions, user_prompt, call_id == NULL && tool_output == NULL);
+    if (effective_instructions == NULL) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -133,7 +157,7 @@ int write_create_agent_request(
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputc('"', file) == EOF) {
         success = 0;
     }
@@ -167,6 +191,7 @@ int write_create_agent_request(
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write complete create-agent request.");
@@ -185,6 +210,7 @@ int write_agent_request_mode(const char *model,
                              int allow_write)
 {
     FILE *file;
+    char *effective_instructions;
     int success;
 
     (void)previous_id;
@@ -193,11 +219,18 @@ int write_agent_request_mode(const char *model,
         return 0;
     }
 
+    effective_instructions = llm_m288_instructions(
+        instructions, user_prompt, call_id == NULL && tool_output == NULL);
+    if (effective_instructions == NULL) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -205,7 +238,7 @@ int write_agent_request_mode(const char *model,
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputc('"', file) == EOF) {
         success = 0;
     }
@@ -241,6 +274,7 @@ int write_agent_request_mode(const char *model,
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write complete agent request.");
@@ -262,6 +296,7 @@ int write_agent_final_request(
         "State any remaining uncertainty explicitly. Do not claim to have "
         "inspected or changed anything not present in the supplied evidence.";
     FILE *file;
+    char *effective_instructions;
     int success;
 
     (void)previous_id;
@@ -285,11 +320,18 @@ int write_agent_final_request(
         return 0;
     }
 
+    effective_instructions = llm_m288_instructions(
+        instructions, llm_agent_goal, 0);
+    if (effective_instructions == NULL) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -297,7 +339,7 @@ int write_agent_final_request(
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputs("\",\"input\":", file) == EOF ||
         !llm_agent_ctx_write_final(file, llm_agent_goal)) {
         success = 0;
@@ -315,6 +357,7 @@ int write_agent_final_request(
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write final synthesis request.");
@@ -332,6 +375,7 @@ int write_agent_request(const char *model,
                         const char *tool_output)
 {
     FILE *file;
+    char *effective_instructions;
     int success;
 
     (void)previous_id;
@@ -340,11 +384,18 @@ int write_agent_request(const char *model,
         return 0;
     }
 
+    effective_instructions = llm_m288_instructions(
+        instructions, user_prompt, call_id == NULL && tool_output == NULL);
+    if (effective_instructions == NULL) {
+        return 0;
+    }
+
     file = fopen(LLM_REQUEST_FILE, "w");
     if (file == NULL) {
         (void)printf("Unable to create %s: %s\n",
                      LLM_REQUEST_FILE,
                      strerror(errno));
+        free(effective_instructions);
         return 0;
     }
 
@@ -352,7 +403,7 @@ int write_agent_request(const char *model,
     if (fputs("{\"model\":\"", file) == EOF ||
         !json_write_escaped(file, model) ||
         fputs("\",\"instructions\":\"", file) == EOF ||
-        !json_write_escaped(file, instructions) ||
+        !json_write_escaped(file, effective_instructions) ||
         fputc('"', file) == EOF) {
         success = 0;
     }
@@ -378,6 +429,7 @@ int write_agent_request(const char *model,
     if (fclose(file) != 0) {
         success = 0;
     }
+    free(effective_instructions);
 
     if (!success) {
         (void)puts("Unable to write complete agent request.");

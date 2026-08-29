@@ -9,6 +9,7 @@ int write_build_initial_request(
 int write_build_followup_request(
     const char *model,
     const char *instructions,
+    const char *user_prompt,
     const char *context_items,
     const char *call_id,
     const char *tool_output);
