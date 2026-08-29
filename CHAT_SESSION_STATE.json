@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-08-29T13:00:00-05:00",
+  "updated_at": "2026-08-29T16:10:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -55,7 +55,7 @@
         "Explicit GITAUTH fetch can populate FETCH_HEAD while later porcelain/ref output is blank or unusable.",
         "ODS-5 DCL literal .git uses [.^.GIT] and extensionless control files need a trailing period.",
         "git reset --mixed --no-refresh FETCH_HEAD returned %X1035A00A and changed neither visible ref nor index.",
-        "git checkout -B ... FETCH_HEAD returned %X1035A00A and changed neither HEAD, branch ref, nor index.",
+        "git checkout -B ... FETCH_HEAD returned %X1035A00A and changed neither visible ref nor index.",
         "git read-tree FETCH_HEAD succeeded and replaced the RMS-visible index.",
         "git update-ref plus git symbolic-ref succeeded when verified through RMS-visible control files.",
         "GIT_RESTORE then materialized changed candidate files reliably in short batches.",
@@ -65,7 +65,7 @@
   },
   "m287_wc_campaign": {
     "issue": 119,
-    "status": "ACTIVE_PASCAL_NATIVE_COMPLETE_PUBLICATION_PENDING",
+    "status": "ACTIVE_PYTHON_PUBLICATION_COMPLETE_PERL_NEXT",
     "goal": "Use OVMS Agent itself on OpenVMS to create Unix-like wc in every installed language except C, accumulating agent/language gaps without stopping the campaign.",
     "contract": "lines/words/bytes; -l/-w/-c; canonical line/word/byte order for multiple options; one or more files with total for more than one; SYS$INPUT with no args where normal; ASCII/text only; POSIX logical bytes = RMS record data + LF per record; no GNU extras.",
     "completed": {
@@ -83,8 +83,9 @@
       },
       "pascal": {
         "repository": "mostangrymike/vms-pascal-sandbox",
-        "source_commit": null,
-        "publication": "pending exact accepted WC.PAS commit/push from native sandbox",
+        "source_commit": "4fdd9c95847058df4f4e5c5877e1f7aef0057dc3",
+        "source_blob": "304f5983c29032ae50b96a38c22160dba6a9e565",
+        "publication": "complete and independently verified",
         "compiler": "VSI Pascal V6.5-148",
         "host": "OpenVMS V9.2-3 x86-64",
         "status": "native contract complete",
@@ -107,6 +108,56 @@
           "Supplying even an empty prompt argument makes bare LIB$GET_FOREIGN consume SYS$INPUT; omit the prompt argument when stdin must remain application data.",
           "Derive command length from LENGTH(Command_Line) when only the resultant-string argument is used."
         ]
+      },
+      "cxx": {
+        "repository": "mostangrymike/vms-cxx-sandbox",
+        "source_commit": "b48d290be6d5e230f5acc28019b06dc5c4599814",
+        "source_blob": "f3da0e0f7c80cf8846a35617b002df202eba5935",
+        "publication": "complete and independently verified",
+        "compiler": "VSI C++ V10.1-3U1",
+        "host": "OpenVMS V9.2-3 x86-64",
+        "status": "native contract complete on untouched first generated source",
+        "compile_status": "%X15F60001",
+        "link_status": "%X10000001",
+        "runtime_status": "%X00000001",
+        "acceptance": {
+          "test1": "2/3/14",
+          "test2": "2/4/23",
+          "two_file_total": "4/7/37",
+          "options": "-l/-w/-c/-cw/-clw pass in canonical output order",
+          "stdin_default": "2/3/14",
+          "stdin_w": "3"
+        },
+        "validated_lessons": [
+          "VSI C++ V10.1-3U1 accepted the first generated C++ source without repair.",
+          "Native LINK WC succeeded for the x86-64 C++ object.",
+          "OpenVMS CRTL filename display may canonicalize the supplied filename to lowercase.",
+          "An empty git init defaulted to master on this host; low-level update-ref plus symbolic-ref safely established main without changing the accepted commit."
+        ]
+      },
+      "python": {
+        "repository": "mostangrymike/vms-python-sandbox",
+        "source_commit": "b7d764dfba855dcb5869cea56cac4299175c0871",
+        "source_blob": "5c3bc47531d4f4be4280053e33d489b275180e93",
+        "publication": "complete and independently verified",
+        "interpreter": "Python 3.10.0 / PYTHON A3.10-0RELEASE008",
+        "host": "OpenVMS V9.2-3 x86-64",
+        "status": "native contract complete on untouched first generated source",
+        "syntax_status": "%X00000001",
+        "runtime_status": "%X00000001",
+        "acceptance": {
+          "test1": "2/3/14",
+          "test2": "2/4/23",
+          "two_file_total": "4/7/37",
+          "options": "-l/-w/-c/-cw/-clw pass in canonical output order",
+          "stdin_default": "2/3/14",
+          "stdin_w": "3"
+        },
+        "validated_lessons": [
+          "Installed VSI Python was not initially exposed as a DCL verb; SYS$STARTUP:PYTHON$STARTUP.COM defines PYTHON$ROOT and a foreign command to PYTHON$ROOT:[BIN]PYTHON.EXE makes Python 3.10 usable.",
+          "The first OVMS Agent-generated Python source passed py_compile and the full M287 runtime matrix without repair.",
+          "Python text iteration over OpenVMS RMS text records can be normalized to campaign logical byte semantics by removing the presented newline and adding exactly one logical LF per record."
+        ]
       }
     },
     "basic": {
@@ -114,18 +165,20 @@
       "repository": "mostangrymike/vms-basic-sandbox",
       "sandbox_issues": [1]
     },
-    "next_language": "C++",
-    "remaining_order": ["C++", "Python", "Perl", "Java", "DCL", "MACRO32"],
+    "next_language": "Perl",
+    "remaining_order": ["Perl", "Java", "DCL", "MACRO32"],
     "sandbox_policy": "Use durable per-language vms-<language>-sandbox repositories. Language/compiler-specific defects belong in the language sandbox; generic OVMS Agent defects belong in ovms-agent. Campaign implementation content must be generated by OVMS Agent, not hand-authored externally.",
     "known_generic_gaps": [
-      "#131 guarded agent has no native compiler execution; capture evidence and use external DCL compile/link as bridge/acceptance rather than stopping campaign.",
-      "#132 guarded autonomous write budget can leave a coupled repair incomplete; preserve compiler-proven changes and continue in a later turn."
+      "#131 guarded agent has no native compiler/interpreter execution; capture evidence and use external DCL native execution as bridge/acceptance rather than stopping campaign.",
+      "#132 guarded autonomous write budget can leave a coupled repair incomplete; preserve compiler-proven changes and continue in a later turn.",
+      "#146 GITAUTH --check verifies configured profile data but not whether the PAT is authorized to write the active repository."
     ],
-    "knowledge_pack_note": "Do not add LANGUAGE/PASCAL.MD mid-campaign without a separate OVMS Agent product acceptance checkpoint; validated Pascal lessons are preserved in the sandbox issue and this state for later promotion."
+    "knowledge_pack_note": "Do not add new campaign language packs mid-campaign without a separate OVMS Agent product acceptance checkpoint; validated language lessons remain in sandbox issues/campaign state for later promotion."
   },
   "open_followups": {
     "platform_knowledge": 144,
     "wc_campaign": 119,
+    "gitauth_repo_authorization_preflight": 146,
     "note": "#144 should extend M288-style bounded knowledge injection to validated OpenVMS Git/RMS/DCL lessons; do not fold speculative or unvalidated behavior into packs."
   },
   "github_hygiene": {
