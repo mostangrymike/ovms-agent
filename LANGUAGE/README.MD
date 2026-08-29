@@ -37,5 +37,6 @@ When a pack is loaded, OVMS Agent reports the language and injected byte count b
 ## Current packs
 
 - `COBOL.MD` — VSI COBOL/OpenVMS facts validated during the multi-language WC campaign.
+- `FORTRAN.MD` — VSI Fortran/OpenVMS command-line and RMS text-record facts validated during the multi-language WC campaign.
 
 Additional packs should be added as native evidence is accumulated.
