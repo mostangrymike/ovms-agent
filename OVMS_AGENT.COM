@@ -6,6 +6,9 @@ $ PROJECT_DIR = PROJECT_DEVICE + PROJECT_DIRECTORY
 $ BUILD_DIR = PROJECT_DEVICE + -
               F$EXTRACT(0,F$LENGTH(PROJECT_DIRECTORY)-1,PROJECT_DIRECTORY) + -
               ".BUILD]"
+$ LANGUAGE_DIR = PROJECT_DEVICE + -
+                 F$EXTRACT(0,F$LENGTH(PROJECT_DIRECTORY)-1,PROJECT_DIRECTORY) + -
+                 ".LANGUAGE]"
 $ IMAGE = F$PARSE("OVMS_AGENT.EXE", BUILD_DIR)
 
 $ IF F$SEARCH(IMAGE) .EQS. ""
@@ -26,6 +29,13 @@ $     THEN
 $         BRIDGE_COMMAND = "@" + BRIDGE_FILE
 $         DEFINE/USER OVMS_AGENT_GITHUB_BRIDGE "''BRIDGE_COMMAND'"
 $     ENDIF
+$ ENDIF
+
+$! M288: expose the shipped shared language-knowledge directory to the image.
+$! Preserve an explicit caller/system override for testing or custom installs.
+$ IF F$TRNLNM("OVMS_AGENT_LANGUAGE_DIR") .EQS. ""
+$ THEN
+$     DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "''LANGUAGE_DIR'"
 $ ENDIF
 
 $ IF P1 .NES. ""
