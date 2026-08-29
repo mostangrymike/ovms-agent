@@ -1051,8 +1051,15 @@
 
 4 AGENT_LANG
  Command: AGENT/LANG
- Performs: Lists OpenVMS programming-language support.
+ Performs: Lists OpenVMS programming-language support and language guidance.
  Use when: Determining whether the agent has specific guidance for a project language.
+ Notes: M288 also ships shared, curated packs under LANGUAGE/<LANGUAGE>.MD.
+   AI-assisted requests automatically load a matching pack when the task text or
+   source extension strongly identifies a language; the current project directory
+   name is used as a fallback.  Packs are bounded to 16 KiB.  If no language is
+   confidently detected or no matching pack exists, request behavior is unchanged.
+   When a pack is loaded, the initial request reports
+   "Language knowledge: <language> (<bytes> bytes)."
 
 4 AGENT_LANG_INFO
  Command: AGENT/LANG/INFO language
@@ -1068,6 +1075,11 @@
  Command: AGENT/LANG/POLICY
  Performs: Shows multilingual policy injected into agent context.
  Use when: Diagnosing how language-specific guidance affects agent behavior.
+ Notes: Shared M288 language-pack guidance is appended to request instructions;
+   it cannot override sandbox, safety, evidence, approval, or write policy.  The
+   normal OVMS_AGENT.COM launcher defines OVMS_AGENT_LANGUAGE_DIR to the shipped
+   LANGUAGE directory while preserving an explicit preexisting override for
+   custom installation or testing.
 
 4 AGENT_PARITY
  Command: AGENT/PARITY
