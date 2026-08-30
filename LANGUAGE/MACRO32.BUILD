@@ -1,0 +1,9 @@
+language=MACRO32
+extensions=.MAR
+kind=compiled
+compile_command=MACRO/MIGRATION {compile_options} {source}
+compile_options=
+link_command=LINK {link_options} {object}
+link_options=
+object_extension=.OBJ
+executable_extension=.EXE
