@@ -249,7 +249,7 @@ static int wrap_run(const char *command)
 
     status = system("@SYS$LOGIN:OVMS_AGENT_GIT_RUN.COM");
     wrap_rm_versions(WRAP_RUN_COM);
-    return (int)ovms_status_normalize((unsigned long)(unsigned int)status);
+    return (int)ovms_status_propagate((unsigned long)(unsigned int)status);
 }
 
 int main(int argc, char **argv)
