@@ -38,6 +38,13 @@ int m289_profile_commands(const m289_build_profile *profile,
                           char *error,
                           size_t error_size);
 
+int m289_profile_compile_command(const m289_build_profile *profile,
+                                 const char *source,
+                                 char *compile_command,
+                                 size_t compile_size,
+                                 char *error,
+                                 size_t error_size);
+
 int m289_profile_run_command(const m289_build_profile *profile,
                              const char *source,
                              char *run_command,
