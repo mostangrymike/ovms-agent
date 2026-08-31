@@ -84,6 +84,67 @@ static int dcl_command_valid(const char *command)
     return 1;
 }
 
+static int dcl_suffix_ci(const char *text, const char *suffix)
+{
+    size_t text_length;
+    size_t suffix_length;
+    size_t index;
+
+    if (text == NULL || suffix == NULL) {
+        return 0;
+    }
+    text_length = strlen(text);
+    suffix_length = strlen(suffix);
+    if (suffix_length == 0U || suffix_length > text_length) {
+        return 0;
+    }
+    text += text_length - suffix_length;
+    for (index = 0U; index < suffix_length; ++index) {
+        if (toupper((unsigned char)text[index]) !=
+            toupper((unsigned char)suffix[index])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int dcl_procedure_path_valid(const char *path)
+{
+    const unsigned char *cursor;
+    size_t length;
+
+    if (path == NULL || *path == '\0' ||
+        strstr(path, "..") != NULL || strchr(path, ':') != NULL ||
+        path[0] == '/' || path[0] == '\\' ||
+        !dcl_suffix_ci(path, ".COM")) {
+        return 0;
+    }
+
+    length = strlen(path);
+    if (length >= DCL_COMMAND_MAX) {
+        return 0;
+    }
+
+    cursor = (const unsigned char *)path;
+    while (*cursor != (unsigned char)'\0') {
+        if (*cursor < 32U || *cursor == 127U ||
+            *cursor == (unsigned char)' ' ||
+            *cursor == (unsigned char)'\t' ||
+            *cursor == (unsigned char)'@' ||
+            *cursor == (unsigned char)'|' ||
+            *cursor == (unsigned char)'&' ||
+            *cursor == (unsigned char)'\'' ||
+            *cursor == (unsigned char)'"' ||
+            *cursor == (unsigned char)'!' ||
+            *cursor == (unsigned char)';') {
+            return 0;
+        }
+        ++cursor;
+    }
+
+    return 1;
+}
+
 static int dcl_make_paths(char *procedure,
                           size_t procedure_size,
                           char *output,
@@ -158,15 +219,17 @@ static int dcl_read_output(const char *path,
     return fclose(file) == 0;
 }
 
-int command_dcl_exec(agent_state *state,
-                     const char *command,
-                     char *output,
-                     size_t output_size,
-                     unsigned long *status_out)
+static int dcl_exec_wrapped(agent_state *state,
+                            const char *command,
+                            int procedure_mode,
+                            char *output,
+                            size_t output_size,
+                            unsigned long *status_out)
 {
     char procedure_path[DCL_PATH_MAX];
     char output_path[DCL_PATH_MAX];
     char invoke[DCL_PATH_MAX + 2U];
+    char display[DCL_COMMAND_MAX + 2U];
     char result_note[1024];
     FILE *procedure;
     int status;
@@ -180,7 +243,9 @@ int command_dcl_exec(agent_state *state,
     }
 
     if (state == NULL || output == NULL || output_size == 0U ||
-        status_out == NULL || !dcl_command_valid(command)) {
+        status_out == NULL ||
+        (procedure_mode ? !dcl_procedure_path_valid(command) :
+                          !dcl_command_valid(command))) {
         return 0;
     }
 
@@ -218,15 +283,29 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    written = fprintf(
-        procedure,
-        "$ DEFINE SYS$OUTPUT %s\n"
-        "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
-        "$ %s\n"
-        "$ OVMS_DCL_STATUS = $STATUS\n"
-        "$ EXIT 'OVMS_DCL_STATUS'\n",
-        output_path,
-        command);
+    if (procedure_mode) {
+        written = fprintf(
+            procedure,
+            "$ DEFINE SYS$OUTPUT %s\n"
+            "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
+            "$ @%s\n"
+            "$ OVMS_DCL_STATUS = $STATUS\n"
+            "$ EXIT 'OVMS_DCL_STATUS'\n",
+            output_path,
+            command);
+        (void)snprintf(display, sizeof(display), "@%s", command);
+    } else {
+        written = fprintf(
+            procedure,
+            "$ DEFINE SYS$OUTPUT %s\n"
+            "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
+            "$ %s\n"
+            "$ OVMS_DCL_STATUS = $STATUS\n"
+            "$ EXIT 'OVMS_DCL_STATUS'\n",
+            output_path,
+            command);
+        (void)snprintf(display, sizeof(display), "%s", command);
+    }
 
     if (written < 0) {
         (void)fclose(procedure);
@@ -239,7 +318,7 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    llm_tx_model_call("DCL", command);
+    llm_tx_model_call("DCL", display);
 
     written = snprintf(invoke, sizeof(invoke), "@%s", procedure_path);
     if (written < 0 || (size_t)written >= sizeof(invoke)) {
@@ -267,11 +346,31 @@ int command_dcl_exec(agent_state *state,
         "DCL",
         ((*status_out & 1UL) != 0UL) ? "success" : "failed",
         result_note);
-    llm_log_event("DCL", command, status);
+    llm_log_event("DCL", display, status);
 
     dcl_remove_versions(procedure_path);
     dcl_remove_versions(output_path);
     return 1;
+}
+
+int command_dcl_exec(agent_state *state,
+                     const char *command,
+                     char *output,
+                     size_t output_size,
+                     unsigned long *status_out)
+{
+    return dcl_exec_wrapped(state, command, 0,
+                            output, output_size, status_out);
+}
+
+int command_dcl_exec_procedure(agent_state *state,
+                               const char *procedure_path,
+                               char *output,
+                               size_t output_size,
+                               unsigned long *status_out)
+{
+    return dcl_exec_wrapped(state, procedure_path, 1,
+                            output, output_size, status_out);
 }
 
 void command_dcl(agent_state *state, const char *arguments)
