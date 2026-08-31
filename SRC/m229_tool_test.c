@@ -152,14 +152,39 @@ int main(void)
     state.dcl_enabled = 1;
 
     if (!command_dcl_exec(&state, "SHOW DEFAULT",
-                          output, sizeof(output), &dcl_status) ||
-        (dcl_status & 1UL) == 0UL ||
-        output[0] == '\0' ||
-        !llm_tool_last_text(args, sizeof(args)) ||
-        strstr(args, "Tool:     DCL") == NULL ||
-        strstr(args, "Policy:   full") == NULL ||
-        strstr(args, "Status:   success") == NULL) {
-        (void)puts("M254 failed: approved DCL execution/status capture.");
+                          output, sizeof(output), &dcl_status)) {
+        (void)puts("M254 failed: approved DCL execution dispatch.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if ((dcl_status & 1UL) == 0UL) {
+        (void)printf("M254 failed: approved DCL status was %%X%08lX.\n",
+                     dcl_status);
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if (output[0] == '\0') {
+        (void)puts("M254 failed: approved DCL output capture empty.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if (!llm_tool_last_text(args, sizeof(args))) {
+        (void)puts("M254 failed: approved DCL last tool transcript unavailable.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if (strstr(args, "Tool:     DCL") == NULL) {
+        (void)puts("M254 failed: approved DCL transcript missing tool name.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if (strstr(args, "Policy:   full") == NULL) {
+        (void)puts("M254 failed: approved DCL transcript missing full policy.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+    if (strstr(args, "Status:   success") == NULL) {
+        (void)puts("M254 failed: approved DCL transcript missing success status.");
         cleanup();
         return EXIT_FAILURE;
     }
