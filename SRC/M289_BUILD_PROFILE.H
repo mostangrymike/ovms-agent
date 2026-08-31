@@ -15,6 +15,7 @@ typedef struct m289_build_profile {
     char language[M289_PROFILE_NAME_MAX];
     char extensions[M289_PROFILE_EXTS_MAX];
     char kind[M289_PROFILE_NAME_MAX];
+    char run_command[M289_PROFILE_CMD_MAX];
     char compile_command[M289_PROFILE_CMD_MAX];
     char compile_options[M289_PROFILE_OPTS_MAX];
     char link_command[M289_PROFILE_CMD_MAX];
@@ -36,5 +37,12 @@ int m289_profile_commands(const m289_build_profile *profile,
                           size_t link_size,
                           char *error,
                           size_t error_size);
+
+int m289_profile_run_command(const m289_build_profile *profile,
+                             const char *source,
+                             char *run_command,
+                             size_t run_size,
+                             char *error,
+                             size_t error_size);
 
 #endif
