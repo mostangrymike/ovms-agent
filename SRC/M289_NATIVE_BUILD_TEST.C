@@ -37,6 +37,7 @@ int command_dcl_exec(agent_state *state,
     int cobol_compile;
     int pascal_compile;
     int cxx_compile;
+    int java_compile;
     int python_run;
     int perl_run;
 
@@ -70,6 +71,8 @@ int command_dcl_exec(agent_state *state,
                      strncmp(command, "PASCAL ", 7) == 0;
     cxx_compile = exec_calls == 1U &&
                   strncmp(command, "CXX ", 4) == 0;
+    java_compile = exec_calls == 1U &&
+                   strncmp(command, "JAVAC ", 6) == 0;
     python_run = exec_calls == 1U &&
                  strncmp(command, "PYTHON ", 7) == 0;
     perl_run = exec_calls == 1U &&
@@ -91,6 +94,9 @@ int command_dcl_exec(agent_state *state,
         } else if (cxx_compile) {
             *status_out = 0x15F60001UL;
             text = "CXX compile output\n";
+        } else if (java_compile) {
+            *status_out = 0x10000001UL;
+            text = "Java compile output\n";
         } else if (python_run) {
             *status_out = 0x00000001UL;
             text = "Python run output\n";
@@ -136,6 +142,8 @@ static int test_command_guard(void)
                               M289_BUILD_COMPILE, "PASCAL") ||
         !m289_command_allowed("CXX WC.CXX",
                               M289_BUILD_COMPILE, "CXX") ||
+        !m289_command_allowed("JAVAC M289JavaFixture.java",
+                              M289_BUILD_COMPILE, "JAVA") ||
         !m289_command_allowed("PYTHON WC.PY",
                               M289_BUILD_RUN, "PYTHON") ||
         !m289_command_allowed("PERL WC.PL",
@@ -150,6 +158,10 @@ static int test_command_guard(void)
                               M289_BUILD_LINK, "PASCAL") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "CXX") ||
+        m289_command_allowed("LINK WC.OBJ",
+                             M289_BUILD_LINK, "JAVA") ||
+        m289_command_allowed("JAVAC M289JavaFixture.java",
+                             M289_BUILD_RUN, "JAVA") ||
         m289_command_allowed("PYTHON WC.PY",
                              M289_BUILD_COMPILE, "PYTHON") ||
         m289_command_allowed("LINK WC.OBJ",
@@ -174,6 +186,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "COBOL") ||
         m289_command_allowed("CXX WC.CXX",
                              M289_BUILD_COMPILE, "PASCAL") ||
+        m289_command_allowed("JAVAC M289JavaFixture.java",
+                             M289_BUILD_COMPILE, "CXX") ||
         m289_command_allowed("MACRO WC.MAR",
                              M289_BUILD_COMPILE, "MACRO32") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR|DELETE *.*;*",
@@ -186,6 +200,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "PASCAL") ||
         m289_command_allowed("CXX WC.CXX|DELETE *.*;*",
                              M289_BUILD_COMPILE, "CXX") ||
+        m289_command_allowed("JAVAC M289JavaFixture.java|DELETE *.*;*",
+                             M289_BUILD_COMPILE, "JAVA") ||
         m289_command_allowed("PYTHON WC.PY|DELETE *.*;*",
                              M289_BUILD_RUN, "PYTHON") ||
         m289_command_allowed("PERL WC.PL|DELETE *.*;*",
@@ -387,6 +403,35 @@ static int test_perl_success(agent_state *state)
     return ok;
 }
 
+static int test_java_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289JavaFixture.java", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         strcmp(exec_first, "JAVAC M289JavaFixture.java") == 0 &&
+         exec_second[0] == '\0' &&
+         status == 0x10000001UL &&
+         strstr(result, "Language: JAVA") != NULL &&
+         strstr(result, "Compile command: JAVAC M289JavaFixture.java") != NULL &&
+         strstr(result, "Compile status: %X10000001 (success)") != NULL &&
+         strstr(result, "Java compile output") != NULL &&
+         strstr(result, "Link command:") == NULL &&
+         strstr(result, "Run command:") == NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: Java success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_compile_failure(agent_state *state)
 {
     char *result;
@@ -403,6 +448,29 @@ static int test_compile_failure(agent_state *state)
          strstr(result, "Result: failure") != NULL;
     if (!ok) {
         (void)puts("M289 native failed: compile-failure sequencing.");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_java_compile_failure(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(1);
+    status = 0UL;
+    result = m289_build_source(state, "M289JavaFixture.java", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         status == 2UL &&
+         strstr(result, "Compile status: %X00000002 (failure)") != NULL &&
+         strstr(result, "Link:") == NULL &&
+         strstr(result, "Run command:") == NULL &&
+         strstr(result, "Result: failure") != NULL;
+    if (!ok) {
+        (void)puts("M289 native failed: Java compile-only failure.");
     }
     free(result);
     return ok;
@@ -445,6 +513,27 @@ static int test_refusal(agent_state *state)
          strstr(result, "full approval policy required") != NULL;
     if (!ok) {
         (void)puts("M289 native failed: DCL refusal propagation.");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_java_refusal(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(3);
+    status = 99UL;
+    result = m289_build_source(state, "M289JavaFixture.java", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         status == 0UL &&
+         strstr(result, "Compile execution refused or unavailable.") != NULL &&
+         strstr(result, "full approval policy required") != NULL;
+    if (!ok) {
+        (void)puts("M289 native failed: Java DCL refusal propagation.");
     }
     free(result);
     return ok;
@@ -518,9 +607,12 @@ int main(void)
          test_cxx_success(&state) &&
          test_python_success(&state) &&
          test_perl_success(&state) &&
+         test_java_success(&state) &&
          test_compile_failure(&state) &&
+         test_java_compile_failure(&state) &&
          test_link_failure(&state) &&
          test_refusal(&state) &&
+         test_java_refusal(&state) &&
          test_python_refusal(&state) &&
          test_invalid_source(&state);
 
