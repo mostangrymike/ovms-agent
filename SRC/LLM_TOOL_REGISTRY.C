@@ -14,6 +14,7 @@ static const llm_tool_descriptor tool_registry[] = {
     { "replace_lines", LLM_TOOL_REPLACE_LINES, 0, 1, 1, 0 },
     { "create_file", LLM_TOOL_CREATE_FILE, 0, 1, 1, 0 },
     { "run_build", LLM_TOOL_RUN_BUILD, 0, 0, 0, 1 },
+    { "build_source", LLM_TOOL_BUILD_SOURCE, 0, 0, 0, 1 },
     { NULL, 0, 0, 0, 0, 0 }
 };
 

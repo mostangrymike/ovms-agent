@@ -11,7 +11,8 @@ typedef enum llm_tool_kind {
     LLM_TOOL_REPLACE_TEXT = 5,
     LLM_TOOL_REPLACE_LINES = 6,
     LLM_TOOL_CREATE_FILE = 7,
-    LLM_TOOL_RUN_BUILD = 8
+    LLM_TOOL_RUN_BUILD = 8,
+    LLM_TOOL_BUILD_SOURCE = 9
 } llm_tool_kind;
 
 typedef struct llm_tool_descriptor {

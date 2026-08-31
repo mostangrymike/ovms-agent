@@ -42,6 +42,17 @@ static int schema_create_tool(FILE *file)
     ) != EOF;
 }
 
+static int schema_build_source_tool(FILE *file)
+{
+    return fputs(
+        "{\"type\":\"function\",\"name\":\"build_source\","
+        "\"description\":\"Compile and link one project-relative MACRO32 .MAR source using the validated native toolchain profile. Execution requires full approval, guarded writes, and DCL execution.\","
+        "\"parameters\":{\"type\":\"object\",\"properties\":{\"source\":{\"type\":\"string\"}},"
+        "\"required\":[\"source\"],\"additionalProperties\":false},\"strict\":true}",
+        file
+    ) != EOF;
+}
+
 int write_agent_tools(FILE *file)
 {
     if (file == NULL) return 0;
@@ -82,6 +93,8 @@ int write_agent_tools_with_replace(FILE *file)
     ) == EOF) return 0;
 
     if (!schema_create_tool(file)) return 0;
+    if (fputc(',', file) == EOF) return 0;
+    if (!schema_build_source_tool(file)) return 0;
     return fputc(']', file) != EOF;
 }
 

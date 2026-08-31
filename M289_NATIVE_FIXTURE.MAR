@@ -1,0 +1,10 @@
+.TITLE M289_NATIVE_FIXTURE
+.IDENT /01-001/
+;
+; Minimal MACRO32 source used for guarded native build_source acceptance.
+;
+        .PSECT CODE,EXE,NOWRT,LONG
+        .ENTRY M289_NATIVE_FIXTURE,^M<>
+        MOVL #1,R0
+        RET
+        .END M289_NATIVE_FIXTURE

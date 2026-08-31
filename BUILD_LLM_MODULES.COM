@@ -63,8 +63,8 @@ $ DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "[.LANGUAGE]"
 $ RUN [.BUILD]M288_LANGUAGE_TEST
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
-$! M289 native build-profile parser/resolver regression.
-$ @BUILD_M289_PROFILE
+$! M289 native profile/parser and guarded source-build regression.
+$ @BUILD_M289_NATIVE
 $ IF .NOT. $STATUS THEN GOTO COMPILE_ERROR
 $
 $ CC/OBJECT=[.BUILD]LLM_PROMPTS.OBJ -
