@@ -5,8 +5,10 @@
 #include "llm_internal.h"
 #include "LLM_REQUEST_AGENT.H"
 #include "LLM_RESPONSE.H"
+#include "SETTINGS.H"
 
 #define M279_LARGE_EDIT_TEST "M279_LARGE_EDIT.TMP"
+#define M290_SETTINGS_TEST "[.BUILD]M251_SYNTH_SETTINGS.DAT"
 
 int llm_m279_edit_read_ok(const char *path,
                           unsigned long minimum);
@@ -258,6 +260,13 @@ int main(void)
     char *request;
     int ok;
 
+    remove_all(M290_SETTINGS_TEST);
+    settings_test_path(M290_SETTINGS_TEST);
+    if (!settings_reload()) {
+        (void)puts("M290 failed: unable to isolate M251 settings.");
+        return EXIT_FAILURE;
+    }
+
     if (!test_nonempty_output()) {
         (void)puts(
             "M251 failed: empty output_text masked later synthesis."
@@ -365,6 +374,8 @@ int main(void)
     free(request);
     remove_all(LLM_REQUEST_FILE);
     remove_all(LLM_RESPONSE_FILE);
+    remove_all(M290_SETTINGS_TEST);
+    settings_test_path(NULL);
 
     if (!ok) {
         (void)puts(
