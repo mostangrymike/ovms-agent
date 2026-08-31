@@ -103,6 +103,8 @@ int llm_git_rms_copy(const char *path, const char *target)
     return ok;
 }
 
+#include "LLM_GIT_STATUS_M290.INC"
+
 static int m263_git_empty_copy(const char *target)
 {
     FILE *output;
@@ -345,12 +347,7 @@ int llm_git_refresh(const agent_state *state)
     llm_git_diff_ok = 0;
     llm_git_truncated = 0;
 
-    llm_git_status_ok = llm_git_capture_one(
-        "status",
-        LLM_GIT_STATUS_FILE,
-        llm_git_status,
-        sizeof(llm_git_status)
-    );
+    llm_git_status_ok = m290_git_rms_status();
 
     if (llm_git_status_ok) {
         (void)m263_git_rms_diff();
