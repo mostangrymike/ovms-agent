@@ -9,6 +9,19 @@ The changelog is maintained from M278 forward. Earlier milestone history remains
 - M286 normalizes the remaining mixed-case root documentation filenames to fully uppercase names and reformats `README.MD` as conventional Markdown.
 - No product command, SETTINGS, build, or runtime behavior changes are included in M286.
 
+## M289 — Native toolchain profiles and guarded source build execution
+
+Tag: `m289`
+
+- Added bounded `LANGUAGE/<LANGUAGE>.BUILD` native toolchain profiles selected by source extension.
+- Added guarded `build_source` execution requiring full approval, guarded writes, and DCL execution.
+- Added compiled profiles for MACRO32, Fortran, COBOL, Pascal, C++, and BASIC with native compile/link sequencing and failure propagation.
+- Added compile-only Java support with one guarded `JAVAC` phase and no link/run phase.
+- Added interpreted Python and Perl support with one guarded interpreter run and no compile/link phase.
+- Added DCL procedure profiles through a dedicated validated project-relative `.COM` execution path while preserving the existing rule that ordinary `DCL` rejects `@` command procedures.
+- Added focused parser/executor regressions and synchronized tool-schema and OpenVMS HELP documentation.
+- Native-accepted every shipped M289 language class on OpenVMS V9.2-3 x86-64; the exact final product/HELP acceptance head was `b114b422cf41bd4eb1409ec47593c837c4406418`.
+
 ## 1.0.0 — 2026-08-28 (M284)
 
 Tags: `m284`, `v1.0.0`
@@ -68,7 +81,7 @@ Tag: `m279`
 
 - Closed remaining legacy backlog items carried into the milestone.
 - Added or reconciled structured symbol/refactoring and agent planning/safety work that remained outside the earlier promoted baseline.
-- Preserved the separate `OVMS_AGENT_AUTO_CREATES` create-action ceiling later relied on by M281 compatibility.
+- Preserved the separate `OVMS_AGENT_AUTO_CREATES` create-action ceiling behavior later relied on by M281 compatibility.
 - Promoted the reconciled milestone and retained its permanent tag before branch pruning.
 
 ## M278 — GitHub service bridge completion
