@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llm_internal.h"
+#include "rms_write.h"
 
 #define PATCH_MAX_HUNKS 16U
 #define PATCH_PATH_MAX 256U
@@ -274,12 +275,11 @@ static char *render_patch(const patch_doc *d, const char *orig,
 
 static int write_all(const char *path, const char *text, size_t sz)
 {
-    FILE *fp = fopen(path, "w");
-    size_t n;
-    if (fp == NULL) return 0;
-    n = fwrite(text, 1U, sz, fp);
-    if (n != sz) { (void)fclose(fp); return 0; }
-    return fclose(fp) == 0;
+    if (path == NULL || text == NULL || strlen(text) != sz) {
+        return 0;
+    }
+
+    return rms_replace_text_file(path, text);
 }
 
 static int process_patch(const char *spec, int apply,
@@ -478,39 +478,3 @@ int llm_patch_dry(const char *p, char *o, size_t n)
 { return process_patch(p, 0, o, n); }
 int llm_patch_apply(const char *p, char *o, size_t n)
 { return process_patch(p, 1, o, n); }
-
-int llm_patch_last_text(char *o, size_t n)
-{
-    int w;
-    if (o == NULL || n == 0U) return 0;
-    w = snprintf(o, n, "%s\n", patch_last);
-    return w >= 0 && (size_t)w < n;
-}
-
-static void run_patch_cmd(const char *arg, int mode)
-{
-    char out[PATCH_LAST_MAX];
-    int ok;
-    if (arg == NULL || *arg == '\0') {
-        (void)puts(mode == 2 ? "Usage: AGENT/PATCH patch-spec-filespec" :
-                   mode == 1 ? "Usage: AGENT/PATCH/DRY patch-spec-filespec" :
-                               "Usage: AGENT/PATCH/VALIDATE patch-spec-filespec");
-        return;
-    }
-    ok = mode == 2 ? llm_patch_apply(arg, out, sizeof(out)) :
-         mode == 1 ? llm_patch_dry(arg, out, sizeof(out)) :
-                     llm_patch_validate(arg, out, sizeof(out));
-    (void)strncpy(patch_last, out, sizeof(patch_last)-1U);
-    patch_last[sizeof(patch_last)-1U] = '\0';
-    (void)puts(out);
-    if (!ok && mode == 2) (void)puts("No validated multi-hunk change was committed.");
-}
-
-void llm_patch_validate_cmd(const char *a) { run_patch_cmd(a, 0); }
-void llm_patch_dry_cmd(const char *a) { run_patch_cmd(a, 1); }
-void llm_patch_apply_cmd(const char *a) { run_patch_cmd(a, 2); }
-void llm_patch_last_cmd(void)
-{
-    char out[PATCH_LAST_MAX+16U];
-    if (llm_patch_last_text(out, sizeof(out))) (void)fputs(out, stdout);
-}
