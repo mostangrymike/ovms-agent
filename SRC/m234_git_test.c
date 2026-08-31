@@ -4,6 +4,19 @@
 #include <unistd.h>
 
 #include "llm_internal.h"
+#include "rms_write.h"
+
+#define M290_RMS_HASH_PATH "M290_RMS_HASH.COM"
+#define M290_RMS_HASH_TEXT \
+    "$ WRITE SYS$OUTPUT \"M290\"\n" \
+    "$ EXIT\n"
+#define M290_RMS_HASH_EXPECTED \
+    "1733065d195100a84ee2d0f37462be257ed4ea07"
+
+extern int llm_git_rms_blob_hash(
+    const char *path,
+    char *hash,
+    size_t hash_size);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -69,6 +82,7 @@ int main(void)
 {
     agent_state state;
     char output[32768];
+    char hash[41];
     const char *rms_path;
     const char *copy_path;
     char original_dir[OVMS_AGENT_ROOT_SIZE];
@@ -131,6 +145,31 @@ int main(void)
     }
 
     llm_test_git_data(NULL, NULL);
+
+    m263_remove_versions(M290_RMS_HASH_PATH);
+    if (!rms_write_text_file(M290_RMS_HASH_PATH, M290_RMS_HASH_TEXT) ||
+        !llm_git_rms_blob_hash(
+            M290_RMS_HASH_PATH,
+            hash,
+            sizeof(hash)) ||
+        strcmp(hash, M290_RMS_HASH_EXPECTED) != 0) {
+        (void)puts("M290 failed: RMS Git blob hashing.");
+        m263_remove_versions(M290_RMS_HASH_PATH);
+        return EXIT_FAILURE;
+    }
+    m263_remove_versions(M290_RMS_HASH_PATH);
+
+    if (!llm_git_refresh(&state)) {
+        (void)puts("M290 failed: RMS-safe root Git refresh.");
+        return EXIT_FAILURE;
+    }
+
+    if (!llm_git_status_text(&state, output, sizeof(output)) ||
+        strstr(output, "capture unavailable") != NULL ||
+        strstr(output, "BUILD_M289_PROFILE.COM") != NULL) {
+        (void)puts("M290 failed: RMS-safe root Git status integrity.");
+        return EXIT_FAILURE;
+    }
 
     if (getcwd(original_dir, sizeof(original_dir)) == NULL) {
         (void)puts("M274 failed: unable to save current directory.");

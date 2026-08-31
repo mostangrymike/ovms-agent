@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llm_internal.h"
+#include "rms_write.h"
 
 #define PATCH_MAX_HUNKS 16U
 #define PATCH_PATH_MAX 256U
@@ -274,12 +275,11 @@ static char *render_patch(const patch_doc *d, const char *orig,
 
 static int write_all(const char *path, const char *text, size_t sz)
 {
-    FILE *fp = fopen(path, "w");
-    size_t n;
-    if (fp == NULL) return 0;
-    n = fwrite(text, 1U, sz, fp);
-    if (n != sz) { (void)fclose(fp); return 0; }
-    return fclose(fp) == 0;
+    if (path == NULL || text == NULL || strlen(text) != sz) {
+        return 0;
+    }
+
+    return rms_replace_text_file(path, text);
 }
 
 static int process_patch(const char *spec, int apply,

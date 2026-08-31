@@ -7,6 +7,7 @@
 #include "agent.h"
 #include "command_internal.h"
 #include "llm_internal.h"
+#include "ovms_status.h"
 
 #define DCL_COMMAND_MAX 768U
 #define DCL_OUTPUT_MAX 32768U
@@ -327,7 +328,8 @@ static int dcl_exec_wrapped(agent_state *state,
     }
 
     status = system(invoke);
-    *status_out = (unsigned long)(unsigned int)status;
+    *status_out = ovms_status_normalize(
+        (unsigned long)(unsigned int)status);
 
     if (!dcl_read_output(output_path, output, output_size)) {
         dcl_remove_versions(procedure_path);
@@ -339,12 +341,12 @@ static int dcl_exec_wrapped(agent_state *state,
         result_note, sizeof(result_note),
         "status=%%X%08lX success=%s %s",
         *status_out,
-        ((*status_out & 1UL) != 0UL) ? "yes" : "no",
+        ovms_status_success(*status_out) ? "yes" : "no",
         output);
 
     llm_tx_model_result(
         "DCL",
-        ((*status_out & 1UL) != 0UL) ? "success" : "failed",
+        ovms_status_success(*status_out) ? "success" : "failed",
         result_note);
     llm_log_event("DCL", display, status);
 
@@ -398,5 +400,5 @@ void command_dcl(agent_state *state, const char *arguments)
     (void)printf(
         "OpenVMS completion status: %%X%08lX (%s)\n",
         status,
-        (status & 1UL) != 0UL ? "success" : "failure");
+        ovms_status_success(status) ? "success" : "failure");
 }

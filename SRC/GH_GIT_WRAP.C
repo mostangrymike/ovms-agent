@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 
 #include "llm_config.h"
+#include "ovms_status.h"
 
 #define WRAP_AUTH_CFG "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.CFG"
 #define WRAP_RUN_COM  "SYS$LOGIN:OVMS_AGENT_GIT_RUN.COM"
@@ -235,8 +236,11 @@ static int wrap_run(const char *command)
          fputs("$ DEFINE/PROCESS/NOLOG GIT_TERMINAL_PROMPT \"0\"\n", file) != EOF &&
          fprintf(file, "$ %s\n", command) >= 0 &&
          fputs("$ GIT_STATUS = $STATUS\n", file) != EOF &&
+         fputs("$ GIT_MESSAGE = F$EDIT(F$MESSAGE(GIT_STATUS),\"UPCASE\")\n", file) != EOF &&
+         fputs("$ GIT_RETURN = GIT_STATUS\n", file) != EOF &&
+         fputs("$ IF F$LOCATE(\"%C-S-EXIT\",GIT_MESSAGE) .LT. F$LENGTH(GIT_MESSAGE) THEN GIT_RETURN = %X00000002\n", file) != EOF &&
          fputs("$ DEASSIGN/PROCESS GIT_TERMINAL_PROMPT\n", file) != EOF &&
-         fputs("$ EXIT 'GIT_STATUS'\n", file) != EOF;
+         fputs("$ EXIT 'GIT_RETURN'\n", file) != EOF;
     if (fclose(file) != 0) ok = 0;
     if (!ok) {
         wrap_rm_versions(WRAP_RUN_COM);
@@ -245,7 +249,7 @@ static int wrap_run(const char *command)
 
     status = system("@SYS$LOGIN:OVMS_AGENT_GIT_RUN.COM");
     wrap_rm_versions(WRAP_RUN_COM);
-    return status;
+    return (int)ovms_status_propagate((unsigned long)(unsigned int)status);
 }
 
 int main(int argc, char **argv)
