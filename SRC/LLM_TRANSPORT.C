@@ -10,6 +10,7 @@
 #include "LLM_TRANSPORT.H"
 #include "llm_config.h"
 #include "ANSI_TERM.H"
+#include "OVMS_STATUS.H"
 
 #define M262_RESPONSE_URL_MAX 640U
 #define M273_STREAM_REQ "OVMS_AGENT_STREAM_REQ.TMP"
@@ -203,6 +204,7 @@ static int m273_stream_request(const char *url)
 {
     static const char prefix[] =
         "curl --silent --show-error --no-buffer "
+        LLM_TRANSPORT_CURL_TIMEOUT_ARGS
         "--header @" LLM_HEADERS_FILE " "
         "--data-binary @" M273_STREAM_REQ " ";
     FILE *pipe_stream;
@@ -251,17 +253,29 @@ static int m273_stream_request(const char *url)
         m273_stream_last_nl = 1;
     }
 
-    if (parsed && close_status != -1) {
+    if (close_status == -1 ||
+        !ovms_status_success(
+            (unsigned long)(unsigned int)close_status)) {
+        if (getenv("OVMS_AGENT_STREAM_DEBUG") != NULL) {
+            (void)puts(
+                "M290 stream transport child failed; blocking retry suppressed."
+            );
+        }
+        return 0;
+    }
+
+    if (parsed) {
         return 1;
     }
 
     /*
-     * A stream attempt that produced no user-visible assistant text is
-     * safe to retry through the pre-M273 blocking transport.  This is
-     * the compatibility path for gateways whose SSE dialect differs
-     * from the Responses event stream we understand.  Once any text
-     * has been emitted, never retry the provider request: doing so could
-     * duplicate both output and side effects/cost.
+     * A stream attempt whose child completed successfully but produced
+     * no user-visible assistant text is safe to retry through the
+     * pre-M273 blocking transport. This remains the compatibility path
+     * for gateways whose SSE dialect differs from the Responses event
+     * stream we understand. A failed child is never retried here: that
+     * would double a bounded network timeout and duplicate a failed
+     * provider request.
      */
     if (!m273_last_streamed) {
         if (getenv("OVMS_AGENT_STREAM_DEBUG") != NULL) {
@@ -321,6 +335,7 @@ int perform_openai_request(void)
 {
     static const char prefix[] =
         "curl --silent --show-error "
+        LLM_TRANSPORT_CURL_TIMEOUT_ARGS
         "--output " LLM_RESPONSE_FILE " "
         "--header @" LLM_HEADERS_FILE " "
         "--data-binary @" LLM_REQUEST_FILE " ";
@@ -387,7 +402,8 @@ int perform_openai_request(void)
     for (;;) {
         m273_remove_all(LLM_RESPONSE_FILE);
         status = system(command);
-        if ((status & 1) == 0) {
+        if (!ovms_status_success(
+                (unsigned long)(unsigned int)status)) {
             return 0;
         }
 
