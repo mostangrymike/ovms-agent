@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 
 #include "llm_config.h"
+#include "ovms_status.h"
 
 #define WRAP_AUTH_CFG "SYS$LOGIN:OVMS_AGENT_GIT_AUTH.CFG"
 #define WRAP_RUN_COM  "SYS$LOGIN:OVMS_AGENT_GIT_RUN.COM"
@@ -248,7 +249,7 @@ static int wrap_run(const char *command)
 
     status = system("@SYS$LOGIN:OVMS_AGENT_GIT_RUN.COM");
     wrap_rm_versions(WRAP_RUN_COM);
-    return status;
+    return (int)ovms_status_normalize((unsigned long)(unsigned int)status);
 }
 
 int main(int argc, char **argv)
