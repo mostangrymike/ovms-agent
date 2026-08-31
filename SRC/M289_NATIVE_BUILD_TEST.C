@@ -50,6 +50,7 @@ int command_dcl_exec(agent_state *state,
     int pascal_compile;
     int cxx_compile;
     int java_compile;
+    int basic_compile;
     int python_run;
     int perl_run;
 
@@ -78,6 +79,8 @@ int command_dcl_exec(agent_state *state,
                   strncmp(command, "CXX ", 4) == 0;
     java_compile = exec_calls == 1U &&
                    strncmp(command, "JAVAC ", 6) == 0;
+    basic_compile = exec_calls == 1U &&
+                    strncmp(command, "BASIC ", 6) == 0;
     python_run = exec_calls == 1U &&
                  strncmp(command, "PYTHON ", 7) == 0;
     perl_run = exec_calls == 1U &&
@@ -102,6 +105,9 @@ int command_dcl_exec(agent_state *state,
         } else if (java_compile) {
             *status_out = 0x10000001UL;
             text = "Java compile output\n";
+        } else if (basic_compile) {
+            *status_out = 0x10000001UL;
+            text = "BASIC compile output\n";
         } else if (python_run) {
             *status_out = 0x00000001UL;
             text = "Python run output\n";
@@ -175,6 +181,8 @@ static int test_command_guard(void)
                               M289_BUILD_COMPILE, "CXX") ||
         !m289_command_allowed("JAVAC M289JavaFixture.java",
                               M289_BUILD_COMPILE, "JAVA") ||
+        !m289_command_allowed("BASIC WC.BAS",
+                              M289_BUILD_COMPILE, "BASIC") ||
         !m289_command_allowed("PYTHON WC.PY",
                               M289_BUILD_RUN, "PYTHON") ||
         !m289_command_allowed("PERL WC.PL",
@@ -191,6 +199,8 @@ static int test_command_guard(void)
                               M289_BUILD_LINK, "PASCAL") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "CXX") ||
+        !m289_command_allowed("LINK WC.OBJ",
+                              M289_BUILD_LINK, "BASIC") ||
         m289_command_allowed("LINK WC.OBJ",
                              M289_BUILD_LINK, "JAVA") ||
         m289_command_allowed("JAVAC M289JavaFixture.java",
@@ -215,6 +225,8 @@ static int test_command_guard(void)
                              M289_BUILD_LINK, "PERL") ||
         m289_command_allowed("CXX WC.CXX",
                              M289_BUILD_RUN, "CXX") ||
+        m289_command_allowed("BASIC WC.BAS",
+                             M289_BUILD_RUN, "BASIC") ||
         m289_command_allowed("PYTHON WC.PY",
                              M289_BUILD_RUN, "PERL") ||
         m289_command_allowed("PERL WC.PL",
@@ -231,6 +243,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "PASCAL") ||
         m289_command_allowed("JAVAC M289JavaFixture.java",
                              M289_BUILD_COMPILE, "CXX") ||
+        m289_command_allowed("BASIC WC.BAS",
+                             M289_BUILD_COMPILE, "JAVA") ||
         m289_command_allowed("MACRO WC.MAR",
                              M289_BUILD_COMPILE, "MACRO32") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR|DELETE *.*;*",
@@ -245,6 +259,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "CXX") ||
         m289_command_allowed("JAVAC M289JavaFixture.java|DELETE *.*;*",
                              M289_BUILD_COMPILE, "JAVA") ||
+        m289_command_allowed("BASIC WC.BAS|DELETE *.*;*",
+                             M289_BUILD_COMPILE, "BASIC") ||
         m289_command_allowed("PYTHON WC.PY|DELETE *.*;*",
                              M289_BUILD_RUN, "PYTHON") ||
         m289_command_allowed("PERL WC.PL|DELETE *.*;*",
@@ -385,6 +401,33 @@ static int test_cxx_success(agent_state *state)
          strstr(result, "Result: success") != NULL;
     if (!ok) {
         (void)printf("M289 native failed: CXX success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_basic_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289_BASIC_FIXTURE.BAS", &status);
+    ok = result != NULL &&
+         exec_calls == 2U &&
+         strcmp(exec_first, "BASIC M289_BASIC_FIXTURE.BAS") == 0 &&
+         strcmp(exec_second, "LINK M289_BASIC_FIXTURE.OBJ") == 0 &&
+         status == 0x10000001UL &&
+         strstr(result, "Language: BASIC") != NULL &&
+         strstr(result, "Compile status: %X10000001 (success)") != NULL &&
+         strstr(result, "BASIC compile output") != NULL &&
+         strstr(result, "Link status: %X10000001 (success)") != NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: BASIC success path.\n%s\n",
                      result != NULL ? result : "<null>");
     }
     free(result);
@@ -701,6 +744,7 @@ int main(void)
          test_cobol_success(&state) &&
          test_pascal_success(&state) &&
          test_cxx_success(&state) &&
+         test_basic_success(&state) &&
          test_python_success(&state) &&
          test_perl_success(&state) &&
          test_java_success(&state) &&
