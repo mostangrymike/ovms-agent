@@ -18,6 +18,7 @@ static const char *m289_profile_names[] = {
     "COBOL",
     "PASCAL",
     "CXX",
+    "PYTHON",
     NULL
 };
 
@@ -63,6 +64,7 @@ int m289_command_allowed(const char *command,
     const unsigned char *cursor;
     int verb_ok;
     int language_ok;
+    int interpreted;
 
     if (command == NULL || *command == '\0' ||
         language == NULL || *language == '\0') {
@@ -73,13 +75,15 @@ int m289_command_allowed(const char *command,
                   m289_equal_ci(language, "FORTRAN") ||
                   m289_equal_ci(language, "COBOL") ||
                   m289_equal_ci(language, "PASCAL") ||
-                  m289_equal_ci(language, "CXX");
+                  m289_equal_ci(language, "CXX") ||
+                  m289_equal_ci(language, "PYTHON");
     if (!language_ok) {
         return 0;
     }
 
+    interpreted = m289_equal_ci(language, "PYTHON");
     verb_ok = 0;
-    if (phase == M289_BUILD_COMPILE) {
+    if (phase == M289_BUILD_COMPILE && !interpreted) {
         if (m289_equal_ci(language, "MACRO32")) {
             verb_ok = m289_starts_command(command, "MACRO/MIGRATION");
         } else if (m289_equal_ci(language, "FORTRAN")) {
@@ -91,8 +95,10 @@ int m289_command_allowed(const char *command,
         } else if (m289_equal_ci(language, "CXX")) {
             verb_ok = m289_starts_command(command, "CXX");
         }
-    } else if (phase == M289_BUILD_LINK) {
+    } else if (phase == M289_BUILD_LINK && !interpreted) {
         verb_ok = m289_starts_command(command, "LINK");
+    } else if (phase == M289_BUILD_RUN && interpreted) {
+        verb_ok = m289_starts_command(command, "PYTHON");
     }
 
     if (!verb_ok) {
@@ -211,6 +217,8 @@ static int m289_resolve_profile(const char *source,
                                 size_t compile_size,
                                 char *link_command,
                                 size_t link_size,
+                                char *run_command,
+                                size_t run_size,
                                 char *error,
                                 size_t error_size)
 {
@@ -218,10 +226,14 @@ static int m289_resolve_profile(const char *source,
     char load_error[M289_PROFILE_ERROR_MAX];
     char command_error[M289_PROFILE_ERROR_MAX];
     unsigned int index;
+    int resolved;
 
     if (error != NULL && error_size > 0U) {
         error[0] = '\0';
     }
+    compile_command[0] = '\0';
+    link_command[0] = '\0';
+    run_command[0] = '\0';
 
     for (index = 0U; m289_profile_names[index] != NULL; ++index) {
         load_error[0] = '\0';
@@ -233,10 +245,27 @@ static int m289_resolve_profile(const char *source,
         }
 
         command_error[0] = '\0';
-        if (m289_profile_commands(&candidate, source,
-                                  compile_command, compile_size,
-                                  link_command, link_size,
-                                  command_error, sizeof(command_error))) {
+        resolved = 0;
+        if (m289_equal_ci(candidate.kind, "compiled")) {
+            resolved = m289_profile_commands(&candidate, source,
+                                              compile_command, compile_size,
+                                              link_command, link_size,
+                                              command_error,
+                                              sizeof(command_error));
+            if (resolved) {
+                run_command[0] = '\0';
+            }
+        } else if (m289_equal_ci(candidate.kind, "interpreted")) {
+            resolved = m289_profile_run_command(&candidate, source,
+                                                run_command, run_size,
+                                                command_error,
+                                                sizeof(command_error));
+            if (resolved) {
+                compile_command[0] = '\0';
+                link_command[0] = '\0';
+            }
+        }
+        if (resolved) {
             *profile = candidate;
             return 1;
         }
@@ -244,7 +273,7 @@ static int m289_resolve_profile(const char *source,
 
     if (error != NULL && error_size > 0U) {
         (void)snprintf(error, error_size,
-                       "No compiled native profile accepts source extension.");
+                       "No native profile accepts source extension.");
     }
     return 0;
 }
@@ -277,6 +306,83 @@ static char *m289_make_error(const char *message,
     return result;
 }
 
+static int m289_append_header(char *result,
+                              const char *language,
+                              const char *source)
+{
+    return m289_append(result, M289_NATIVE_RESULT_MAX,
+                       "M289 native source build\n") &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, "Language: ") &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, language) &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, "\n") &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, "Source: ") &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, source) &&
+           m289_append(result, M289_NATIVE_RESULT_MAX, "\n");
+}
+
+static char *m289_run_interpreted(agent_state *state,
+                                  const m289_build_profile *profile,
+                                  const char *source,
+                                  const char *run_command,
+                                  unsigned long *status_out)
+{
+    char run_output[M289_STAGE_OUTPUT_MAX];
+    char *result;
+    unsigned long run_status;
+    int executed;
+
+    if (!m289_command_allowed(run_command, M289_BUILD_RUN,
+                              profile->language)) {
+        return m289_make_error("M289 native source build refused",
+                               "resolved command failed execution guard");
+    }
+
+    result = (char *)malloc(M289_NATIVE_RESULT_MAX);
+    if (result == NULL) {
+        return NULL;
+    }
+    result[0] = '\0';
+    if (!m289_append_header(result, profile->language, source) ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, "Run command: ") ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, run_command) ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, "\n")) {
+        free(result);
+        return NULL;
+    }
+
+    run_output[0] = '\0';
+    run_status = 0UL;
+    executed = command_dcl_exec(state, run_command,
+                                run_output, sizeof(run_output),
+                                &run_status);
+    if (!executed) {
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                          "Run execution refused or unavailable.\n");
+        if (run_output[0] != '\0') {
+            (void)m289_append(result, M289_NATIVE_RESULT_MAX, run_output);
+        }
+        *status_out = 0UL;
+        return result;
+    }
+
+    (void)m289_append_status(result, M289_NATIVE_RESULT_MAX,
+                             "Run status: ", run_status);
+    if (run_output[0] != '\0') {
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX, "Run output:\n");
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX, run_output);
+        if (run_output[strlen(run_output) - 1U] != '\n') {
+            (void)m289_append(result, M289_NATIVE_RESULT_MAX, "\n");
+        }
+    }
+
+    *status_out = run_status;
+    (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                      (run_status & 1UL) != 0UL ?
+                          "Result: success\n" :
+                          "Result: failure\n");
+    return result;
+}
+
 char *m289_build_source(agent_state *state,
                         const char *source,
                         unsigned long *status_out)
@@ -284,6 +390,7 @@ char *m289_build_source(agent_state *state,
     m289_build_profile profile;
     char compile_command[M289_PROFILE_CMD_MAX];
     char link_command[M289_PROFILE_CMD_MAX];
+    char run_command[M289_PROFILE_CMD_MAX];
     char compile_output[M289_STAGE_OUTPUT_MAX];
     char link_output[M289_STAGE_OUTPUT_MAX];
     char error[M289_PROFILE_ERROR_MAX];
@@ -310,14 +417,19 @@ char *m289_build_source(agent_state *state,
     if (!m289_resolve_profile(source, &profile,
                               compile_command, sizeof(compile_command),
                               link_command, sizeof(link_command),
+                              run_command, sizeof(run_command),
                               error, sizeof(error))) {
         return m289_make_error("Unable to resolve native build profile",
                                error);
     }
 
+    if (m289_equal_ci(profile.kind, "interpreted")) {
+        return m289_run_interpreted(state, &profile, source,
+                                    run_command, status_out);
+    }
     if (!m289_equal_ci(profile.kind, "compiled")) {
         return m289_make_error("M289 native source build refused",
-                               "profile is not compiled");
+                               "unsupported profile kind");
     }
 
     if (!m289_command_allowed(compile_command, M289_BUILD_COMPILE,
@@ -334,17 +446,7 @@ char *m289_build_source(agent_state *state,
     }
     result[0] = '\0';
 
-    if (!m289_append(result, M289_NATIVE_RESULT_MAX,
-                     "M289 native source build\n") ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX,
-                     "Language: ") ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX,
-                     profile.language) ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX, "\n") ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX,
-                     "Source: ") ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX, source) ||
-        !m289_append(result, M289_NATIVE_RESULT_MAX, "\n") ||
+    if (!m289_append_header(result, profile.language, source) ||
         !m289_append(result, M289_NATIVE_RESULT_MAX,
                      "Compile command: ") ||
         !m289_append(result, M289_NATIVE_RESULT_MAX, compile_command) ||
