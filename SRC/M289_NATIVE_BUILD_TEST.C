@@ -38,6 +38,7 @@ int command_dcl_exec(agent_state *state,
     int pascal_compile;
     int cxx_compile;
     int python_run;
+    int perl_run;
 
     (void)state;
     if (command == NULL || output == NULL || output_size == 0U ||
@@ -71,6 +72,8 @@ int command_dcl_exec(agent_state *state,
                   strncmp(command, "CXX ", 4) == 0;
     python_run = exec_calls == 1U &&
                  strncmp(command, "PYTHON ", 7) == 0;
+    perl_run = exec_calls == 1U &&
+               strncmp(command, "PERL ", 5) == 0;
 
     if (exec_calls == 1U) {
         if (exec_mode == 1) {
@@ -91,6 +94,9 @@ int command_dcl_exec(agent_state *state,
         } else if (python_run) {
             *status_out = 0x00000001UL;
             text = "Python run output\n";
+        } else if (perl_run) {
+            *status_out = 0x00000001UL;
+            text = "Perl run output\n";
         } else {
             *status_out = 0x107D0001UL;
             text = "MACRO compile output\n";
@@ -132,6 +138,8 @@ static int test_command_guard(void)
                               M289_BUILD_COMPILE, "CXX") ||
         !m289_command_allowed("PYTHON WC.PY",
                               M289_BUILD_RUN, "PYTHON") ||
+        !m289_command_allowed("PERL WC.PL",
+                              M289_BUILD_RUN, "PERL") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "MACRO32") ||
         !m289_command_allowed("LINK WC.OBJ",
@@ -146,8 +154,16 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "PYTHON") ||
         m289_command_allowed("LINK WC.OBJ",
                              M289_BUILD_LINK, "PYTHON") ||
+        m289_command_allowed("PERL WC.PL",
+                             M289_BUILD_COMPILE, "PERL") ||
+        m289_command_allowed("LINK WC.OBJ",
+                             M289_BUILD_LINK, "PERL") ||
         m289_command_allowed("CXX WC.CXX",
                              M289_BUILD_RUN, "CXX") ||
+        m289_command_allowed("PYTHON WC.PY",
+                             M289_BUILD_RUN, "PERL") ||
+        m289_command_allowed("PERL WC.PL",
+                             M289_BUILD_RUN, "PYTHON") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR",
                              M289_BUILD_COMPILE, "FORTRAN") ||
         m289_command_allowed("FORTRAN WC.F90",
@@ -172,6 +188,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "CXX") ||
         m289_command_allowed("PYTHON WC.PY|DELETE *.*;*",
                              M289_BUILD_RUN, "PYTHON") ||
+        m289_command_allowed("PERL WC.PL|DELETE *.*;*",
+                             M289_BUILD_RUN, "PERL") ||
         m289_command_allowed("LINK WC.OBJ @EVIL.COM",
                              M289_BUILD_LINK, "CXX") ||
         m289_command_allowed("LINK SYS$DISK:[X]WC.OBJ",
@@ -340,6 +358,35 @@ static int test_python_success(agent_state *state)
     return ok;
 }
 
+static int test_perl_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289_PERL_FIXTURE.PL", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         strcmp(exec_first, "PERL M289_PERL_FIXTURE.PL") == 0 &&
+         exec_second[0] == '\0' &&
+         status == 0x00000001UL &&
+         strstr(result, "Language: PERL") != NULL &&
+         strstr(result, "Run command: PERL M289_PERL_FIXTURE.PL") != NULL &&
+         strstr(result, "Run status: %X00000001 (success)") != NULL &&
+         strstr(result, "Perl run output") != NULL &&
+         strstr(result, "Compile command:") == NULL &&
+         strstr(result, "Link command:") == NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: Perl success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_compile_failure(agent_state *state)
 {
     char *result;
@@ -470,6 +517,7 @@ int main(void)
          test_pascal_success(&state) &&
          test_cxx_success(&state) &&
          test_python_success(&state) &&
+         test_perl_success(&state) &&
          test_compile_failure(&state) &&
          test_link_failure(&state) &&
          test_refusal(&state) &&
