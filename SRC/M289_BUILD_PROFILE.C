@@ -377,7 +377,8 @@ int m289_profile_load(const char *path,
         return 1;
     }
 
-    if (m289_equal_ci(profile->kind, "interpreted")) {
+    if (m289_equal_ci(profile->kind, "interpreted") ||
+        m289_equal_ci(profile->kind, "procedure")) {
         if ((seen & M289_KEYS_INTERPRETED) != M289_KEYS_INTERPRETED) {
             m289_error(error, error_size, "Missing required build-profile key.");
             return 0;
@@ -783,8 +784,10 @@ int m289_profile_run_command(const m289_build_profile *profile,
         m289_error(error, error_size, "Invalid command-resolution arguments.");
         return 0;
     }
-    if (!m289_equal_ci(profile->kind, "interpreted")) {
-        m289_error(error, error_size, "Profile is not an interpreted toolchain.");
+    if (!m289_equal_ci(profile->kind, "interpreted") &&
+        !m289_equal_ci(profile->kind, "procedure")) {
+        m289_error(error, error_size,
+                   "Profile is not an interpreted/procedure toolchain.");
         return 0;
     }
     if (!m289_source_allowed(profile, source)) {
