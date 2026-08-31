@@ -22,6 +22,7 @@ static const char *m289_profile_names[] = {
     "PERL",
     "JAVA",
     "DCL",
+    "BASIC",
     NULL
 };
 
@@ -108,7 +109,8 @@ int m289_command_allowed(const char *command,
                   m289_equal_ci(language, "PYTHON") ||
                   m289_equal_ci(language, "PERL") ||
                   m289_equal_ci(language, "JAVA") ||
-                  m289_equal_ci(language, "DCL");
+                  m289_equal_ci(language, "DCL") ||
+                  m289_equal_ci(language, "BASIC");
     if (!language_ok) {
         return 0;
     }
@@ -131,6 +133,8 @@ int m289_command_allowed(const char *command,
             verb_ok = m289_starts_command(command, "CXX");
         } else if (m289_equal_ci(language, "JAVA")) {
             verb_ok = m289_starts_command(command, "JAVAC");
+        } else if (m289_equal_ci(language, "BASIC")) {
+            verb_ok = m289_starts_command(command, "BASIC");
         }
     } else if (phase == M289_BUILD_LINK &&
                !interpreted && !compile_only && !procedure) {
