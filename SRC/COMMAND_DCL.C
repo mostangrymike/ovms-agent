@@ -148,7 +148,9 @@ static int dcl_procedure_path_valid(const char *path)
 static int dcl_make_paths(char *procedure,
                           size_t procedure_size,
                           char *output,
-                          size_t output_size)
+                          size_t output_size,
+                          char *raw_status,
+                          size_t raw_status_size)
 {
     unsigned long pid;
     int written;
@@ -167,7 +169,15 @@ static int dcl_make_paths(char *procedure,
         output, output_size,
         "SYS$SCRATCH:OVMS_DCL_%08lX.OUT",
         pid);
-    return written >= 0 && (size_t)written < output_size;
+    if (written < 0 || (size_t)written >= output_size) {
+        return 0;
+    }
+
+    written = snprintf(
+        raw_status, raw_status_size,
+        "SYS$SCRATCH:OVMS_DCL_%08lX.STS",
+        pid);
+    return written >= 0 && (size_t)written < raw_status_size;
 }
 
 static int dcl_read_output(const char *path,
@@ -219,6 +229,58 @@ static int dcl_read_output(const char *path,
     return fclose(file) == 0;
 }
 
+static int dcl_read_raw_status(const char *path, unsigned long *status_out)
+{
+    FILE *file;
+    unsigned long value;
+
+    if (path == NULL || status_out == NULL) {
+        return 0;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    value = 0UL;
+    if (fscanf(file, "%lx", &value) != 1) {
+        (void)fclose(file);
+        return 0;
+    }
+
+    if (fclose(file) != 0) {
+        return 0;
+    }
+
+    *status_out = value;
+    return 1;
+}
+
+static void dcl_append_raw_status(char *output,
+                                  size_t output_size,
+                                  unsigned long raw_status)
+{
+    size_t used;
+    int written;
+
+    if (output == NULL || output_size == 0U) {
+        return;
+    }
+
+    used = strlen(output);
+    if (used >= output_size) {
+        return;
+    }
+
+    written = snprintf(output + used, output_size - used,
+                       "Raw subprocess status: %%X%08lX\n",
+                       raw_status);
+    if (written < 0 || (size_t)written >= output_size - used) {
+        output[output_size - 1U] = '\0';
+    }
+}
+
 static int dcl_exec_wrapped(agent_state *state,
                             const char *command,
                             int procedure_mode,
@@ -228,10 +290,12 @@ static int dcl_exec_wrapped(agent_state *state,
 {
     char procedure_path[DCL_PATH_MAX];
     char output_path[DCL_PATH_MAX];
+    char raw_status_path[DCL_PATH_MAX];
     char invoke[DCL_PATH_MAX + 2U];
     char display[DCL_COMMAND_MAX + 2U];
     char result_note[1024];
     FILE *procedure;
+    unsigned long raw_status;
     int status;
     int written;
 
@@ -271,12 +335,14 @@ static int dcl_exec_wrapped(agent_state *state,
     }
 
     if (!dcl_make_paths(procedure_path, sizeof(procedure_path),
-                        output_path, sizeof(output_path))) {
+                        output_path, sizeof(output_path),
+                        raw_status_path, sizeof(raw_status_path))) {
         return 0;
     }
 
     dcl_remove_versions(procedure_path);
     dcl_remove_versions(output_path);
+    dcl_remove_versions(raw_status_path);
 
     procedure = fopen(procedure_path, "w");
     if (procedure == NULL) {
@@ -290,9 +356,16 @@ static int dcl_exec_wrapped(agent_state *state,
             "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
             "$ @%s\n"
             "$ OVMS_DCL_STATUS = $STATUS\n"
-            "$ EXIT 'OVMS_DCL_STATUS'\n",
+            "$ OPEN/WRITE OVMS_DCL_RAW %s\n"
+            "$ WRITE OVMS_DCL_RAW F$FAO(\"!8XL\",OVMS_DCL_STATUS)\n"
+            "$ CLOSE OVMS_DCL_RAW\n"
+            "$ OVMS_DCL_MSG = F$EDIT(F$MESSAGE(OVMS_DCL_STATUS),\"UPCASE\")\n"
+            "$ OVMS_DCL_NORM = OVMS_DCL_STATUS\n"
+            "$ IF F$LOCATE(\"%%C-S-EXIT\",OVMS_DCL_MSG) .LT. F$LENGTH(OVMS_DCL_MSG) THEN OVMS_DCL_NORM = %%X00000002\n"
+            "$ EXIT 'OVMS_DCL_NORM'\n",
             output_path,
-            command);
+            command,
+            raw_status_path);
         (void)snprintf(display, sizeof(display), "@%s", command);
     } else {
         written = fprintf(
@@ -301,20 +374,29 @@ static int dcl_exec_wrapped(agent_state *state,
             "$ DEFINE SYS$ERROR SYS$OUTPUT\n"
             "$ %s\n"
             "$ OVMS_DCL_STATUS = $STATUS\n"
-            "$ EXIT 'OVMS_DCL_STATUS'\n",
+            "$ OPEN/WRITE OVMS_DCL_RAW %s\n"
+            "$ WRITE OVMS_DCL_RAW F$FAO(\"!8XL\",OVMS_DCL_STATUS)\n"
+            "$ CLOSE OVMS_DCL_RAW\n"
+            "$ OVMS_DCL_MSG = F$EDIT(F$MESSAGE(OVMS_DCL_STATUS),\"UPCASE\")\n"
+            "$ OVMS_DCL_NORM = OVMS_DCL_STATUS\n"
+            "$ IF F$LOCATE(\"%%C-S-EXIT\",OVMS_DCL_MSG) .LT. F$LENGTH(OVMS_DCL_MSG) THEN OVMS_DCL_NORM = %%X00000002\n"
+            "$ EXIT 'OVMS_DCL_NORM'\n",
             output_path,
-            command);
+            command,
+            raw_status_path);
         (void)snprintf(display, sizeof(display), "%s", command);
     }
 
     if (written < 0) {
         (void)fclose(procedure);
         dcl_remove_versions(procedure_path);
+        dcl_remove_versions(raw_status_path);
         return 0;
     }
 
     if (fclose(procedure) != 0) {
         dcl_remove_versions(procedure_path);
+        dcl_remove_versions(raw_status_path);
         return 0;
     }
 
@@ -323,22 +405,31 @@ static int dcl_exec_wrapped(agent_state *state,
     written = snprintf(invoke, sizeof(invoke), "@%s", procedure_path);
     if (written < 0 || (size_t)written >= sizeof(invoke)) {
         dcl_remove_versions(procedure_path);
+        dcl_remove_versions(raw_status_path);
         return 0;
     }
 
     status = system(invoke);
     *status_out = (unsigned long)(unsigned int)status;
+    raw_status = *status_out;
+    (void)dcl_read_raw_status(raw_status_path, &raw_status);
 
     if (!dcl_read_output(output_path, output, output_size)) {
         dcl_remove_versions(procedure_path);
         dcl_remove_versions(output_path);
+        dcl_remove_versions(raw_status_path);
         return 0;
+    }
+
+    if (raw_status != *status_out) {
+        dcl_append_raw_status(output, output_size, raw_status);
     }
 
     (void)snprintf(
         result_note, sizeof(result_note),
-        "status=%%X%08lX success=%s %s",
+        "status=%%X%08lX raw=%%X%08lX success=%s %s",
         *status_out,
+        raw_status,
         ((*status_out & 1UL) != 0UL) ? "yes" : "no",
         output);
 
@@ -350,6 +441,7 @@ static int dcl_exec_wrapped(agent_state *state,
 
     dcl_remove_versions(procedure_path);
     dcl_remove_versions(output_path);
+    dcl_remove_versions(raw_status_path);
     return 1;
 }
 
