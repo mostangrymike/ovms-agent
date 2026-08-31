@@ -235,8 +235,11 @@ static int wrap_run(const char *command)
          fputs("$ DEFINE/PROCESS/NOLOG GIT_TERMINAL_PROMPT \"0\"\n", file) != EOF &&
          fprintf(file, "$ %s\n", command) >= 0 &&
          fputs("$ GIT_STATUS = $STATUS\n", file) != EOF &&
+         fputs("$ GIT_MESSAGE = F$EDIT(F$MESSAGE(GIT_STATUS),\"UPCASE\")\n", file) != EOF &&
+         fputs("$ GIT_RETURN = GIT_STATUS\n", file) != EOF &&
+         fputs("$ IF F$LOCATE(\"%C-S-EXIT\",GIT_MESSAGE) .LT. F$LENGTH(GIT_MESSAGE) THEN GIT_RETURN = %X00000002\n", file) != EOF &&
          fputs("$ DEASSIGN/PROCESS GIT_TERMINAL_PROMPT\n", file) != EOF &&
-         fputs("$ EXIT 'GIT_STATUS'\n", file) != EOF;
+         fputs("$ EXIT 'GIT_RETURN'\n", file) != EOF;
     if (fclose(file) != 0) ok = 0;
     if (!ok) {
         wrap_rm_versions(WRAP_RUN_COM);
