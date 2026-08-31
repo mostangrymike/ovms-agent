@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "OVMS_STATUS.H"
+#include "LLM_TRANSPORT.H"
 
 static int fail(const char *message)
 {
@@ -46,6 +48,17 @@ int main(void)
         return fail("native status preservation");
     }
 
-    (void)puts("M290 POSIX status regression passed.");
+    if (strcmp(
+            LLM_TRANSPORT_CURL_TIMEOUT_ARGS,
+            "--connect-timeout 10 --max-time 120 ") != 0 ||
+        LLM_TRANSPORT_CONNECT_TIMEOUT_SECONDS != 10U ||
+        LLM_TRANSPORT_REQUEST_TIMEOUT_SECONDS != 120U) {
+        return fail("provider timeout command contract");
+    }
+    if (ovms_status_success(0x0F0180EAUL)) {
+        return fail("curl timeout classified as success");
+    }
+
+    (void)puts("M290 POSIX status and provider timeout regressions passed.");
     return EXIT_SUCCESS;
 }
