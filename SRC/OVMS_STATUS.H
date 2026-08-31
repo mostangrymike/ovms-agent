@@ -26,11 +26,13 @@ static int ovms_status_success(unsigned long status)
     return (status & 1UL) != 0UL;
 }
 
+/* Reporting paths retain the original OpenVMS condition value. */
 static unsigned long ovms_status_normalize(unsigned long status)
 {
     return status;
 }
 
+/* Process wrappers must expose POSIX nonzero exits as VMS failure. */
 static unsigned long ovms_status_propagate(unsigned long status)
 {
     unsigned int code;
