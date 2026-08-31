@@ -16,10 +16,20 @@
 #define M289_KEY_OBJEXT     0x0080UL
 #define M289_KEY_EXEEXT     0x0100UL
 #define M289_KEY_RUN        0x0200UL
-#define M289_KEYS_COMPILED  0x01ffUL
-#define M289_KEYS_COMMON    0x0007UL
-#define M289_KEYS_COMPILED_ONLY 0x01f8UL
-#define M289_KEYS_INTERPRETED (M289_KEYS_COMMON | M289_KEY_RUN)
+
+#define M289_KEYS_COMMON       0x0007UL
+#define M289_KEYS_COMPILED     0x01ffUL
+#define M289_KEYS_COMPILED_ONLY 0x001fUL
+#define M289_KEYS_INTERPRETED  (M289_KEYS_COMMON | M289_KEY_RUN)
+#define M289_KEYS_LINK_OUTPUT  (M289_KEY_LINK | M289_KEY_LOPTS | \
+                                M289_KEY_OBJEXT | M289_KEY_EXEEXT)
+#define M289_KEYS_INTERP_BAD   (M289_KEY_COMPILE | M289_KEY_COPTS | \
+                                M289_KEYS_LINK_OUTPUT)
+#define M289_KEYS_COMPILE_ONLY_BAD (M289_KEY_RUN | M289_KEYS_LINK_OUTPUT)
+
+#define M289_TEMPLATE_COMPILED 0
+#define M289_TEMPLATE_RUN 1
+#define M289_TEMPLATE_COMPILE_ONLY 2
 
 static void m289_error(char *error, size_t error_size, const char *text)
 {
@@ -182,7 +192,14 @@ static int m289_run_placeholder_ok(const char *name)
            strcmp(name, "source_name") == 0;
 }
 
-static int m289_template_ok(const char *text, int run_template)
+static int m289_compile_only_placeholder_ok(const char *name)
+{
+    return strcmp(name, "source") == 0 ||
+           strcmp(name, "source_name") == 0 ||
+           strcmp(name, "compile_options") == 0;
+}
+
+static int m289_template_ok(const char *text, int template_kind)
 {
     const char *open;
     const char *close;
@@ -213,8 +230,13 @@ static int m289_template_ok(const char *text, int run_template)
         }
         (void)memcpy(name, open + 1, length);
         name[length] = '\0';
-        valid = run_template ? m289_run_placeholder_ok(name) :
-                               m289_placeholder_ok(name);
+        if (template_kind == M289_TEMPLATE_RUN) {
+            valid = m289_run_placeholder_ok(name);
+        } else if (template_kind == M289_TEMPLATE_COMPILE_ONLY) {
+            valid = m289_compile_only_placeholder_ok(name);
+        } else {
+            valid = m289_placeholder_ok(name);
+        }
         if (!valid) {
             return 0;
         }
@@ -319,8 +341,35 @@ int m289_profile_load(const char *path,
                        "Required build-profile value is empty.");
             return 0;
         }
-        if (!m289_template_ok(profile->compile_command, 0) ||
-            !m289_template_ok(profile->link_command, 0)) {
+        if (!m289_template_ok(profile->compile_command,
+                              M289_TEMPLATE_COMPILED) ||
+            !m289_template_ok(profile->link_command,
+                              M289_TEMPLATE_COMPILED)) {
+            m289_error(error, error_size,
+                       "Invalid build-profile placeholder.");
+            return 0;
+        }
+        return 1;
+    }
+
+    if (m289_equal_ci(profile->kind, "compile_only")) {
+        if ((seen & M289_KEYS_COMPILED_ONLY) != M289_KEYS_COMPILED_ONLY) {
+            m289_error(error, error_size, "Missing required build-profile key.");
+            return 0;
+        }
+        if ((seen & M289_KEYS_COMPILE_ONLY_BAD) != 0UL) {
+            m289_error(error, error_size,
+                       "Build-profile key is not allowed for this kind.");
+            return 0;
+        }
+        if (profile->language[0] == '\0' || profile->extensions[0] == '\0' ||
+            profile->compile_command[0] == '\0') {
+            m289_error(error, error_size,
+                       "Required build-profile value is empty.");
+            return 0;
+        }
+        if (!m289_template_ok(profile->compile_command,
+                              M289_TEMPLATE_COMPILE_ONLY)) {
             m289_error(error, error_size,
                        "Invalid build-profile placeholder.");
             return 0;
@@ -333,7 +382,7 @@ int m289_profile_load(const char *path,
             m289_error(error, error_size, "Missing required build-profile key.");
             return 0;
         }
-        if ((seen & M289_KEYS_COMPILED_ONLY) != 0UL) {
+        if ((seen & M289_KEYS_INTERP_BAD) != 0UL) {
             m289_error(error, error_size,
                        "Build-profile key is not allowed for this kind.");
             return 0;
@@ -344,7 +393,7 @@ int m289_profile_load(const char *path,
                        "Required build-profile value is empty.");
             return 0;
         }
-        if (!m289_template_ok(profile->run_command, 1)) {
+        if (!m289_template_ok(profile->run_command, M289_TEMPLATE_RUN)) {
             m289_error(error, error_size,
                        "Invalid build-profile placeholder.");
             return 0;
@@ -674,6 +723,44 @@ int m289_profile_commands(const m289_build_profile *profile,
                      object, executable, profile,
                      link_command, link_size)) {
         m289_error(error, error_size, "Resolved build command is too long.");
+        return 0;
+    }
+    return 1;
+}
+
+int m289_profile_compile_command(const m289_build_profile *profile,
+                                 const char *source,
+                                 char *compile_command,
+                                 size_t compile_size,
+                                 char *error,
+                                 size_t error_size)
+{
+    char source_name[M289_PROFILE_PATH_MAX];
+
+    if (error != NULL && error_size > 0U) {
+        error[0] = '\0';
+    }
+    if (profile == NULL || source == NULL || *source == '\0' ||
+        compile_command == NULL || compile_size == 0U) {
+        m289_error(error, error_size, "Invalid command-resolution arguments.");
+        return 0;
+    }
+    if (!m289_equal_ci(profile->kind, "compile_only")) {
+        m289_error(error, error_size, "Profile is not a compile-only toolchain.");
+        return 0;
+    }
+    if (!m289_source_allowed(profile, source)) {
+        m289_error(error, error_size,
+                   "Source extension is not allowed by profile.");
+        return 0;
+    }
+    if (!m289_source_name(source, source_name, sizeof(source_name))) {
+        m289_error(error, error_size, "Unable to derive source name.");
+        return 0;
+    }
+    if (!m289_expand(profile->compile_command, source, source_name,
+                     "", "", profile, compile_command, compile_size)) {
+        m289_error(error, error_size, "Resolved compile command is too long.");
         return 0;
     }
     return 1;
