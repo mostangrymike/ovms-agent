@@ -37,23 +37,39 @@ static void clean(const char *p)
     while(remove(p)==0){}
 }
 
+static void trim_record_end(char *line)
+{
+    size_t n;
+
+    n=strlen(line);
+    while(n>0U && (line[n-1U]=='\n' || line[n-1U]=='\r'))
+    {
+        --n;
+        line[n]='\0';
+    }
+}
+
 static int verify_rms_lines(const char *path)
 {
     FILE *file;
     char line[128];
 
-    file=fopen(path,"r","ctx=stm");
+    file=fopen(path,"r");
     if(file==NULL)return 0;
 
-    if(fgets(line,sizeof(line),file)==NULL ||
-       strcmp(line,"$ WRITE SYS$OUTPUT \"M236 PATCHED\"\n")!=0)
+    if(fgets(line,sizeof(line),file)==NULL)
+    { (void)fclose(file);return 0; }
+    trim_record_end(line);
+    if(strcmp(line,"$ WRITE SYS$OUTPUT \"M236 PATCHED\"")!=0)
     { (void)fclose(file);return 0; }
 
-    if(fgets(line,sizeof(line),file)==NULL ||
-       strcmp(line,"$ EXIT 1\n")!=0)
+    if(fgets(line,sizeof(line),file)==NULL)
+    { (void)fclose(file);return 0; }
+    trim_record_end(line);
+    if(strcmp(line,"$ EXIT 1")!=0)
     { (void)fclose(file);return 0; }
 
-    if(fgets(line,sizeof(line),file)!=NULL)
+    if(fgets(line,sizeof(line),file)!=NULL || ferror(file))
     { (void)fclose(file);return 0; }
 
     return fclose(file)==0;
