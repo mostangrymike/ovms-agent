@@ -39,6 +39,11 @@ int command_dcl_exec(agent_state *state,
                      char *output,
                      size_t output_size,
                      unsigned long *status_out);
+int command_dcl_exec_procedure(agent_state *state,
+                               const char *procedure_path,
+                               char *output,
+                               size_t output_size,
+                               unsigned long *status_out);
 
 void command_root(agent_state *state, const char *arguments);
 void command_status(agent_state *state, const char *arguments);
