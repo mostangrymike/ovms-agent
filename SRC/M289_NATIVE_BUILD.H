@@ -7,6 +7,7 @@
 
 #define M289_BUILD_COMPILE 1
 #define M289_BUILD_LINK 2
+#define M289_BUILD_RUN 3
 #define M289_NATIVE_RESULT_MAX 32768U
 
 int m289_command_allowed(const char *command,
