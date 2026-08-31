@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stat.h>
+#include <rms.h>
 #include "llm_internal.h"
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_PATCH.H"
 #include "LLM_AUTO.H"
+#include "rms_write.h"
 
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
@@ -27,6 +30,48 @@ static char *rt(const char *p)
     t=(char*)malloc((size_t)n+1U); if(t==NULL){(void)fclose(f);return NULL;}
     if(fread(t,1U,(size_t)n,f)!=(size_t)n){free(t);(void)fclose(f);return NULL;}
     t[n]='\0';(void)fclose(f);return t;
+}
+
+static void clean(const char *p)
+{
+    while(remove(p)==0){}
+}
+
+static int test_rms_patch(void)
+{
+    static const char path[]="M236_RMS_TARGET.COM";
+    static const char original[]=
+        "$ WRITE SYS$OUTPUT \"M236 ORIGINAL\"\n$ EXIT 1\n";
+    static const char expected[]=
+        "$ WRITE SYS$OUTPUT \"M236 PATCHED\"\n$ EXIT 1\n";
+    char out[4096];
+    char *text;
+    struct stat before;
+    struct stat after;
+
+    clean(path);
+
+    if(!rms_write_text_file(path,original) ||
+       stat(path,&before)!=0 ||
+       before.st_fab_rfm!=FAB$C_VAR)
+    { clean(path);puts("M290 failed: variable-record setup.");return 0; }
+
+    if(!llm_patch_apply_json(
+        "{\"path\":\"M236_RMS_TARGET.COM\","
+        "\"patch\":\"@@OLD\\nM236 ORIGINAL\\n@@NEW\\nM236 PATCHED\\n@@END\\n\"}",
+        out,sizeof(out)))
+    { clean(path);puts("M290 failed: RMS structured patch.");return 0; }
+
+    if(stat(path,&after)!=0 || after.st_fab_rfm!=FAB$C_VAR)
+    { clean(path);puts("M290 failed: RMS record format changed.");return 0; }
+
+    text=rt(path);
+    if(text==NULL || strcmp(text,expected)!=0)
+    { free(text);clean(path);puts("M290 failed: RMS record boundaries.");return 0; }
+
+    free(text);
+    clean(path);
+    return 1;
 }
 
 int main(void)
@@ -73,6 +118,9 @@ int main(void)
         out,sizeof(out)) ||
        strstr(out,"not found")==NULL)
     { puts("M236 failed: stale autonomous hunk."); return EXIT_FAILURE; }
+
+    if(!test_rms_patch())
+    { return EXIT_FAILURE; }
 
     llm_auto_test_limits(12U,1U);
     llm_auto_begin(LLM_WORKFLOW_WRITE);
