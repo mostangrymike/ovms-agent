@@ -15,6 +15,9 @@
 #define FIX_COMPILE_MISSING "M289_COMPILE_MISSING.TMP"
 #define FIX_COMPILE_LINK "M289_COMPILE_LINK.TMP"
 #define FIX_COMPILE_BADPH "M289_COMPILE_BADPH.TMP"
+#define FIX_PROC_MISSING "M289_PROC_MISSING.TMP"
+#define FIX_PROC_COMPILE "M289_PROC_COMPILE.TMP"
+#define FIX_PROC_BADPH "M289_PROC_BADPH.TMP"
 
 static const char *profile_prefix =
     "language=MACRO32\n"
@@ -103,6 +106,33 @@ static int write_compile_only(const char *path,
     }
     if (ok) {
         ok = fputs("compile_options=\n", file) != EOF;
+    }
+    if (ok && extra != NULL) {
+        ok = fputs(extra, file) != EOF;
+    }
+    if (fclose(file) != 0) {
+        ok = 0;
+    }
+    return ok;
+}
+
+static int write_procedure(const char *path,
+                           const char *run_line,
+                           const char *extra)
+{
+    FILE *file;
+    int ok;
+
+    remove_all(path);
+    file = fopen(path, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    ok = fputs("language=DCL\n", file) != EOF &&
+         fputs("extensions=.COM\n", file) != EOF &&
+         fputs("kind=procedure\n", file) != EOF;
+    if (ok && run_line != NULL) {
+        ok = fputs(run_line, file) != EOF;
     }
     if (ok && extra != NULL) {
         ok = fputs(extra, file) != EOF;
@@ -227,6 +257,42 @@ static int test_java_success(void)
     if (strcmp(compile_command, "JAVAC M289JavaFixture.java") != 0) {
         (void)printf("M289 failed: resolved Java compile=[%s]\n",
                      compile_command);
+        return 0;
+    }
+    return 1;
+}
+
+static int test_dcl_success(void)
+{
+    m289_build_profile profile;
+    char run_command[M289_PROFILE_CMD_MAX];
+    char error[M289_PROFILE_ERROR_MAX];
+    int loaded;
+
+    loaded = m289_profile_load("[.LANGUAGE]DCL.BUILD",
+                               &profile, error, sizeof(error));
+    if (!loaded) {
+        loaded = m289_profile_load("LANGUAGE/DCL.BUILD",
+                                   &profile, error, sizeof(error));
+    }
+    if (!loaded) {
+        (void)printf("M289 failed: DCL profile load: %s\n", error);
+        return 0;
+    }
+    if (strcmp(profile.language, "DCL") != 0 ||
+        strcmp(profile.kind, "procedure") != 0) {
+        (void)puts("M289 failed: DCL profile fields.");
+        return 0;
+    }
+    if (!m289_profile_run_command(&profile, "M289_DCL_FIXTURE.COM",
+                                  run_command, sizeof(run_command),
+                                  error, sizeof(error))) {
+        (void)printf("M289 failed: DCL command resolution: %s\n", error);
+        return 0;
+    }
+    if (strcmp(run_command, "M289_DCL_FIXTURE.COM") != 0) {
+        (void)printf("M289 failed: resolved DCL procedure=[%s]\n",
+                     run_command);
         return 0;
     }
     return 1;
@@ -363,6 +429,28 @@ static int test_compile_only_bad_placeholder(void)
            expect_rejected(FIX_COMPILE_BADPH);
 }
 
+static int test_procedure_missing_run(void)
+{
+    return write_procedure(FIX_PROC_MISSING, NULL, NULL) &&
+           expect_rejected(FIX_PROC_MISSING);
+}
+
+static int test_procedure_rejects_compile(void)
+{
+    return write_procedure(
+               FIX_PROC_COMPILE,
+               "run_command={source}\n",
+               "compile_command=DCL {source}\n") &&
+           expect_rejected(FIX_PROC_COMPILE);
+}
+
+static int test_procedure_bad_placeholder(void)
+{
+    return write_procedure(FIX_PROC_BADPH,
+                           "run_command={object}\n", NULL) &&
+           expect_rejected(FIX_PROC_BADPH);
+}
+
 int main(void)
 {
     int ok;
@@ -370,6 +458,7 @@ int main(void)
     ok = test_success() &&
          test_python_success() &&
          test_java_success() &&
+         test_dcl_success() &&
          test_unknown_key() &&
          test_duplicate_key() &&
          test_unknown_placeholder() &&
@@ -380,7 +469,10 @@ int main(void)
          test_interpreted_bad_placeholder() &&
          test_compile_only_missing_compile() &&
          test_compile_only_rejects_link() &&
-         test_compile_only_bad_placeholder();
+         test_compile_only_bad_placeholder() &&
+         test_procedure_missing_run() &&
+         test_procedure_rejects_compile() &&
+         test_procedure_bad_placeholder();
 
     remove_all(FIX_BADKEY);
     remove_all(FIX_DUPKEY);
@@ -393,6 +485,9 @@ int main(void)
     remove_all(FIX_COMPILE_MISSING);
     remove_all(FIX_COMPILE_LINK);
     remove_all(FIX_COMPILE_BADPH);
+    remove_all(FIX_PROC_MISSING);
+    remove_all(FIX_PROC_COMPILE);
+    remove_all(FIX_PROC_BADPH);
 
     if (!ok) {
         (void)puts("M289 build-profile parser/resolver test failed.");
