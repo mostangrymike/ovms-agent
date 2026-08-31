@@ -19,6 +19,7 @@ static const char *m289_profile_names[] = {
     "PASCAL",
     "CXX",
     "PYTHON",
+    "PERL",
     NULL
 };
 
@@ -76,12 +77,14 @@ int m289_command_allowed(const char *command,
                   m289_equal_ci(language, "COBOL") ||
                   m289_equal_ci(language, "PASCAL") ||
                   m289_equal_ci(language, "CXX") ||
-                  m289_equal_ci(language, "PYTHON");
+                  m289_equal_ci(language, "PYTHON") ||
+                  m289_equal_ci(language, "PERL");
     if (!language_ok) {
         return 0;
     }
 
-    interpreted = m289_equal_ci(language, "PYTHON");
+    interpreted = m289_equal_ci(language, "PYTHON") ||
+                  m289_equal_ci(language, "PERL");
     verb_ok = 0;
     if (phase == M289_BUILD_COMPILE && !interpreted) {
         if (m289_equal_ci(language, "MACRO32")) {
@@ -98,7 +101,11 @@ int m289_command_allowed(const char *command,
     } else if (phase == M289_BUILD_LINK && !interpreted) {
         verb_ok = m289_starts_command(command, "LINK");
     } else if (phase == M289_BUILD_RUN && interpreted) {
-        verb_ok = m289_starts_command(command, "PYTHON");
+        if (m289_equal_ci(language, "PYTHON")) {
+            verb_ok = m289_starts_command(command, "PYTHON");
+        } else if (m289_equal_ci(language, "PERL")) {
+            verb_ok = m289_starts_command(command, "PERL");
+        }
     }
 
     if (!verb_ok) {
