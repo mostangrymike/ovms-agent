@@ -28,6 +28,11 @@ static int ovms_status_success(unsigned long status)
 
 static unsigned long ovms_status_normalize(unsigned long status)
 {
+    return status;
+}
+
+static unsigned long ovms_status_propagate(unsigned long status)
+{
     unsigned int code;
 
     if (ovms_status_posix(status, &code)) {
