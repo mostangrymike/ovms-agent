@@ -37,15 +37,34 @@ static void clean(const char *p)
     while(remove(p)==0){}
 }
 
+static int verify_rms_lines(const char *path)
+{
+    FILE *file;
+    char line[128];
+
+    file=fopen(path,"r","ctx=stm");
+    if(file==NULL)return 0;
+
+    if(fgets(line,sizeof(line),file)==NULL ||
+       strcmp(line,"$ WRITE SYS$OUTPUT \"M236 PATCHED\"\n")!=0)
+    { (void)fclose(file);return 0; }
+
+    if(fgets(line,sizeof(line),file)==NULL ||
+       strcmp(line,"$ EXIT 1\n")!=0)
+    { (void)fclose(file);return 0; }
+
+    if(fgets(line,sizeof(line),file)!=NULL)
+    { (void)fclose(file);return 0; }
+
+    return fclose(file)==0;
+}
+
 static int test_rms_patch(void)
 {
     static const char path[]="M236_RMS_TARGET.COM";
     static const char original[]=
         "$ WRITE SYS$OUTPUT \"M236 ORIGINAL\"\n$ EXIT 1\n";
-    static const char expected[]=
-        "$ WRITE SYS$OUTPUT \"M236 PATCHED\"\n$ EXIT 1\n";
     char out[4096];
-    char *text;
     struct stat before;
     struct stat after;
 
@@ -65,11 +84,9 @@ static int test_rms_patch(void)
     if(stat(path,&after)!=0 || after.st_fab_rfm!=FAB$C_VAR)
     { clean(path);puts("M290 failed: RMS record format changed.");return 0; }
 
-    text=rt(path);
-    if(text==NULL || strcmp(text,expected)!=0)
-    { free(text);clean(path);puts("M290 failed: RMS record boundaries.");return 0; }
+    if(!verify_rms_lines(path))
+    { clean(path);puts("M290 failed: RMS record boundaries.");return 0; }
 
-    free(text);
     clean(path);
     return 1;
 }
