@@ -20,6 +20,7 @@ static const char *m289_profile_names[] = {
     "CXX",
     "PYTHON",
     "PERL",
+    "JAVA",
     NULL
 };
 
@@ -66,6 +67,7 @@ int m289_command_allowed(const char *command,
     int verb_ok;
     int language_ok;
     int interpreted;
+    int compile_only;
 
     if (command == NULL || *command == '\0' ||
         language == NULL || *language == '\0') {
@@ -78,13 +80,15 @@ int m289_command_allowed(const char *command,
                   m289_equal_ci(language, "PASCAL") ||
                   m289_equal_ci(language, "CXX") ||
                   m289_equal_ci(language, "PYTHON") ||
-                  m289_equal_ci(language, "PERL");
+                  m289_equal_ci(language, "PERL") ||
+                  m289_equal_ci(language, "JAVA");
     if (!language_ok) {
         return 0;
     }
 
     interpreted = m289_equal_ci(language, "PYTHON") ||
                   m289_equal_ci(language, "PERL");
+    compile_only = m289_equal_ci(language, "JAVA");
     verb_ok = 0;
     if (phase == M289_BUILD_COMPILE && !interpreted) {
         if (m289_equal_ci(language, "MACRO32")) {
@@ -97,8 +101,10 @@ int m289_command_allowed(const char *command,
             verb_ok = m289_starts_command(command, "PASCAL");
         } else if (m289_equal_ci(language, "CXX")) {
             verb_ok = m289_starts_command(command, "CXX");
+        } else if (m289_equal_ci(language, "JAVA")) {
+            verb_ok = m289_starts_command(command, "JAVAC");
         }
-    } else if (phase == M289_BUILD_LINK && !interpreted) {
+    } else if (phase == M289_BUILD_LINK && !interpreted && !compile_only) {
         verb_ok = m289_starts_command(command, "LINK");
     } else if (phase == M289_BUILD_RUN && interpreted) {
         if (m289_equal_ci(language, "PYTHON")) {
@@ -262,6 +268,16 @@ static int m289_resolve_profile(const char *source,
             if (resolved) {
                 run_command[0] = '\0';
             }
+        } else if (m289_equal_ci(candidate.kind, "compile_only")) {
+            resolved = m289_profile_compile_command(&candidate, source,
+                                                    compile_command,
+                                                    compile_size,
+                                                    command_error,
+                                                    sizeof(command_error));
+            if (resolved) {
+                link_command[0] = '\0';
+                run_command[0] = '\0';
+            }
         } else if (m289_equal_ci(candidate.kind, "interpreted")) {
             resolved = m289_profile_run_command(&candidate, source,
                                                 run_command, run_size,
@@ -390,6 +406,72 @@ static char *m289_run_interpreted(agent_state *state,
     return result;
 }
 
+static char *m289_compile_only(agent_state *state,
+                               const m289_build_profile *profile,
+                               const char *source,
+                               const char *compile_command,
+                               unsigned long *status_out)
+{
+    char compile_output[M289_STAGE_OUTPUT_MAX];
+    char *result;
+    unsigned long compile_status;
+    int executed;
+
+    if (!m289_command_allowed(compile_command, M289_BUILD_COMPILE,
+                              profile->language)) {
+        return m289_make_error("M289 native source build refused",
+                               "resolved command failed execution guard");
+    }
+
+    result = (char *)malloc(M289_NATIVE_RESULT_MAX);
+    if (result == NULL) {
+        return NULL;
+    }
+    result[0] = '\0';
+    if (!m289_append_header(result, profile->language, source) ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, "Compile command: ") ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, compile_command) ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, "\n")) {
+        free(result);
+        return NULL;
+    }
+
+    compile_output[0] = '\0';
+    compile_status = 0UL;
+    executed = command_dcl_exec(state, compile_command,
+                                compile_output, sizeof(compile_output),
+                                &compile_status);
+    if (!executed) {
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                          "Compile execution refused or unavailable.\n");
+        if (compile_output[0] != '\0') {
+            (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                              compile_output);
+        }
+        *status_out = 0UL;
+        return result;
+    }
+
+    (void)m289_append_status(result, M289_NATIVE_RESULT_MAX,
+                             "Compile status: ", compile_status);
+    if (compile_output[0] != '\0') {
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                          "Compile output:\n");
+        (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                          compile_output);
+        if (compile_output[strlen(compile_output) - 1U] != '\n') {
+            (void)m289_append(result, M289_NATIVE_RESULT_MAX, "\n");
+        }
+    }
+
+    *status_out = compile_status;
+    (void)m289_append(result, M289_NATIVE_RESULT_MAX,
+                      (compile_status & 1UL) != 0UL ?
+                          "Result: success\n" :
+                          "Result: failure\n");
+    return result;
+}
+
 char *m289_build_source(agent_state *state,
                         const char *source,
                         unsigned long *status_out)
@@ -433,6 +515,10 @@ char *m289_build_source(agent_state *state,
     if (m289_equal_ci(profile.kind, "interpreted")) {
         return m289_run_interpreted(state, &profile, source,
                                     run_command, status_out);
+    }
+    if (m289_equal_ci(profile.kind, "compile_only")) {
+        return m289_compile_only(state, &profile, source,
+                                 compile_command, status_out);
     }
     if (!m289_equal_ci(profile.kind, "compiled")) {
         return m289_make_error("M289 native source build refused",
