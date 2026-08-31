@@ -28,9 +28,10 @@ int main(void)
     llm_test_reset_approval();
 
     if (!llm_tools_text(output, sizeof(output)) ||
-        strstr(output, "Registered parity tools: 9") == NULL ||
+        strstr(output, "Registered parity tools: 10") == NULL ||
         strstr(output, "read_file") == NULL ||
         strstr(output, "run_build") == NULL ||
+        strstr(output, "build_source") == NULL ||
         strstr(output, "effect=write") == NULL) {
         (void)puts("M227 failed: tool catalog.");
         return EXIT_FAILURE;
@@ -42,6 +43,9 @@ int main(void)
         !llm_tool_info_text("structured_patch", output, sizeof(output)) ||
         strstr(output, "Effect:      write") == NULL ||
         strstr(output, "Approval:    workspace") == NULL ||
+        !llm_tool_info_text("build_source", output, sizeof(output)) ||
+        strstr(output, "Effect:      execute") == NULL ||
+        strstr(output, "Approval:    full + write + DCL") == NULL ||
         llm_tool_info_text("unknown_tool", output, sizeof(output))) {
         (void)puts("M227 failed: tool metadata.");
         return EXIT_FAILURE;
@@ -63,7 +67,7 @@ int main(void)
         strstr(output, "Write gate:        enabled") == NULL ||
         strstr(output, "DCL gate:          disabled") == NULL ||
         strstr(output, "Approval policy:   workspace") == NULL ||
-        strstr(output, "Parity tools:      9") == NULL) {
+        strstr(output, "Parity tools:      10") == NULL) {
         (void)puts("M227 failed: execution context.");
         return EXIT_FAILURE;
     }

@@ -667,6 +667,11 @@
  Performs: Runs the guarded write agent.
  Use when: An AI-directed goal legitimately requires project edits and write/policy
  gates are intentionally enabled.
+ Notes: M289 adds the guarded build_source tool for one native source file.  It
+   loads the matching LANGUAGE/<LANGUAGE>.BUILD profile and executes only when
+   full approval, guarded writes, and DCL execution are all enabled.  The first
+   native-accepted profile is MACRO32 (.MAR); compile must succeed before link,
+   and native status plus captured command output are returned to the agent.
 
 4 AGENT_BUILD
  Command: AGENT/BUILD goal
