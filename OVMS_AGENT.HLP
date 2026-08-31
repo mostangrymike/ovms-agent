@@ -669,9 +669,10 @@
  gates are intentionally enabled.
  Notes: M289 adds the guarded build_source tool for one native source file.  It
    loads the matching LANGUAGE/<LANGUAGE>.BUILD profile and executes only when
-   full approval, guarded writes, and DCL execution are all enabled.  The first
-   native-accepted profile is MACRO32 (.MAR); compile must succeed before link,
-   and native status plus captured command output are returned to the agent.
+   full approval, guarded writes, and DCL execution are all enabled.  Compiled
+   profiles compile then link; interpreted profiles execute one configured
+   interpreter command.  Native status plus captured command output are returned
+   to the agent.  The first native-accepted profile is MACRO32 (.MAR).
 
 4 AGENT_BUILD
  Command: AGENT/BUILD goal
