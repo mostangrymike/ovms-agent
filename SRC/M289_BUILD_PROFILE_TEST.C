@@ -12,6 +12,9 @@
 #define FIX_INTERP_MISSING "M289_INTERP_MISSING.TMP"
 #define FIX_INTERP_COMPILE "M289_INTERP_COMPILE.TMP"
 #define FIX_INTERP_BADPH "M289_INTERP_BADPH.TMP"
+#define FIX_COMPILE_MISSING "M289_COMPILE_MISSING.TMP"
+#define FIX_COMPILE_LINK "M289_COMPILE_LINK.TMP"
+#define FIX_COMPILE_BADPH "M289_COMPILE_BADPH.TMP"
 
 static const char *profile_prefix =
     "language=MACRO32\n"
@@ -70,6 +73,36 @@ static int write_interpreted(const char *path,
          fputs("kind=interpreted\n", file) != EOF;
     if (ok && run_line != NULL) {
         ok = fputs(run_line, file) != EOF;
+    }
+    if (ok && extra != NULL) {
+        ok = fputs(extra, file) != EOF;
+    }
+    if (fclose(file) != 0) {
+        ok = 0;
+    }
+    return ok;
+}
+
+static int write_compile_only(const char *path,
+                              const char *compile_line,
+                              const char *extra)
+{
+    FILE *file;
+    int ok;
+
+    remove_all(path);
+    file = fopen(path, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    ok = fputs("language=JAVA\n", file) != EOF &&
+         fputs("extensions=.java\n", file) != EOF &&
+         fputs("kind=compile_only\n", file) != EOF;
+    if (ok && compile_line != NULL) {
+        ok = fputs(compile_line, file) != EOF;
+    }
+    if (ok) {
+        ok = fputs("compile_options=\n", file) != EOF;
     }
     if (ok && extra != NULL) {
         ok = fputs(extra, file) != EOF;
@@ -157,6 +190,43 @@ static int test_python_success(void)
     }
     if (strcmp(run_command, "PYTHON M289_PYTHON_FIXTURE.PY") != 0) {
         (void)printf("M289 failed: resolved run=[%s]\n", run_command);
+        return 0;
+    }
+    return 1;
+}
+
+static int test_java_success(void)
+{
+    m289_build_profile profile;
+    char compile_command[M289_PROFILE_CMD_MAX];
+    char error[M289_PROFILE_ERROR_MAX];
+    int loaded;
+
+    loaded = m289_profile_load("[.LANGUAGE]JAVA.BUILD",
+                               &profile, error, sizeof(error));
+    if (!loaded) {
+        loaded = m289_profile_load("LANGUAGE/JAVA.BUILD",
+                                   &profile, error, sizeof(error));
+    }
+    if (!loaded) {
+        (void)printf("M289 failed: Java profile load: %s\n", error);
+        return 0;
+    }
+    if (strcmp(profile.language, "JAVA") != 0 ||
+        strcmp(profile.kind, "compile_only") != 0) {
+        (void)puts("M289 failed: Java profile fields.");
+        return 0;
+    }
+    if (!m289_profile_compile_command(&profile, "M289JavaFixture.java",
+                                      compile_command,
+                                      sizeof(compile_command),
+                                      error, sizeof(error))) {
+        (void)printf("M289 failed: Java command resolution: %s\n", error);
+        return 0;
+    }
+    if (strcmp(compile_command, "JAVAC M289JavaFixture.java") != 0) {
+        (void)printf("M289 failed: resolved Java compile=[%s]\n",
+                     compile_command);
         return 0;
     }
     return 1;
@@ -269,12 +339,37 @@ static int test_interpreted_bad_placeholder(void)
            expect_rejected(FIX_INTERP_BADPH);
 }
 
+static int test_compile_only_missing_compile(void)
+{
+    return write_compile_only(FIX_COMPILE_MISSING, NULL, NULL) &&
+           expect_rejected(FIX_COMPILE_MISSING);
+}
+
+static int test_compile_only_rejects_link(void)
+{
+    return write_compile_only(
+               FIX_COMPILE_LINK,
+               "compile_command=JAVAC {compile_options} {source}\n",
+               "link_command=LINK {object}\n") &&
+           expect_rejected(FIX_COMPILE_LINK);
+}
+
+static int test_compile_only_bad_placeholder(void)
+{
+    return write_compile_only(
+               FIX_COMPILE_BADPH,
+               "compile_command=JAVAC {object}\n",
+               NULL) &&
+           expect_rejected(FIX_COMPILE_BADPH);
+}
+
 int main(void)
 {
     int ok;
 
     ok = test_success() &&
          test_python_success() &&
+         test_java_success() &&
          test_unknown_key() &&
          test_duplicate_key() &&
          test_unknown_placeholder() &&
@@ -282,7 +377,10 @@ int main(void)
          test_oversized() &&
          test_interpreted_missing_run() &&
          test_interpreted_rejects_compile() &&
-         test_interpreted_bad_placeholder();
+         test_interpreted_bad_placeholder() &&
+         test_compile_only_missing_compile() &&
+         test_compile_only_rejects_link() &&
+         test_compile_only_bad_placeholder();
 
     remove_all(FIX_BADKEY);
     remove_all(FIX_DUPKEY);
@@ -292,6 +390,9 @@ int main(void)
     remove_all(FIX_INTERP_MISSING);
     remove_all(FIX_INTERP_COMPILE);
     remove_all(FIX_INTERP_BADPH);
+    remove_all(FIX_COMPILE_MISSING);
+    remove_all(FIX_COMPILE_LINK);
+    remove_all(FIX_COMPILE_BADPH);
 
     if (!ok) {
         (void)puts("M289 build-profile parser/resolver test failed.");
