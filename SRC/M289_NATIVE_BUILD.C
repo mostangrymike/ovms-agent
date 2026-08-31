@@ -16,6 +16,7 @@ static const char *m289_profile_names[] = {
     "MACRO32",
     "FORTRAN",
     "COBOL",
+    "PASCAL",
     NULL
 };
 
@@ -69,7 +70,8 @@ int m289_command_allowed(const char *command,
 
     language_ok = m289_equal_ci(language, "MACRO32") ||
                   m289_equal_ci(language, "FORTRAN") ||
-                  m289_equal_ci(language, "COBOL");
+                  m289_equal_ci(language, "COBOL") ||
+                  m289_equal_ci(language, "PASCAL");
     if (!language_ok) {
         return 0;
     }
@@ -82,6 +84,8 @@ int m289_command_allowed(const char *command,
             verb_ok = m289_starts_command(command, "FORTRAN");
         } else if (m289_equal_ci(language, "COBOL")) {
             verb_ok = m289_starts_command(command, "COBOL");
+        } else if (m289_equal_ci(language, "PASCAL")) {
+            verb_ok = m289_starts_command(command, "PASCAL");
         }
     } else if (phase == M289_BUILD_LINK) {
         verb_ok = m289_starts_command(command, "LINK");
