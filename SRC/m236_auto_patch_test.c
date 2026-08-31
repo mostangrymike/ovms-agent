@@ -58,7 +58,7 @@ static int test_rms_patch(void)
 
     if(!llm_patch_apply_json(
         "{\"path\":\"M236_RMS_TARGET.COM\","
-        "\"patch\":\"@@OLD\\nM236 ORIGINAL\\n@@NEW\\nM236 PATCHED\\n@@END\\n\"}",
+        "\"patch\":\"@@OLD\\n$ WRITE SYS$OUTPUT \\\"M236 ORIGINAL\\\"\\n@@NEW\\n$ WRITE SYS$OUTPUT \\\"M236 PATCHED\\\"\\n@@END\\n\"}",
         out,sizeof(out)))
     { clean(path);puts("M290 failed: RMS structured patch.");return 0; }
 
