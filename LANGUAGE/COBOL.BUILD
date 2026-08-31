@@ -1,0 +1,9 @@
+language=COBOL
+extensions=.COB,.CBL
+kind=compiled
+compile_command=COBOL {compile_options} {source}
+compile_options=
+link_command=LINK {link_options} {object}
+link_options=
+object_extension=.OBJ
+executable_extension=.EXE
