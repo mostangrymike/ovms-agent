@@ -36,6 +36,7 @@ int command_dcl_exec(agent_state *state,
     int fortran_compile;
     int cobol_compile;
     int pascal_compile;
+    int cxx_compile;
 
     (void)state;
     if (command == NULL || output == NULL || output_size == 0U ||
@@ -65,6 +66,8 @@ int command_dcl_exec(agent_state *state,
                     strncmp(command, "COBOL ", 6) == 0;
     pascal_compile = exec_calls == 1U &&
                      strncmp(command, "PASCAL ", 7) == 0;
+    cxx_compile = exec_calls == 1U &&
+                  strncmp(command, "CXX ", 4) == 0;
 
     if (exec_calls == 1U) {
         if (exec_mode == 1) {
@@ -79,6 +82,9 @@ int command_dcl_exec(agent_state *state,
         } else if (pascal_compile) {
             *status_out = 0x10000001UL;
             text = "Pascal compile output\n";
+        } else if (cxx_compile) {
+            *status_out = 0x15F60001UL;
+            text = "CXX compile output\n";
         } else {
             *status_out = 0x107D0001UL;
             text = "MACRO compile output\n";
@@ -116,6 +122,8 @@ static int test_command_guard(void)
                               M289_BUILD_COMPILE, "COBOL") ||
         !m289_command_allowed("PASCAL WC.PAS",
                               M289_BUILD_COMPILE, "PASCAL") ||
+        !m289_command_allowed("CXX WC.CXX",
+                              M289_BUILD_COMPILE, "CXX") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "MACRO32") ||
         !m289_command_allowed("LINK WC.OBJ",
@@ -124,6 +132,8 @@ static int test_command_guard(void)
                               M289_BUILD_LINK, "COBOL") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "PASCAL") ||
+        !m289_command_allowed("LINK WC.OBJ",
+                              M289_BUILD_LINK, "CXX") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR",
                              M289_BUILD_COMPILE, "FORTRAN") ||
         m289_command_allowed("FORTRAN WC.F90",
@@ -132,6 +142,8 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "FORTRAN") ||
         m289_command_allowed("PASCAL WC.PAS",
                              M289_BUILD_COMPILE, "COBOL") ||
+        m289_command_allowed("CXX WC.CXX",
+                             M289_BUILD_COMPILE, "PASCAL") ||
         m289_command_allowed("MACRO WC.MAR",
                              M289_BUILD_COMPILE, "MACRO32") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR|DELETE *.*;*",
@@ -142,8 +154,10 @@ static int test_command_guard(void)
                              M289_BUILD_COMPILE, "COBOL") ||
         m289_command_allowed("PASCAL WC.PAS|DELETE *.*;*",
                              M289_BUILD_COMPILE, "PASCAL") ||
+        m289_command_allowed("CXX WC.CXX|DELETE *.*;*",
+                             M289_BUILD_COMPILE, "CXX") ||
         m289_command_allowed("LINK WC.OBJ @EVIL.COM",
-                             M289_BUILD_LINK, "PASCAL") ||
+                             M289_BUILD_LINK, "CXX") ||
         m289_command_allowed("LINK SYS$DISK:[X]WC.OBJ",
                              M289_BUILD_LINK, "MACRO32")) {
         (void)puts("M289 native failed: command guard.");
@@ -256,6 +270,32 @@ static int test_pascal_success(agent_state *state)
     return ok;
 }
 
+static int test_cxx_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289_CXX_FIXTURE.CXX", &status);
+    ok = result != NULL &&
+         exec_calls == 2U &&
+         strcmp(exec_first, "CXX M289_CXX_FIXTURE.CXX") == 0 &&
+         strcmp(exec_second, "LINK M289_CXX_FIXTURE.OBJ") == 0 &&
+         status == 0x10000001UL &&
+         strstr(result, "Language: CXX") != NULL &&
+         strstr(result, "Compile status: %X15F60001 (success)") != NULL &&
+         strstr(result, "Link status: %X10000001 (success)") != NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: CXX success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_compile_failure(agent_state *state)
 {
     char *result;
@@ -285,7 +325,7 @@ static int test_link_failure(agent_state *state)
 
     reset_exec(2);
     status = 0UL;
-    result = m289_build_source(state, "M289_PASCAL_FIXTURE.PAS", &status);
+    result = m289_build_source(state, "M289_CXX_FIXTURE.CXX", &status);
     ok = result != NULL &&
          exec_calls == 2U &&
          status == 2UL &&
@@ -306,7 +346,7 @@ static int test_refusal(agent_state *state)
 
     reset_exec(3);
     status = 99UL;
-    result = m289_build_source(state, "M289_PASCAL_FIXTURE.PAS", &status);
+    result = m289_build_source(state, "M289_CXX_FIXTURE.CXX", &status);
     ok = result != NULL &&
          exec_calls == 1U &&
          status == 0UL &&
@@ -363,6 +403,7 @@ int main(void)
          test_fortran_success(&state) &&
          test_cobol_success(&state) &&
          test_pascal_success(&state) &&
+         test_cxx_success(&state) &&
          test_compile_failure(&state) &&
          test_link_failure(&state) &&
          test_refusal(&state) &&
