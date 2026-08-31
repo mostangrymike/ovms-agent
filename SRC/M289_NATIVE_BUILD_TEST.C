@@ -33,6 +33,7 @@ int command_dcl_exec(agent_state *state,
                      unsigned long *status_out)
 {
     const char *text;
+    int fortran_compile;
 
     (void)state;
     if (command == NULL || output == NULL || output_size == 0U ||
@@ -56,10 +57,16 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
+    fortran_compile = exec_calls == 1U &&
+                      strncmp(command, "FORTRAN ", 8) == 0;
+
     if (exec_calls == 1U) {
         if (exec_mode == 1) {
             *status_out = 2UL;
-            text = "MACRO compile failed\n";
+            text = "compile failed\n";
+        } else if (fortran_compile) {
+            *status_out = 0x186A0001UL;
+            text = "Fortran compile output\n";
         } else {
             *status_out = 0x107D0001UL;
             text = "MACRO compile output\n";
@@ -90,22 +97,34 @@ static void reset_exec(int mode)
 static int test_command_guard(void)
 {
     if (!m289_command_allowed("MACRO/MIGRATION WC.MAR",
-                              M289_BUILD_COMPILE) ||
-        !m289_command_allowed("LINK WC.OBJ", M289_BUILD_LINK) ||
-        m289_command_allowed("MACRO WC.MAR", M289_BUILD_COMPILE) ||
+                              M289_BUILD_COMPILE, "MACRO32") ||
+        !m289_command_allowed("FORTRAN WC.F90",
+                              M289_BUILD_COMPILE, "FORTRAN") ||
+        !m289_command_allowed("LINK WC.OBJ",
+                              M289_BUILD_LINK, "MACRO32") ||
+        !m289_command_allowed("LINK WC.OBJ",
+                              M289_BUILD_LINK, "FORTRAN") ||
+        m289_command_allowed("MACRO/MIGRATION WC.MAR",
+                             M289_BUILD_COMPILE, "FORTRAN") ||
+        m289_command_allowed("FORTRAN WC.F90",
+                             M289_BUILD_COMPILE, "MACRO32") ||
+        m289_command_allowed("MACRO WC.MAR",
+                             M289_BUILD_COMPILE, "MACRO32") ||
         m289_command_allowed("MACRO/MIGRATION WC.MAR|DELETE *.*;*",
-                             M289_BUILD_COMPILE) ||
+                             M289_BUILD_COMPILE, "MACRO32") ||
+        m289_command_allowed("FORTRAN WC.F90|DELETE *.*;*",
+                             M289_BUILD_COMPILE, "FORTRAN") ||
         m289_command_allowed("LINK WC.OBJ @EVIL.COM",
-                             M289_BUILD_LINK) ||
+                             M289_BUILD_LINK, "FORTRAN") ||
         m289_command_allowed("LINK SYS$DISK:[X]WC.OBJ",
-                             M289_BUILD_LINK)) {
+                             M289_BUILD_LINK, "MACRO32")) {
         (void)puts("M289 native failed: command guard.");
         return 0;
     }
     return 1;
 }
 
-static int test_success(agent_state *state)
+static int test_macro_success(agent_state *state)
 {
     char *result;
     unsigned long status;
@@ -119,11 +138,38 @@ static int test_success(agent_state *state)
          strcmp(exec_first, "MACRO/MIGRATION WC.MAR") == 0 &&
          strcmp(exec_second, "LINK WC.OBJ") == 0 &&
          status == 0x10000001UL &&
+         strstr(result, "Language: MACRO32") != NULL &&
          strstr(result, "Compile status: %X107D0001 (success)") != NULL &&
          strstr(result, "Link status: %X10000001 (success)") != NULL &&
          strstr(result, "Result: success") != NULL;
     if (!ok) {
-        (void)printf("M289 native failed: success path.\n%s\n",
+        (void)printf("M289 native failed: MACRO32 success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_fortran_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289_FORTRAN_FIXTURE.F90", &status);
+    ok = result != NULL &&
+         exec_calls == 2U &&
+         strcmp(exec_first, "FORTRAN M289_FORTRAN_FIXTURE.F90") == 0 &&
+         strcmp(exec_second, "LINK M289_FORTRAN_FIXTURE.OBJ") == 0 &&
+         status == 0x10000001UL &&
+         strstr(result, "Language: FORTRAN") != NULL &&
+         strstr(result, "Compile status: %X186A0001 (success)") != NULL &&
+         strstr(result, "Link status: %X10000001 (success)") != NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: Fortran success path.\n%s\n",
                      result != NULL ? result : "<null>");
     }
     free(result);
@@ -159,7 +205,7 @@ static int test_link_failure(agent_state *state)
 
     reset_exec(2);
     status = 0UL;
-    result = m289_build_source(state, "WC.MAR", &status);
+    result = m289_build_source(state, "M289_FORTRAN_FIXTURE.F90", &status);
     ok = result != NULL &&
          exec_calls == 2U &&
          status == 2UL &&
@@ -180,7 +226,7 @@ static int test_refusal(agent_state *state)
 
     reset_exec(3);
     status = 99UL;
-    result = m289_build_source(state, "WC.MAR", &status);
+    result = m289_build_source(state, "M289_FORTRAN_FIXTURE.F90", &status);
     ok = result != NULL &&
          exec_calls == 1U &&
          status == 0UL &&
@@ -213,10 +259,10 @@ static int test_invalid_source(agent_state *state)
     reset_exec(0);
     result = m289_build_source(state, "WC.C", &status);
     ok = result != NULL && exec_calls == 0U &&
-         strstr(result, "Source extension is not allowed") != NULL;
+         strstr(result, "No compiled native profile accepts source extension") != NULL;
     free(result);
     if (!ok) {
-        (void)puts("M289 native failed: non-MACRO32 source rejection.");
+        (void)puts("M289 native failed: unsupported source rejection.");
         return 0;
     }
     return 1;
@@ -233,7 +279,8 @@ int main(void)
     state.dcl_enabled = 1;
 
     ok = test_command_guard() &&
-         test_success(&state) &&
+         test_macro_success(&state) &&
+         test_fortran_success(&state) &&
          test_compile_failure(&state) &&
          test_link_failure(&state) &&
          test_refusal(&state) &&

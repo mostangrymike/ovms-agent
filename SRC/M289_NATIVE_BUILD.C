@@ -10,6 +10,13 @@
 
 #define M289_STAGE_OUTPUT_MAX 12288U
 #define M289_STATUS_TEXT_MAX 128U
+#define M289_PROFILE_FILE_MAX 128U
+
+static const char *m289_profile_names[] = {
+    "MACRO32",
+    "FORTRAN",
+    NULL
+};
 
 static int m289_equal_ci(const char *left, const char *right)
 {
@@ -46,23 +53,37 @@ static int m289_starts_command(const char *command, const char *prefix)
             command[length] == '\t');
 }
 
-int m289_command_allowed(const char *command, int phase)
+int m289_command_allowed(const char *command,
+                         int phase,
+                         const char *language)
 {
     const unsigned char *cursor;
+    int verb_ok;
+    int language_ok;
 
-    if (command == NULL || *command == '\0') {
+    if (command == NULL || *command == '\0' ||
+        language == NULL || *language == '\0') {
         return 0;
     }
 
+    language_ok = m289_equal_ci(language, "MACRO32") ||
+                  m289_equal_ci(language, "FORTRAN");
+    if (!language_ok) {
+        return 0;
+    }
+
+    verb_ok = 0;
     if (phase == M289_BUILD_COMPILE) {
-        if (!m289_starts_command(command, "MACRO/MIGRATION")) {
-            return 0;
+        if (m289_equal_ci(language, "MACRO32")) {
+            verb_ok = m289_starts_command(command, "MACRO/MIGRATION");
+        } else if (m289_equal_ci(language, "FORTRAN")) {
+            verb_ok = m289_starts_command(command, "FORTRAN");
         }
     } else if (phase == M289_BUILD_LINK) {
-        if (!m289_starts_command(command, "LINK")) {
-            return 0;
-        }
-    } else {
+        verb_ok = m289_starts_command(command, "LINK");
+    }
+
+    if (!verb_ok) {
         return 0;
     }
 
@@ -128,17 +149,92 @@ static int m289_append_status(char *output,
     return m289_append(output, output_size, line);
 }
 
-static int m289_load_macro_profile(m289_build_profile *profile,
-                                   char *error,
-                                   size_t error_size)
+static int m289_profile_name_ok(const char *name,
+                                const m289_build_profile *profile,
+                                char *error,
+                                size_t error_size)
 {
-    if (m289_profile_load("[.LANGUAGE]MACRO32.BUILD",
-                          profile, error, error_size)) {
+    if (name != NULL && profile != NULL &&
+        m289_equal_ci(name, profile->language)) {
         return 1;
     }
 
-    return m289_profile_load("LANGUAGE/MACRO32.BUILD",
-                             profile, error, error_size);
+    if (error != NULL && error_size > 0U) {
+        (void)snprintf(error, error_size,
+                       "Build profile language does not match profile name.");
+    }
+    return 0;
+}
+
+static int m289_load_named_profile(const char *name,
+                                   m289_build_profile *profile,
+                                   char *error,
+                                   size_t error_size)
+{
+    char path[M289_PROFILE_FILE_MAX];
+    int written;
+
+    if (name == NULL || *name == '\0' || profile == NULL) {
+        return 0;
+    }
+
+    written = snprintf(path, sizeof(path), "[.LANGUAGE]%s.BUILD", name);
+    if (written >= 0 && (size_t)written < sizeof(path) &&
+        m289_profile_load(path, profile, error, error_size)) {
+        return m289_profile_name_ok(name, profile, error, error_size);
+    }
+
+    written = snprintf(path, sizeof(path), "LANGUAGE/%s.BUILD", name);
+    if (written < 0 || (size_t)written >= sizeof(path) ||
+        !m289_profile_load(path, profile, error, error_size)) {
+        return 0;
+    }
+
+    return m289_profile_name_ok(name, profile, error, error_size);
+}
+
+static int m289_resolve_profile(const char *source,
+                                m289_build_profile *profile,
+                                char *compile_command,
+                                size_t compile_size,
+                                char *link_command,
+                                size_t link_size,
+                                char *error,
+                                size_t error_size)
+{
+    m289_build_profile candidate;
+    char load_error[M289_PROFILE_ERROR_MAX];
+    char command_error[M289_PROFILE_ERROR_MAX];
+    unsigned int index;
+
+    if (error != NULL && error_size > 0U) {
+        error[0] = '\0';
+    }
+
+    for (index = 0U; m289_profile_names[index] != NULL; ++index) {
+        load_error[0] = '\0';
+        if (!m289_load_named_profile(m289_profile_names[index],
+                                     &candidate,
+                                     load_error,
+                                     sizeof(load_error))) {
+            continue;
+        }
+
+        command_error[0] = '\0';
+        if (m289_profile_commands(&candidate, source,
+                                  compile_command, compile_size,
+                                  link_command, link_size,
+                                  command_error, sizeof(command_error))) {
+            *profile = candidate;
+            return 1;
+        }
+    }
+
+    if (error != NULL && error_size > 0U) {
+        (void)snprintf(error, error_size,
+                       "No compiled native profile accepts source extension.");
+    }
+    return 0;
 }
 
 static char *m289_make_error(const char *message,
@@ -199,27 +295,23 @@ char *m289_build_source(agent_state *state,
                                "unsafe project-relative source path");
     }
 
-    if (!m289_load_macro_profile(&profile, error, sizeof(error))) {
-        return m289_make_error("Unable to load MACRO32 build profile",
+    if (!m289_resolve_profile(source, &profile,
+                              compile_command, sizeof(compile_command),
+                              link_command, sizeof(link_command),
+                              error, sizeof(error))) {
+        return m289_make_error("Unable to resolve native build profile",
                                error);
     }
 
-    if (!m289_equal_ci(profile.language, "MACRO32") ||
-        !m289_equal_ci(profile.kind, "compiled")) {
+    if (!m289_equal_ci(profile.kind, "compiled")) {
         return m289_make_error("M289 native source build refused",
-                               "profile is not compiled MACRO32");
+                               "profile is not compiled");
     }
 
-    if (!m289_profile_commands(&profile, source,
-                               compile_command, sizeof(compile_command),
-                               link_command, sizeof(link_command),
-                               error, sizeof(error))) {
-        return m289_make_error("Unable to resolve MACRO32 build commands",
-                               error);
-    }
-
-    if (!m289_command_allowed(compile_command, M289_BUILD_COMPILE) ||
-        !m289_command_allowed(link_command, M289_BUILD_LINK)) {
+    if (!m289_command_allowed(compile_command, M289_BUILD_COMPILE,
+                              profile.language) ||
+        !m289_command_allowed(link_command, M289_BUILD_LINK,
+                              profile.language)) {
         return m289_make_error("M289 native source build refused",
                                "resolved command failed execution guard");
     }
@@ -233,7 +325,10 @@ char *m289_build_source(agent_state *state,
     if (!m289_append(result, M289_NATIVE_RESULT_MAX,
                      "M289 native source build\n") ||
         !m289_append(result, M289_NATIVE_RESULT_MAX,
-                     "Language: MACRO32\n") ||
+                     "Language: ") ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX,
+                     profile.language) ||
+        !m289_append(result, M289_NATIVE_RESULT_MAX, "\n") ||
         !m289_append(result, M289_NATIVE_RESULT_MAX,
                      "Source: ") ||
         !m289_append(result, M289_NATIVE_RESULT_MAX, source) ||

@@ -9,7 +9,9 @@
 #define M289_BUILD_LINK 2
 #define M289_NATIVE_RESULT_MAX 32768U
 
-int m289_command_allowed(const char *command, int phase);
+int m289_command_allowed(const char *command,
+                         int phase,
+                         const char *language);
 
 char *m289_build_source(agent_state *state,
                         const char *source,
