@@ -26,6 +26,18 @@ int llm_path_is_safe(const char *path)
     return 1;
 }
 
+static void record_exec(const char *command)
+{
+    ++exec_calls;
+    if (exec_calls == 1U) {
+        (void)strncpy(exec_first, command, sizeof(exec_first) - 1U);
+        exec_first[sizeof(exec_first) - 1U] = '\0';
+    } else if (exec_calls == 2U) {
+        (void)strncpy(exec_second, command, sizeof(exec_second) - 1U);
+        exec_second[sizeof(exec_second) - 1U] = '\0';
+    }
+}
+
 int command_dcl_exec(agent_state *state,
                      const char *command,
                      char *output,
@@ -47,14 +59,7 @@ int command_dcl_exec(agent_state *state,
         return 0;
     }
 
-    ++exec_calls;
-    if (exec_calls == 1U) {
-        (void)strncpy(exec_first, command, sizeof(exec_first) - 1U);
-        exec_first[sizeof(exec_first) - 1U] = '\0';
-    } else if (exec_calls == 2U) {
-        (void)strncpy(exec_second, command, sizeof(exec_second) - 1U);
-        exec_second[sizeof(exec_second) - 1U] = '\0';
-    }
+    record_exec(command);
 
     if (exec_mode == 3) {
         (void)snprintf(output, output_size,
@@ -122,6 +127,32 @@ int command_dcl_exec(agent_state *state,
     return 1;
 }
 
+int command_dcl_exec_procedure(agent_state *state,
+                               const char *procedure_path,
+                               char *output,
+                               size_t output_size,
+                               unsigned long *status_out)
+{
+    (void)state;
+    if (procedure_path == NULL || output == NULL || output_size == 0U ||
+        status_out == NULL) {
+        return 0;
+    }
+
+    record_exec(procedure_path);
+    if (exec_mode == 3) {
+        (void)snprintf(output, output_size,
+                       "DCL command refused: full approval policy required.\n");
+        *status_out = 0UL;
+        return 0;
+    }
+
+    *status_out = 0x00030001UL;
+    (void)strncpy(output, "DCL procedure output\n", output_size - 1U);
+    output[output_size - 1U] = '\0';
+    return 1;
+}
+
 static void reset_exec(int mode)
 {
     exec_mode = mode;
@@ -148,6 +179,8 @@ static int test_command_guard(void)
                               M289_BUILD_RUN, "PYTHON") ||
         !m289_command_allowed("PERL WC.PL",
                               M289_BUILD_RUN, "PERL") ||
+        !m289_command_allowed("M289_DCL_FIXTURE.COM",
+                              M289_BUILD_RUN, "DCL") ||
         !m289_command_allowed("LINK WC.OBJ",
                               M289_BUILD_LINK, "MACRO32") ||
         !m289_command_allowed("LINK WC.OBJ",
@@ -162,6 +195,16 @@ static int test_command_guard(void)
                              M289_BUILD_LINK, "JAVA") ||
         m289_command_allowed("JAVAC M289JavaFixture.java",
                              M289_BUILD_RUN, "JAVA") ||
+        m289_command_allowed("M289_DCL_FIXTURE.COM",
+                             M289_BUILD_COMPILE, "DCL") ||
+        m289_command_allowed("M289_DCL_FIXTURE.COM",
+                             M289_BUILD_LINK, "DCL") ||
+        m289_command_allowed("@M289_DCL_FIXTURE.COM",
+                             M289_BUILD_RUN, "DCL") ||
+        m289_command_allowed("M289_DCL_FIXTURE.COM ARG",
+                             M289_BUILD_RUN, "DCL") ||
+        m289_command_allowed("PYTHON WC.PY",
+                             M289_BUILD_RUN, "DCL") ||
         m289_command_allowed("PYTHON WC.PY",
                              M289_BUILD_COMPILE, "PYTHON") ||
         m289_command_allowed("LINK WC.OBJ",
@@ -206,6 +249,8 @@ static int test_command_guard(void)
                              M289_BUILD_RUN, "PYTHON") ||
         m289_command_allowed("PERL WC.PL|DELETE *.*;*",
                              M289_BUILD_RUN, "PERL") ||
+        m289_command_allowed("M289_DCL_FIXTURE.COM|DELETE *.*;*",
+                             M289_BUILD_RUN, "DCL") ||
         m289_command_allowed("LINK WC.OBJ @EVIL.COM",
                              M289_BUILD_LINK, "CXX") ||
         m289_command_allowed("LINK SYS$DISK:[X]WC.OBJ",
@@ -432,6 +477,36 @@ static int test_java_success(agent_state *state)
     return ok;
 }
 
+static int test_dcl_success(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(0);
+    status = 0UL;
+    result = m289_build_source(state, "M289_DCL_FIXTURE.COM", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         strcmp(exec_first, "M289_DCL_FIXTURE.COM") == 0 &&
+         exec_second[0] == '\0' &&
+         status == 0x00030001UL &&
+         strstr(result, "Language: DCL") != NULL &&
+         strstr(result, "Procedure command: @M289_DCL_FIXTURE.COM") != NULL &&
+         strstr(result, "Procedure status: %X00030001 (success)") != NULL &&
+         strstr(result, "DCL procedure output") != NULL &&
+         strstr(result, "Compile command:") == NULL &&
+         strstr(result, "Link command:") == NULL &&
+         strstr(result, "Run command:") == NULL &&
+         strstr(result, "Result: success") != NULL;
+    if (!ok) {
+        (void)printf("M289 native failed: DCL procedure success path.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_compile_failure(agent_state *state)
 {
     char *result;
@@ -560,6 +635,27 @@ static int test_python_refusal(agent_state *state)
     return ok;
 }
 
+static int test_dcl_refusal(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    reset_exec(3);
+    status = 99UL;
+    result = m289_build_source(state, "M289_DCL_FIXTURE.COM", &status);
+    ok = result != NULL &&
+         exec_calls == 1U &&
+         status == 0UL &&
+         strstr(result, "Procedure execution refused or unavailable.") != NULL &&
+         strstr(result, "full approval policy required") != NULL;
+    if (!ok) {
+        (void)puts("M289 native failed: DCL procedure refusal propagation.");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_invalid_source(agent_state *state)
 {
     char *result;
@@ -608,12 +704,14 @@ int main(void)
          test_python_success(&state) &&
          test_perl_success(&state) &&
          test_java_success(&state) &&
+         test_dcl_success(&state) &&
          test_compile_failure(&state) &&
          test_java_compile_failure(&state) &&
          test_link_failure(&state) &&
          test_refusal(&state) &&
          test_java_refusal(&state) &&
          test_python_refusal(&state) &&
+         test_dcl_refusal(&state) &&
          test_invalid_source(&state);
 
     if (!ok) {
