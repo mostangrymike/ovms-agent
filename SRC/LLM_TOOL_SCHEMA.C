@@ -46,7 +46,7 @@ static int schema_build_source_tool(FILE *file)
 {
     return fputs(
         "{\"type\":\"function\",\"name\":\"build_source\","
-        "\"description\":\"Compile and link one project-relative MACRO32 .MAR source using the validated native toolchain profile. Execution requires full approval, guarded writes, and DCL execution.\","
+        "\"description\":\"Compile and link one project-relative source using a validated native compiled profile selected by extension. Current profiles are MACRO32 (.MAR), Fortran (.F90/.FOR/.F), and COBOL (.COB/.CBL). Execution requires full approval, guarded writes, and DCL execution.\","
         "\"parameters\":{\"type\":\"object\",\"properties\":{\"source\":{\"type\":\"string\"}},"
         "\"required\":[\"source\"],\"additionalProperties\":false},\"strict\":true}",
         file
