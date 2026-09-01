@@ -261,6 +261,20 @@ static int test_tool_model_compat(void)
         return 0;
     }
 
+    if (llm_m294_stream_ok(
+            "https://openrouter.ai/api/v1",
+            "openrouter/free",
+            tool_request)) {
+        return 0;
+    }
+
+    if (!llm_m294_stream_ok(
+            "https://openrouter.ai/api/v1",
+            "openrouter/free",
+            plain_request)) {
+        return 0;
+    }
+
     if (!llm_m294_stream_ok(
             "https://openrouter.ai/api/v1",
             "openai/gpt-oss-120b",
@@ -351,7 +365,7 @@ int main(void)
 
     if (!test_tool_model_compat()) {
         (void)puts(
-            "M295 failed: provider tool/stream compatibility matrix invalid."
+            "M296 failed: provider tool/stream compatibility matrix invalid."
         );
         return EXIT_FAILURE;
     }
@@ -449,7 +463,7 @@ int main(void)
     (void)puts("M279 sibling tool-call filtering test passed.");
     (void)puts("M279 tool-like assistant text test passed.");
     (void)puts("M294 GPT-OSS Responses eligibility test passed.");
-    (void)puts("M295 Groq tool stream selection test passed.");
+    (void)puts("M296 provider tool stream selection test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
