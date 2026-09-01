@@ -86,7 +86,7 @@ Knowledge packs are separate from `.BUILD` toolchain profiles: a language may ha
 
 ## Git context and RMS integrity
 
-The Git/RMS engine treats GitHub/tree state, Git metadata, and physical RMS-visible files as separate evidence. It can compare committed content against current RMS versions without blindly asking Git to hash problematic multi-version files.
+The Git/RMS engine treats GitHub/tree state, Git metadata, and physical RMS-visible files as separate evidence. It can compare committed content against current RMS versions without blindly asking Git to hash problematic multi-version files directly.
 
 M290 reliability hardening fixed RMS structured-patch integrity, subprocess/native-status handling, Git/RMS short-read paths, persistent-settings test isolation, and bounded provider timeout behavior.
 
@@ -116,7 +116,7 @@ See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules.
 
 ## Safety controls
 
-OVMS Agent combines approval policy, guarded-write and DCL gates, path/sensitive-file checks, network policy, autonomous budgets, transaction/rollback behavior, repository-bound authentication, and AUTOPILOT's inability to satisfy FULL.
+OVMS Agent combines approval policy, guarded-write and DCL gates, path/sensitive-file checks, network policy, autonomous budgets, transaction/rollback behavior, repository-bound authentication, and AUTOPILOT's inability to satisfy FULL approval.
 
 `AGENT/AUTOPILOT` is bounded local workspace repair/build orchestration; it cannot silently authorize arbitrary DCL, GitHub/PUSH, MCP/external work, or other FULL-gated operations.
 
