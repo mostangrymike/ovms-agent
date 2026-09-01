@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M294**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M294**, plus the M295 Groq/Qwen tool-transport candidate on this branch.
 
 ## Project inspection and context
 
@@ -35,9 +35,9 @@ Direct providers and OpenAI-compatible intermediaries such as Requesty are suppo
 
 ### Tool transport compatibility selection
 
-M294 preserves the common Responses API request contract while handling one proven transport compatibility exception before send. When the configured endpoint is Groq, the model name begins `openai/gpt-oss-`, and the outgoing request actually contains tool definitions, OVMS Agent selects the existing bounded blocking transport instead of attempting SSE streaming.
+M294 preserves the common Responses API request contract while handling a proven Groq transport compatibility exception before send. When the configured endpoint is Groq, the outgoing request actually contains tool definitions, and the model is either `openai/gpt-oss-*` or the M295-proven `qwen/qwen3.6-27b`, OVMS Agent selects the existing bounded blocking transport instead of attempting SSE streaming.
 
-This is capability selection, not a failed-stream retry: the request is sent once through the compatible transport, avoiding duplicate requests after a real network failure. Non-tool GPT-OSS requests and all other provider/model combinations keep the existing streaming decision. Users do not need to define `OVMS_AGENT_NOSTREAM` for the supported Groq GPT-OSS tool workflow.
+This is capability selection, not a failed-stream retry: the request is sent once through the compatible transport, avoiding duplicate requests after a real network failure. Non-tool requests and other provider/model combinations keep the existing streaming decision. Users do not need to define `OVMS_AGENT_NOSTREAM` for the supported Groq GPT-OSS or Qwen tool workflows.
 
 ## Guarded source changes
 
