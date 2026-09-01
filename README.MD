@@ -5,8 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M294`
-- **Current development milestone:** `M295` Groq/Qwen tool transport compatibility
+- **Latest promoted milestone:** `M295`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -149,7 +148,7 @@ This tool supplements rather than replaces a project's normal `BUILD.COM` or equ
 
 ## Git and GitHub on OpenVMS
 
-OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible files and native build/runtime behavior are acceptance truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
+OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible OpenVMS files are native compile/runtime input truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
 
 Authenticated raw Git uses `GITAUTH`. Operator-facing:
 
