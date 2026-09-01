@@ -1,9 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
+#include "ANSI_TERM.H"
 #include "command_internal.h"
 #include "llm_config.h"
+#include "LLM_JSON_PARSE.H"
+#include "LLM_JSON_WRITE.H"
+#include "LLM_RESPONSE.H"
+#include "LLM_TRANSPORT.H"
 #include "secret_input.h"
+
+#define PROV_PROBE_PROMPT "Reply with exactly: OK"
+#define PROV_PROBE_TOKENS 64
 
 static int prov_read_value(const char *prompt,
                            char *buffer,
@@ -109,6 +119,266 @@ static void prov_show(const char *name)
                      "<not configured>");
 }
 
+static void prov_remove_all(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    while (remove(path) == 0) {
+        /* Remove OpenVMS file versions newest first. */
+    }
+}
+
+static void prov_probe_cleanup(void)
+{
+    prov_remove_all(LLM_PROBE_REQUEST_FILE);
+    prov_remove_all(LLM_PROBE_HEADERS_FILE);
+    prov_remove_all(LLM_PROBE_RESPONSE_FILE);
+}
+
+static int prov_probe_request(const llm_provider *provider)
+{
+    FILE *file;
+    int success;
+
+    if (provider == NULL || provider->model[0] == '\0') {
+        return 0;
+    }
+
+    file = fopen(LLM_PROBE_REQUEST_FILE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    success = 1;
+    if (fputs("{\"model\":\"", file) == EOF ||
+        !json_write_escaped(file, provider->model) ||
+        fputs("\",\"input\":\"", file) == EOF ||
+        !json_write_escaped(file, PROV_PROBE_PROMPT) ||
+        fprintf(file,
+                "\",\"max_output_tokens\":%d,"
+                "\"parallel_tool_calls\":false}\n",
+                PROV_PROBE_TOKENS) < 0) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
+static int prov_probe_headers(const llm_provider *provider)
+{
+    FILE *file;
+    int success;
+
+    if (provider == NULL || provider->api_key[0] == '\0') {
+        return 0;
+    }
+
+    file = fopen(LLM_PROBE_HEADERS_FILE, "w");
+    if (file == NULL) {
+        return 0;
+    }
+
+    success = 1;
+    if (fputs("Content-Type: application/json\n", file) == EOF ||
+        fputs("Authorization: Bearer ", file) == EOF ||
+        fputs(provider->api_key, file) == EOF ||
+        fputc('\n', file) == EOF) {
+        success = 0;
+    }
+
+    if (fclose(file) != 0) {
+        success = 0;
+    }
+
+    return success;
+}
+
+static int prov_probe_has_text(const char *text)
+{
+    if (text == NULL) {
+        return 0;
+    }
+
+    while (*text == ' ' || *text == '\t' ||
+           *text == '\r' || *text == '\n') {
+        ++text;
+    }
+
+    return *text != '\0';
+}
+
+static const char *prov_probe_classify_json(const char *json,
+                                             int transported,
+                                             int *responsive)
+{
+    char *text;
+    const char *message;
+
+    if (responsive != NULL) {
+        *responsive = 0;
+    }
+
+    if (!transported || json == NULL) {
+        return "TRANSPORT";
+    }
+
+    text = extract_output_text_from_json(json);
+    if (text != NULL) {
+        if (prov_probe_has_text(text)) {
+            free(text);
+            if (responsive != NULL) {
+                *responsive = 1;
+            }
+            return "OK";
+        }
+        free(text);
+    }
+
+    message = find_string_value(json, "message");
+    if (message != NULL) {
+        return "API ERROR";
+    }
+
+    if (llm_response_empty_completed(json, NULL)) {
+        return "EMPTY";
+    }
+
+    return "INVALID";
+}
+
+const char *command_prov_test_json(const char *json,
+                                   int transported,
+                                   int *responsive)
+{
+    return prov_probe_classify_json(json, transported, responsive);
+}
+
+static const char *prov_probe_classify(int transported,
+                                       int *responsive)
+{
+    char *json;
+    const char *status;
+
+    if (responsive != NULL) {
+        *responsive = 0;
+    }
+
+    if (!transported) {
+        return "TRANSPORT";
+    }
+
+    json = read_entire_file(LLM_PROBE_RESPONSE_FILE, NULL);
+    if (json == NULL) {
+        return "TRANSPORT";
+    }
+
+    status = prov_probe_classify_json(json, 1, responsive);
+    free(json);
+    return status;
+}
+
+static int prov_test_one(const llm_provider *provider)
+{
+    char row[512];
+    const char *status;
+    time_t started;
+    time_t finished;
+    long elapsed;
+    int responsive;
+    int transported;
+
+    if (provider == NULL) {
+        return 0;
+    }
+
+    prov_probe_cleanup();
+    responsive = 0;
+    transported = 0;
+    started = time(NULL);
+
+    if (provider->url[0] == '\0' ||
+        provider->model[0] == '\0' ||
+        provider->api_key[0] == '\0') {
+        status = "CONFIG";
+    } else if (!prov_probe_request(provider) ||
+               !prov_probe_headers(provider)) {
+        status = "LOCAL ERROR";
+    } else {
+        transported = llm_transport_probe(provider->url);
+        status = prov_probe_classify(transported, &responsive);
+    }
+
+    finished = time(NULL);
+    elapsed = finished >= started ?
+        (long)(finished - started) : 0L;
+
+    (void)sprintf(row,
+                  "  %s  model=%s  %s  %lds\n",
+                  provider->name,
+                  provider->model[0] != '\0' ?
+                      provider->model : "<not set>",
+                  status,
+                  elapsed);
+    ansi_term_diff(responsive ? ANSI_DIFF_ADD : ANSI_DIFF_DELETE, row);
+    prov_probe_cleanup();
+    return responsive;
+}
+
+static void prov_test(const char *name)
+{
+    const llm_provider *provider;
+    unsigned int count;
+    unsigned int index;
+    unsigned int tested;
+    unsigned int responsive;
+
+    tested = 0U;
+    responsive = 0U;
+
+    (void)puts("LLM provider health test");
+    (void)puts("------------------------");
+
+    if (name != NULL && *name != '\0') {
+        provider = prov_find(name);
+        if (provider == NULL) {
+            (void)puts("AI provider profile not found.");
+            return;
+        }
+        tested = 1U;
+        responsive = prov_test_one(provider) ? 1U : 0U;
+    } else {
+        count = llm_prov_count();
+        if (count == 0U) {
+            (void)puts("No AI provider profiles are configured.");
+            return;
+        }
+
+        for (index = 0U; index < count; ++index) {
+            provider = llm_prov_get(index);
+            if (provider == NULL) {
+                continue;
+            }
+            ++tested;
+            if (prov_test_one(provider)) {
+                ++responsive;
+            }
+        }
+    }
+
+    (void)printf(
+        "Provider health summary: tested=%u responsive=%u failed=%u\n",
+        tested,
+        responsive,
+        tested - responsive
+    );
+}
+
 static void prov_add(const char *name)
 {
     char url[LLM_PROV_URL_MAX];
@@ -167,7 +437,7 @@ static void command_provider(agent_state *state,
 
     if (verb == NULL || extra != NULL) {
         (void)puts(
-            "Usage: PROVIDER [LIST|SHOW [name]|USE name|ADD name|DELETE name]"
+            "Usage: PROVIDER [LIST|SHOW [name]|TEST [name]|USE name|ADD name|DELETE name]"
         );
         return;
     }
@@ -183,6 +453,11 @@ static void command_provider(agent_state *state,
 
     if (strcmp(verb, "SHOW") == 0) {
         prov_show(name);
+        return;
+    }
+
+    if (strcmp(verb, "TEST") == 0) {
+        prov_test(name);
         return;
     }
 
@@ -210,7 +485,7 @@ static void command_provider(agent_state *state,
     }
 
     (void)puts(
-        "Usage: PROVIDER [LIST|SHOW [name]|USE name|ADD name|DELETE name]"
+        "Usage: PROVIDER [LIST|SHOW [name]|TEST [name]|USE name|ADD name|DELETE name]"
     );
 }
 
@@ -258,7 +533,7 @@ static void command_model(agent_state *state,
 
 static const command_entry provider_commands[] = {
     { "MODEL", "Show or set the active AI provider model", command_model },
-    { "PROVIDER", "Manage persistent AI provider profiles", command_provider }
+    { "PROVIDER", "Manage and test persistent AI provider profiles", command_provider }
 };
 
 void command_register_provider(void)

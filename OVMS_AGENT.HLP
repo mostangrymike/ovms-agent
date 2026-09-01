@@ -303,10 +303,17 @@
  Use when: Staying on the same provider profile but choosing another supported model.
 
 4 PROVIDER_CMD
- Command: PROVIDER [LIST|SHOW [name]|USE name|ADD name|DELETE name]
- Performs: Manages persistent AI provider profiles.
- Use when: Adding a provider, switching endpoints/accounts, inspecting a profile,
- or removing one.  ADD prompts for service address, model, and API key.
+ Command: PROVIDER [LIST|SHOW [name]|TEST [name]|USE name|ADD name|DELETE name]
+ Performs: Manages persistent AI provider profiles and tests response health.
+ Use when: Adding a provider, switching endpoints/accounts, inspecting or testing
+ a profile, or removing one.  ADD prompts for service address, model, and API key.
+ Notes: TEST sends one bounded plain-text no-op request through each configured
+   profile, or only the named profile, without changing the active profile.
+   Responsive profiles report OK; failures report CONFIG, LOCAL ERROR, TRANSPORT,
+   API ERROR, EMPTY, or INVALID.  Rows are green/red on ANSI terminals and keep
+   the textual status on plain terminals and in logs.  TEST uses real provider
+   transport and may consume a very small amount of provider usage.  It checks
+   basic response health only; it is not a tool-call or capability benchmark.
 
 4 GITHUB_PROFILE
  Command: GITHUB [LIST|SHOW [name]|USE name|ADD name|DELETE name]

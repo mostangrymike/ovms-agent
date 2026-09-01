@@ -10,6 +10,10 @@
 #define TEST_TX "M230_TRANSCRIPT.DAT"
 #define TEST_ROLLBACK "M230_ROLLBACK.TXT"
 
+const char *command_prov_test_json(const char *json,
+                                   int transported,
+                                   int *responsive);
+
 int command_line_complete(const char *input,
                           size_t input_size,
                           int reached_eof)
@@ -124,6 +128,53 @@ static int test_rate_limit_parser(void)
            !llm_rate_limit_delay(normal_output, &wait_seconds);
 }
 
+static int test_provider_probe_parser(void)
+{
+    static const char ok_response[] =
+        "{\"status\":\"completed\",\"output\":[{"
+        "\"type\":\"message\",\"content\":[{"
+        "\"type\":\"output_text\",\"text\":\"OK\"}]}]}";
+    static const char api_error[] =
+        "{\"error\":{\"message\":\"Invalid API key\"}}";
+    static const char empty_response[] =
+        "{\"status\":\"completed\",\"output\":[],"
+        "\"usage\":{\"output_tokens\":0}}";
+    static const char invalid_response[] =
+        "{\"status\":\"completed\",\"output\":[{}]}";
+    const char *status;
+    int responsive;
+
+    responsive = 0;
+    status = command_prov_test_json(ok_response, 1, &responsive);
+    if (status == NULL || strcmp(status, "OK") != 0 || !responsive) {
+        return 0;
+    }
+
+    responsive = 1;
+    status = command_prov_test_json(api_error, 1, &responsive);
+    if (status == NULL || strcmp(status, "API ERROR") != 0 || responsive) {
+        return 0;
+    }
+
+    responsive = 1;
+    status = command_prov_test_json(empty_response, 1, &responsive);
+    if (status == NULL || strcmp(status, "EMPTY") != 0 || responsive) {
+        return 0;
+    }
+
+    responsive = 1;
+    status = command_prov_test_json(invalid_response, 1, &responsive);
+    if (status == NULL || strcmp(status, "INVALID") != 0 || responsive) {
+        return 0;
+    }
+
+    responsive = 1;
+    status = command_prov_test_json(NULL, 0, &responsive);
+    return status != NULL &&
+           strcmp(status, "TRANSPORT") == 0 &&
+           !responsive;
+}
+
 int main(void)
 {
     char output[16384];
@@ -143,6 +194,12 @@ int main(void)
 
     if (!test_rate_limit_parser()) {
         (void)puts("M230 failed: bounded provider rate-limit parser.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (!test_provider_probe_parser()) {
+        (void)puts("M292 failed: provider health response classification.");
         cleanup();
         return EXIT_FAILURE;
     }

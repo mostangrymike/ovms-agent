@@ -18,3 +18,64 @@ int perform_openai_request(void)
 
     return result;
 }
+
+int llm_transport_probe(const char *base)
+{
+    static const char prefix[] =
+        "curl --silent --show-error "
+        LLM_TRANSPORT_CURL_TIMEOUT_ARGS
+        "--output " LLM_PROBE_RESPONSE_FILE " "
+        "--header @" LLM_PROBE_HEADERS_FILE " "
+        "--data-binary @" LLM_PROBE_REQUEST_FILE " ";
+    char url[M262_RESPONSE_URL_MAX];
+    char command[1024];
+    char *response;
+    size_t needed;
+    unsigned int retries;
+    unsigned int wait_seconds;
+    int status;
+
+    if (base == NULL || *base == '\0' ||
+        !m262_url_valid(base) ||
+        !m262_response_url(base, url, sizeof(url))) {
+        return 0;
+    }
+
+    needed = strlen(prefix) + strlen(url) + 1U;
+    if (needed > sizeof(command)) {
+        return 0;
+    }
+
+    (void)strcpy(command, prefix);
+    (void)strcat(command, url);
+    retries = 0U;
+
+    for (;;) {
+        m273_remove_all(LLM_PROBE_RESPONSE_FILE);
+        status = system(command);
+        if (!ovms_status_success(
+                (unsigned long)(unsigned int)status)) {
+            return 0;
+        }
+
+        response = read_entire_file(LLM_PROBE_RESPONSE_FILE, NULL);
+        if (response == NULL) {
+            return 0;
+        }
+
+        wait_seconds = 0U;
+        if (!llm_rate_limit_delay(response, &wait_seconds)) {
+            free(response);
+            return 1;
+        }
+
+        free(response);
+
+        if (retries >= M276_RATE_RETRIES) {
+            return 1;
+        }
+
+        ++retries;
+        (void)sleep(wait_seconds);
+    }
+}
