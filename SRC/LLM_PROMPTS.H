@@ -21,7 +21,7 @@ static int llm_guard_write_kind(
     int build_after_write)
 {
     if (llm_tool_is_replace(descriptor)) {
-        return 1;
+        return !llm_auto_atomic_write();
     }
 
     return !build_after_write &&
