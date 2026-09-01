@@ -183,13 +183,13 @@ static int test_tool_like_text(void)
 
 static int test_tool_model_compat(void)
 {
-    if (llm_m279_tool_model_ok(
+    if (!llm_m279_tool_model_ok(
             "https://api.groq.com/openai/v1",
             "openai/gpt-oss-120b")) {
         return 0;
     }
 
-    if (llm_m279_tool_model_ok(
+    if (!llm_m279_tool_model_ok(
             "https://api.groq.com/openai/v1",
             "openai/gpt-oss-20b")) {
         return 0;
@@ -290,7 +290,7 @@ int main(void)
 
     if (!test_tool_model_compat()) {
         (void)puts(
-            "M279 failed: provider tool-transport compatibility matrix invalid."
+            "M294 failed: provider Responses eligibility matrix invalid."
         );
         return EXIT_FAILURE;
     }
@@ -387,7 +387,7 @@ int main(void)
     (void)puts("M251 final synthesis request test passed.");
     (void)puts("M279 sibling tool-call filtering test passed.");
     (void)puts("M279 tool-like assistant text test passed.");
-    (void)puts("M279 GPT-OSS transport guard test passed.");
+    (void)puts("M294 GPT-OSS Responses eligibility test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
