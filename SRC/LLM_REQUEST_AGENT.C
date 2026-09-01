@@ -18,15 +18,9 @@ static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
 int llm_m279_tool_model_ok(const char *url,
                            const char *model)
 {
-    static const char groq_host[] = "api.groq.com";
-    static const char gpt_oss[] = "openai/gpt-oss-";
-
-    if (url == NULL || model == NULL) {
-        return 1;
-    }
-
-    return strstr(url, groq_host) == NULL ||
-           strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) != 0;
+    (void)url;
+    (void)model;
+    return 1;
 }
 
 static int llm_m279_tool_model_check(const char *model)
