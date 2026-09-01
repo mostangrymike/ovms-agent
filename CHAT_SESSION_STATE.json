@@ -1,163 +1,132 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-01T12:46:00-05:00",
+  "updated_at": "2026-09-01T13:50:51-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
-  "current_main": {
-    "head": "53150b29e42b5063a9aef0bec76781494c217c69",
-    "tree": "db1f7d83c1c4a5defade9d71dec8e3eaac4ad9cf",
-    "latest_milestone": "M294",
-    "latest_code_milestone": "M294",
-    "m292_promoted_main": "c6eda68f573e407d405a539874f518853b50f86c",
-    "m293_promoted_main": "f85a4badda332b6f8c87934bea69ece67b621994",
-    "m294_native_source_head": "d7e62df01aac2b0a4d8402fb12f95b1044ba0358",
-    "m294_native_source_tree": "17d7419ba6e198eda4e3d9ce68255a112050ebff",
-    "m294_final_native_candidate": "29d66a4a9cc7ea4f8a9405caabdf619ce91c3085",
-    "m294_final_native_candidate_tree": "43d8306f0f9218602a3a4a20ab384215733fe880",
-    "m294_promoted_main": "53150b29e42b5063a9aef0bec76781494c217c69",
-    "m294_promoted_tree": "db1f7d83c1c4a5defade9d71dec8e3eaac4ad9cf",
-    "main_sha_itself_native_run": false,
-    "note": "M294 source/runtime bytes were native-built and live-tested at d7e62df01aac2b0a4d8402fb12f95b1044ba0358. Final native candidate 29d66a4a9cc7ea4f8a9405caabdf619ce91c3085 added documentation and the exact native-validated HLP; its HLP compiled/looked up successfully. Final promoted main 53150b29e42b5063a9aef0bec76781494c217c69 differs from 29d66a4 only in README.MD, FEATURES.MD, and CHANGELOG.MD promotion-status text; source/test/HLP bytes are unchanged."
-  },
-  "m293": {
-    "issue": 160,
-    "status": "COMPLETED_PROMOTED_DOCUMENTATION_VALIDATED_TREE_TAGGED_RETAINED",
-    "branch": "m293-documentation-currentness",
-    "final_candidate_head": "027c72a0175e13aec140c8db32cc396f5f5c9263",
-    "final_tree": "1dfa386dc3a265c7a493eb9e50f3a500c3d8d592",
-    "promoted_main": "f85a4badda332b6f8c87934bea69ece67b621994",
-    "tag": "f85a4badda332b6f8c87934bea69ece67b621994",
-    "issue_closed_completed": true
+  "current": {
+    "main": "3fd26e344866e25779fa216696286eac8eb1447a",
+    "tree": "c59729d6b6d0277db598309be92f49a0a71f86e8",
+    "latest_milestone": "M295",
+    "latest_code_milestone": "M295",
+    "canonical_host": "OpenVMS V9.2-3 x86-64",
+    "public_release": "1.0.0"
   },
   "m294": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 163,
     "resolved_issue": 126,
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "branch": "m294-groq-gptoss-responses",
-    "baseline_main": "f85a4badda332b6f8c87934bea69ece67b621994",
-    "eligibility_checkpoint": "cccdb215186caaa8715d86757396364b4660770c",
-    "native_source_head": "d7e62df01aac2b0a4d8402fb12f95b1044ba0358",
-    "native_source_tree": "17d7419ba6e198eda4e3d9ce68255a112050ebff",
-    "final_native_candidate": "29d66a4a9cc7ea4f8a9405caabdf619ce91c3085",
-    "final_native_candidate_tree": "43d8306f0f9218602a3a4a20ab384215733fe880",
-    "primary_promotion_pr": 164,
-    "primary_promoted_main": "c52baf8e4f872bfc5a2168ca44a9d0c1ef10a8cd",
-    "post_promotion_docs_pr": 165,
-    "post_promotion_docs_main": "d4c268357bc59139f2e98acccf31831cdaca02b0",
-    "wording_correction_pr": 166,
+    "native_source": "d7e62df01aac2b0a4d8402fb12f95b1044ba0358",
+    "final_candidate": "29d66a4a9cc7ea4f8a9405caabdf619ce91c3085",
     "promoted_main": "53150b29e42b5063a9aef0bec76781494c217c69",
-    "promoted_tree": "db1f7d83c1c4a5defade9d71dec8e3eaac4ad9cf",
-    "branch_head": "d1779fa9f08730b597b65becc91725c8c33693a3",
-    "branch_tree": "db1f7d83c1c4a5defade9d71dec8e3eaac4ad9cf",
     "tag": "53150b29e42b5063a9aef0bec76781494c217c69",
-    "feature": {
-      "problem": "Groq openai/gpt-oss-* plain Responses health works, but tool-bearing SSE streaming requests fail while bounded blocking Responses tool requests work.",
-      "fix": "Pre-send capability selector routes only Groq openai/gpt-oss-* requests that actually contain tool definitions through the existing bounded blocking Responses transport. It is not a failed-stream retry and does not duplicate already-sent requests.",
-      "non_tool_behavior": "Non-tool GPT-OSS and other provider/model combinations retain normal streaming behavior unless the user independently disables streaming.",
-      "api_contract": "Responses API remains the common request contract.",
-      "manual_override_required": false
-    },
-    "acceptance": {
-      "host": "OpenVMS V9.2-3 x86-64",
-      "source_build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build_complete": "Build completed successfully.",
-      "provider_health": "PROVIDER TEST groq with openai/gpt-oss-20b returned OK in 4s, tested=1 responsive=1 failed=0.",
-      "streaming_discriminator": "Without selector/manual override, tool AGENT failed quickly with LLM request failed.",
-      "manual_blocking_discriminator": "With OVMS_AGENT_NOSTREAM=1, read-only AGENT executed read_file_range, survived bounded rate-limit retry, and returned correct answer.",
-      "automatic_selector": "With no OVMS_AGENT_NOSTREAM override on d7e62df, read-only AGENT executed read_file_range and returned correct answer.",
-      "guarded_write": "AGENT/WRITE created exactly requested M294_GPTOSS_WRITE_PROBE.TXT content; probe existed only as ;1, was verified, then deleted. Provider/model restored.",
-      "residual_model_behavior": "After successful create_file, GPT-OSS requested replace_text unnecessarily, but no second RMS write materialized.",
-      "help_library_status": "%X10000001",
-      "help_lookup_status": "%X00000001",
-      "help_topic": "OVMS_AGENT COMMANDS CORE PROVIDER_CMD displayed the M294 tool-transport compatibility note.",
-      "final_main_source_help_equivalent": true
-    },
-    "issue_closed_completed": true
+    "result": "Groq openai/gpt-oss-* tool-bearing requests use bounded blocking Responses transport automatically; non-tool traffic keeps normal streaming."
   },
-  "m287_wc_campaign": {
-    "issue": 119,
-    "status": "COMPLETED_FEASIBLE_LANGUAGES_MACRO32_PUBLISHED_BASIC_PROVIDER_BLOCKED",
-    "campaign_result": "Fortran, COBOL, Pascal, C++, Python, Perl, Java, DCL, and MACRO32 native-accepted and published; BASIC attempted but provider/model-blocked; C excluded.",
-    "basic_related_open_gaps": [120, 123, 124],
-    "historical_gptoss_branch": "m287-groq-gptoss-responses",
-    "historical_gptoss_branch_pruned_after_m294": true,
-    "reason": "Its only two unique experimental commits in LLM_REQUEST_AGENT.C and m251_synth_test.c were explicitly superseded by M294 eligibility, expanded regression coverage, and the accepted transport selector."
+  "m295": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 167,
+    "resolved_issues": [
+      120,
+      125
+    ],
+    "branch": "m295-groq-qwen-tool-transport",
+    "baseline_main": "53150b29e42b5063a9aef0bec76781494c217c69",
+    "native_source": "909a3c86b6028c16f1c489d3e2def208845449a1",
+    "native_source_tree": "c59a5886c590c7993431303adc00723b54ff1014",
+    "final_candidate": "2a483a8bdcad55d2829a285338c878b1c54fd14c",
+    "final_candidate_tree": "a42113f8480870728ce19cf5331f7216e0058e7e",
+    "promotion_pr": 168,
+    "first_promoted_main": "07ebb00dce509768fffab83e284f540441459cf3",
+    "docs_pr": 169,
+    "promoted_main": "3fd26e344866e25779fa216696286eac8eb1447a",
+    "promoted_tree": "c59729d6b6d0277db598309be92f49a0a71f86e8",
+    "tag": "3fd26e344866e25779fa216696286eac8eb1447a",
+    "result": "Exact Groq qwen/qwen3.6-27b tool-bearing requests use bounded blocking Responses transport automatically. Non-tool Qwen, other Qwen models, and non-Groq Qwen endpoints retain normal streaming.",
+    "acceptance": {
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build": "Build completed successfully.",
+      "provider_test": "qwen/qwen3.6-27b returned INVALID in PROVIDER TEST; health test is not a tool-capability benchmark.",
+      "manual_blocking": "OVMS_AGENT_NOSTREAM=1 read-only AGENT executed read_file_range and returned correct answer.",
+      "automatic_read_only": "Without NOSTREAM on native source head, read_file_range executed and answer was correct.",
+      "automatic_guarded_write": "Created M295_QWEN_WRITE_PROBE.TXT exactly as ;1 with M295_QWEN_WRITE_OK, then deleted it and restored provider/model.",
+      "residual": "Qwen requested replace_text after successful create_file, but no second RMS write materialized.",
+      "help_library": "%X10000001",
+      "help_lookup": "%X00000001",
+      "final_main_source_help_equivalent": true
+    }
   },
   "open_followups": {
+    "provider_model_compatibility": [
+      123,
+      124
+    ],
     "platform_knowledge": 144,
-    "provider_model_compatibility": [120, 123, 124, 125],
-    "completed_provider_model_compatibility": [126],
-    "completed_provider_health": 158,
-    "completed_documentation": 160,
-    "completed_m294": 163,
-    "note": "M294 resolves Groq GPT-OSS tool-transport issue #126 only. Requesty/OpenRouter/Groq-Qwen issues #120/#123/#124/#125 remain separate."
+    "completed_provider_model_compatibility": [
+      120,
+      125,
+      126
+    ],
+    "note": "#123 is OpenRouter/free compatibility. #124 is reasoning/output-budget exhaustion. Keep them separate unless fresh evidence proves a shared fix."
   },
   "github_hygiene": {
-    "status": "M294_TAGGED_BRANCH_RETENTION_CLEAN",
-    "permanent_branches": ["main", "chat-session-state"],
-    "retained_completed_branches": ["m293-documentation-currentness", "m294-groq-gptoss-responses"],
-    "pruned_completed_or_superseded_branches": ["m286-root-uppercase-readme", "m288-language-knowledge-packs", "m289-native-toolchain-profiles", "m290-reliability-hardening", "m291-reliability-backlog", "m292-provider-health-test", "m287-groq-gptoss-responses"],
-    "verified_tags": {
-      "m278": "dfd552f3cda772fd07c10600a6aba9d9edad0cbc",
-      "m279": "5feaae97699c3eb124144bdbef978564f619f42a",
-      "m280": "717e54fb88003deba0efc2b253b72caedf2feaa8",
-      "m281": "846fea9e0cd2247a47fe4ed8dae7da3a542579e8",
-      "m282": "4944547fe52700cfcb0e7213947d16a1ce1c8e28",
-      "m283": "4d4598e553ee4ebbdfc1b9c5aa9d4a683d323400",
-      "m284": "de5837a121860b7cf3167d97df67099d771a3bef",
+    "permanent": [
+      "main",
+      "chat-session-state"
+    ],
+    "retained_completed": [
+      "m294-groq-gptoss-responses",
+      "m295-groq-qwen-tool-transport"
+    ],
+    "recent_pruned": [
+      "m287-groq-gptoss-responses",
+      "m292-provider-health-test",
+      "m293-documentation-currentness"
+    ],
+    "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "m285": "129e69f97b11c3e381403deabc6ba2feacc059b5",
-      "m286": "f7c5f663b5d82981b3f9e603bb2dd73badc56281",
-      "m288": "fc73ad048b02adc7c5e8acf6cd3bc090e32fc535",
-      "m289": "4d98e5d8efa61be9e6e399d936db2f3abecb06ad",
-      "m290": "587574a7d68e09a86f8975d6b889ea4ccf45675f",
-      "m291": "82fd65c9c6b75eead02387d7ed1812ca3280bc4e",
-      "m292": "c6eda68f573e407d405a539874f518853b50f86c",
       "m293": "f85a4badda332b6f8c87934bea69ece67b621994",
-      "m294": "53150b29e42b5063a9aef0bec76781494c217c69"
-    },
-    "pending_tags": {}
+      "m294": "53150b29e42b5063a9aef0bec76781494c217c69",
+      "m295": "3fd26e344866e25779fa216696286eac8eb1447a"
+    }
   },
-  "openvms_acceptance_worktree": {
-    "status": "M294_NATIVE_GREEN_FINAL_MAIN_REF_SYNCED_WITH_LOCAL_CHANGELOG_PRESERVED",
-    "head": "53150b29e42b5063a9aef0bec76781494c217c69",
+  "openvms_worktree": {
+    "head": "3fd26e344866e25779fa216696286eac8eb1447a",
     "branch": "main",
-    "native_source_head": "d7e62df01aac2b0a4d8402fb12f95b1044ba0358",
-    "native_source_tree": "17d7419ba6e198eda4e3d9ce68255a112050ebff",
-    "final_native_candidate": "29d66a4a9cc7ea4f8a9405caabdf619ce91c3085",
-    "final_native_candidate_tree": "43d8306f0f9218602a3a4a20ab384215733fe880",
-    "promoted_main": "53150b29e42b5063a9aef0bec76781494c217c69",
-    "promoted_tree": "db1f7d83c1c4a5defade9d71dec8e3eaac4ad9cf",
-    "build_status": "%X00000001",
-    "regressions": "All regression tests passed.",
-    "build_complete": "Build completed successfully.",
-    "help_library_status": "%X10000001",
-    "help_lookup_status": "%X00000001",
-    "materialized_after_final_promotion": ["ARCHITECTURE.MD", "README.MD", "FEATURES.MD"],
-    "not_materialized_after_final_promotion": ["CHANGELOG.MD"],
-    "note": "CHANGELOG.MD was deliberately not restored because a pre-existing local modification must be assessed rather than discarded. OVMS_AGENT.HLP was already exact from the final native candidate and source/test files were already exact from the native source checkpoint."
+    "native_source": "909a3c86b6028c16f1c489d3e2def208845449a1",
+    "final_candidate": "2a483a8bdcad55d2829a285338c878b1c54fd14c",
+    "materialized_after_promotion": [
+      "ARCHITECTURE.MD",
+      "README.MD",
+      "FEATURES.MD"
+    ],
+    "protected_not_materialized": [
+      "CHANGELOG.MD"
+    ],
+    "note": "OVMS_AGENT.HLP and M295 source/test files were already exact from native acceptance. CHANGELOG.MD has a pre-existing local modification and must not be discarded without assessment."
   },
-  "local_worktree_notes": {
-    "change_log": "CHANGELOG.MD was locally modified before M291; do not discard without assessment.",
-    "diagnostic": "SRC/M290_DCL_PROBE.C is an obsolete untracked diagnostic; cleanup only after explicit assessment.",
-    "java_fixture": "M289JavaFixture.class may be generated/untracked; assess before deletion."
+  "local_notes": {
+    "CHANGELOG.MD": "locally modified before M291; preserve until explicitly assessed",
+    "SRC/M290_DCL_PROBE.C": "obsolete untracked diagnostic; cleanup only after explicit assessment",
+    "M289JavaFixture.class": "may be generated/untracked; assess before deletion"
+  },
+  "status_semantics": {
+    "base": "0x0035A000UL",
+    "mask": "0x0FFFF800UL",
+    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure."
   },
   "standing_rules": [
-    "Read RULES.MD on main and this state at chat start.",
-    "GitHub is the default repository editing control plane; OpenVMS V9.2-3 x86-64 is the current canonical compile/link/RMS/runtime acceptance host.",
-    "Omit OVMS-AGENT> from agent command lines provided for paste.",
-    "Use GITAUTH for authenticated Git network operations; it already invokes Git.",
-    "Keep core.filemode=false.",
-    "Never trust Git status/porcelain/ref output or $STATUS alone on OpenVMS when RMS-visible files/control files can verify the fact directly.",
-    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing a new OpenVMS Git materialization workflow.",
-    "Canonical product acceptance requires All regression tests passed., Build completed successfully., and %X00000001 when source/build/runtime inputs changed.",
-    "Do not call an untested GitHub candidate or promoted merge native-green; distinguish exact-SHA native acceptance from tree-equivalent or source/HLP-equivalent promotion.",
-    "Keep root-level OVMS_AGENT.HLP synchronized with every user-visible command/persistent-setting/material behavior change in the same milestone.",
-    "Beginning with 1.0.0, semantic releases use vX.Y.Z tags in addition to mNNN milestone tags and follow semantic versioning.",
-    "Use uppercase DOC as the canonical documentation-history directory; root-level repository filenames are uppercase unless an external constraint requires otherwise.",
-    "DEC C/VAX-facing external identifiers remain <=31 characters and C89/DEC C compatible unless a subsystem specifically requires otherwise.",
-    "Keep main and chat-session-state permanently, retain only the two most recently completed milestone development branches, and never prune unique unpromoted work."
+    "At chat start read RULES.MD on main and this state.",
+    "GitHub is source/control plane; OpenVMS V9.2-3 x86-64 is canonical compile/link/RMS/runtime acceptance.",
+    "Omit literal OVMS-AGENT> from commands supplied for paste; native DCL $ prompts are acceptable.",
+    "Use GITAUTH for authenticated Git network operations and keep core.filemode=false.",
+    "Never trust OpenVMS Git porcelain/ref output or $STATUS alone when RMS-visible files/control files can verify.",
+    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing materialization workflows.",
+    "When source/build/runtime inputs change, native acceptance requires All regression tests passed., Build completed successfully., and %X00000001.",
+    "Distinguish exact native-tested SHA from tree/source/HLP-equivalent promoted commits; never call an untested GitHub head native-green.",
+    "Keep OVMS_AGENT.HLP synchronized with user-visible command/settings/material behavior changes.",
+    "Externally visible DEC C/VAX-facing identifiers remain <=31 chars and C89/DEC C compatible unless required otherwise.",
+    "Permanently keep main and chat-session-state; retain only the two most recently completed milestone branches unless unique unpromoted work requires retention."
   ]
 }
