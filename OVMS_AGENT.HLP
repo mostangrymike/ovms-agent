@@ -315,10 +315,10 @@
    transport and may consume a very small amount of provider usage.  It checks
    basic response health only; it is not a tool-call or capability benchmark.
    Tool-call compatibility can differ from TEST.  Groq requests using
-   openai/gpt-oss-* or exact qwen/qwen3.6-27b automatically use the bounded
-   blocking Responses transport when the request includes tool definitions; no
-   OVMS_AGENT_NOSTREAM override is required.  Non-tool requests and other
-   provider/model combinations keep normal streaming behavior.
+   openai/gpt-oss-* or exact qwen/qwen3.6-27b, and OpenRouter requests using
+   exact openrouter/free, automatically use bounded blocking Responses transport
+   for requests with tool definitions; no OVMS_AGENT_NOSTREAM override is required.
+   Non-tool requests and other provider/model combinations keep normal streaming.
 
 4 GITHUB_PROFILE
  Command: GITHUB [LIST|SHOW [name]|USE name|ADD name|DELETE name]
