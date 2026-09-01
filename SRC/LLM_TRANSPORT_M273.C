@@ -12,23 +12,30 @@ int llm_m294_stream_ok(const char *url,
                        const char *request)
 {
     static const char groq_host[] = "api.groq.com";
+    static const char openrouter_host[] = "openrouter.ai";
     static const char gpt_oss[] = "openai/gpt-oss-";
     static const char qwen_36_27b[] = "qwen/qwen3.6-27b";
+    static const char openrouter_free[] = "openrouter/free";
 
     if (request == NULL || strstr(request, "\"tools\":") == NULL ||
         url == NULL || model == NULL) {
         return 1;
     }
 
-    if (strstr(url, groq_host) == NULL) {
-        return 1;
+    if (strstr(url, groq_host) != NULL) {
+        if (strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) == 0) {
+            return 0;
+        }
+
+        return strcmp(model, qwen_36_27b) != 0;
     }
 
-    if (strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) == 0) {
+    if (strstr(url, openrouter_host) != NULL &&
+        strcmp(model, openrouter_free) == 0) {
         return 0;
     }
 
-    return strcmp(model, qwen_36_27b) != 0;
+    return 1;
 }
 
 static char *m294_transport_env(const char *name)
