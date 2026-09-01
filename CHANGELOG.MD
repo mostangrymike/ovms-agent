@@ -6,7 +6,11 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-### M294 — Groq GPT-OSS tool transport compatibility
+No additional user-visible product changes are currently recorded beyond M294 below.
+
+## M294 — Groq GPT-OSS tool transport compatibility
+
+Tag: `m294`
 
 - Removed the historical pre-rejection that prevented Groq `openai/gpt-oss-*` models from attempting Responses tool workflows.
 - Added deterministic eligibility coverage for GPT-OSS tool requests.
