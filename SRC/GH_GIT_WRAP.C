@@ -252,6 +252,54 @@ static int wrap_run(const char *command)
     return (int)ovms_status_propagate((unsigned long)(unsigned int)status);
 }
 
+static int wrap_check(const gh_profile *profile)
+{
+    char auth_path[WRAP_PATH_MAX];
+    char command[WRAP_CMD_MAX];
+    char *check_argv[7];
+    int status;
+
+    auth_path[0] = '\0';
+    command[0] = '\0';
+    if (!wrap_auth_cfg(profile, auth_path, sizeof(auth_path))) {
+        (void)puts("GITAUTH: unable to prepare temporary authentication data.");
+        return EXIT_FAILURE;
+    }
+
+    check_argv[0] = "GITAUTH";
+    check_argv[1] = "push";
+    check_argv[2] = "--dry-run";
+    check_argv[3] = "--no-verify";
+    check_argv[4] = "--quiet";
+    check_argv[5] = "origin";
+    check_argv[6] = "HEAD:refs/heads/__ovms_agent_auth_check__";
+
+    if (!wrap_build_cmd(7, check_argv, auth_path,
+                        command, sizeof(command))) {
+        wrap_zero(auth_path, sizeof(auth_path));
+        wrap_auth_cleanup();
+        (void)puts("GITAUTH: unable to build authorization preflight command.");
+        return EXIT_FAILURE;
+    }
+
+    status = wrap_run(command);
+    wrap_zero(command, sizeof(command));
+    wrap_zero(auth_path, sizeof(auth_path));
+    wrap_auth_cleanup();
+
+    if (!ovms_status_success((unsigned long)(unsigned int)status)) {
+        (void)printf(
+            "GITAUTH: profile=%s repo=%s is configured, but current-origin write authorization was not verified.\n",
+            profile->name, profile->repo);
+        return status;
+    }
+
+    (void)printf(
+        "GITAUTH verified: profile=%s repo=%s authorization=write\n",
+        profile->name, profile->repo);
+    return status;
+}
+
 int main(int argc, char **argv)
 {
     const gh_profile *profile;
@@ -259,15 +307,25 @@ int main(int argc, char **argv)
     char command[WRAP_CMD_MAX];
     int status;
 
+    if (argc == 2 && strcmp(argv[1], "--check-config") == 0) {
+        profile = gh_prof_active();
+        if (!wrap_ready(profile)) {
+            (void)puts("GITAUTH: active GitHub profile is incomplete.");
+            return EXIT_FAILURE;
+        }
+        (void)printf(
+            "GITAUTH configured: profile=%s repo=%s credentials=configured authorization=not-checked\n",
+            profile->name, profile->repo);
+        return EXIT_SUCCESS;
+    }
+
     if (argc == 2 && strcmp(argv[1], "--check") == 0) {
         profile = gh_prof_active();
         if (!wrap_ready(profile)) {
             (void)puts("GITAUTH: active GitHub profile is incomplete.");
             return EXIT_FAILURE;
         }
-        (void)printf("GITAUTH ready: profile=%s repo=%s credentials=configured\n",
-                     profile->name, profile->repo);
-        return EXIT_SUCCESS;
+        return wrap_check(profile);
     }
 
     if (argc < 2) {
