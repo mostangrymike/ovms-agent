@@ -148,7 +148,7 @@ This tool supplements rather than replaces a project's normal `BUILD.COM` or equ
 
 ## Git and GitHub on OpenVMS
 
-OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible OpenVMS files are native compile/runtime input truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
+OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible files and native build/runtime behavior are acceptance truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
 
 Authenticated raw Git uses `GITAUTH`. Operator-facing:
 
