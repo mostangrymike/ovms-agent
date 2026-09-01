@@ -654,6 +654,10 @@
  Command: ASK prompt
  Performs: Sends one prompt to the configured LLM without maintaining CHAT context.
  Use when: You have a one-off question or transformation that needs no conversation history.
+ Notes: If the provider returns an incomplete response because max_output_tokens
+   was exhausted before assistant text was produced, ASK reports a bounded
+   diagnostic, any reported output/reasoning token counts, and retry guidance
+   instead of displaying the raw provider response.
 
 4 CHAT
  Command: CHAT prompt

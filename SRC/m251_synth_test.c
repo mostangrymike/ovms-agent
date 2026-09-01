@@ -150,6 +150,54 @@ static int test_empty_completed(void)
     return !llm_response_empty_completed(nonempty_response, &tokens);
 }
 
+static int test_token_exhaustion(void)
+{
+    static const char exhausted_response[] =
+        "{\"status\":\"incomplete\",\"output\":[{"
+        "\"type\":\"reasoning\",\"content\":[]}],"
+        "\"incomplete_details\":{\"reason\":\"max_output_tokens\"},"
+        "\"usage\":{\"output_tokens\":4096,"
+        "\"output_tokens_details\":{\"reasoning_tokens\":4096}}}";
+    static const char other_incomplete[] =
+        "{\"status\":\"incomplete\",\"output\":[],"
+        "\"incomplete_details\":{\"reason\":\"content_filter\"}}";
+    static const char completed_response[] =
+        "{\"status\":\"completed\",\"output\":[],"
+        "\"incomplete_details\":{\"reason\":\"max_output_tokens\"}}";
+    char *text;
+    long output_tokens;
+    long reasoning_tokens;
+
+    text = extract_output_text_from_json(exhausted_response);
+    if (text != NULL) {
+        free(text);
+        return 0;
+    }
+
+    output_tokens = 0L;
+    reasoning_tokens = 0L;
+    if (!llm_response_token_exhausted(
+            exhausted_response,
+            &output_tokens,
+            &reasoning_tokens) ||
+        output_tokens != 4096L ||
+        reasoning_tokens != 4096L) {
+        return 0;
+    }
+
+    if (llm_response_token_exhausted(
+            other_incomplete,
+            &output_tokens,
+            &reasoning_tokens)) {
+        return 0;
+    }
+
+    return !llm_response_token_exhausted(
+        completed_response,
+        &output_tokens,
+        &reasoning_tokens);
+}
+
 static int test_tool_like_text(void)
 {
     static const char read_text[] =
@@ -356,6 +404,13 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (!test_token_exhaustion()) {
+        (void)puts(
+            "M297 failed: output-token exhaustion classification was invalid."
+        );
+        return EXIT_FAILURE;
+    }
+
     if (!test_tool_like_text()) {
         (void)puts(
             "M279 failed: tool-like assistant text classifier was invalid."
@@ -464,6 +519,7 @@ int main(void)
     (void)puts("M279 tool-like assistant text test passed.");
     (void)puts("M294 GPT-OSS Responses eligibility test passed.");
     (void)puts("M296 provider tool stream selection test passed.");
+    (void)puts("M297 output-token exhaustion classification test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }

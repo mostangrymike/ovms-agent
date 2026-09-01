@@ -93,6 +93,82 @@ int llm_response_empty_completed(const char *json,
     return 1;
 }
 
+int llm_response_token_exhausted(const char *json,
+                                 long *output_tokens,
+                                 long *reasoning_tokens)
+{
+    const char *status_value;
+    const char *details;
+    const char *reason_value;
+    char *status;
+    char *reason;
+    long output;
+    long reasoning;
+    int exhausted;
+
+    if (output_tokens != NULL) {
+        *output_tokens = 0L;
+    }
+    if (reasoning_tokens != NULL) {
+        *reasoning_tokens = 0L;
+    }
+
+    if (json == NULL) {
+        return 0;
+    }
+
+    status_value = find_string_value(json, "status");
+    if (status_value == NULL) {
+        return 0;
+    }
+
+    status = json_decode_string(status_value, NULL);
+    if (status == NULL) {
+        return 0;
+    }
+
+    exhausted = strcmp(status, "incomplete") == 0;
+    free(status);
+    if (!exhausted) {
+        return 0;
+    }
+
+    details = strstr(json, "\"incomplete_details\"");
+    if (details == NULL) {
+        return 0;
+    }
+
+    reason_value = find_string_value(details, "reason");
+    if (reason_value == NULL) {
+        return 0;
+    }
+
+    reason = json_decode_string(reason_value, NULL);
+    if (reason == NULL) {
+        return 0;
+    }
+
+    exhausted = strcmp(reason, "max_output_tokens") == 0;
+    free(reason);
+    if (!exhausted) {
+        return 0;
+    }
+
+    output = 0L;
+    reasoning = 0L;
+    (void)extract_integer_argument(json, "output_tokens", &output);
+    (void)extract_integer_argument(json, "reasoning_tokens", &reasoning);
+
+    if (output_tokens != NULL) {
+        *output_tokens = output;
+    }
+    if (reasoning_tokens != NULL) {
+        *reasoning_tokens = reasoning;
+    }
+
+    return 1;
+}
+
 static int llm_text_known_tool(const char *name)
 {
     static const char *tools[] = {
@@ -202,6 +278,7 @@ int display_clean_response(void)
     const char *text_value;
     char *decoded;
     long output_tokens;
+    long reasoning_tokens;
 
     json = read_entire_file(LLM_RESPONSE_FILE, NULL);
 
@@ -238,6 +315,31 @@ int display_clean_response(void)
                 "no assistant text was returned."
             );
         }
+        free(json);
+        return 1;
+    }
+
+    if (llm_response_token_exhausted(
+            json,
+            &output_tokens,
+            &reasoning_tokens)) {
+        ansi_term_puts("");
+        ansi_term_puts(
+            "Provider response was incomplete because max_output_tokens was "
+            "reached before assistant text was returned."
+        );
+        if (output_tokens > 0L || reasoning_tokens > 0L) {
+            ansi_term_printf(
+                "Provider reported %ld output tokens and %ld reasoning "
+                "tokens.\n",
+                output_tokens,
+                reasoning_tokens
+            );
+        }
+        ansi_term_puts(
+            "Request a shorter response or increase max_output_tokens and "
+            "retry; a higher limit may still be exhausted by model reasoning."
+        );
         free(json);
         return 1;
     }
