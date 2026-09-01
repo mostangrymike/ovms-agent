@@ -13,14 +13,22 @@ int llm_m294_stream_ok(const char *url,
 {
     static const char groq_host[] = "api.groq.com";
     static const char gpt_oss[] = "openai/gpt-oss-";
+    static const char qwen_36_27b[] = "qwen/qwen3.6-27b";
 
     if (request == NULL || strstr(request, "\"tools\":") == NULL ||
         url == NULL || model == NULL) {
         return 1;
     }
 
-    return strstr(url, groq_host) == NULL ||
-           strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) != 0;
+    if (strstr(url, groq_host) == NULL) {
+        return 1;
+    }
+
+    if (strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) == 0) {
+        return 0;
+    }
+
+    return strcmp(model, qwen_36_27b) != 0;
 }
 
 static char *m294_transport_env(const char *name)

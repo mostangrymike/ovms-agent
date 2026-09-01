@@ -6,6 +6,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 
 - **Current public release:** `1.0.0`
 - **Latest promoted milestone:** `M294`
+- **Current development milestone:** `M295` Groq/Qwen tool transport compatibility
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -130,7 +131,7 @@ MODEL [model-name]
 
 `PROVIDER TEST` sends one bounded plain-text no-op request through each configured profile; `PROVIDER TEST name` tests one profile. It does not change the active profile. Responsive profiles report `OK`; failures are classified as `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, or `INVALID`. The test uses real provider transport and may consume a very small amount of provider usage. It is a basic response-health check, not a tool-call capability benchmark.
 
-Provider/model tool-call compatibility can differ from plain-text health. M294 keeps the Responses API as the common request contract but selects the bounded blocking transport before send for Groq `openai/gpt-oss-*` requests that actually contain tool definitions. This avoids a known streaming incompatibility while preserving normal streaming for non-tool GPT-OSS requests and other provider/model combinations. No manual `OVMS_AGENT_NOSTREAM` override is required for that tool workflow.
+Provider/model tool-call compatibility can differ from plain-text health. M294 keeps the Responses API as the common request contract but selects the bounded blocking transport before send for Groq `openai/gpt-oss-*` requests that actually contain tool definitions. M295 extends the same pre-send selection to the proven Groq `qwen/qwen3.6-27b` tool workflow. This avoids known streaming incompatibilities while preserving normal streaming for non-tool requests and other provider/model combinations. No manual `OVMS_AGENT_NOSTREAM` override is required for these supported Groq tool workflows.
 
 Provider keys are entered without terminal echo, masked in normal output, and kept outside the repository.
 
