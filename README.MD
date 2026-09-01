@@ -5,7 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M296`
+- **Latest promoted milestone:** `M297`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -28,6 +28,7 @@ Historical VAX/DEC C compatibility remains an intentional source constraint wher
 | [`RULES.MD`](RULES.MD) | Durable project-development and acceptance rules. |
 | [`DOC/`](DOC/) | Historical reconciliation/parity records plus the current OpenVMS Git/RMS operating guide. |
 | [`LANGUAGE/`](LANGUAGE/) | Native-validated language knowledge packs and build profiles. |
+| [`KNOWLEDGE/`](KNOWLEDGE/) | Validated OpenVMS Git/RMS/DCL platform knowledge packs. |
 
 ## Major capabilities
 
@@ -48,9 +49,9 @@ OVMS Agent currently provides:
 - bounded provider transport plus compatibility-aware stream selection for tool workflows;
 - bounded autonomous execution and AUTOPILOT safety controls;
 - image input and external/MCP tool integration under approval controls; and
-- native-validated language guidance.
+- native-validated language and platform guidance.
 
-The shared knowledge-pack layer currently ships curated COBOL and Fortran `.MD` packs. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
+The shared language knowledge layer ships curated COBOL and Fortran `.MD` packs under `LANGUAGE/`. The unreleased M298 platform layer separately ships validated OpenVMS Git, RMS, and DCL guidance under `KNOWLEDGE/`, loaded only when strong prompt-topic evidence is present and always subordinate to live evidence and safety policy. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
 
 ## Requirements
 

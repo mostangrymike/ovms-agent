@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M296**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M297**, plus explicitly identified unreleased M298 work on the active milestone branch.
 
 ## Project inspection and context
 
@@ -38,6 +38,10 @@ Direct providers and OpenAI-compatible intermediaries such as Requesty are suppo
 M294 preserves the common Responses API request contract while handling a proven Groq transport compatibility exception before send. When the configured endpoint is Groq, the outgoing request actually contains tool definitions, and the model is either `openai/gpt-oss-*` or the M295-proven `qwen/qwen3.6-27b`, OVMS Agent selects the existing bounded blocking transport instead of attempting SSE streaming. M296 adds the same pre-send selection for the OpenRouter endpoint when the configured model is exact `openrouter/free` and the serialized request contains tool definitions.
 
 This is capability selection, not a failed-stream retry: the request is sent once through the compatible transport, avoiding duplicate requests after a real network failure. Non-tool requests and other provider/model combinations keep the existing streaming decision. Users do not need to define `OVMS_AGENT_NOSTREAM` for the supported Groq GPT-OSS/Qwen or OpenRouter/free tool workflows.
+
+### Reasoning/output-budget exhaustion handling
+
+M297 hardens plain ASK response handling when a provider returns an incomplete response because `max_output_tokens` was reached before any assistant text was produced. Instead of falling through to the raw provider-response fallback, OVMS Agent emits a bounded diagnostic explaining the exhaustion condition, includes reported output/reasoning token counts when available, and suggests retrying with a larger output budget or a more constrained prompt. Normal successful responses and unrelated provider failures keep their existing behavior.
 
 ## Guarded source changes
 
@@ -83,6 +87,14 @@ Compiled profiles compile/link, compile-only profiles compile once, interpreted 
 The provider-neutral language layer can inject bounded native-validated guidance from `LANGUAGE/<LANGUAGE>.MD` when strong task/file evidence identifies a language. The currently shipped curated knowledge packs are COBOL and Fortran.
 
 Knowledge packs are separate from `.BUILD` toolchain profiles: a language may have a build profile without a curated knowledge `.MD` pack.
+
+## Platform knowledge packs
+
+M298 adds a separate unreleased platform-knowledge namespace under `KNOWLEDGE/`, initially shipping `OPENVMS_GIT.MD`, `OPENVMS_RMS.MD`, and `OPENVMS_DCL.MD`. Strong prompt-topic evidence can inject one or more relevant packs into request instructions; unrelated prompts remain unchanged.
+
+Each platform pack is bounded to 8 KiB and the combined platform-knowledge budget is 16 KiB. Relevant Git/RMS/DCL packs may compose with one another and with an M288 language pack. `OVMS_AGENT.COM` exposes the shipped directory through `OVMS_AGENT_KNOWLEDGE_DIR` while preserving an explicit preexisting override for custom installation or testing.
+
+Platform packs are guidance only. They cannot override sandbox, safety, evidence, approval, write, network, or tool policy, and loading a pack is never evidence that any current ref, file, status, record format, logical name, or system state actually exists. Provider-free regression coverage verifies positive topic detection, combined-topic behavior, false-positive suppression, actual pack injection, unchanged unrelated requests, and composition with the existing language layer.
 
 ## Git context and RMS integrity
 
