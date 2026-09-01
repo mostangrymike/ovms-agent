@@ -15,7 +15,7 @@ OVMS Agent consists of:
 5. settings/profile persistence;
 6. guarded write and transactional machinery;
 7. build/repair/autonomous orchestration;
-8. language knowledge and native source-build profiles;
+8. language and platform knowledge plus native source-build profiles;
 9. Git/GitHub integration; and
 10. persistent sessions, transcripts, results, history, and project context.
 
@@ -27,7 +27,7 @@ The normal entry point is:
 @OVMS_AGENT
 ```
 
-`OVMS_AGENT.COM` resolves the checkout/build image, exposes the shipped GitHub bridge and language directory unless explicitly overridden, enables the scoped stream-pipe behavior required by network transport, and runs the image.
+`OVMS_AGENT.COM` resolves the checkout/build image, exposes the shipped GitHub bridge, language directory, and platform knowledge directory unless explicitly overridden, enables the scoped stream-pipe behavior required by network transport, and runs the image.
 
 `BUILD.COM` is authoritative for the OVMS Agent product build and canonical regressions. Command and LLM module groups are built through their dedicated DCL procedures/options files; generated objects, tests, logs, and `OVMS_AGENT.EXE` live under `[.BUILD]`.
 
@@ -74,7 +74,7 @@ Responsibilities include:
 - provider/model selection;
 - network transport and bounded timeout behavior;
 - tool schemas/results and multi-turn local continuation;
-- prompts/project/language context;
+- prompts/project/language/platform context;
 - image requests where supported; and
 - provider compatibility handling when protocol behavior genuinely differs.
 
@@ -135,6 +135,18 @@ The currently shipped curated knowledge packs are:
 
 Knowledge packs and `.BUILD` toolchain profiles are separate mechanisms: a language may have a build profile without a curated `.MD` knowledge pack.
 
+## Platform knowledge layer
+
+M298 adds a separate data-driven platform layer under `KNOWLEDGE/`. The launcher exposes it through `OVMS_AGENT_KNOWLEDGE_DIR`, preserving an explicit preexisting override for testing or custom installation. Strong prompt-topic evidence can load one or more of the shipped packs:
+
+- `KNOWLEDGE/OPENVMS_GIT.MD`;
+- `KNOWLEDGE/OPENVMS_RMS.MD`;
+- `KNOWLEDGE/OPENVMS_DCL.MD`.
+
+Each individual platform pack is bounded to 8 KiB and the combined platform-knowledge budget is 16 KiB. Relevant platform packs can compose with one another and with an M288 language pack through the existing request-instruction merge path. If no supported platform topic is confidently detected or no matching pack is readable, unrelated request behavior remains unchanged.
+
+Platform guidance is explicitly subordinate to sandbox, safety, evidence, approval, write, network, and tool policy. It is guidance rather than proof: loading a Git/RMS/DCL pack is never evidence that a current ref, file, status, record format, logical name, or system state actually exists. Live inspection and native evidence remain authoritative.
+
 ## Builds, repairs, and autonomous execution
 
 Build workflows capture native status and diagnostics. Repair workflows reason from captured failures, generate guarded candidates, protect required behavior, rebuild, and record history/artifacts.
@@ -156,7 +168,7 @@ Git is used for repository context, milestone/ref management, history, and GitHu
 - Git index/ref metadata as a separate state that may require independent verification; and
 - exact-SHA native acceptance from tree-equivalent promotion.
 
-The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow.
+The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow. M298's `OPENVMS_GIT` knowledge pack can carry these validated operating lessons into relevant AI requests, but it does not replace live Git/RMS inspection or make remembered state authoritative.
 
 M290/M291 hardening also keeps internal Git-status scratch files out of synthesized user status and preserves native/POSIX status semantics rather than trusting simple odd/even checks.
 
