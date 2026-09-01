@@ -9,6 +9,8 @@
 #include "LLM_AUTO.H"
 #include "rms_write.h"
 
+extern void llm_patch_test_confirm(int answer);
+
 int command_line_complete(const char *a,size_t b,int c)
 { (void)a;(void)b;(void)c;return 0; }
 int command_read_stream(FILE *a,char *b,size_t c)
@@ -112,6 +114,7 @@ int main(void)
     char out[4096];
     char *text;
     FILE *schema_file;
+    int saved_workflow;
 
     while(remove("M236_AUTO_TARGET.TMP")==0){}
     while(remove("M236_SCHEMA.TMP")==0){}
@@ -151,6 +154,40 @@ int main(void)
         out,sizeof(out)) ||
        strstr(out,"not found")==NULL)
     { puts("M236 failed: stale autonomous hunk."); return EXIT_FAILURE; }
+
+    if(!wt("M236_AUTO_TARGET.TMP","one\nmiddle\nthree\n"))
+    { puts("M291 failed: confirmation setup."); return EXIT_FAILURE; }
+
+    saved_workflow=llm_last_workflow;
+    llm_last_workflow=LLM_WORKFLOW_WRITE;
+    llm_patch_test_confirm(0);
+    if(llm_patch_apply_json(
+        "{\"path\":\"M236_AUTO_TARGET.TMP\","
+        "\"patch\":\"@@OLD\\none\\n@@NEW\\nONE\\n@@END\\n"
+        "@@OLD\\nthree\\n@@NEW\\nTHREE\\n@@END\\n\"}",
+        out,sizeof(out)) ||
+       strstr(out,"declined by local user")==NULL)
+    { puts("M291 failed: structured patch decline."); return EXIT_FAILURE; }
+
+    text=rt("M236_AUTO_TARGET.TMP");
+    if(text==NULL || strcmp(text,"one\nmiddle\nthree\n")!=0)
+    { free(text);puts("M291 failed: declined patch changed file.");return EXIT_FAILURE;}
+    free(text);
+
+    llm_patch_test_confirm(1);
+    if(!llm_patch_apply_json(
+        "{\"path\":\"M236_AUTO_TARGET.TMP\","
+        "\"patch\":\"@@OLD\\none\\n@@NEW\\nONE\\n@@END\\n"
+        "@@OLD\\nthree\\n@@NEW\\nTHREE\\n@@END\\n\"}",
+        out,sizeof(out)))
+    { puts("M291 failed: structured patch approval."); return EXIT_FAILURE; }
+
+    text=rt("M236_AUTO_TARGET.TMP");
+    if(text==NULL || strcmp(text,"ONE\nmiddle\nTHREE\n")!=0)
+    { free(text);puts("M291 failed: approved patch content.");return EXIT_FAILURE;}
+    free(text);
+    llm_patch_test_confirm(-1);
+    llm_last_workflow=saved_workflow;
 
     if(!test_rms_patch())
     { return EXIT_FAILURE; }
