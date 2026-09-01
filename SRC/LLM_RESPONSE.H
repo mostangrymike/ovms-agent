@@ -6,6 +6,9 @@
 int save_response_id(const char *json);
 int llm_response_empty_completed(const char *json,
                                  long *output_tokens);
+int llm_response_token_exhausted(const char *json,
+                                 long *output_tokens,
+                                 long *reasoning_tokens);
 int llm_text_tool_like(const char *text,
                        char *tool_name,
                        size_t tool_name_size);
