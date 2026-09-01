@@ -5,6 +5,7 @@
 #include "LLM_IMAGE.H"
 #include "LLM_REQUEST_BASIC.H"
 #include "LLM_LANGUAGE.H"
+#include "LLM_KNOWLEDGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
 
 static char *m288_basic_instructions(const char *prompt)
@@ -17,7 +18,18 @@ static char *m288_basic_instructions(const char *prompt)
                      llm_lang_last(),
                      (unsigned long)llm_lang_last_bytes());
     }
+    if (instructions != NULL && llm_knowledge_last()[0] != '\0') {
+        (void)printf("Platform knowledge: %s (%lu bytes).\n",
+                     llm_knowledge_last(),
+                     (unsigned long)llm_knowledge_last_bytes());
+    }
     return instructions;
+}
+
+static int m298_has_instructions(void)
+{
+    return llm_lang_last()[0] != '\0' ||
+           llm_knowledge_last()[0] != '\0';
 }
 
 int write_request(const char *model,
@@ -51,7 +63,7 @@ int write_request(const char *model,
         success = 0;
     }
 
-    if (success && llm_lang_last()[0] != '\0') {
+    if (success && m298_has_instructions()) {
         if (fputs(",\"instructions\":\"", file) == EOF ||
             !json_write_escaped(file, language_instructions) ||
             fputc('"', file) == EOF) {
@@ -136,7 +148,7 @@ int write_request_image(const char *model,
         success = 0;
     }
 
-    if (success && llm_lang_last()[0] != '\0') {
+    if (success && m298_has_instructions()) {
         if (fputs(",\"instructions\":\"", file) == EOF ||
             !json_write_escaped(file, language_instructions) ||
             fputc('"', file) == EOF) {
