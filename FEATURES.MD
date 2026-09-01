@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M297**, plus explicitly identified unreleased M298 work on the active milestone branch.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M298**.
 
 ## Project inspection and context
 
@@ -90,7 +90,7 @@ Knowledge packs are separate from `.BUILD` toolchain profiles: a language may ha
 
 ## Platform knowledge packs
 
-M298 adds a separate unreleased platform-knowledge namespace under `KNOWLEDGE/`, initially shipping `OPENVMS_GIT.MD`, `OPENVMS_RMS.MD`, and `OPENVMS_DCL.MD`. Strong prompt-topic evidence can inject one or more relevant packs into request instructions; unrelated prompts remain unchanged.
+M298 adds a separate platform-knowledge namespace under `KNOWLEDGE/`, initially shipping `OPENVMS_GIT.MD`, `OPENVMS_RMS.MD`, and `OPENVMS_DCL.MD`. Strong prompt-topic evidence can inject one or more relevant packs into request instructions; unrelated prompts remain unchanged.
 
 Each platform pack is bounded to 8 KiB and the combined platform-knowledge budget is 16 KiB. Relevant Git/RMS/DCL packs may compose with one another and with an M288 language pack. `OVMS_AGENT.COM` exposes the shipped directory through `OVMS_AGENT_KNOWLEDGE_DIR` while preserving an explicit preexisting override for custom installation or testing.
 

@@ -6,7 +6,11 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-### M298 — OpenVMS platform knowledge packs
+No additional user-visible product changes are currently recorded beyond M298 below.
+
+## M298 — OpenVMS platform knowledge packs
+
+Tag: `m298`
 
 - Added a separate bounded `KNOWLEDGE/` platform layer for validated OpenVMS Git, RMS, and DCL guidance rather than mixing generic platform lessons into language packs.
 - Added strong prompt-topic detection with an 8 KiB bound per platform pack and a 16 KiB combined platform-knowledge budget; relevant Git/RMS/DCL packs may compose while unrelated requests remain unchanged.
@@ -15,7 +19,7 @@ The changelog is maintained from M278 forward. Earlier history remains available
 - Added provider-free positive, combined-topic, false-positive, injection, unchanged-request, and language/platform-composition regression coverage.
 - Added launcher wiring through `OVMS_AGENT_KNOWLEDGE_DIR` while preserving an explicit preexisting override.
 - Exact native-green source candidate `d9ecacd80238b157a5b3ebd6f2af62d2f2025785` (tree `9955a9814adcf432d5bedd46d443c43a5bcc060b`) passed full `@BUILD` with `BUILD_STATUS = "%X00000001"`, focused M288/M298 regressions with `%X00000001`, and live blocking Git-positive/unrelated-negative injection checks.
-- M298 is not promoted yet; no `m298` tag has been created.
+- Final documentation head `a388c918d4f2233c8ce9c858d482aeb6b6498636` passed native HELP-library creation and `PLATFORM_KNOWLEDGE` lookup; PR #176 promoted that accepted tree to main before this docs-only milestone-status synchronization.
 
 ## M297 — Reasoning/output-budget exhaustion handling
 
