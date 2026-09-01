@@ -183,6 +183,11 @@ static int test_tool_like_text(void)
 
 static int test_tool_model_compat(void)
 {
+    static const char tool_request[] =
+        "{\"model\":\"test\",\"tools\":[]}";
+    static const char plain_request[] =
+        "{\"model\":\"test\",\"input\":\"hello\"}";
+
     if (!llm_m279_tool_model_ok(
             "https://api.groq.com/openai/v1",
             "openai/gpt-oss-120b")) {
@@ -204,6 +209,41 @@ static int test_tool_model_compat(void)
     if (!llm_m279_tool_model_ok(
             "https://openrouter.ai/api/v1",
             "openai/gpt-oss-120b")) {
+        return 0;
+    }
+
+    if (llm_m294_stream_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-120b",
+            tool_request)) {
+        return 0;
+    }
+
+    if (llm_m294_stream_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-20b",
+            tool_request)) {
+        return 0;
+    }
+
+    if (!llm_m294_stream_ok(
+            "https://api.groq.com/openai/v1",
+            "openai/gpt-oss-20b",
+            plain_request)) {
+        return 0;
+    }
+
+    if (!llm_m294_stream_ok(
+            "https://api.groq.com/openai/v1",
+            "qwen/qwen3-32b",
+            tool_request)) {
+        return 0;
+    }
+
+    if (!llm_m294_stream_ok(
+            "https://openrouter.ai/api/v1",
+            "openai/gpt-oss-120b",
+            tool_request)) {
         return 0;
     }
 
@@ -290,7 +330,7 @@ int main(void)
 
     if (!test_tool_model_compat()) {
         (void)puts(
-            "M294 failed: provider Responses eligibility matrix invalid."
+            "M294 failed: provider tool/stream compatibility matrix invalid."
         );
         return EXIT_FAILURE;
     }
@@ -388,6 +428,7 @@ int main(void)
     (void)puts("M279 sibling tool-call filtering test passed.");
     (void)puts("M279 tool-like assistant text test passed.");
     (void)puts("M294 GPT-OSS Responses eligibility test passed.");
+    (void)puts("M294 GPT-OSS tool stream selection test passed.");
     (void)puts("M279 large guarded-edit reader test passed.");
     return EXIT_SUCCESS;
 }
