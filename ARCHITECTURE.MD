@@ -86,6 +86,14 @@ Direct providers and OpenAI-compatible intermediaries such as Requesty are selec
 
 Other states distinguish `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, and `INVALID`. This diagnostic tests basic response health, not tool-call/capability compatibility.
 
+### Tool transport compatibility selection
+
+M294 keeps the Responses API as the common request contract while separating protocol choice from transport mode. Before a request is sent, the transport layer inspects the configured endpoint/model plus whether the serialized request actually contains tool definitions.
+
+For the proven Groq `openai/gpt-oss-*` tool-call compatibility case, the request is sent once through the existing bounded blocking Responses transport instead of SSE streaming. This is a pre-send capability decision, not a retry after a failed stream, so it does not duplicate a request after an actual network/child-process failure. Non-tool GPT-OSS traffic and all other provider/model combinations continue through the existing streaming decision unless the user has independently disabled streaming.
+
+The selector is deliberately narrow and provider/model evidence-driven. It does not make `PROVIDER TEST` a tool capability test and does not introduce a second API dialect.
+
 ## Settings and profile persistence
 
 Ordinary settings:
