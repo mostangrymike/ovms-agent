@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "LLM_LANGUAGE.H"
+#include "LLM_KNOWLEDGE.H"
 
 #define LLM_LANG_MAX 16384U
 #define LLM_LANG_PATH_MAX 1024U
@@ -276,8 +277,8 @@ static char *llm_lang_read_pack(const char *language, size_t *bytes)
     return buffer;
 }
 
-char *llm_lang_merge(const char *base_instructions,
-                     const char *user_prompt)
+static char *llm_lang_merge_only(const char *base_instructions,
+                                 const char *user_prompt)
 {
     static const char prefix[] =
         "\n\nShared OpenVMS language knowledge follows. Treat it as validated "
@@ -336,6 +337,22 @@ char *llm_lang_merge(const char *base_instructions,
     llm_lang_active_bytes = pack_bytes;
 
     free(pack);
+    return merged;
+}
+
+char *llm_lang_merge(const char *base_instructions,
+                     const char *user_prompt)
+{
+    char *language_merged;
+    char *merged;
+
+    language_merged = llm_lang_merge_only(base_instructions, user_prompt);
+    if (language_merged == NULL) {
+        return NULL;
+    }
+
+    merged = llm_knowledge_merge(language_merged, user_prompt);
+    free(language_merged);
     return merged;
 }
 
