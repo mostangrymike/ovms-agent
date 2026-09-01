@@ -241,9 +241,10 @@
    Limits autonomous write actions in one bounded autonomous run.
 
  Use when:
-   Keep it low for narrowly scoped repairs.  Raise it only when a planned local
-   task legitimately requires several distinct guarded writes and you still
-   want a hard stop before broader change.
+   Keep it low for narrowly scoped repairs.  Raising it expands the budget only
+   for workflows that legitimately support several distinct guarded writes.
+   Ordinary AGENT/WRITE still permits one materialized existing-file write;
+   coupled edits in one file must be expressed as one structured_patch action.
 
  Saved changes apply to the next autonomous run without restarting OVMS Agent.
  A legacy logical override wins over the saved value.  Regression-test-only
@@ -667,7 +668,13 @@
  Performs: Runs the guarded write agent.
  Use when: An AI-directed goal legitimately requires project edits and write/policy
  gates are intentionally enabled.
- Notes: M289 adds the guarded build_source tool for one native source file.  It
+ Notes: Ordinary AGENT/WRITE existing-file edits are atomic.  structured_patch is
+   the only advertised existing-file write tool; one or more exact non-overlapping
+   hunks in one file are validated and confirmed together before one RMS write.
+   replace_text and replace_lines remain available to supervised AGENT/FIX paths,
+   not ordinary AGENT/WRITE.  Raising auto_writes does not permit sequential
+   existing-file patches in an AGENT/WRITE run.
+   M289 adds the guarded build_source tool for one native source file.  It
    loads the matching LANGUAGE/<LANGUAGE>.BUILD profile and executes only when
    full approval, guarded writes, and DCL execution are all enabled.  Compiled
    profiles compile then link; compile-only profiles compile once without
