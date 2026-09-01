@@ -17,5 +17,6 @@
 #undef llm_auto_allow_write
 #undef llm_auto_finish
 
+#include "LLM_AUTO_M291.INC"
 #include "LLM_AUTOPILOT_AUTO.INC"
 #include "LLM_AUTO_CREATE_M279.INC"
