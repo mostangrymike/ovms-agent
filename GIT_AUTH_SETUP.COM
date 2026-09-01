@@ -39,7 +39,10 @@ $ LINK/EXECUTABLE=[.BUILD]OVMS_AGENT_GIT_AUTH.EXE -
 [.BUILD]GH_CONFIG_WRAP.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ MCR [.BUILD]OVMS_AGENT_GIT_AUTH.EXE --check
+$! Installation validates local profile/config plumbing without requiring
+$! network availability. Operator-facing GITAUTH --check performs the live
+$! current-origin write-authorization preflight after installation.
+$ MCR [.BUILD]OVMS_AGENT_GIT_AUTH.EXE --check-config
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
 $ COPY/NOLOG [.BUILD]OVMS_AGENT_GIT_AUTH.EXE -
@@ -65,13 +68,15 @@ $
 $ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
-$ MCR SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE --check
+$ MCR SYS$LOGIN:OVMS_AGENT_GIT_AUTH.EXE --check-config
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
 $ WRITE SYS$OUTPUT "Authenticated Git wrapper installed successfully."
 $ WRITE SYS$OUTPUT "DCL wrapper command defined: GITAUTH"
 $ WRITE SYS$OUTPUT -
 "Use GITAUTH for GitHub network commands that need the active saved profile."
+$ WRITE SYS$OUTPUT -
+"Run GITAUTH --check in a repository to verify current-origin write authorization."
 $ WRITE SYS$OUTPUT -
 "For future logins, run @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM after Git setup."
 $ GOTO FINISH
