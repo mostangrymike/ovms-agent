@@ -1,222 +1,192 @@
 # Contributing to OVMS Agent
 
-OVMS Agent is developed with an unusual but deliberate split of responsibilities:
+OVMS Agent deliberately separates repository control from native acceptance:
 
-- GitHub is the repository source of truth and development control plane.
-- OpenVMS/VAX is the canonical authority for DEC C, linker, RMS, DCL, and live runtime acceptance.
+- **GitHub** is the repository source of truth and default editing/control plane.
+- **OpenVMS V9.2-3 x86-64** is the current canonical compile/link/RMS/DCL/runtime acceptance host.
 
-Contributions should preserve that split instead of treating OpenVMS as a Unix-like checkout target.
+Historical DEC C/VAX compatibility remains part of the source contract where it affects external identifiers, C syntax, or linker behavior, but VAX is not the current canonical acceptance machine.
 
 ## Before starting
 
 Read:
 
-- `README.MD` for the project overview.
-- `ARCHITECTURE.MD` for subsystem boundaries.
-- `BUILD.MD` for canonical build and regression behavior.
-- `RULES.MD` for durable project-specific engineering rules.
-- `OVMS_AGENT.HLP` when changing user-facing commands or persistent settings.
+- `README.MD` for the overview;
+- `ARCHITECTURE.MD` for subsystem boundaries;
+- `BUILD.MD` for product build/acceptance behavior;
+- `RULES.MD` for durable project rules;
+- `DOC/OPENVMS_GIT_QUIRKS.MD` before inventing an OpenVMS Git/materialization procedure; and
+- `OVMS_AGENT.HLP` when changing user-visible commands or persistent SETTINGS.
 
-Significant work should have a GitHub issue before implementation. Milestone work normally uses an `mNNN-description` development branch based on the current promoted `main`.
+Significant work should have a GitHub issue. Milestone work normally uses an `mNNN-description` branch created from exact promoted `main`.
 
 ## Development workflow
 
-The normal workflow is:
-
-1. Verify the current `main` SHA and durable project state.
-2. Create or update the tracking issue.
-3. Create a bounded milestone branch from exact `main`.
+1. Verify current promoted `main` and durable state.
+2. Create/update the tracking issue.
+3. Create the bounded milestone branch from exact `main`.
 4. Make repository edits on GitHub by default.
-5. Audit the exact branch diff and changed-file set.
-6. Materialize only the changed tracked files on OpenVMS when VAX acceptance is required.
-7. Run the applicable build/tests/live checks.
-8. Preserve the exact accepted SHA and evidence.
-9. Promote through a pull request with an expected-head guard.
-10. Tag the promoted milestone commit and apply branch-retention hygiene.
+5. Audit exact changed files and diff against the base.
+6. For source/build/runtime work, fetch the exact candidate on OpenVMS and establish its ref/index using the validated RMS-sensitive workflow.
+7. Materialize only required tracked files with `GIT_RESTORE.COM` in short verified batches when ordinary checkout/reset is unreliable.
+8. Verify RMS-visible files and Git control files independently of porcelain/status output.
+9. Run the applicable full build, focused regressions, and live checks.
+10. Record the exact accepted candidate SHA/tree and evidence.
+11. Promote through a pull request with an expected-head guard.
+12. Prove whether the promoted merge tree is identical to the accepted candidate tree.
+13. Create the permanent `mNNN` tag on canonical promoted `main`.
+14. Apply branch-retention hygiene and update durable state only at a full green checkpoint.
 
-Do not turn a focused change into a general cleanup opportunity. Separate unrelated backlog work unless it directly blocks acceptance.
+Do not turn a focused milestone into unrelated cleanup unless the extra work is required for correctness or acceptance.
 
 ## GitHub-first editing
 
-Repository files should normally be edited through GitHub tooling. This keeps the authoritative branch state explicit and avoids unnecessary exposure to OpenVMS RMS/index edge cases during authoring.
+Repository discovery, committed file reads, searches, branch state, diffs, edits, issue/PR work, and history should use GitHub when the capability exists. Search results are discovery hints only; fetch the exact active-branch file before making a correctness decision or replacing a file.
 
-Before replacing a whole repository file:
+After direct GitHub edits, compare the new branch head to its base and confirm no unintended files, modes, or broad formatting changes were introduced.
 
-1. Fetch the exact active-branch content and blob SHA.
-2. Change only the intended content.
-3. Compare the resulting branch head against its base.
-4. Confirm there are no accidental mode, formatting, or unrelated file changes.
+An OpenVMS-side edit is an exception for RMS-specific acceptance repairs or cases where the available GitHub mutation path is genuinely unsuitable. Any such edit must be pushed back to the milestone branch and re-audited on GitHub before acceptance.
 
-GitHub search results are discovery hints only. Fetch the exact live file before making a correctness decision from a search result.
+## OpenVMS Git/RMS materialization
 
-If the available GitHub mutation path requires replacing an impractically large file for a tiny change, a narrowly scoped VAX-side edit may be used as an exception. In that case, keep the edit deterministic, commit/push it back to the milestone branch, and re-audit the resulting exact GitHub head before acceptance.
+Do not assume `git pull`, `git reset`, `git checkout`, `git restore`, `git add`, `git status`, `git rev-parse`, or `$STATUS` alone proves the desired OpenVMS state. The observed Git port can update refs/index without reconstructing the RMS-visible file, or produce blank/misleading porcelain output.
 
-## OpenVMS/RMS materialization
-
-Native Git worktree/index operations on OpenVMS can report success without correctly materializing RMS files. Do not assume `git pull`, `git reset`, or ordinary checkout behavior is sufficient merely because it worked on another platform.
-
-For accepted project workflows, use the RMS-aware restore path when changed tracked files must be materialized on VAX. For multiple files, use `GIT_RESTORE.COM` with short comma-separated path batches rather than issuing many individual restores or exceeding DCL element limits.
-
-After materialization, verify:
+Useful independent evidence includes:
 
 ```text
-$ git rev-parse HEAD
-$ git diff --name-only
-$ git status --short
-$ git config --get core.filemode
+$ TYPE [.^.GIT]FETCH_HEAD.
+$ TYPE [.^.GIT]HEAD.
+$ TYPE [.^.GIT.REFS.HEADS]BRANCH-NAME.
+$ DIRECTORY/FULL [.^.GIT]INDEX.
+$ TYPE path-to-file
 ```
 
-The normal clean state has an empty working-tree diff/status and:
+Use the low-level `read-tree` + `update-ref` + `symbolic-ref` sequence only in the already documented failure mode and verify each piece separately. It establishes metadata; it does not materialize working files.
+
+For tracked files, use:
 
 ```text
-false
+$ @GIT_RESTORE "path1,path2,path3"
 ```
 
-for `core.filemode`.
+Keep each comma-separated list short enough to avoid DCL `%TKNOVF`. A successful restore must be followed by physical file verification. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
 
-## Git network operations on OpenVMS
+Keep:
 
-Use the established authenticated wrapper for GitHub network operations that require the saved OVMS Agent GitHub profile:
+```text
+core.filemode=false
+```
+
+and investigate mode drift rather than accepting it casually.
+
+## Git network operations
+
+Use the installed authenticated wrapper:
 
 ```text
 GITAUTH
 ```
 
-Install it from an accepted checkout with:
+Install/configure it from an accepted checkout with:
 
 ```text
 $ @GIT_AUTH_SETUP
 ```
 
-For future logins, load it with:
+and load it on later logins with:
 
 ```text
 $ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 ```
 
-Do not introduce plaintext credential-helper storage as a convenience shortcut.
+`GITAUTH` already invokes Git; do not write `GITAUTH GIT ...`.
+
+Operator-facing:
+
+```text
+$ GITAUTH --check
+```
+
+performs an authenticated, non-mutating dry-run push against the active profile/current origin to verify repository **write authorization**, not merely credential presence. Setup uses the internal/config-only check so installation itself does not require network availability.
+
+Keep interactive Git credential prompting disabled and do not use plaintext `credential.helper=store` as the standing solution.
+
+## OpenVMS condition-status interpretation
+
+Do not apply the native odd/even success rule before decoding the project's POSIX-exit status range. In particular, statuses in the encoded POSIX range can be numerically odd while still representing failure. Use the established status helper semantics rather than eyeballing the low bit.
+
+For canonical product builds, `%X00000001` remains the established successful status.
 
 ## C and linker compatibility
 
-For VAX-facing code:
+For DEC C/VAX-facing compatibility:
 
 - externally visible identifiers must be 31 characters or fewer;
 - implicit function declarations are not acceptable;
-- preserve DEC C/OpenVMS conventions;
-- avoid casually introducing modern C syntax into code that must remain VAX-compatible;
-- preserve existing compiler-mode choices unless the change deliberately updates them;
-- never rely on linker truncation to resolve long names.
+- preserve OpenVMS/DEC C conventions;
+- keep VAX-facing C within the project's C89 discipline unless a subsystem requires otherwise;
+- never rely on linker truncation.
 
-A change that compiles only on a modern non-VAX system is not sufficient evidence for VAX-sensitive code.
+The canonical x86-64 build is necessary acceptance evidence, but it does not waive these compatibility rules.
 
 ## Build and regression expectations
 
-`BUILD.COM` is authoritative. For source/build/runtime changes that can affect the product, the normal acceptance target includes:
+For source/build/runtime changes, normal acceptance includes:
 
 ```text
 All regression tests passed.
 Build completed successfully.
+BUILD_STATUS = "%X00000001"
 ```
 
-and a saved final status of:
+Focused regressions add evidence but do not silently replace a required full build.
 
-```text
-%X00000001
-```
+Documentation-only work that does not feed compilation, linking, launcher/runtime behavior, or HELP parsing may use a narrower exact-diff/content validation. State explicitly why a product build is unnecessary.
 
-Focused regressions may add evidence but do not replace a required full build.
-
-If a change is documentation-only and does not feed compilation/runtime, use the narrowest relevant validation and document explicitly why a full build was unnecessary.
-
-For a semantic release candidate, also verify that normal startup and the `VERSION` command report the intended `X.Y.Z` value from the exact candidate head.
+For a semantic release candidate, also verify normal startup and `VERSION` on the exact candidate.
 
 ## User-facing commands and SETTINGS
 
-`OVMS_AGENT.HLP` is part of the user interface contract.
+`OVMS_AGENT.HLP` is part of the user interface contract. If a command or persistent setting is added, removed, renamed, gains/loses options, or materially changes behavior, update HELP in the same milestone. HELP topics must explain both what a feature does and when/why to use it.
 
-If a user-facing command or persistent SETTINGS entry is added, removed, renamed, gains or loses options, or materially changes behavior, update the corresponding HELP topic in the same milestone.
+## Documentation ownership
 
-Each HELP topic must explain both:
+Update the document that owns the changed contract:
 
-- what the command or setting does; and
-- when or why a user would choose it.
+- installation/environment -> `INSTALL.MD`;
+- product build/test -> `BUILD.MD`;
+- contributor/workflow/rules -> `CONTRIBUTING.MD` and `RULES.MD` when durable;
+- security/credentials/approval/network -> `SECURITY.MD`;
+- subsystem/data flow -> `ARCHITECTURE.MD`;
+- current capability summary -> `FEATURES.MD`;
+- promoted user-visible history -> `CHANGELOG.MD`;
+- command/SETTINGS behavior -> `OVMS_AGENT.HLP`.
 
-Syntax-only documentation is not sufficient.
+Root repository filenames are uppercase by default unless an external/tooling constraint requires otherwise. Historical milestone records under `DOC/` should preserve the facts and terminology of the milestone they document; do not rewrite historical VAX evidence merely because the current canonical host is x86-64.
 
-## Other documentation responsibilities
+## Secrets
 
-Update the documentation file that owns the changed contract:
+Never commit provider keys, GitHub tokens, passwords, authorization headers, `SYS$LOGIN` profile/configuration files, or logs/fixtures containing live secrets. See `SECURITY.MD`.
 
-- installation/environment changes -> `INSTALL.MD`;
-- build/test changes -> `BUILD.MD`;
-- contributor/workflow/rule changes -> `CONTRIBUTING.MD` and, when durable, `RULES.MD`;
-- security boundary/credential/approval changes -> `SECURITY.MD`;
-- subsystem boundaries or data-flow changes -> `ARCHITECTURE.MD`;
-- user-visible milestone/release changes -> `CHANGELOG.MD`;
-- command/SETTINGS changes -> `OVMS_AGENT.HLP`.
+## Pull requests and promotion
 
-Keep `README.MD` concise enough to remain an overview and navigation page rather than duplicating every specialist document.
+A promotion PR should state the milestone goal, exact scope, compatibility implications, exact native acceptance evidence, and the accepted candidate SHA/tree. Use an expected-head guard when merging.
 
-Root-level repository filenames are expected to be fully uppercase, including extensions, unless an external or tooling requirement makes lowercase unavoidable.
+If the promoted merge SHA was not itself native-built, do not call that SHA native-green. Prove tree equivalence and say that the promoted merge **carries the exact accepted tree**.
 
-## Secrets and test data
+## Milestone/release tags and branch retention
 
-Never commit:
+Each completed milestone receives a lightweight `mNNN` tag on canonical promoted `main`. Public semantic releases additionally receive `vX.Y.Z` on the same promoted commit.
 
-- provider API keys;
-- GitHub tokens;
-- passwords;
-- short-lived authorization headers;
-- private configuration files from `SYS$LOGIN`;
-- captured production secrets in logs or test fixtures.
+Keep permanently:
 
-See `SECURITY.MD` for the credential and reporting policy.
+- `main`;
+- `chat-session-state`.
 
-## Pull requests
+Keep the active milestone branch while work is in progress. After promotion, retain only the two most recently completed milestone development branches, except that any branch containing unique unpromoted work must remain until that work is resolved or otherwise preserved.
 
-A pull request should state:
-
-- the problem or milestone goal;
-- the exact scope of changed files;
-- compatibility implications;
-- tests/acceptance performed;
-- the exact VAX-accepted feature SHA when applicable;
-- whether the promotion merge itself was separately run on VAX or is only tree-equivalent to an accepted feature head.
-
-Do not describe an untested GitHub merge SHA as VAX-green merely because its tree matches an accepted candidate. Use precise wording.
-
-## Milestone and release tags
-
-Each completed milestone receives a permanent lightweight `mNNN` tag on its canonical promoted `main` commit.
-
-Public semantic releases additionally receive a `vX.Y.Z` tag on the same canonical promoted commit. From 1.0.0 onward, use semantic versioning as the release contract:
-
-- `X.Y.Z` patch releases for backward-compatible fixes;
-- `X.Y.0` minor releases for backward-compatible features;
-- `X.0.0` major releases for intentional incompatible changes.
-
-A semantic release tag does not replace the milestone tag; both identify different aspects of the same promoted checkpoint.
-
-## Branch retention
-
-Keep:
-
-- `main` permanently;
-- `chat-session-state` permanently;
-- the active milestone branch while work is in progress;
-- only the two most recently completed milestone development branches after promotion.
-
-Before pruning an older milestone branch, verify that its accepted work is represented on `main`, its permanent tag exists, its issue is completed as appropriate, and the important SHAs are recorded durably.
+Before pruning, verify promotion, tag, issue state, tree representation on `main`, and durable SHA recording.
 
 ## Style of changes
 
-Prefer changes that are:
-
-- bounded;
-- reviewable;
-- native to OpenVMS conventions;
-- provider-neutral when the behavior is generic;
-- explicit about compatibility and safety tradeoffs;
-- easy to validate with exact before/after evidence.
-
-The goal is not simply to make OVMS Agent work. The goal is to make it maintainable and trustworthy on OpenVMS.
+Prefer bounded, reviewable, provider-neutral, OpenVMS-native changes with explicit compatibility/safety tradeoffs and exact evidence. The goal is not only to make OVMS Agent work, but to keep it maintainable and trustworthy on OpenVMS.
