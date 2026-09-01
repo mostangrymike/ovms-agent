@@ -6,7 +6,25 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M296 below.
+### M298 — OpenVMS platform knowledge packs
+
+- Added a separate bounded `KNOWLEDGE/` platform layer for validated OpenVMS Git, RMS, and DCL guidance rather than mixing generic platform lessons into language packs.
+- Added strong prompt-topic detection with an 8 KiB bound per platform pack and a 16 KiB combined platform-knowledge budget; relevant Git/RMS/DCL packs may compose while unrelated requests remain unchanged.
+- Composed platform guidance with the existing M288 language-pack request-instruction path so language and platform knowledge can both apply when independently relevant.
+- Added an explicit guidance-not-evidence boundary: platform packs cannot prove current refs/files/status/system state and cannot override sandbox, safety, evidence, approval, write, network, or tool policy.
+- Added provider-free positive, combined-topic, false-positive, injection, unchanged-request, and language/platform-composition regression coverage.
+- Added launcher wiring through `OVMS_AGENT_KNOWLEDGE_DIR` while preserving an explicit preexisting override.
+- Exact native-green source candidate `d9ecacd80238b157a5b3ebd6f2af62d2f2025785` (tree `9955a9814adcf432d5bedd46d443c43a5bcc060b`) passed full `@BUILD` with `BUILD_STATUS = "%X00000001"`, focused M288/M298 regressions with `%X00000001`, and live blocking Git-positive/unrelated-negative injection checks.
+- M298 is not promoted yet; no `m298` tag has been created.
+
+## M297 — Reasoning/output-budget exhaustion handling
+
+Tag: `m297`
+
+- Classified incomplete provider responses whose `incomplete_details.reason` is `max_output_tokens` before the raw-response fallback when no assistant text was returned.
+- Replaced the raw provider JSON fallback for that case with a bounded diagnostic, optional reported output/reasoning token counts, and retry guidance.
+- Added deterministic provider-free regression coverage and synchronized `OVMS_AGENT.HLP` for the user-visible ASK behavior.
+- The final accepted documentation tree `4fbab9f2648c0d2182df1845101a15124bb0aa56` was promoted as main `1224014d544b43cea6e9c602ff17217969cb46c6`; the promoted merge SHA carries the accepted tree rather than being separately claimed as the exact native-built source SHA.
 
 ## M296 — OpenRouter/free tool transport compatibility
 
