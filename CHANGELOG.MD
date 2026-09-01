@@ -10,7 +10,7 @@ No additional user-visible product changes are currently recorded beyond the M29
 
 ## M293 — Markdown documentation currentness
 
-Tag: `m293` on promotion
+Tag: `m293`
 
 - Audited every repository `*.MD` file against promoted M292 product state.
 - Updated living root documentation to identify OpenVMS V9.2-3 x86-64 as the current canonical native acceptance host while preserving historical DEC C/VAX compatibility constraints where they remain part of the source contract.
