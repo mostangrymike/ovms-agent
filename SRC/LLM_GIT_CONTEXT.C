@@ -103,7 +103,10 @@ int llm_git_rms_copy(const char *path, const char *target)
     return ok;
 }
 
+#define m290_git_rms_status m290_git_rms_status_base
 #include "LLM_GIT_STATUS_M290.INC"
+#undef m290_git_rms_status
+#include "LLM_GIT_STATUS_M291.INC"
 
 static int m263_git_empty_copy(const char *target)
 {

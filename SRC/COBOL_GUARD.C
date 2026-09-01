@@ -286,6 +286,257 @@ static int cob_missing_names(cob_scope_count *before,
     return 0;
 }
 
+static int cob_rename_delta(cob_scope_count *before,
+                            cob_scope_count *after,
+                            char *old_name,
+                            char *new_name)
+{
+    unsigned int i;
+    unsigned int now;
+    unsigned int prior;
+    int old_found;
+    int new_found;
+
+    if (before == NULL || after == NULL ||
+        old_name == NULL || new_name == NULL) return 0;
+
+    old_name[0] = '\0';
+    new_name[0] = '\0';
+    old_found = 0;
+    new_found = 0;
+
+    for (i = 0U; i < before->para_used; ++i) {
+        now = cob_name_count(after->para, after->para_count,
+                             after->para_used, before->para[i]);
+        if (now != before->para_count[i]) {
+            if (old_found || before->para_count[i] != 1U || now != 0U) {
+                return 0;
+            }
+            (void)strcpy(old_name, before->para[i]);
+            old_found = 1;
+        }
+    }
+
+    for (i = 0U; i < after->para_used; ++i) {
+        prior = cob_name_count(before->para, before->para_count,
+                               before->para_used, after->para[i]);
+        if (prior != after->para_count[i] && prior == 0U) {
+            if (new_found || after->para_count[i] != 1U) {
+                return 0;
+            }
+            (void)strcpy(new_name, after->para[i]);
+            new_found = 1;
+        }
+    }
+
+    return old_found && new_found;
+}
+
+static int cob_name_match_at(const char *text, const char *name)
+{
+    size_t i;
+    size_t length;
+
+    if (text == NULL || name == NULL || *name == '\0') return 0;
+    length = strlen(name);
+    for (i = 0U; i < length; ++i) {
+        if (text[i] == '\0' ||
+            toupper((unsigned char)text[i]) !=
+            toupper((unsigned char)name[i])) return 0;
+    }
+    return !cob_word_char((unsigned char)text[length]);
+}
+
+static int cob_append(char **buffer,
+                      size_t *used,
+                      size_t *capacity,
+                      const char *text,
+                      size_t length)
+{
+    char *grown;
+    size_t wanted;
+    size_t next;
+
+    if (buffer == NULL || used == NULL || capacity == NULL ||
+        text == NULL) return 0;
+
+    wanted = *used + length + 1U;
+    if (wanted > *capacity) {
+        next = *capacity == 0U ? 256U : *capacity;
+        while (next < wanted) {
+            if (next > (size_t)-1 / 2U) return 0;
+            next *= 2U;
+        }
+        grown = (char *)realloc(*buffer, next);
+        if (grown == NULL) return 0;
+        *buffer = grown;
+        *capacity = next;
+    }
+
+    if (length > 0U) {
+        (void)memcpy(*buffer + *used, text, length);
+        *used += length;
+    }
+    (*buffer)[*used] = '\0';
+    return 1;
+}
+
+static int cob_procedure_line(const char *line)
+{
+    char first[24];
+    char second[24];
+
+    if (line == NULL) return 0;
+    first[0] = '\0';
+    second[0] = '\0';
+    if (sscanf(line, " %23[A-Za-z-] %23[A-Za-z-]",
+               first, second) != 2) return 0;
+    return cob_eq_ci(first, "PROCEDURE") &&
+           cob_eq_ci(second, "DIVISION");
+}
+
+static int cob_rename_line(const char *line,
+                           size_t length,
+                           const char *old_name,
+                           const char *new_name,
+                           char **buffer,
+                           size_t *used,
+                           size_t *capacity,
+                           unsigned int *replacements)
+{
+    size_t i;
+    size_t old_length;
+    char quote;
+
+    if (line == NULL || old_name == NULL || new_name == NULL ||
+        buffer == NULL || used == NULL || capacity == NULL ||
+        replacements == NULL) return 0;
+
+    old_length = strlen(old_name);
+    quote = '\0';
+    i = 0U;
+    while (i < length) {
+        if (quote != '\0') {
+            if (!cob_append(buffer, used, capacity, line + i, 1U)) return 0;
+            if (line[i] == quote) {
+                if (i + 1U < length && line[i + 1U] == quote) {
+                    if (!cob_append(buffer, used, capacity,
+                                    line + i + 1U, 1U)) return 0;
+                    i += 2U;
+                    continue;
+                }
+                quote = '\0';
+            }
+            ++i;
+            continue;
+        }
+
+        if (line[i] == '\'' || line[i] == '"') {
+            quote = line[i];
+            if (!cob_append(buffer, used, capacity, line + i, 1U)) return 0;
+            ++i;
+            continue;
+        }
+
+        if ((i == 0U || !cob_word_char((unsigned char)line[i - 1U])) &&
+            cob_name_match_at(line + i, old_name)) {
+            if (!cob_append(buffer, used, capacity,
+                            new_name, strlen(new_name))) return 0;
+            i += old_length;
+            ++*replacements;
+            continue;
+        }
+
+        if (!cob_append(buffer, used, capacity, line + i, 1U)) return 0;
+        ++i;
+    }
+    return 1;
+}
+
+static char *cob_render_rename(const char *original,
+                               const char *old_name,
+                               const char *new_name,
+                               unsigned int *replacements)
+{
+    const char *cursor;
+    const char *end;
+    char line[1024];
+    size_t length;
+    size_t used;
+    size_t capacity;
+    char *buffer;
+    int in_procedure;
+
+    if (original == NULL || old_name == NULL || new_name == NULL ||
+        replacements == NULL) return NULL;
+
+    *replacements = 0U;
+    buffer = NULL;
+    used = 0U;
+    capacity = 0U;
+    in_procedure = 0;
+    cursor = original;
+
+    while (*cursor != '\0') {
+        end = strchr(cursor, '\n');
+        length = end == NULL ? strlen(cursor) :
+                 (size_t)(end - cursor) + 1U;
+        if (length >= sizeof(line)) {
+            free(buffer);
+            return NULL;
+        }
+        (void)memcpy(line, cursor, length);
+        line[length] = '\0';
+
+        if (!in_procedure || cob_comment(line)) {
+            if (!cob_append(&buffer, &used, &capacity,
+                            cursor, length)) {
+                free(buffer);
+                return NULL;
+            }
+            if (!in_procedure && cob_procedure_line(line)) {
+                in_procedure = 1;
+            }
+        } else if (!cob_rename_line(
+                       cursor, length, old_name, new_name,
+                       &buffer, &used, &capacity, replacements)) {
+            free(buffer);
+            return NULL;
+        }
+
+        if (end == NULL) break;
+        cursor = end + 1;
+    }
+
+    if (buffer == NULL) {
+        buffer = (char *)malloc(1U);
+        if (buffer != NULL) buffer[0] = '\0';
+    }
+    return buffer;
+}
+
+static int cob_paragraph_rename_safe(const char *original,
+                                     const char *candidate,
+                                     cob_scope_count *before,
+                                     cob_scope_count *after)
+{
+    char old_name[COB_NAME_MAX];
+    char new_name[COB_NAME_MAX];
+    char *expected;
+    unsigned int replacements;
+    int safe;
+
+    if (!cob_rename_delta(before, after, old_name, new_name)) return 0;
+
+    expected = cob_render_rename(
+        original, old_name, new_name, &replacements);
+    if (expected == NULL) return 0;
+
+    safe = replacements > 0U && strcmp(expected, candidate) == 0;
+    free(expected);
+    return safe;
+}
+
 static int cob_pair_safe(long bo, long bc, long ao, long ac)
 {
     long dopen;
@@ -351,9 +602,11 @@ int cobol_edit_safe(const char *path,
                    "COBOL edit duplicates a SECTION label.");
         return 0;
     }
-    if (cob_missing_names(&before, &after, 0)) {
+    if (cob_missing_names(&before, &after, 0) &&
+        !cob_paragraph_rename_safe(
+            original, candidate, &before, &after)) {
         cob_reason(reason, reason_size,
-                   "COBOL edit removes or renames an existing paragraph boundary.");
+                   "COBOL edit removes or inconsistently renames an existing paragraph boundary.");
         return 0;
     }
     if (cob_missing_names(&before, &after, 1)) {

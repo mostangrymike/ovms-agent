@@ -6,6 +6,7 @@
 #include "LLM_AUTO.H"
 #include "LLM_PATCH.H"
 #include "LLM_REQUEST_AGENT.H"
+#include "ANSI_TERM.H"
 
 int write_agent_image_req(const char *model,
                           const char *instructions,
@@ -41,6 +42,8 @@ static int m259_agent_request(const char *model,
                               int allow_write)
 {
     int result;
+
+    ansi_term_status_clear();
 
     if (m259_agent_image[0] != '\0' &&
         previous_id == NULL && call_id == NULL && tool_output == NULL) {

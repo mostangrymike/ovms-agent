@@ -135,6 +135,50 @@ int main(void)
         "           STOP RUN.\n"
         "       END PROGRAM GAP007.\n"
         "       END PROGRAM GAP007.\n";
+    static const char rename_before[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP139.\n"
+        "       PROCEDURE DIVISION.\n"
+        "       MAIN-PARA.\n"
+        "           PERFORM REPORT\n"
+        "           STOP RUN.\n"
+        "       REPORT.\n"
+        "           DISPLAY \"REPORT\"\n"
+        "      * REPORT remains a comment token\n"
+        "       END PROGRAM GAP139.\n";
+    static const char rename_after[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP139.\n"
+        "       PROCEDURE DIVISION.\n"
+        "       MAIN-PARA.\n"
+        "           PERFORM PRINT-COUNTS\n"
+        "           STOP RUN.\n"
+        "       PRINT-COUNTS.\n"
+        "           DISPLAY \"REPORT\"\n"
+        "      * REPORT remains a comment token\n"
+        "       END PROGRAM GAP139.\n";
+    static const char rename_stale_ref[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP139.\n"
+        "       PROCEDURE DIVISION.\n"
+        "       MAIN-PARA.\n"
+        "           PERFORM REPORT\n"
+        "           STOP RUN.\n"
+        "       PRINT-COUNTS.\n"
+        "           DISPLAY \"REPORT\"\n"
+        "      * REPORT remains a comment token\n"
+        "       END PROGRAM GAP139.\n";
+    static const char rename_extra_edit[] =
+        "       IDENTIFICATION DIVISION.\n"
+        "       PROGRAM-ID. GAP139.\n"
+        "       PROCEDURE DIVISION.\n"
+        "       MAIN-PARA.\n"
+        "           PERFORM PRINT-COUNTS\n"
+        "           STOP RUN.\n"
+        "       PRINT-COUNTS.\n"
+        "           DISPLAY \"CHANGED\"\n"
+        "      * REPORT remains a comment token\n"
+        "       END PROGRAM GAP139.\n";
 
     if (!expect_safe("M264.COB", before, duplicate_if, 0,
                      "duplicated IF accepted") ||
@@ -150,6 +194,12 @@ int main(void)
                      "duplicate END PROGRAM accepted") ||
         !expect_safe("M264.C", before, duplicate_if, 1,
                      "non-COBOL file affected") ||
+        !expect_safe("M264.COB", rename_before, rename_after, 1,
+                     "consistent paragraph rename rejected") ||
+        !expect_safe("M264.COB", rename_before, rename_stale_ref, 0,
+                     "stale paragraph reference accepted") ||
+        !expect_safe("M264.COB", rename_before, rename_extra_edit, 0,
+                     "unrelated edit accepted with paragraph rename") ||
         !expect_text("M264.COB", before,
                      "           IF A = B",
                      "           IF A = B\n           IF A = B",
@@ -159,7 +209,16 @@ int main(void)
                      "DISPLAY \"MATCH\"",
                      "DISPLAY \"MATCHED\"",
                      1,
-                     "exact-text ordinary edit rejected")) {
+                     "exact-text ordinary edit rejected") ||
+        !expect_text("M264.COB", rename_before,
+                     "           PERFORM REPORT\n"
+                     "           STOP RUN.\n"
+                     "       REPORT.",
+                     "           PERFORM PRINT-COUNTS\n"
+                     "           STOP RUN.\n"
+                     "       PRINT-COUNTS.",
+                     1,
+                     "exact-text paragraph rename rejected")) {
         return EXIT_FAILURE;
     }
 

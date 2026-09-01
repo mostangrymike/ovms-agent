@@ -84,10 +84,14 @@ static char *m279_patch_getenv(const char *name)
 }
 
 #define getenv m279_patch_getenv
+#define llm_patch_apply_json m291_patch_apply_json_core
 #define llm_patch_apply_cmd m273_patch_apply_core
 #include "LLM_PATCH_CORE.INC"
 #undef llm_patch_apply_cmd
+#undef llm_patch_apply_json
 #undef getenv
+
+#include "LLM_PATCH_M291.INC"
 
 void llm_patch_apply_cmd(const char *arguments)
 {
