@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M295**, plus the M296 OpenRouter/free tool-transport candidate on this branch.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M296**.
 
 ## Project inspection and context
 

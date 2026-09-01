@@ -6,7 +6,11 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-### M296 — OpenRouter/free tool transport compatibility
+No additional user-visible product changes are currently recorded beyond M296 below.
+
+## M296 — OpenRouter/free tool transport compatibility
+
+Tag: `m296`
 
 - Revalidated historical OpenRouter/free issue #123 on OpenVMS V9.2-3 x86-64 using the configured `openrouter` profile and exact model `openrouter/free`.
 - `PROVIDER TEST openrouter` remained healthy, while the same read-only tool request failed through normal streaming and succeeded through the bounded blocking Responses transport.

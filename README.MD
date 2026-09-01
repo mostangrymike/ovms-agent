@@ -5,8 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M295`
-- **Current development milestone:** `M296` OpenRouter/free tool transport compatibility
+- **Latest promoted milestone:** `M296`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
