@@ -6,7 +6,16 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M294 below.
+### M295 — Groq Qwen tool transport compatibility
+
+- Revalidated historical Groq/Qwen issues #120 and #125 on OpenVMS V9.2-3 x86-64 using `qwen/qwen3.6-27b`.
+- Current streaming tool requests failed before a usable tool exchange, while the same read-only tool workflow succeeded through the bounded blocking Responses transport.
+- Extended the existing pre-send Groq tool transport selector so exact model `qwen/qwen3.6-27b` uses bounded blocking transport when the serialized request contains tool definitions.
+- Kept non-tool Qwen traffic, other Qwen models, and non-Groq Qwen endpoints on the existing streaming decision.
+- Added deterministic selector coverage for the exact Qwen model, non-tool requests, another Qwen model, and a non-Groq endpoint.
+- Native exact source head `909a3c86b6028c16f1c489d3e2def208845449a1` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
+- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second write materialized.
+- #124 remains separate reasoning/output-budget work; #123 remains separate OpenRouter/free compatibility work.
 
 ## M294 — Groq GPT-OSS tool transport compatibility
 
