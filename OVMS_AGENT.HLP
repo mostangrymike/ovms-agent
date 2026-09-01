@@ -261,7 +261,7 @@
    SYMBOLS     C symbol analysis and structured refactoring.
    LLM         ASK, CHAT, REVIEW, and primary agent workflows.
    REPAIR      Repair planning and persisted repair-history analysis.
-   TOOLS       Built-in tools, MCP, language guidance, and parity reports.
+   TOOLS       Built-in tools, MCP, language/platform guidance, and parity reports.
    GITHUB      Guarded GitHub and local Git-context commands.
    SESSIONS    Persistent session and transcript/result commands.
    AUTOMATION  Autonomous-loop and AUTOPILOT commands.
@@ -1024,7 +1024,7 @@
  Use when: History is intentionally being discarded and is no longer needed for audit.
 
 3 TOOLS
- Built-in/external tools, MCP, language guidance, and parity reporting.
+ Built-in/external tools, MCP, language/platform guidance, and parity reporting.
 
 4 AGENT_TOOLS
  Command: AGENT/TOOLS
@@ -1112,6 +1112,23 @@
    normal OVMS_AGENT.COM launcher defines OVMS_AGENT_LANGUAGE_DIR to the shipped
    LANGUAGE directory while preserving an explicit preexisting override for
    custom installation or testing.
+
+4 PLATFORM_KNOWLEDGE
+ Performs: Automatically appends validated OpenVMS platform guidance to AI
+ requests only when strong prompt evidence identifies Git, RMS, and/or DCL.
+ Use when: A request depends on OpenVMS operating details where known Git/RMS/DCL
+ lessons can prevent Unix assumptions or repeated platform-specific mistakes.
+ Notes: M298 ships KNOWLEDGE/OPENVMS_GIT.MD, KNOWLEDGE/OPENVMS_RMS.MD, and
+   KNOWLEDGE/OPENVMS_DCL.MD.  Each individual pack is bounded to 8 KiB and the
+   combined platform budget is 16 KiB; multiple relevant packs may compose.
+   Unrelated requests remain unchanged.  When guidance is loaded, the request
+   reports "Platform knowledge: <pack-list> (<bytes> bytes)."
+   Platform packs are guidance only and are not evidence that any current ref,
+   file, status, record format, logical name, or system state exists.  They cannot
+   override sandbox, safety, evidence, approval, write, network, or tool policy.
+   The normal OVMS_AGENT.COM launcher defines OVMS_AGENT_KNOWLEDGE_DIR to the
+   shipped KNOWLEDGE directory while preserving an explicit preexisting override
+   for custom installation or testing.
 
 4 AGENT_PARITY
  Command: AGENT/PARITY
