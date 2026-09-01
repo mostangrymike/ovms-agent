@@ -213,12 +213,57 @@ static int prov_probe_has_text(const char *text)
     return *text != '\0';
 }
 
+static const char *prov_probe_classify_json(const char *json,
+                                             int transported,
+                                             int *responsive)
+{
+    char *text;
+    const char *message;
+
+    if (responsive != NULL) {
+        *responsive = 0;
+    }
+
+    if (!transported || json == NULL) {
+        return "TRANSPORT";
+    }
+
+    text = extract_output_text_from_json(json);
+    if (text != NULL) {
+        if (prov_probe_has_text(text)) {
+            free(text);
+            if (responsive != NULL) {
+                *responsive = 1;
+            }
+            return "OK";
+        }
+        free(text);
+    }
+
+    message = find_string_value(json, "message");
+    if (message != NULL) {
+        return "API ERROR";
+    }
+
+    if (llm_response_empty_completed(json, NULL)) {
+        return "EMPTY";
+    }
+
+    return "INVALID";
+}
+
+const char *command_prov_test_json(const char *json,
+                                   int transported,
+                                   int *responsive)
+{
+    return prov_probe_classify_json(json, transported, responsive);
+}
+
 static const char *prov_probe_classify(int transported,
                                        int *responsive)
 {
     char *json;
-    char *text;
-    const char *message;
+    const char *status;
 
     if (responsive != NULL) {
         *responsive = 0;
@@ -233,32 +278,9 @@ static const char *prov_probe_classify(int transported,
         return "TRANSPORT";
     }
 
-    text = extract_output_text_from_json(json);
-    if (text != NULL) {
-        if (prov_probe_has_text(text)) {
-            free(text);
-            free(json);
-            if (responsive != NULL) {
-                *responsive = 1;
-            }
-            return "OK";
-        }
-        free(text);
-    }
-
-    message = find_string_value(json, "message");
-    if (message != NULL) {
-        free(json);
-        return "API ERROR";
-    }
-
-    if (llm_response_empty_completed(json, NULL)) {
-        free(json);
-        return "EMPTY";
-    }
-
+    status = prov_probe_classify_json(json, 1, responsive);
     free(json);
-    return "INVALID";
+    return status;
 }
 
 static int prov_test_one(const llm_provider *provider)
