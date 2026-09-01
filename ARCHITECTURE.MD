@@ -1,26 +1,25 @@
 # OVMS Agent Architecture
 
-OVMS Agent is a native OpenVMS agentic programming assistant. Its architecture is organized around one central constraint: modern AI-assisted development behavior must operate through OpenVMS-native files, DCL procedures, RMS semantics, compiler/linker constraints, and explicit approval boundaries.
+OVMS Agent is a native OpenVMS agentic programming assistant. Its architecture is organized around one central constraint: modern AI-assisted development must operate through OpenVMS-native files, DCL procedures, RMS semantics, compiler/linker behavior, provider-neutral transport, and explicit approval boundaries.
 
-This document describes the major subsystem boundaries and how data and authority move through them.
+The current canonical native acceptance host is **OpenVMS V9.2-3 x86-64**. Historical DEC C/VAX compatibility remains an explicit source/linker constraint where applicable.
 
 ## High-level structure
 
-At a high level, OVMS Agent consists of:
+OVMS Agent consists of:
 
 1. a DCL launch/build layer;
 2. an interactive command layer;
 3. a project/file/RMS layer;
 4. a provider-neutral LLM/agent layer;
-5. settings and profile persistence;
-6. guarded write/transaction machinery;
+5. settings/profile persistence;
+6. guarded write and transactional machinery;
 7. build/repair/autonomous orchestration;
-8. Git and GitHub integration;
-9. persistent sessions, transcripts, results, history, and project context.
+8. language knowledge and native source-build profiles;
+9. Git/GitHub integration; and
+10. persistent sessions, transcripts, results, history, and project context.
 
-The code is intentionally modular, but the build remains native DCL rather than introducing an external build framework.
-
-## Launch layer
+## Launch and product build
 
 The normal entry point is:
 
@@ -28,276 +27,142 @@ The normal entry point is:
 @OVMS_AGENT
 ```
 
-`OVMS_AGENT.COM`:
+`OVMS_AGENT.COM` resolves the checkout/build image, exposes the shipped GitHub bridge and language directory unless explicitly overridden, enables the scoped stream-pipe behavior required by network transport, and runs the image.
 
-- resolves the project and `[.BUILD]` directory from its own procedure filespec;
-- verifies that `[.BUILD]OVMS_AGENT.EXE` exists;
-- exposes the shipped `GITHUB_BRIDGE.COM` to the launched image when no explicit bridge logical already exists;
-- supports a one-shot invocation mode through DCL parameters;
-- enables the scoped C RTL stream-pipe feature required by the live network transport;
-- runs the image and returns its status.
-
-The launcher deliberately scopes temporary logical-name behavior to the image activation rather than permanently changing the caller's process environment when that is not required.
-
-## Build layer
-
-`BUILD.COM` is authoritative for the product build and regression sequence.
-
-It delegates large module families to:
-
-- `BUILD_COMMAND_MODULES.COM`;
-- `BUILD_LLM_MODULES.COM`;
-- `COMMAND_MODULES.OPT`;
-- `LLM_MODULES.OPT`.
-
-Generated objects, test images, logs, option-file copies, and the final executable live under `[.BUILD]`.
-
-The build structure reflects architectural boundaries: command-facing code and LLM/agent code are assembled as coherent module groups, while core project/edit/util modules are linked with them into the final image.
-
-See `BUILD.MD` for detailed build behavior.
+`BUILD.COM` is authoritative for the OVMS Agent product build and canonical regressions. Command and LLM module groups are built through their dedicated DCL procedures/options files; generated objects, tests, logs, and `OVMS_AGENT.EXE` live under `[.BUILD]`.
 
 ## Interactive command layer
 
-The command subsystem lives primarily in `SRC/COMMAND*.C` and related include files.
+`SRC/COMMAND*.C` and related modules parse and dispatch project, SETTINGS, provider, GitHub, agent, repair, session, refactoring, and tool commands while enforcing command-specific syntax/policy.
 
-Responsibilities include:
-
-- parsing user commands;
-- dispatching core/project/settings/provider/GitHub commands;
-- enforcing syntax and command-specific policy;
-- connecting interactive commands to the project, LLM, build, refactoring, repair, and service subsystems;
-- presenting user-readable results.
-
-Some historically evolved commands use specialized dispatch paths rather than one flat registry, so user-facing command documentation must be validated against both the registered command surface and special dispatch logic.
-
-`OVMS_AGENT.HLP` is the authoritative human-oriented command/settings reference and explains both what commands do and when they should be used.
+`OVMS_AGENT.HLP` is the authoritative human-oriented command/SETTINGS reference. User-visible command/settings changes must update it in the same milestone.
 
 ## Project and RMS layer
 
-The project layer centers on source-tree awareness and OpenVMS filesystem behavior.
+The project/RMS layer handles:
 
-Important responsibilities include:
-
-- project-root resolution;
+- project-root resolution and path safety;
 - bounded directory/tree/file inspection;
-- source-language classification;
-- safe path handling;
-- Git-aware project state;
-- RMS-aware reading and comparison;
-- avoiding stale file-version reads after writes.
+- source classification and project context;
+- RMS-aware reading/comparison;
+- Git-aware project state; and
+- stale-version avoidance after writes.
 
-OpenVMS file versioning is not treated as a Unix filename implementation detail. Where Git and RMS semantics conflict, OVMS Agent uses temporary/single-version techniques and guarded materialization rather than assuming ordinary Unix checkout/hash behavior.
+OpenVMS file versions are not treated as a Unix implementation detail. Where the observed Git port and RMS semantics conflict, OVMS Agent uses verified Git metadata plus RMS-aware materialization/comparison rather than assuming ordinary checkout/hash behavior is sufficient.
 
-`SRC/PROJECT.C`, `SRC/RMS_WRITE*`, edit/transaction modules, and related path/context helpers are key parts of this boundary.
+## Guarded writes and transactions
 
-## Guarded write and transaction layer
+Model text is not allowed to become arbitrary filesystem writes directly. The guarded architecture combines project/workspace scope, approval policy, the guarded-write gate, RMS-aware write primitives, confirmation, exact change accounting, and rollback/transaction mechanisms.
 
-File changes are not intended to flow directly from model text to arbitrary writes.
+### Ordinary AGENT/WRITE existing-file behavior
 
-The guarded write architecture provides:
+M291 preserves a **one materialized existing-file write** invariant for ordinary `AGENT/WRITE`. Its advertised existing-file primitive is `structured_patch`, which may contain multiple exact non-overlapping hunks for **one file** and validates/previews/confirms them together before one RMS write.
 
-- project/workspace scope checks;
-- approval checks;
-- guarded-write enablement;
-- exact-replacement/patch primitives;
-- transactional multi-file work;
-- rollback when bounded automatic work stops incomplete;
-- protection of explicitly required behavior through goal-guard checks;
-- RMS-aware creation/replacement behavior.
+`replace_text` and `replace_lines` remain available to supervised `AGENT/FIX`, but are not ordinary `AGENT/WRITE` existing-file primitives. Raising `auto_writes` does not turn ordinary `AGENT/WRITE` into sequential existing-file patching.
 
-Structured refactoring commands reuse these controlled paths rather than inventing independent file writers.
+This is one-file atomicity only. Cross-file all-or-rollback work belongs to `CHANGESET`/transaction machinery.
 
-This layer is a major safety boundary. New write-capable features should reuse it whenever possible.
+Model-invoked `structured_patch` uses a local confirmation path before mutation. Language-specific structural guards remain separate concerns; do not infer that every structured patch automatically invokes every language guard.
 
 ## LLM/provider layer
 
-The provider-neutral AI subsystem lives primarily under `SRC/LLM*`.
-
-It separates generic agent behavior from provider profile configuration so that the program is not tied to one model vendor.
+The provider-neutral subsystem under `SRC/LLM*` separates generic agent behavior from profile-specific endpoint/model/access-key configuration.
 
 Responsibilities include:
 
-- request construction;
-- response parsing;
-- tool schema and tool result handling;
-- local multi-turn conversation state;
-- network transport;
+- request construction and response parsing;
 - provider/model selection;
-- prompt construction;
-- project/context assembly;
-- image/request specializations where supported;
-- parity and capability checks.
+- network transport and bounded timeout behavior;
+- tool schemas/results and multi-turn local continuation;
+- prompts/project/language context;
+- image requests where supported; and
+- provider compatibility handling when protocol behavior genuinely differs.
 
-The architecture supports direct providers and OpenAI-compatible intermediaries such as Requesty through configured endpoints rather than compile-time provider selection.
+Direct providers and OpenAI-compatible intermediaries such as Requesty are selected through configuration rather than compile-time provider choice. Generic architecture naming uses `LLM`/`provider`; OpenAI naming is reserved for genuinely OpenAI-specific behavior.
 
-Generic architecture naming uses `LLM` or `provider`; genuinely provider-specific compatibility logic remains provider-specific.
+### Provider health diagnostics
+
+`PROVIDER TEST` / `PROVIDER TEST name` use the real provider transport with dedicated temporary request/header/response files while leaving the selected active profile unchanged. A profile is `OK` only when configuration is usable, transport/auth/request acceptance succeeds, the response parses, and nonempty assistant text is obtained.
+
+Other states distinguish `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, and `INVALID`. This diagnostic tests basic response health, not tool-call/capability compatibility.
 
 ## Settings and profile persistence
 
-OVMS Agent separates ordinary settings from credential-bearing/provider-specific profile stores.
-
-### Ordinary settings
-
-Stored in:
+Ordinary settings:
 
 ```text
 SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT
 ```
 
-These include normal operational choices such as guarded-write/DCL gates, approval policy, network allow/deny values, output limits, and autonomous limits.
-
-Supported legacy `OVMS_AGENT_*` logical names remain higher-precedence compatibility overrides for corresponding settings.
-
-### AI provider profiles
-
-Stored in:
+Provider profiles:
 
 ```text
 SYS$LOGIN:OVMS_AGENT_CONFIG.DAT
 ```
 
-A provider profile contains endpoint/model/access-key state. Provider/model configuration can change without rebuilding the executable.
-
-### GitHub profiles
-
-Stored in:
+GitHub profiles:
 
 ```text
 SYS$LOGIN:OVMS_AGENT_GITHUB.DAT
 ```
 
-A GitHub profile contains repository/user/branch/token information used by guarded GitHub operations and the authenticated Git wrapper.
+Credential-bearing state stays outside the source checkout. Supported legacy logical names remain higher-precedence compatibility overrides for corresponding ordinary settings.
 
-Keeping these stores under `SYS$LOGIN` keeps user configuration and secrets outside the source checkout.
+## Agent planning, tools, and native source builds
 
-## Agent planning and tool execution
+Agent workflows assemble bounded project/context state and use the selected provider. Tool-capable flows can inspect files/Git/symbols, make guarded changes, build, operate on sessions/plans/results, and use guarded external/GitHub paths when policy allows.
 
-The interactive AI-assisted workflows build bounded project context and send requests through the selected provider.
+M289 added guarded `build_source` execution for one native source file using `LANGUAGE/<LANGUAGE>.BUILD` profiles. It requires full approval, guarded writes, and DCL execution. Profiles can represent compiled/link, compile-only, interpreted, and project-relative DCL procedure execution. Shipped profiles cover MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL.
 
-Tool-capable agent flows can perform operations such as:
+`build_source` supplements rather than replaces a project's authoritative build procedure.
 
-- read/search project files;
-- inspect Git state;
-- reason about symbols/dependencies;
-- propose/write controlled changes;
-- build and inspect failures;
-- operate on saved plans/sessions/results;
-- use guarded GitHub or external service paths when policy permits.
+## Language knowledge layer
 
-The agent loop carries prior model output/tool results locally instead of depending on a provider-specific server-side conversation identifier. This improves provider portability and keeps conversation state under local control.
+Shared language knowledge is data-driven. The launcher exposes `LANGUAGE/` through `OVMS_AGENT_LANGUAGE_DIR`; strong task/file evidence can load a bounded `<LANGUAGE>.MD` pack into request instructions. The guidance is explicitly subordinate to safety/evidence/approval/write policy.
 
-## Build, repair, and history workflows
+The currently shipped curated knowledge packs are:
 
-OVMS Agent treats builds and repairs as stateful engineering operations rather than one-shot shell commands.
+- `LANGUAGE/COBOL.MD`;
+- `LANGUAGE/FORTRAN.MD`.
 
-Build workflows can capture:
+Knowledge packs and `.BUILD` toolchain profiles are separate mechanisms: a language may have a build profile without a curated `.MD` knowledge pack.
 
-- final OpenVMS status;
-- compiler/linker/test output;
-- failed-build evidence used by repair planning.
+## Builds, repairs, and autonomous execution
 
-Repair workflows can:
+Build workflows capture native status and diagnostics. Repair workflows reason from captured failures, generate guarded candidates, protect required behavior, rebuild, and record history/artifacts.
 
-- reason from captured build failures;
-- generate candidate edits;
-- apply guarded transactional changes;
-- reject candidates that violate explicit required behavior;
-- rebuild;
-- record repair history and artifacts for review.
+Persistent `auto_turns`/`auto_writes` settings bound autonomous work. `AGENT/AUTOPILOT` adds a hard safety floor: it automates bounded local workspace repair/build behavior, cannot satisfy `FULL`, cannot silently authorize GitHub/PUSH/MCP/arbitrary-DCL work, consumes a cumulative budget, and stops in an explicit terminal state with human-review evidence.
 
-Repair history and comparison commands exist so later decisions can inspect what was attempted rather than losing all context after one run.
+## Symbol/refactoring subsystem
 
-## Autonomous execution and AUTOPILOT
+The C-oriented symbol subsystem supports definitions, callers, module/dependency analysis, and structured refactoring such as rename/extract/move. Refactoring must preserve guarded-write and verification boundaries.
 
-Autonomous agent work has explicit bounded limits.
-
-Persistent SETTINGS control normal autonomous model/tool turns and write-action ceilings, while test-only overrides can replace them inside regression tests.
-
-`AGENT/AUTOPILOT` adds a stronger safety floor:
-
-- it is limited to bounded local workspace repair/build behavior;
-- it reuses the normal guarded/transactional primitives;
-- it cannot satisfy FULL approval;
-- it cannot silently authorize arbitrary DCL, PUSH, GitHub mutations, MCP/external actions, or other FULL-only operations;
-- one invocation consumes one cumulative autonomous budget;
-- it must stop in an explicit terminal state;
-- it produces a human-review artifact.
-
-AUTOPILOT is therefore an orchestrator over existing safety primitives, not a bypass around them.
-
-## Symbol and structured-refactoring subsystem
-
-The symbol subsystem maintains a C-oriented index used for definition lookup, callers, dependency analysis, function/struct display, and structured refactoring operations.
-
-Refactoring commands such as rename/extract/move are intended to combine static project knowledge with guarded edits and verification rather than perform unbounded text replacement.
-
-VAX/DEC C external-identifier limits remain part of the correctness model for refactoring operations that introduce or rename linker-visible symbols.
-
-## Language-awareness layer
-
-OVMS Agent recognizes multiple OpenVMS development languages and adjusts context/guidance accordingly.
-
-The current language-awareness layer includes C, DCL/OpenVMS commands, MACRO-32, Fortran, BASIC, Pascal, COBOL, and BLISS.
-
-Language awareness is not the same as requiring every compiler to be installed. The target project's own build procedure remains authoritative.
-
-COBOL-specific guards and source/copy-file classification are examples of language-aware behavior implemented without replacing the project's native compiler/build system.
+New externally visible identifiers remain subject to the historical DEC C/VAX 31-character compatibility limit even though the current canonical acceptance host is x86-64.
 
 ## Git integration
 
-Git is used for:
+Git is used for repository context, milestone/ref management, history, and GitHub integration. The established architecture distinguishes:
 
-- repository state and diff context;
-- safe project reasoning;
-- milestone/ref management;
-- source-history awareness;
-- GitHub integration.
+- GitHub branch/tree state as repository truth;
+- RMS-visible OpenVMS files as native compile/runtime input truth;
+- Git index/ref metadata as a separate state that may require independent verification; and
+- exact-SHA native acceptance from tree-equivalent promotion.
 
-OpenVMS RMS semantics can make native Git worktree/index operations unreliable. The established project workflow therefore distinguishes:
+The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow.
 
-- GitHub branch state as repository source of truth;
-- VAX materialization/build/runtime as acceptance authority;
-- RMS-aware restore operations for changed tracked files;
-- `core.filemode=false` to suppress meaningless OpenVMS mode drift.
+M290/M291 hardening also keeps internal Git-status scratch files out of synthesized user status and preserves native/POSIX status semantics rather than trusting simple odd/even checks.
 
-Authenticated raw Git network operations use the installed `GITAUTH` wrapper and short-lived repository-scoped configuration rather than plaintext credential storage.
+## GitHub authentication and service integration
 
-## GitHub integration
+Authenticated raw Git uses `GITAUTH` with short-lived repository-scoped configuration and interactive prompting disabled. `GITAUTH --check` performs a non-mutating authenticated dry-run push preflight to verify current-origin write authorization; setup uses a config-only check.
 
-OVMS Agent has two related GitHub paths.
+Guarded GitHub commands and `GITHUB_BRIDGE.COM` provide repository and issue/PR service operations under approval rules. GitHub mutations remain FULL-gated where required. Temporary authorization/body/response data is protected and removed across RMS versions.
 
-### Guarded Git operations
+## Persistence and security boundaries
 
-Commands cover status/remote/check/fetch/pull/push/clone behavior with repository/profile matching and approval requirements.
+OVMS Agent separates ordinary settings, provider/GitHub profiles, sessions/transcripts/results, repair/build history, project context, and generated build artifacts by responsibility. Credential-bearing state stays outside the repository.
 
-### GitHub service bridge
-
-`GITHUB_BRIDGE.COM` implements issue and pull-request service operations using the active saved GitHub profile.
-
-The launcher automatically exposes the shipped bridge when no explicit override exists.
-
-The bridge uses protected short-lived header/body/response files and cleans them across RMS versions after operations.
-
-GitHub mutations remain FULL-gated.
-
-## Persistence and local state
-
-OVMS Agent deliberately persists different classes of state separately:
-
-- ordinary settings;
-- AI provider profiles;
-- GitHub profiles;
-- agent sessions/transcripts/results;
-- repair/build history and review artifacts;
-- project context/instructions where applicable.
-
-Credential-bearing configuration remains outside the repository. Generated build artifacts remain under `[.BUILD]`. Source-controlled policy and documentation remain in the repository.
-
-This separation makes it possible to replace/update a checkout without treating generated objects or local credentials as source files.
-
-## Security boundaries
-
-The architecture relies on several independent boundaries:
+Independent safety boundaries include:
 
 - project-root/path checks;
 - approval policy;
@@ -306,24 +171,22 @@ The architecture relies on several independent boundaries:
 - network policy;
 - autonomous budgets;
 - AUTOPILOT's inability to satisfy FULL;
-- repository/profile matching for authenticated GitHub work;
-- short-lived credential transport;
-- transactional rollback.
+- repository/profile matching;
+- short-lived credential transport; and
+- transaction/rollback behavior.
 
-See `SECURITY.MD` for the security policy and reporting guidance.
+See `SECURITY.MD` for the security contract.
 
 ## Documentation ownership
 
-The root documentation is intentionally divided by contract:
-
-- `README.MD` — overview and navigation;
-- `INSTALL.MD` — prerequisites/setup/first run;
-- `BUILD.MD` — build/regression mechanics;
-- `CONTRIBUTING.MD` — engineering and milestone workflow;
-- `SECURITY.MD` — credential and authority boundaries;
+- `README.MD` — overview/navigation;
+- `INSTALL.MD` — setup/first run;
+- `BUILD.MD` — product build/acceptance;
+- `CONTRIBUTING.MD` — engineering workflow;
+- `SECURITY.MD` — credential/authority boundaries;
 - `ARCHITECTURE.MD` — subsystem/data-flow model;
-- `CHANGELOG.MD` — user-visible milestone history;
-- `OVMS_AGENT.HLP` — command and SETTINGS reference;
-- `RULES.MD` — durable project-development rules.
-
-When architecture changes, update the document that owns the affected contract instead of allowing the README to become the only source of truth.
+- `FEATURES.MD` — current capability catalog;
+- `CHANGELOG.MD` — promoted user-visible history;
+- `OVMS_AGENT.HLP` — command/SETTINGS reference;
+- `RULES.MD` — durable current project rules;
+- `DOC/` — historical reconciliation/parity records and the current Git/RMS operating guide.
