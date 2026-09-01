@@ -10,6 +10,7 @@ void llm_auto_note_tool(void);
 int llm_auto_final_has_evidence(int workflow);
 int llm_auto_allow_write(void);
 int llm_auto_allow_create(void);
+int llm_auto_atomic_write(void);
 int llm_auto_partial_limit(void);
 void llm_auto_finish(const char *reason);
 int llm_auto_bounded_completed(void);
