@@ -167,4 +167,4 @@ When a newer explicit user instruction conflicts with this file, the newer instr
 ## 19. Explicitly preserved exceptions
 
 - GAP-010 was explicitly discarded and must not be revived unless the user explicitly requests it.
-- Branch `m287-groq-gptoss-responses` contains unique unpromoted provider-compatibility work and must be retained while that work remains unresolved.
+- Branch `m287-groq-gptoss-responses` was explicitly assessed as semantically superseded by M294 and pruned; do not revive or retain it solely because its historical commits were once unique.
