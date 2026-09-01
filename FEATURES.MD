@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M292**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M293**, plus the M294 provider/tool compatibility candidate on this branch.
 
 ## Project inspection and context
 
@@ -32,6 +32,12 @@ The test sends one bounded real no-op request through every configured profile o
 The diagnostic uses real provider transport and a small amount of provider usage. It checks basic response health only; it is not a tool-call/capability benchmark. Dedicated temporary request/header/response files are removed across RMS versions.
 
 Direct providers and OpenAI-compatible intermediaries such as Requesty are supported through configured endpoints. Multi-turn agent state is carried locally rather than requiring provider-held conversation identifiers.
+
+### Tool transport compatibility selection
+
+M294 preserves the common Responses API request contract while handling one proven transport compatibility exception before send. When the configured endpoint is Groq, the model name begins `openai/gpt-oss-`, and the outgoing request actually contains tool definitions, OVMS Agent selects the existing bounded blocking transport instead of attempting SSE streaming.
+
+This is capability selection, not a failed-stream retry: the request is sent once through the compatible transport, avoiding duplicate requests after a real network failure. Non-tool GPT-OSS requests and all other provider/model combinations keep the existing streaming decision. Users do not need to define `OVMS_AGENT_NOSTREAM` for the supported Groq GPT-OSS tool workflow.
 
 ## Guarded source changes
 

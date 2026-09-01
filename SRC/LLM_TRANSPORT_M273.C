@@ -1,11 +1,60 @@
+#include <stdlib.h>
+#include <string.h>
+
+#include "llm_internal.h"
 #include "LLM_USAGE.H"
 
 /* M276 bounded provider-rate-limit parsing is part of the transport object. */
 #include "LLM_RATE_LIMIT.C"
 
+int llm_m294_stream_ok(const char *url,
+                       const char *model,
+                       const char *request)
+{
+    static const char groq_host[] = "api.groq.com";
+    static const char gpt_oss[] = "openai/gpt-oss-";
+
+    if (request == NULL || strstr(request, "\"tools\":") == NULL ||
+        url == NULL || model == NULL) {
+        return 1;
+    }
+
+    return strstr(url, groq_host) == NULL ||
+           strncmp(model, gpt_oss, sizeof(gpt_oss) - 1U) != 0;
+}
+
+static char *m294_transport_env(const char *name)
+{
+    char *value;
+    char *request;
+    int stream_ok;
+
+    if (name == NULL) {
+        return NULL;
+    }
+
+    if (strcmp(name, "OVMS_AGENT_NOSTREAM") != 0) {
+        return getenv(name);
+    }
+
+    value = getenv(name);
+    if (value != NULL) {
+        return value;
+    }
+
+    request = read_entire_file(LLM_REQUEST_FILE, NULL);
+    stream_ok = llm_m294_stream_ok(
+        llm_api_url(), llm_model(), request);
+    free(request);
+
+    return stream_ok ? NULL : "1";
+}
+
+#define getenv m294_transport_env
 #define perform_openai_request m273_raw_request
 #include "LLM_TRANSPORT.C"
 #undef perform_openai_request
+#undef getenv
 
 int perform_openai_request(void)
 {

@@ -314,6 +314,11 @@
    the textual status on plain terminals and in logs.  TEST uses real provider
    transport and may consume a very small amount of provider usage.  It checks
    basic response health only; it is not a tool-call or capability benchmark.
+   Tool-call compatibility can differ from TEST.  Groq openai/gpt-oss-* requests
+   that include tool definitions automatically use the bounded blocking Responses
+   transport instead of streaming; no OVMS_AGENT_NOSTREAM override is required.
+   Non-tool GPT-OSS requests and other provider/model combinations keep normal
+   streaming behavior.
 
 4 GITHUB_PROFILE
  Command: GITHUB [LIST|SHOW [name]|USE name|ADD name|DELETE name]

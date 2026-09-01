@@ -6,6 +6,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 
 - **Current public release:** `1.0.0`
 - **Latest promoted milestone:** `M293`
+- **Current development milestone:** `M294` provider/tool transport compatibility
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -45,6 +46,7 @@ OVMS Agent currently provides:
 - persistent provider, GitHub, and ordinary SETTINGS configuration;
 - provider-neutral support for direct providers and OpenAI-compatible intermediaries such as Requesty;
 - `PROVIDER TEST` / `PROVIDER TEST name` response-health diagnostics;
+- bounded provider transport plus compatibility-aware stream selection for tool workflows;
 - bounded autonomous execution and AUTOPILOT safety controls;
 - image input and external/MCP tool integration under approval controls; and
 - native-validated language guidance.
@@ -128,6 +130,8 @@ MODEL [model-name]
 ```
 
 `PROVIDER TEST` sends one bounded plain-text no-op request through each configured profile; `PROVIDER TEST name` tests one profile. It does not change the active profile. Responsive profiles report `OK`; failures are classified as `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, or `INVALID`. The test uses real provider transport and may consume a very small amount of provider usage. It is a basic response-health check, not a tool-call capability benchmark.
+
+Provider/model tool-call compatibility can differ from plain-text health. M294 keeps the Responses API as the common request contract but selects the bounded blocking transport before send for Groq `openai/gpt-oss-*` requests that actually contain tool definitions. This avoids a known streaming incompatibility while preserving normal streaming for non-tool GPT-OSS requests and other provider/model combinations. No manual `OVMS_AGENT_NOSTREAM` override is required for that tool workflow.
 
 Provider keys are entered without terminal echo, masked in normal output, and kept outside the repository.
 

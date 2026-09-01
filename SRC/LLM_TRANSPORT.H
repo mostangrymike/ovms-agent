@@ -16,6 +16,9 @@ int write_headers(const char *api_key);
 void remove_temporary_files(void);
 int perform_openai_request(void);
 int llm_transport_probe(const char *base);
+int llm_m294_stream_ok(const char *url,
+                       const char *model,
+                       const char *request);
 void llm_transport_set_stream(llm_stream_cb callback);
 int llm_transport_streamed(void);
 

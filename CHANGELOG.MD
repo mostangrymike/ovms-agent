@@ -6,7 +6,15 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond the M293 documentation-currentness work below.
+### M294 — Groq GPT-OSS tool transport compatibility
+
+- Removed the historical pre-rejection that prevented Groq `openai/gpt-oss-*` models from attempting Responses tool workflows.
+- Added deterministic eligibility coverage for GPT-OSS tool requests.
+- Revalidated live provider behavior after M290 bounded transport hardening: plain provider health is responsive, streaming tool requests fail quickly, and the same tool workflows succeed through the bounded blocking Responses transport.
+- Added a narrow pre-send transport selector: Groq `openai/gpt-oss-*` requests that actually contain tool definitions use the bounded blocking transport automatically; non-tool GPT-OSS requests and other provider/model combinations keep normal streaming behavior.
+- The selector is not a failed-stream retry and does not duplicate an already-sent provider request.
+- Native OpenVMS V9.2-3 x86-64 validation on exact source head `d7e62df01aac2b0a4d8402fb12f95b1044ba0358` passed full `@BUILD`, automatic read-only `AGENT` tool execution, and a guarded disposable `AGENT/WRITE` create workflow without requiring `OVMS_AGENT_NOSTREAM`.
+- The guarded write probe also showed one unnecessary model-requested `replace_text` after successful creation, but no second RMS write materialized; the file remained only version `;1` with exact requested content.
 
 ## M293 — Markdown documentation currentness
 
