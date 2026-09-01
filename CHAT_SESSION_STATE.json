@@ -1,14 +1,14 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-01T14:55:33-05:00",
+  "updated_at": "2026-09-01T16:16:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
-    "tree": "4944e583ccfa0a1cebd57cd2685be803c639a6bf",
-    "latest_milestone": "M296",
-    "latest_code_milestone": "M296",
+    "main": "1224014d544b43cea6e9c602ff17217969cb46c6",
+    "tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
+    "latest_milestone": "M297",
+    "latest_code_milestone": "M297",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0"
   },
@@ -22,7 +22,7 @@
     "result": "Groq openai/gpt-oss-* tool-bearing requests use bounded blocking Responses transport automatically; non-tool traffic keeps normal streaming."
   },
   "m295": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 167,
     "resolved_issues": [
       120,
@@ -73,23 +73,57 @@
       "final_main_source_test_help_equivalent": true
     }
   },
+  "m297": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 173,
+    "resolved_issue": 124,
+    "branch": "m297-reasoning-output-budget",
+    "baseline_main": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
+    "native_source": "67240e303f2d6217314547931502ac928ecebf50",
+    "native_source_tree": "4ad9b68bab1b817660c42176b095bafe7bd7368d",
+    "final_candidate": "6368d2cc00367de72e276fc169bba7c0f8dfbcbb",
+    "final_candidate_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
+    "promotion_pr": 175,
+    "promoted_main": "1224014d544b43cea6e9c602ff17217969cb46c6",
+    "promoted_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
+    "tag": "1224014d544b43cea6e9c602ff17217969cb46c6",
+    "result": "Responses status=incomplete with incomplete_details.reason=max_output_tokens and no assistant text now produce a bounded actionable diagnostic with reported output/reasoning token counts when available, rather than falling through to raw provider JSON. The default max_output_tokens remains unchanged.",
+    "acceptance": {
+      "baseline_2048": "Promoted M296 + Groq exact qwen/qwen3.6-27b + blocking NOSTREAM reproduced reasoning-only exhaustion: output_tokens=2048, reasoning_tokens=2048, no assistant text, raw-response fallback.",
+      "baseline_4096": "Exact same bounded ASK at 4096 again exhausted all output budget in reasoning and produced no assistant text; 4096 is not a reliable workaround.",
+      "historical_8192": "Prior controlled evidence also exhausted all 8192 output tokens in reasoning with no assistant text.",
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build": "Build completed successfully.",
+      "native_build_scope": "Full product build/regressions ran on exact source/test checkpoint 67240e303f2d6217314547931502ac928ecebf50.",
+      "live_post_fix": "Groq exact qwen/qwen3.6-27b with OVMS_AGENT_NOSTREAM=1 and max_output_tokens=4096 reproduced reasoning-only exhaustion; OVMS Agent emitted only the bounded M297 diagnostic and did not emit raw-response fallback or raw JSON.",
+      "help_delta": "Final candidate 6368d2cc00367de72e276fc169bba7c0f8dfbcbb differs from native-built source checkpoint only by four added OVMS_AGENT.HLP lines.",
+      "help_library": "%X10000001",
+      "help_lookup": "%X00000001",
+      "help_lookup_topic": "OVMS_AGENT COMMANDS LLM ASK displayed the new bounded max_output_tokens diagnostic note.",
+      "promotion_tree_equals_final_candidate": true,
+      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
+      "provider_restored": "Active provider restored to openai model gpt-5.6-terra; saved Groq model restored to gpt-5.6-luna.",
+      "process_overrides_restored": "OVMS_AGENT_NOSTREAM restored to absent; OVMS_AGENT_MAX_OUTPUT_TOKENS restored to original 2048."
+    }
+  },
   "open_followups": {
-    "provider_model_compatibility": [
-      124
-    ],
+    "provider_model_compatibility": [],
     "platform_knowledge": 144,
     "completed_provider_model_compatibility": [
       120,
       123,
+      124,
       125,
       126
     ],
     "completed_milestone_trackers": [
       163,
       167,
-      170
+      170,
+      173
     ],
-    "note": "#124 remains separate reasoning/output-budget exhaustion work. #144 remains platform-knowledge-pack work."
+    "note": "#124 was resolved by promoted M297. #144 remains platform-knowledge-pack work."
   },
   "github_hygiene": {
     "permanent": [
@@ -97,38 +131,61 @@
       "chat-session-state"
     ],
     "retained_completed": [
-      "m295-groq-qwen-tool-transport",
-      "m296-openrouter-free-tool-transport"
+      "m296-openrouter-free-tool-transport",
+      "m297-reasoning-output-budget"
     ],
     "recent_pruned": [
       "m287-groq-gptoss-responses",
       "m292-provider-health-test",
       "m293-documentation-currentness",
-      "m294-groq-gptoss-responses"
+      "m294-groq-gptoss-responses",
+      "m295-groq-qwen-tool-transport"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m293": "f85a4badda332b6f8c87934bea69ece67b621994",
       "m294": "53150b29e42b5063a9aef0bec76781494c217c69",
       "m295": "3fd26e344866e25779fa216696286eac8eb1447a",
-      "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b"
+      "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
+      "m297": "1224014d544b43cea6e9c602ff17217969cb46c6"
     }
   },
   "openvms_worktree": {
-    "head": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
+    "head": "1224014d544b43cea6e9c602ff17217969cb46c6",
     "branch": "main",
-    "native_source": "f9c40b6d47d46a21e5b6e2b6b0bbf4f20fd07a2a",
-    "final_candidate": "5c676fb05663c872851a07ff0e524ccaf05efade",
-    "materialized_after_promotion": [
-      "ARCHITECTURE.MD",
-      "README.MD",
-      "FEATURES.MD",
-      "RULES.MD"
+    "native_source": "67240e303f2d6217314547931502ac928ecebf50",
+    "native_source_tree": "4ad9b68bab1b817660c42176b095bafe7bd7368d",
+    "final_candidate": "6368d2cc00367de72e276fc169bba7c0f8dfbcbb",
+    "final_candidate_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
+    "materialized_m297": [
+      "SRC/LLM_RESPONSE.C",
+      "SRC/LLM_RESPONSE.H",
+      "SRC/m251_synth_test.c",
+      "OVMS_AGENT.HLP"
+    ],
+    "hybrid_tree_recovery_restored": [
+      "BUILD.MD",
+      "CONTRIBUTING.MD",
+      "INSTALL.MD",
+      "SECURITY.MD",
+      "DOC/README.MD",
+      "LANGUAGE/README.MD",
+      "DOC/OPENVMS_GIT_QUIRKS.MD",
+      "BUILD_M289_NATIVE.COM",
+      "BUILD_M289_PROFILE.COM",
+      "BUILD_M290_STATUS.COM",
+      "M289_DCL_FIXTURE.COM"
     ],
     "protected_not_materialized": [
       "CHANGELOG.MD"
     ],
-    "note": "M296 source/test and OVMS_AGENT.HLP were already native-accepted physical content. CHANGELOG.MD has a pre-existing local modification and must not be discarded without assessment."
+    "authoritative_status": [
+      " M CHANGELOG.MD",
+      "?? M289JavaFixture.class",
+      "?? SRC/M290_DCL_PROBE.C"
+    ],
+    "status_note": "AGENT/GIT/REFRESH and AGENT/GIT/STATUS are authoritative for this OpenVMS worktree and reported exactly 3 changed paths with no short-read diagnostics. Raw git status can still emit known #149 short-read diagnostics on valid variable-record .COM files even after RMS-aware restore verification.",
+    "note": "Promoted main is tree-equivalent to final M297 candidate. M297 source/test and HELP physical content were native accepted. CHANGELOG.MD remains a pre-existing local modification and must not be discarded without assessment."
   },
   "local_notes": {
     "CHANGELOG.MD": "locally modified before M291; preserve until explicitly assessed",
@@ -146,6 +203,7 @@
     "Omit literal OVMS-AGENT> from commands supplied for paste; native DCL $ prompts are acceptable.",
     "Use GITAUTH for authenticated Git network operations and keep core.filemode=false.",
     "Never trust OpenVMS Git porcelain/ref output or $STATUS alone when RMS-visible files/control files can verify.",
+    "For OpenVMS working-tree state, use AGENT/GIT/REFRESH and AGENT/GIT/STATUS when direct Git encounters known #149 RMS short-read behavior.",
     "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing materialization workflows.",
     "When source/build/runtime inputs change, native acceptance requires All regression tests passed., Build completed successfully., and %X00000001.",
     "Distinguish exact native-tested SHA from tree/source/HLP-equivalent promoted commits; never call an untested GitHub head native-green.",
