@@ -17,6 +17,9 @@ extern int llm_git_rms_blob_hash(
     const char *path,
     char *hash,
     size_t hash_size);
+extern int llm_git_m291_filter_status(
+    char *status,
+    size_t status_size);
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -141,6 +144,27 @@ int main(void)
         strstr(output, "Git state context:     available") == NULL ||
         strstr(output, "Git diff awareness:    available") == NULL) {
         (void)puts("M234 failed: parity status.");
+        return EXIT_FAILURE;
+    }
+
+    (void)strcpy(
+        output,
+        "?? OVMS_AGENT_GIT_META.TMP\n"
+        "?? SRC/OVMS_AGENT_GIT_INDEX.TMP\n"
+        "?? OVMS_AGENT_GIT_CACHED.TMP\n"
+        "?? OVMS_AGENT_GIT_OTHER.TMP\n"
+        "?? OVMS_AGENT_GIT_HASH.TMP\n"
+        "?? KEEP.TXT\n"
+        " M OVMS_AGENT_GIT_META.TMP\n"
+        "?? OVMS_AGENT_GIT_META.TMP.BAK");
+
+    if (!llm_git_m291_filter_status(output, sizeof(output)) ||
+        strcmp(
+            output,
+            "?? KEEP.TXT\n"
+            " M OVMS_AGENT_GIT_META.TMP\n"
+            "?? OVMS_AGENT_GIT_META.TMP.BAK") != 0) {
+        (void)puts("M291 failed: Git scratch status filtering.");
         return EXIT_FAILURE;
     }
 
