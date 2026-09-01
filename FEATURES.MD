@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M293**, plus the M294 provider/tool compatibility candidate on this branch.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M294**.
 
 ## Project inspection and context
 
@@ -116,7 +116,7 @@ See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules.
 
 ## Safety controls
 
-OVMS Agent combines approval policy, guarded-write and DCL gates, path/sensitive-file checks, network policy, autonomous budgets, transaction/rollback behavior, repository-bound authentication, and AUTOPILOT's inability to satisfy FULL approval.
+OVMS Agent combines approval policy, guarded-write and DCL gates, path/sensitive-file checks, network policy, autonomous budgets, transaction/rollback behavior, repository-bound authentication, and AUTOPILOT's inability to satisfy FULL.
 
 `AGENT/AUTOPILOT` is bounded local workspace repair/build orchestration; it cannot silently authorize arbitrary DCL, GitHub/PUSH, MCP/external work, or other FULL-gated operations.
 
