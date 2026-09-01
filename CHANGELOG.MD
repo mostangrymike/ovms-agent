@@ -6,7 +6,16 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M295 below.
+### M296 — OpenRouter/free tool transport compatibility
+
+- Revalidated historical OpenRouter/free issue #123 on OpenVMS V9.2-3 x86-64 using the configured `openrouter` profile and exact model `openrouter/free`.
+- `PROVIDER TEST openrouter` remained healthy, while the same read-only tool request failed through normal streaming and succeeded through the bounded blocking Responses transport.
+- Extended the pre-send transport selector so the OpenRouter endpoint with exact model `openrouter/free` uses bounded blocking transport only when the serialized request contains tool definitions.
+- Kept non-tool OpenRouter/free traffic, other OpenRouter models, and unrelated provider/model combinations on the existing streaming decision.
+- Added deterministic selector coverage for OpenRouter/free tool and non-tool requests while preserving streaming for a different OpenRouter model.
+- Native exact source head `f9c40b6d47d46a21e5b6e2b6b0bbf4f20fd07a2a` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
+- The guarded write probe created exactly one RMS version with the requested content; OpenRouter/free subsequently requested an unnecessary `replace_text`, but no second write materialized.
+- #124 remains separate reasoning/output-budget work.
 
 ## M295 — Groq Qwen tool transport compatibility
 
