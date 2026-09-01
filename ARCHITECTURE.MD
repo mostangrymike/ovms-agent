@@ -88,9 +88,9 @@ Other states distinguish `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMP
 
 ### Tool transport compatibility selection
 
-M294/M295 keep the Responses API as the common request contract while separating protocol choice from transport mode. Before a request is sent, the transport layer inspects the configured endpoint/model plus whether the serialized request actually contains tool definitions.
+M294-M296 keep the Responses API as the common request contract while separating protocol choice from transport mode. Before a request is sent, the transport layer inspects the configured endpoint/model plus whether the serialized request actually contains tool definitions.
 
-For the proven Groq `openai/gpt-oss-*` tool-call compatibility case and the M295-proven Groq `qwen/qwen3.6-27b` tool workflow, the request is sent once through the existing bounded blocking Responses transport instead of SSE streaming. This is a pre-send capability decision, not a retry after a failed stream, so it does not duplicate a request after an actual network/child-process failure. Non-tool traffic and other provider/model combinations continue through the existing streaming decision unless the user has independently disabled streaming.
+For the proven Groq `openai/gpt-oss-*` tool-call compatibility case and the M295-proven Groq `qwen/qwen3.6-27b` tool workflow, the request is sent once through the existing bounded blocking Responses transport instead of SSE streaming. M296 adds the same narrow pre-send decision for the OpenRouter endpoint when the configured model is exact `openrouter/free` and the request actually contains tool definitions. This is a pre-send capability decision, not a retry after a failed stream, so it does not duplicate a request after an actual network/child-process failure. Non-tool traffic and other provider/model combinations continue through the existing streaming decision unless the user has independently disabled streaming.
 
 The selector is deliberately narrow and provider/model evidence-driven. It does not make `PROVIDER TEST` a tool capability test and does not introduce a second API dialect.
 
