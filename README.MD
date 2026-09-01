@@ -5,7 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M297`
+- **Latest promoted milestone:** `M298`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -51,7 +51,7 @@ OVMS Agent currently provides:
 - image input and external/MCP tool integration under approval controls; and
 - native-validated language and platform guidance.
 
-The shared language knowledge layer ships curated COBOL and Fortran `.MD` packs under `LANGUAGE/`. The unreleased M298 platform layer separately ships validated OpenVMS Git, RMS, and DCL guidance under `KNOWLEDGE/`, loaded only when strong prompt-topic evidence is present and always subordinate to live evidence and safety policy. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
+The shared language knowledge layer ships curated COBOL and Fortran `.MD` packs under `LANGUAGE/`. The M298 platform layer separately ships validated OpenVMS Git, RMS, and DCL guidance under `KNOWLEDGE/`, loaded only when strong prompt-topic evidence is present and always subordinate to live evidence and safety policy. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
 
 ## Requirements
 
