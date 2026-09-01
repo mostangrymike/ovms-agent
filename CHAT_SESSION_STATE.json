@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-01T16:16:00-05:00",
+  "updated_at": "2026-09-01T16:51:38-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -24,10 +24,7 @@
   "m295": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 167,
-    "resolved_issues": [
-      120,
-      125
-    ],
+    "resolved_issues": [120, 125],
     "branch": "m295-groq-qwen-tool-transport",
     "native_source": "909a3c86b6028c16f1c489d3e2def208845449a1",
     "final_candidate": "2a483a8bdcad55d2829a285338c878b1c54fd14c",
@@ -65,11 +62,7 @@
       "help_library": "%X10000001",
       "help_lookup": "%X00000001",
       "first_promotion_tree_exact": true,
-      "final_main_diff_from_accepted_candidate": [
-        "CHANGELOG.MD",
-        "FEATURES.MD",
-        "README.MD"
-      ],
+      "final_main_diff_from_accepted_candidate": ["CHANGELOG.MD", "FEATURES.MD", "README.MD"],
       "final_main_source_test_help_equivalent": true
     }
   },
@@ -110,37 +103,16 @@
   "open_followups": {
     "provider_model_compatibility": [],
     "platform_knowledge": 144,
-    "completed_provider_model_compatibility": [
-      120,
-      123,
-      124,
-      125,
-      126
-    ],
-    "completed_milestone_trackers": [
-      163,
-      167,
-      170,
-      173
-    ],
+    "completed_provider_model_compatibility": [120, 123, 124, 125, 126],
+    "completed_milestone_trackers": [163, 167, 170, 173],
     "note": "#124 was resolved by promoted M297. #144 remains platform-knowledge-pack work."
   },
   "github_hygiene": {
-    "permanent": [
-      "main",
-      "chat-session-state"
-    ],
-    "retained_completed": [
-      "m296-openrouter-free-tool-transport",
-      "m297-reasoning-output-budget"
-    ],
-    "recent_pruned": [
-      "m287-groq-gptoss-responses",
-      "m292-provider-health-test",
-      "m293-documentation-currentness",
-      "m294-groq-gptoss-responses",
-      "m295-groq-qwen-tool-transport"
-    ],
+    "permanent": ["main", "chat-session-state"],
+    "retained_completed": ["m296-openrouter-free-tool-transport", "m297-reasoning-output-budget"],
+    "verified_remote_branches": ["main", "chat-session-state", "m296-openrouter-free-tool-transport", "m297-reasoning-output-budget"],
+    "open_prs": 0,
+    "recent_pruned": ["m287-groq-gptoss-responses", "m292-provider-health-test", "m293-documentation-currentness", "m294-groq-gptoss-responses", "m295-groq-qwen-tool-transport"],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m293": "f85a4badda332b6f8c87934bea69ece67b621994",
@@ -148,7 +120,8 @@
       "m295": "3fd26e344866e25779fa216696286eac8eb1447a",
       "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
       "m297": "1224014d544b43cea6e9c602ff17217969cb46c6"
-    }
+    },
+    "cleanup_note": "Post-M297 hygiene verified only permanent refs plus the two retained completed milestone branches on GitHub; no open PRs. Historical milestone tags remain intentionally retained."
   },
   "openvms_worktree": {
     "head": "1224014d544b43cea6e9c602ff17217969cb46c6",
@@ -157,41 +130,21 @@
     "native_source_tree": "4ad9b68bab1b817660c42176b095bafe7bd7368d",
     "final_candidate": "6368d2cc00367de72e276fc169bba7c0f8dfbcbb",
     "final_candidate_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
-    "materialized_m297": [
-      "SRC/LLM_RESPONSE.C",
-      "SRC/LLM_RESPONSE.H",
-      "SRC/m251_synth_test.c",
-      "OVMS_AGENT.HLP"
-    ],
-    "hybrid_tree_recovery_restored": [
-      "BUILD.MD",
-      "CONTRIBUTING.MD",
-      "INSTALL.MD",
-      "SECURITY.MD",
-      "DOC/README.MD",
-      "LANGUAGE/README.MD",
-      "DOC/OPENVMS_GIT_QUIRKS.MD",
-      "BUILD_M289_NATIVE.COM",
-      "BUILD_M289_PROFILE.COM",
-      "BUILD_M290_STATUS.COM",
-      "M289_DCL_FIXTURE.COM"
-    ],
-    "protected_not_materialized": [
-      "CHANGELOG.MD"
-    ],
-    "authoritative_status": [
-      " M CHANGELOG.MD",
-      "?? M289JavaFixture.class",
-      "?? SRC/M290_DCL_PROBE.C"
-    ],
-    "status_note": "AGENT/GIT/REFRESH and AGENT/GIT/STATUS are authoritative for this OpenVMS worktree and reported exactly 3 changed paths with no short-read diagnostics. Raw git status can still emit known #149 short-read diagnostics on valid variable-record .COM files even after RMS-aware restore verification.",
-    "note": "Promoted main is tree-equivalent to final M297 candidate. M297 source/test and HELP physical content were native accepted. CHANGELOG.MD remains a pre-existing local modification and must not be discarded without assessment."
+    "materialized_m297": ["SRC/LLM_RESPONSE.C", "SRC/LLM_RESPONSE.H", "SRC/m251_synth_test.c", "OVMS_AGENT.HLP"],
+    "hybrid_tree_recovery_restored": ["BUILD.MD", "CONTRIBUTING.MD", "INSTALL.MD", "SECURITY.MD", "DOC/README.MD", "LANGUAGE/README.MD", "DOC/OPENVMS_GIT_QUIRKS.MD", "BUILD_M289_NATIVE.COM", "BUILD_M289_PROFILE.COM", "BUILD_M290_STATUS.COM", "M289_DCL_FIXTURE.COM", "CHANGELOG.MD"],
+    "local_heads": ["main", "m296-openrouter-free-tool-transport", "m297-reasoning-output-budget"],
+    "remote_tracking_refs": ["origin/HEAD", "origin/main"],
+    "authoritative_status": [],
+    "status_note": "Post-cleanup AGENT/GIT/REFRESH reported 0 changed paths and AGENT/GIT/STATUS reported clean. Known obsolete untracked diagnostics and generated M289 artifacts were removed after assessment; stale local and origin-tracking branch refs were pruned without touching retained milestone tags.",
+    "cleanup": {
+      "change_log": "Pre-M291 local CHANGELOG.MD was compared against promoted main, proven stale rather than unique newer work, restored from HEAD, and purged to one RMS version.",
+      "removed_untracked": ["M289JavaFixture.class", "SRC/M290_DCL_PROBE.C"],
+      "removed_generated_classes": ["*.TMP", "*.LOG", "M28*.EXE", "M28*.OBJ", "M29*.EXE", "M29*.OBJ"],
+      "final_sweep": "No *.TMP, *.BAK, *.DIF, *.LOG, *.HLB, M28*.EXE/OBJ, or M29*.EXE/OBJ files remained in the root cleanup sweep."
+    },
+    "note": "Promoted main remains tree-equivalent to final M297 candidate. The OpenVMS working tree and tracked status are clean after explicit post-M297 cleanup."
   },
-  "local_notes": {
-    "CHANGELOG.MD": "locally modified before M291; preserve until explicitly assessed",
-    "SRC/M290_DCL_PROBE.C": "obsolete untracked diagnostic; cleanup only after explicit assessment",
-    "M289JavaFixture.class": "may be generated/untracked; assess before deletion"
-  },
+  "local_notes": {},
   "status_semantics": {
     "base": "0x0035A000UL",
     "mask": "0x0FFFF800UL",
