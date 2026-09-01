@@ -9,6 +9,9 @@ $ BUILD_DIR = PROJECT_DEVICE + -
 $ LANGUAGE_DIR = PROJECT_DEVICE + -
                  F$EXTRACT(0,F$LENGTH(PROJECT_DIRECTORY)-1,PROJECT_DIRECTORY) + -
                  ".LANGUAGE]"
+$ KNOWLEDGE_DIR = PROJECT_DEVICE + -
+                  F$EXTRACT(0,F$LENGTH(PROJECT_DIRECTORY)-1,PROJECT_DIRECTORY) + -
+                  ".KNOWLEDGE]"
 $ IMAGE = F$PARSE("OVMS_AGENT.EXE", BUILD_DIR)
 
 $ IF F$SEARCH(IMAGE) .EQS. ""
@@ -36,6 +39,13 @@ $! Preserve an explicit caller/system override for testing or custom installs.
 $ IF F$TRNLNM("OVMS_AGENT_LANGUAGE_DIR") .EQS. ""
 $ THEN
 $     DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "''LANGUAGE_DIR'"
+$ ENDIF
+
+$! M298: expose bounded shared OpenVMS platform/tool knowledge packs.
+$! Preserve an explicit caller/system override for testing or custom installs.
+$ IF F$TRNLNM("OVMS_AGENT_KNOWLEDGE_DIR") .EQS. ""
+$ THEN
+$     DEFINE/USER OVMS_AGENT_KNOWLEDGE_DIR "''KNOWLEDGE_DIR'"
 $ ENDIF
 
 $ IF P1 .NES. ""
