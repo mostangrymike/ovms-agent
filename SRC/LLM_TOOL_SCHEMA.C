@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "LLM_TOOL_SCHEMA.H"
+#include "LLM_AUTO.H"
 
 static int schema_read_tools(FILE *file)
 {
@@ -42,6 +43,23 @@ static int schema_create_tool(FILE *file)
     ) != EOF;
 }
 
+static int schema_patch_tool(FILE *file)
+{
+    return fputs(
+        "{\"type\":\"function\",\"name\":\"structured_patch\","
+        "\"description\":\"Apply one complete atomic existing-file edit. "
+        "The patch string contains one or more exact non-overlapping @@OLD, "
+        "@@NEW, @@END hunks. All hunks are validated against the original "
+        "file before any write. In ordinary AGENT/WRITE this is the only "
+        "existing-file write tool, so include every requested coupled edit "
+        "in this one call.\","
+        "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
+        "\"patch\":{\"type\":\"string\"}},"
+        "\"required\":[\"path\",\"patch\"],\"additionalProperties\":false},\"strict\":true}",
+        file
+    ) != EOF;
+}
+
 static int schema_build_source_tool(FILE *file)
 {
     return fputs(
@@ -61,8 +79,23 @@ int write_agent_tools(FILE *file)
     return fputc(']', file) != EOF;
 }
 
+int write_agent_tools_atomic(FILE *file)
+{
+    if (file == NULL) return 0;
+    if (fputs("\"tools\":[", file) == EOF) return 0;
+    if (!schema_read_tools(file)) return 0;
+    if (fputc(',', file) == EOF || !schema_patch_tool(file)) return 0;
+    if (fputc(',', file) == EOF || !schema_create_tool(file)) return 0;
+    if (fputc(',', file) == EOF || !schema_build_source_tool(file)) return 0;
+    return fputc(']', file) != EOF;
+}
+
 int write_agent_tools_with_replace(FILE *file)
 {
+    if (llm_auto_atomic_write()) {
+        return write_agent_tools_atomic(file);
+    }
+
     if (file == NULL) return 0;
     if (fputs("\"tools\":[", file) == EOF) return 0;
     if (!schema_read_tools(file)) return 0;
@@ -81,20 +114,13 @@ int write_agent_tools_with_replace(FILE *file)
         "\"last_line\":{\"type\":\"integer\",\"minimum\":1},"
         "\"new_text\":{\"type\":\"string\"}},"
         "\"required\":[\"path\",\"first_line\",\"last_line\",\"new_text\"],"
-        "\"additionalProperties\":false},\"strict\":true},"
-        "{\"type\":\"function\",\"name\":\"structured_patch\","
-        "\"description\":\"Apply multiple exact non-overlapping hunks to one project-relative file. "
-        "The patch string contains repeated @@OLD, @@NEW, @@END blocks. "
-        "All hunks are validated against the original file before any write.\","
-        "\"parameters\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"},"
-        "\"patch\":{\"type\":\"string\"}},"
-        "\"required\":[\"path\",\"patch\"],\"additionalProperties\":false},\"strict\":true},",
+        "\"additionalProperties\":false},\"strict\":true},",
         file
     ) == EOF) return 0;
 
-    if (!schema_create_tool(file)) return 0;
-    if (fputc(',', file) == EOF) return 0;
-    if (!schema_build_source_tool(file)) return 0;
+    if (!schema_patch_tool(file)) return 0;
+    if (fputc(',', file) == EOF || !schema_create_tool(file)) return 0;
+    if (fputc(',', file) == EOF || !schema_build_source_tool(file)) return 0;
     return fputc(']', file) != EOF;
 }
 
