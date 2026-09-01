@@ -1,264 +1,237 @@
 # OpenVMS Git Quirks and Safe Operating Guide
 
-This document records Git behavior actually observed while developing and accepting OVMS Agent on OpenVMS. It exists so users, contributors, and future agent work do not repeatedly rediscover the same Git/RMS traps.
+This document is the **current operational guide** for Git behavior actually observed while developing and accepting OVMS Agent on OpenVMS. It is the one living operating document under `DOC/`; the milestone reconciliation/parity files are historical records.
 
-These are operational lessons, not claims about every Git port or every OpenVMS filesystem. When later native evidence contradicts a rule here, update this document with the new evidence.
+Current canonical native acceptance host: **OpenVMS V9.2-3 x86-64**.
+
+These are observed operating lessons, not claims about every OpenVMS Git port or filesystem. Update the guide when later native evidence supersedes a lesson.
 
 ## Core principle
 
-**GitHub is the repository source of truth; the OpenVMS RMS-visible working files are the native build/runtime truth.**
+**GitHub branch/tree state is repository truth; RMS-visible OpenVMS working files are native compiler/runtime input truth. Git metadata is a third state that must sometimes be verified independently.**
 
-On the OpenVMS systems used for OVMS Agent development, those two views can temporarily disagree even when a Git command reports success. Never use a Git exit/status value alone as proof that a ref moved, a file materialized, an index changed, or a network mutation occurred.
+Never use one Git command's output or `$STATUS` alone as proof that a ref moved, an index changed, a working file materialized, or a network mutation occurred.
 
-## Authentication and network operations
+## Authentication: use GITAUTH
 
-Use the OVMS Agent authenticated wrapper for GitHub network operations:
+Use the installed authenticated wrapper for GitHub network operations:
 
 ```text
 $ @GIT_AUTH_SETUP
-$ GITAUTH FETCH ORIGIN branch-name
+$ GITAUTH fetch origin branch-name
 ```
 
-or, after login setup:
+or on later logins:
 
 ```text
 $ @SYS$LOGIN:OVMS_AGENT_GIT_AUTH.COM
 ```
 
-`GITAUTH` already invokes Git. Do **not** write `GITAUTH GIT FETCH ...`.
+`GITAUTH` already invokes Git. Do not write `GITAUTH GIT ...`.
 
-Keep `GIT_TERMINAL_PROMPT=0`; the accepted authentication design fails closed rather than falling back to interactive username/PAT prompts. Old `credential.helper=store` and askpass experiments are not the standing solution.
+Keep `GIT_TERMINAL_PROMPT=0`; the accepted design fails closed instead of falling back to interactive username/PAT prompts. Plaintext `credential.helper=store`, the former global helper experiment, and askpass are not the standing solution.
 
-## A successful FETCH may populate only FETCH_HEAD
+### GITAUTH --check means write authorization
 
-When fetching an explicit branch such as:
+Operator-facing:
 
 ```text
-$ GITAUTH FETCH ORIGIN M288-LANGUAGE-KNOWLEDGE-PACKS
+$ GITAUTH --check
 ```
 
-native Git may report a successful fetch while no visible `origin/<branch>` remote-tracking ref is available through later commands. The fetched commit can still be present and recorded in `.git/FETCH_HEAD`.
+performs an authenticated, non-mutating dry-run push to the active profile's **current origin**. It verifies repository write authorization, not merely that profile fields are populated.
 
-If `GIT REV-PARSE origin/branch` is blank or otherwise untrustworthy, verify the fetched object through the RMS-visible Git control file.
+This catches two historical failure classes:
 
-On ODS-5 DCL syntax, the leading dot in `.git` must be escaped and extensionless files should be named with a trailing period:
+- a token that can authenticate but lacks write access to the repository; and
+- a stale/wrong active profile whose repository-scoped auth does not match current origin.
+
+The preflight uses a temporary target ref with dry-run semantics; no remote ref should be created. Verify that fact independently when it is part of acceptance.
+
+`GIT_AUTH_SETUP.COM` uses the internal/config-only check so wrapper installation does not require current network availability.
+
+## Decode POSIX exit statuses before native odd/even reasoning
+
+The project can receive POSIX-exit values encoded into OpenVMS status space. Do **not** apply the generic native odd/even success rule first.
+
+Current constants:
+
+```text
+OVMS_POSIX_EXIT_BASE = 0x0035A000UL
+OVMS_POSIX_EXIT_MASK = 0x0FFFF800UL
+```
+
+Known examples:
+
+- `%X0035A401` = encoded POSIX exit 128 = **failure**, despite being odd;
+- `%X1035A00A` = encoded POSIX exit 1 = **failure**;
+- `%X00030001` = native odd success;
+- `%X0F0180EA` = curl timeout / failure.
+
+`ovms_status_propagate` maps POSIX nonzero to native even failure status 2. Never call `%X0035A401` success.
+
+## Explicit fetch may be proven through FETCH_HEAD
+
+An explicit fetch can succeed even when later porcelain/remote-tracking-ref output is blank or unhelpful. Verify the exact fetched object through the RMS-visible control file:
 
 ```text
 $ TYPE [.^.GIT]FETCH_HEAD.
-$ TYPE [.^.GIT]HEAD.
 ```
 
-Example accepted evidence:
+On ODS-5 DCL, the literal `.git` directory is escaped as `[.^.GIT]`; extensionless control files need a trailing period.
+
+Also useful:
 
 ```text
-FETCH_HEAD: c9ebaed00f6aeee3141b1f5ed1ad077798908c78 ... m288-language-knowledge-packs
-HEAD:       ref: refs/heads/main
+$ TYPE [.^.GIT]HEAD.
+$ TYPE [.^.GIT.REFS.HEADS]BRANCH-NAME.
+$ DIRECTORY/FULL [.^.GIT]INDEX.
 ```
-
-This proves the exact fetched candidate object exists while the visible local checkout still points at `main`.
 
 ## Blank porcelain/ref output is not authoritative
 
-On the development system, commands including these have sometimes returned completely blank output without a useful diagnostic even though Git metadata exists:
+Observed commands such as `git status`, `rev-parse`, and branch display have sometimes produced blank/misleading output even though Git metadata exists. Do not conclude the repository/ref is absent from blank output alone; cross-check GitHub and RMS-visible `.git` files.
+
+Likewise, a `.GIT.DIR` directory by itself is **not proof of a valid Git repository**. Historical sandboxes showed `.GIT.DIR` without a valid `HEAD`/refs structure. A fresh valid OpenVMS repository contained an RMS-visible `HEAD.` such as:
 
 ```text
-$ GIT STATUS --PORCELAIN=V1 -B
-$ GIT REV-PARSE HEAD
-$ GIT REV-PARSE FETCH_HEAD
-$ GIT BRANCH --SHOW-CURRENT
+ref: refs/heads/master
 ```
 
-Do not conclude that the repository, HEAD, or fetched object is absent from blank output alone. Cross-check RMS-visible `.git` control files and GitHub branch state.
+and native `git rev-parse --is-inside-work-tree` succeeded.
 
-## DCL syntax for .git control files
+## Reset/checkout/pull can fail to materialize RMS files
 
-Do not use Unix-looking `[.GIT]` for the literal `.git` directory on ODS-5. That refers to a normal `GIT` subdirectory name and can produce `%RMS-E-DNF`.
-
-Use the escaped directory name:
-
-```text
-$ DIRECTORY [.^.GIT]
-```
-
-For extensionless Git control files, add a trailing period so DCL does not supply a default extension such as `.LIS`:
-
-```text
-$ TYPE [.^.GIT]HEAD.
-$ TYPE [.^.GIT]FETCH_HEAD.
-$ TYPE [.^.GIT]ORIG_HEAD.
-```
-
-This distinction is OpenVMS/DCL pathname behavior, not a Git semantic issue.
-
-## Do not trust checkout/reset/pull to materialize RMS files
-
-Observed native Git behavior can update repository metadata, refs, or index state without reconstructing the expected RMS-visible working file contents.
-
-Commands such as these therefore require independent verification:
+Observed native Git behavior can update refs or index state without reconstructing expected RMS-visible working-file contents. Treat these as requiring independent physical verification:
 
 ```text
 git pull
 git reset
-git reset --mixed --no-refresh
 git checkout / switch / restore
 git add
 ```
 
-During M288 acceptance, both of these failed without changing the relevant RMS-visible metadata:
-
-```text
-$ GIT RESET --MIXED --NO-REFRESH FETCH_HEAD
-$ GIT "checkout" "-B" "m288-language-knowledge-packs" "FETCH_HEAD"
-```
-
-Both returned `%X1035A00A`; the visible `HEAD`, branch-ref set, and index remained unchanged. Do not retry equivalent reset/checkout variants after that failure class is established.
-
-After any branch/materialization operation, verify the actual OpenVMS files with `DIRECTORY`, `TYPE`, `SEARCH`, compiler input, or another RMS-visible check before building.
-
-A successful Git status is not enough.
+Verify actual files with `TYPE`, `DIRECTORY`, `SEARCH`, hashes/comparisons, compiler input, or another RMS-visible check before building.
 
 ## Validated low-level candidate-establishment path
 
-When an exact fetched candidate is present in `FETCH_HEAD`, normal reset/checkout has been proven ineffective on the current OpenVMS checkout, and the existing RMS-aware restore requires the candidate to be represented by `HEAD`, M288 established this low-level recovery path:
+When exact `FETCH_HEAD` is known and ordinary branch establishment is unreliable, the validated recovery path is:
 
 ```text
 $ GIT "read-tree" "FETCH_HEAD"
-$ DIRECTORY/FULL [.^.GIT]INDEX.
-
 $ GIT "update-ref" "refs/heads/<candidate-branch>" "FETCH_HEAD"
 $ GIT "symbolic-ref" "HEAD" "refs/heads/<candidate-branch>"
+
+$ DIRECTORY/FULL [.^.GIT]INDEX.
 $ TYPE [.^.GIT]HEAD.
 $ TYPE [.^.GIT.REFS.HEADS]<CANDIDATE-BRANCH>.
 ```
 
-The accepted M288 evidence was:
+Treat each as a separate proof:
 
-- `git read-tree FETCH_HEAD` returned `%X00000001` and replaced the RMS-visible index, with a new creation/modification timestamp;
-- `git update-ref` returned `%X00000001` and created the intended local branch ref at the exact fetched SHA;
-- `git symbolic-ref` returned `%X00000001` and made the RMS-visible `HEAD.` point at that branch;
-- the physical branch-ref file contained the exact GitHub candidate SHA.
+- `read-tree` establishes index content;
+- `update-ref` establishes the branch ref;
+- `symbolic-ref` establishes HEAD;
+- **none of them materializes the working files**.
 
-Treat those as separate proofs. Do not infer that `read-tree` moved a ref, or that `update-ref`/`symbolic-ref` materialized the working files. They establish index/ref metadata only; working-file materialization remains a separate RMS-aware step.
+Do not invent equivalent low-level sequences when the established workflow already covers the observed failure mode.
 
-This path is a validated recovery procedure for the observed failure mode, not a claim that low-level plumbing is generally preferable to normal Git on every OpenVMS installation. Use it only after exact candidate identity is known and ordinary branch establishment has failed in the documented way.
+## RMS-aware tracked-file restore
 
-## RMS-aware restore is the established tracked-file workaround
-
-OVMS Agent includes an RMS-aware restore path for changed tracked files. When the visible HEAD is valid and the needed candidate is represented by HEAD, use the established restore procedure rather than inventing a new checkout mechanism.
-
-For several files, use the batch procedure:
+When HEAD represents the intended candidate, use the established batch restore:
 
 ```text
 $ @GIT_RESTORE "path1,path2,path3"
 ```
 
-Keep the comma-separated path list short. A long DCL command can fail with:
+Keep the list short enough to avoid `%DCL-W-TKNOVF`. If token overflow occurs, assume the batch did not reliably restore the requested files; split it and verify each smaller batch.
+
+`GIT_RESTORE.COM` restores from current Git HEAD. It is not a general arbitrary-SHA/FETCH_HEAD materializer.
+
+## Selective restore can leave a hybrid tree
+
+Restoring only files changed by a candidate does not prove every other working file matches that candidate. M288 acceptance exposed a stale earlier-branch regression file outside the M288 changed-file list; the full regression suite caught the hybrid tree.
+
+Therefore:
+
+- know what local modifications/fixtures existed before materialization;
+- restore suspect tracked paths from current exact HEAD;
+- do not discard unrelated local modifications without assessment; and
+- use the full native build/regression suite to expose hidden contamination when product inputs changed.
+
+## Git status implementation and scratch-file filtering
+
+M290 moved Git status/diff handling toward RMS-safe direct comparison and correct native/POSIX status interpretation.
+
+M291 fixed a self-pollution bug where status scratch files created by OVMS Agent could appear as untracked. The current filter removes only exact untracked (`?? `) basenames:
 
 ```text
-%DCL-W-TKNOVF
+OVMS_AGENT_GIT_META.TMP
+OVMS_AGENT_GIT_INDEX.TMP
+OVMS_AGENT_GIT_CACHED.TMP
+OVMS_AGENT_GIT_OTHER.TMP
+OVMS_AGENT_GIT_HASH.TMP
 ```
 
-If that occurs, assume the requested restore batch did **not** reliably materialize the files; split the list into smaller verified batches.
+Tracked files with the same name and lookalikes such as `.TMP.BAK` are not hidden.
 
-### Important limitation
+Do not generalize this into “ignore all TMP files”; the filter is deliberately exact.
 
-The current `GIT_RESTORE.COM` / `GITRESTORE` path restores from Git `HEAD`; it is not a general arbitrary-SHA or `FETCH_HEAD` materializer. Do not pretend it can restore an unrelated fetched candidate when visible HEAD still points somewhere else.
+## Exact candidate identity versus tree-equivalent promotion
 
-When HEAD cannot safely represent the exact fetched candidate, use an explicitly audited deterministic materialization method and compare the resulting RMS-visible files against the exact GitHub candidate before native acceptance.
+Separate these questions:
 
-## Selective restore can leave a hybrid working tree
+1. Which GitHub commit/tree is the candidate?
+2. Which object did OpenVMS fetch?
+3. Which refs/index does local Git metadata represent?
+4. Which files are physically visible to compiler/runtime?
+5. Which exact SHA was native-tested?
+6. Does the promoted merge have an identical tree?
 
-Restoring only the files changed by the new candidate does **not** prove the rest of the OpenVMS working tree matches that candidate.
+If the merge SHA itself was not native-built, do not call it native-green. It may be accepted as a **tree-equivalent promotion** only after proving its tree equals the exact native-accepted candidate tree.
 
-During M288 acceptance, the 17 M288-changed files were restored and verified from the exact candidate, yet `SRC/M251_SYNTH_TEST.C` still contained an earlier unpromoted M287 experiment because M288 itself did not change that path. The resulting hybrid tree mixed M288 production code with a stale M287 regression expectation and caused the full build to fail:
+## Hashing, index operations, and file modes
+
+When native Git cannot hash/stage an RMS file normally, verify the physical file first.
+
+`git hash-object` without `-w` computes a blob ID but does not store it. Use `-w` only when the object must actually be referenced. Low-level `update-index --cacheinfo` is a last-resort operation and requires independently verified blob SHA and repository mode.
+
+Keep:
 
 ```text
-M287 failed: provider Responses eligibility matrix invalid.
-Regression test M251_SYNTH_TEST.EXE failed.
+core.filemode=false
 ```
 
-Restoring `SRC/M251_SYNTH_TEST.C` from the current exact M288 `HEAD` removed the contamination; the next full build passed with:
+and preserve repository executable bits unless an intentional change requires otherwise. OpenVMS editors can cause meaningless local mode drift.
 
-```text
-All regression tests passed.
-Build completed successfully.
-BUILD_STATUS=%X00000001
-```
+## Shallow history
 
-Therefore, after candidate materialization, verify or clear residual local modifications from prior experiments. A changed-file list is sufficient to identify what the candidate introduces; it is **not** sufficient to prove every other RMS-visible file already matches candidate `HEAD`.
+Before promotion/push from a shallow clone, unshallow and verify ancestry. A genuine fast-forward can otherwise appear locally as a non-fast-forward rejection.
 
-When native status/porcelain cannot be trusted, use known prior-branch history, candidate-sensitive file checks, exact GitHub content, RMS-aware restore of suspect paths, and ultimately the full native build/regression suite to detect hybrid-tree contamination.
+## OpenVMS file versions and stale objects
 
-## Verify exact candidate identity before acceptance
+Repository deletion does not prove all physical OpenVMS file versions are gone. Verify stale versions explicitly when acceptance depends on deletion.
 
-For milestone work, separate these questions:
+A failed compile can leave an older object version available to LINK; a successful LINK after a failed compile is not proof of a fresh object.
 
-1. **Which GitHub commit is the candidate?**
-2. **Which object did OpenVMS actually fetch?**
-3. **Which refs/index does the local Git metadata actually represent?**
-4. **Which files are physically visible to the OpenVMS compiler/runtime?**
-5. **Do those visible files exactly represent the candidate tree/content, without stale prior-branch contamination?**
+## Known-good candidate sequence
 
-Do not collapse these into “Git returned success.”
+1. Verify the exact GitHub candidate SHA/tree.
+2. Fetch with `GITAUTH`.
+3. Verify RMS-visible `FETCH_HEAD.` (or intended ref) contains that SHA.
+4. Establish index/ref metadata with the validated workflow if normal checkout/reset is unreliable.
+5. Verify `INDEX.`, `HEAD.`, and the branch-ref file separately when relevant.
+6. Materialize changed tracked files with `GIT_RESTORE` in short verified batches.
+7. Check for stale prior-branch/local tracked modifications outside the candidate changed-file list.
+8. Verify RMS-visible candidate files before build.
+9. Run native compile/link/regressions/live checks appropriate to the changed surface.
+10. Record exact native status/evidence.
+11. Promote only after acceptance.
+12. Compare accepted candidate tree to promoted merge tree before using tree-equivalent promotion language.
+13. Tag/prune refs only after promotion evidence is durable.
 
-Useful evidence includes:
+## What belongs here
 
-- exact GitHub branch/PR head SHA;
-- `.git/FETCH_HEAD` showing that exact SHA;
-- `.git/HEAD` showing the current local ref;
-- the RMS-visible branch-ref file containing the exact SHA;
-- `DIRECTORY/FULL [.^.GIT]INDEX.` when index replacement must be proven;
-- exact branch-live GitHub file content/blob SHAs;
-- RMS-visible `TYPE`, `SEARCH`, `DIFFERENCES`, or hashes;
-- native compile/link/runtime acceptance.
+Add lessons here when they are primarily about Git/OpenVMS/RMS/DCL interaction and supported by native evidence. Language/compiler-specific lessons belong under `LANGUAGE/`; generic product defects belong in GitHub issues.
 
-If an exact candidate SHA itself was not what OpenVMS built, say so. Distinguish **exact-SHA accepted** from **tree/content-equivalent accepted**.
-
-## Git hashing and the RMS index
-
-When native Git cannot hash or stage an RMS file normally, verify the physical file first.
-
-`git hash-object` without `-w` computes a blob ID but does not store the blob. If a new blob must actually be referenced by the index/object database, use `git hash-object -w`.
-
-Low-level operations such as `git update-index --cacheinfo` are last-resort tools. Use them only with independently verified blob SHAs and the intended repository mode.
-
-Preserve existing executable-mode bits unless a mode change is intentional. EDT and other OpenVMS editors can contribute to local mode drift.
-
-## Shallow clones can lie about ancestry
-
-Before promotion/push from a shallow acceptance clone, unshallow and verify ancestry. A genuine fast-forward can appear to be a non-fast-forward rejection when the local history boundary hides the required ancestors.
-
-## OpenVMS file versioning can preserve stale files
-
-Repository deletion does not necessarily prove every physical OpenVMS file version is gone. When acceptance depends on a file truly disappearing (for example a compatibility shim), inspect and remove stale versions explicitly before building.
-
-Likewise, a failed compile can leave an older object version available to LINK. Never treat a successful LINK after a failed compile as proof that the failed source produced a new object.
-
-## Known-good decision sequence
-
-For a fetched milestone candidate, prefer this sequence:
-
-```text
-1. Fetch with GITAUTH.
-2. Verify the exact GitHub candidate SHA.
-3. Verify FETCH_HEAD or the intended ref visibly contains that SHA.
-4. Determine the current visible HEAD/ref/index separately.
-5. If normal branch establishment works, verify it physically and use the established RMS-aware restore path.
-6. If reset/checkout has been proven ineffective for this checkout, use the validated read-tree + update-ref + symbolic-ref recovery path and verify INDEX., HEAD., and the branch-ref file separately.
-7. Materialize candidate files with GIT_RESTORE in short verified batches.
-8. Check for stale prior-branch files that are not in the candidate changed-file list; restore any suspect tracked paths from current HEAD.
-9. Verify actual RMS-visible candidate files before build.
-10. Run native compile/link/regressions.
-11. Record exact status and distinguish exact-SHA vs tree-equivalent acceptance.
-12. Only then promote/push/tag.
-```
-
-Do not introduce a new Git mechanism merely because ordinary porcelain output is confusing if an already-validated OVMS Agent workaround covers the case.
-
-## What belongs in this document
-
-Add a lesson here when it is primarily about Git/OpenVMS/RMS/DCL interaction and has been reproduced or otherwise supported by native evidence.
-
-Language/compiler-specific lessons belong in `LANGUAGE/<LANGUAGE>.MD` instead. Generic OVMS Agent defects belong in GitHub issues for `ovms-agent`.
-
-The purpose is simple: **once we have paid the cost to learn an OpenVMS Git quirk, future users and future development sessions should start from that knowledge rather than pay for it again.**
+The purpose is simple: once a Git/RMS quirk has been proven, future users and development sessions should start from that evidence rather than rediscover it.

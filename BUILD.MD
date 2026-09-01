@@ -1,6 +1,12 @@
 # Building OVMS Agent
 
-`BUILD.COM` is the authoritative build and regression procedure for OVMS Agent. The project intentionally keeps its build logic in native OpenVMS DCL rather than requiring a Unix-oriented build system.
+`BUILD.COM` is the authoritative build and regression procedure for OVMS Agent. The project intentionally uses native OpenVMS DCL rather than requiring a Unix-oriented build system.
+
+## Canonical acceptance environment
+
+The current canonical product acceptance host is **OpenVMS V9.2-3 x86-64**. It is authoritative for the project's live compile/link behavior, RMS semantics, DCL behavior, regression execution, and runtime checks.
+
+The source also preserves historical DEC C/VAX-facing compatibility constraints where they remain part of the product contract. Those compatibility constraints are not a statement that VAX is the current acceptance host.
 
 ## Normal build
 
@@ -9,8 +15,6 @@ From the repository root:
 ```text
 $ @BUILD
 ```
-
-The procedure determines the project directory from its own filespec, creates `[.TEST]` and `[.BUILD]` when needed, bounds old generated file versions in `[.BUILD]`, compiles and links the program and its supporting test images, runs the regression suite, restores the caller's default directory, and returns the final OpenVMS status.
 
 A successful 1.0.0 build ends with:
 
@@ -21,33 +25,39 @@ Build completed successfully.
 Run with: $ @OVMS_AGENT
 ```
 
-For milestone and release acceptance, save and display the final status explicitly when requested. The established successful build status is:
+For milestone/release acceptance, capture the final status explicitly when requested. The established successful product-build status is:
 
 ```text
 %X00000001
 ```
 
+`BUILD.COM` creates/uses `[.TEST]` and `[.BUILD]`, compiles and links the product and regression images, runs the canonical regressions, bounds generated file versions, restores the caller's default directory, and returns the final OpenVMS status.
+
 ## Generated files
 
-Build products live under:
+Generated build products live under:
 
 ```text
 [.BUILD]
 ```
 
-That directory contains object files, test images, linker option copies, the final `OVMS_AGENT.EXE`, and build diagnostics. These are generated artifacts and should not be treated as source of truth.
+They include objects, regression images, option-file copies, logs, and the final:
 
-Before a normal build, `BUILD.COM` purges generated `[.BUILD]` files to keep one version. This bounds normal OpenVMS file-version accumulation while preserving the newest generated artifact.
+```text
+[.BUILD]OVMS_AGENT.EXE
+```
+
+Generated files are not source of truth. OpenVMS file versioning can leave stale generated versions, so a failed compile followed by a successful link is not proof that the failed source produced a fresh object.
 
 ## Quiet and verbose builds
 
-Normal builds redirect compiler/linker detail to:
+Normal compiler/linker detail is captured in:
 
 ```text
 [.BUILD]OVMS_BUILD.LOG
 ```
 
-To request verbose build output, define the process logical `OVMS_AGENT_BUILD_VERBOSE` to one of the recognized true values before invoking `@BUILD`, for example:
+For verbose output:
 
 ```text
 $ DEFINE/PROCESS OVMS_AGENT_BUILD_VERBOSE YES
@@ -55,94 +65,88 @@ $ @BUILD
 $ DEASSIGN/PROCESS OVMS_AGENT_BUILD_VERBOSE
 ```
 
-Recognized true forms include `YES`, `TRUE`, `1`, and `ON`.
-
-Verbose output is useful when diagnosing a compiler, linker, or regression failure. Routine milestone acceptance normally uses the standard build output plus the captured log when additional detail is necessary.
+Recognized true values include `YES`, `TRUE`, `1`, and `ON`.
 
 ## Build structure
 
-The top-level procedure delegates coherent module families to supporting DCL procedures and options files:
+The top-level procedure delegates coherent module groups to:
 
-- `BUILD_LLM_MODULES.COM` builds the provider-neutral LLM/agent subsystem and related support modules.
-- `BUILD_COMMAND_MODULES.COM` builds the command subsystem.
-- `LLM_MODULES.OPT` supplies the LLM-side object set to the linker.
-- `COMMAND_MODULES.OPT` supplies the command-side object set to the linker.
-- `BUILD.COM` builds the remaining core/project modules, links the final image, builds focused regression executables, and runs the canonical regression sequence.
+- `BUILD_LLM_MODULES.COM`;
+- `BUILD_COMMAND_MODULES.COM`;
+- `LLM_MODULES.OPT`;
+- `COMMAND_MODULES.OPT`.
 
-The final executable is linked as:
-
-```text
-[.BUILD]OVMS_AGENT.EXE
-```
-
-Do not add the same object through both the top-level link command and an options file. Several build comments explicitly protect against duplicate linkage of shared transaction/RMS objects.
+`BUILD.COM` builds the remaining core/project modules, links the final image, builds focused regression executables, and runs the canonical sequence. Do not add the same object through both a top-level link command and an options file.
 
 ## Compiler compatibility
 
-The repository includes code compiled with both C99 and `RELAXED_ANSI89` modes depending on the module and historical compatibility requirements.
+The repository contains modules compiled with different historical compiler modes, including C99 and `RELAXED_ANSI89`, according to subsystem needs. Preserve existing mode choices unless the change deliberately updates them.
 
-For VAX-facing work, project rules remain stricter than simply accepting whatever a modern compiler allows:
+For DEC C/VAX-facing compatibility:
 
-- do not introduce implicit function declarations;
-- preserve DEC C/OpenVMS calling and library conventions;
-- treat the 31-character externally visible identifier limit as a hard compatibility constraint;
-- avoid modern C syntax in VAX-sensitive code unless the live subsystem already requires it;
-- never rely on compiler/linker identifier truncation.
+- externally visible identifiers must be 31 characters or fewer;
+- implicit function declarations are not acceptable;
+- preserve OpenVMS/DEC C calling and library conventions;
+- keep VAX-facing C within the project's C89/DEC C discipline unless an existing subsystem specifically requires otherwise;
+- never rely on compiler/linker name truncation.
 
-When adding a new external function, global variable, or linker-visible symbol, count the identifier before asking VAX to discover the problem for you.
+The canonical x86-64 build does not remove these compatibility requirements.
 
-## Tests
+## Regression expectations
 
-A normal `@BUILD` is not merely compilation. It builds and executes the project's canonical regression programs. A source change is not accepted merely because the final executable linked.
+A normal `@BUILD` is both a build and the canonical regression suite. Linking the final executable alone is not acceptance.
 
-When a focused regression procedure or executable is used as additional milestone evidence, capture its final OpenVMS status separately. Focused tests supplement the normal build; they do not silently replace it when the changed surface can affect normal compilation, linking, or runtime behavior.
+Focused tests may supplement the full build and should have their final OpenVMS status captured when used as evidence. They do not replace a required full build for source/build/runtime changes.
 
-## Intentional diagnostic path
-
-`BUILD.COM` contains test-only diagnostic hooks used by regression work. Do not use milestone-specific diagnostic arguments during a normal production build unless the corresponding test explicitly requires them.
-
-For example, the `M251_DIAG_FAIL` argument intentionally exercises a failed-build path. It is not an installation or acceptance command.
+Milestone-specific diagnostic hooks such as historical failure-injection arguments are test paths, not normal installation or acceptance commands.
 
 ## When a full build is required
 
 Run the full `@BUILD` for changes that can affect:
 
 - C source or headers;
-- command/LLM module build lists;
-- options files or linker composition;
-- DCL procedures used by the build or launcher;
-- compatibility shim removal;
-- runtime behavior whose acceptance depends on the built image.
+- command/LLM module composition;
+- options/linker inputs;
+- launcher/build DCL procedures;
+- runtime behavior;
+- compatibility-shim removal; or
+- regression behavior.
 
-A documentation-only change that does not feed the build or runtime may use a narrower documentation/RMS validation gate, but the milestone record must say why a full product build was not required.
+A documentation-only change that does not feed compilation, linking, launcher behavior, HELP-library syntax, or runtime may use a narrower documentation validation gate. The milestone record must state why a product rebuild was unnecessary.
 
-## VAX/OpenVMS acceptance
+## Exact candidate versus tree-equivalent promotion
 
-GitHub is the repository control plane, but OpenVMS/VAX remains the canonical authority for DEC C behavior, linker behavior, RMS semantics, DCL semantics, and live runtime acceptance.
+Native acceptance belongs to the exact candidate that was actually materialized and tested. After promotion, a GitHub merge commit may be treated as carrying the accepted product tree only when its tree is proven identical to the accepted candidate tree.
 
-The accepted workflow is:
+Do not say a merge SHA itself was native-built when only its tree-equivalent parent/candidate was built. Record both facts precisely.
 
-1. Make and audit the repository change on GitHub.
-2. Fetch the exact candidate ref on OpenVMS.
-3. Materialize changed tracked files with the RMS-aware restore path when native Git checkout/reset is unreliable.
-4. Verify the exact candidate SHA and a clean intended diff.
-5. Run the required build/tests.
-6. Save the final status.
-7. Verify `git status --short` and `git diff --name-only` are empty and `core.filemode=false`.
-8. Promote only after the acceptance evidence is complete.
+## OpenVMS/RMS acceptance workflow
 
-For a release candidate, also verify the runtime `VERSION` command and normal startup banner report the intended semantic version before promotion.
+GitHub is the repository control plane; the canonical OpenVMS host is the native acceptance authority. Because the observed OpenVMS Git port is RMS-sensitive, repository identity, Git metadata, physical files, and native execution must be verified separately.
 
-See `CONTRIBUTING.MD` for the full milestone workflow.
+For source/build/runtime milestones:
+
+1. Create/audit the exact candidate on GitHub.
+2. Fetch it on OpenVMS with `GITAUTH` when authenticated network access is required.
+3. Verify the exact fetched SHA through RMS-visible Git control files when normal porcelain/ref output is unreliable (for example `[.^.GIT]FETCH_HEAD.` and the intended branch-ref file).
+4. Establish local index/ref metadata using the already validated workflow when ordinary checkout/reset is unreliable.
+5. Materialize changed tracked files through the RMS-aware restore path in short verified batches.
+6. Verify physical RMS-visible files, not Git status alone.
+7. Run the required full build/focused tests/live checks.
+8. Capture final OpenVMS statuses.
+9. Confirm `core.filemode=false` and investigate any local working-tree anomalies rather than assuming porcelain output is authoritative.
+10. Promote only after the acceptance evidence is complete.
+
+See `DOC/OPENVMS_GIT_QUIRKS.MD` for the detailed operating guide and `CONTRIBUTING.MD` for milestone workflow.
 
 ## Build failures
 
 When a build fails:
 
-1. Preserve the exact compiler/linker/test diagnostic and final status.
-2. Inspect `[.BUILD]OVMS_BUILD.LOG` when the standard output is intentionally quiet.
-3. Fix the smallest coherent cause rather than broadening the change opportunistically.
-4. Re-run the relevant focused test if one exists.
-5. Re-run the full build when the changed surface requires it.
+1. Preserve the exact diagnostic and status.
+2. Inspect `[.BUILD]OVMS_BUILD.LOG` when needed.
+3. Fix the smallest coherent cause.
+4. Run the relevant focused regression when one exists.
+5. Re-run the full build whenever the changed surface requires it.
 
-OVMS Agent itself can capture failed project build evidence for repair workflows, but the repository's own `BUILD.COM` remains authoritative for building OVMS Agent.
+OVMS Agent can capture failed project-build evidence for repair workflows, but this repository's `BUILD.COM` remains authoritative for building OVMS Agent itself.

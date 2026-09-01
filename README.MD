@@ -1,82 +1,70 @@
 # OVMS Agent
 
-OVMS Agent is a native agentic programming assistant for OpenVMS.
+OVMS Agent is a native agentic programming assistant for OpenVMS. It brings modern AI-assisted software-development workflows to OpenVMS while respecting DCL, RMS file semantics, native compiler/linker behavior, explicit approval boundaries, and OpenVMS Git quirks.
 
-It brings modern AI-assisted software-development workflows to OpenVMS while respecting native build procedures, filesystem and RMS semantics, security boundaries, DCL conventions, and platform-specific compiler/linker constraints. The project is written primarily in C and is intended to run directly on OpenVMS without requiring a Unix compatibility layer for normal operation.
-
-## Release Status
+## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **License:** MIT
+- **Latest promoted milestone:** `M292`
+- **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
-- **Native user reference:** `OVMS_AGENT.HLP`
-- **Canonical documentation-history directory:** `DOC`
+- **Native command reference:** `OVMS_AGENT.HLP`
+- **License:** MIT
+
+Historical VAX/DEC C compatibility remains an intentional source constraint where it affects external identifiers, C89-era syntax, or linker behavior; it is not the current canonical acceptance host.
 
 ## Documentation
 
 | File | Purpose |
 | --- | --- |
 | [`INSTALL.MD`](INSTALL.MD) | Prerequisites, installation, first run, provider setup, and authenticated Git setup. |
-| [`BUILD.MD`](BUILD.MD) | Authoritative build procedure, generated artifacts, diagnostics, regressions, and VAX acceptance. |
-| [`CONTRIBUTING.MD`](CONTRIBUTING.MD) | GitHub-first development workflow, RMS-aware VAX acceptance, compatibility rules, and milestone hygiene. |
-| [`SECURITY.MD`](SECURITY.MD) | Credentials, approval boundaries, DCL/write/network safety, GitHub authentication, and vulnerability reporting. |
-| [`ARCHITECTURE.MD`](ARCHITECTURE.MD) | Subsystem boundaries, persistence, guarded writes, provider flow, repair/autonomous execution, and Git/GitHub integration. |
-| [`FEATURES.MD`](FEATURES.MD) | Plain-language catalog of current OVMS Agent capabilities. |
-| [`CHANGELOG.MD`](CHANGELOG.MD) | User-visible milestone/release history and the current unreleased section. |
-| [`OVMS_AGENT.HLP`](OVMS_AGENT.HLP) | Complete OpenVMS HELP source for commands and persistent SETTINGS, including when and why to use each feature. |
-| [`RULES.MD`](RULES.MD) | Durable project-development rules and acceptance discipline. |
-| [`LICENSE`](LICENSE) | MIT License terms for use, modification, and redistribution. |
+| [`BUILD.MD`](BUILD.MD) | Authoritative product build, regressions, diagnostics, and native acceptance workflow. |
+| [`CONTRIBUTING.MD`](CONTRIBUTING.MD) | GitHub-first development, RMS-aware OpenVMS acceptance, compatibility rules, and milestone hygiene. |
+| [`SECURITY.MD`](SECURITY.MD) | Credentials, approval boundaries, provider/GitHub transport, DCL/write/network safety, and reporting. |
+| [`ARCHITECTURE.MD`](ARCHITECTURE.MD) | Subsystem boundaries, persistence, guarded writes, provider flow, native toolchain execution, and Git/GitHub integration. |
+| [`FEATURES.MD`](FEATURES.MD) | Plain-language catalog of current capabilities. |
+| [`CHANGELOG.MD`](CHANGELOG.MD) | Promoted milestone/release history and current unreleased work. |
+| [`OVMS_AGENT.HLP`](OVMS_AGENT.HLP) | Complete OpenVMS HELP source for commands and persistent SETTINGS. |
+| [`RULES.MD`](RULES.MD) | Durable project-development and acceptance rules. |
+| [`DOC/`](DOC/) | Historical reconciliation/parity records plus the current OpenVMS Git/RMS operating guide. |
+| [`LANGUAGE/`](LANGUAGE/) | Native-validated language knowledge packs and build profiles. |
 
-Historical parity and reconciliation records are kept under [`DOC`](DOC/).
+## Major capabilities
 
-## What OVMS Agent Can Do
+OVMS Agent currently provides:
 
-OVMS Agent provides an interactive OpenVMS programming assistant with support for:
+- project/tree/file inspection and search;
+- ASK, CHAT, REVIEW, read-only agent analysis, planning, and persistent sessions;
+- guarded file creation and modification with OpenVMS RMS-aware behavior;
+- atomic multi-hunk `structured_patch` editing for ordinary `AGENT/WRITE` existing-file changes;
+- transactional multi-file change sets and rollback-oriented repair workflows;
+- project builds and captured build diagnostics;
+- guarded native `build_source` execution using language-specific toolchain profiles;
+- Git-aware project context and RMS-safe status/diff handling;
+- guarded GitHub operations and prompt-free authenticated raw Git through `GITAUTH`;
+- persistent provider, GitHub, and ordinary SETTINGS configuration;
+- provider-neutral support for direct providers and OpenAI-compatible intermediaries such as Requesty;
+- `PROVIDER TEST` / `PROVIDER TEST name` response-health diagnostics;
+- bounded autonomous execution and AUTOPILOT safety controls;
+- image input and external/MCP tool integration under approval controls; and
+- native-validated language guidance.
 
-- project and source-tree inspection;
-- plain-English source-code explanation;
-- text and code lookup;
-- Git-aware project context;
-- guarded file creation and modification;
-- structured multi-file patching;
-- controlled builds through the project's existing `BUILD.COM`;
-- build-error diagnosis;
-- supervised repair and retry workflows;
-- persistent agent sessions and transcripts;
-- project instruction context;
-- source and build-result history;
-- approval-controlled external-tool execution;
-- guarded GitHub operations;
-- persistent AI-provider and GitHub profiles;
-- persistent interactive user settings; and
-- multilingual OpenVMS development support.
-
-The language-awareness layer explicitly supports C, OpenVMS commands, MACRO-32, Fortran, BASIC, Pascal, COBOL, and BLISS.
-
-OVMS Agent does not assume that every compiler is installed. A project's own build procedure remains authoritative.
+The shared knowledge-pack layer currently ships curated COBOL and Fortran `.MD` packs. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
 
 ## Requirements
 
-You need:
-
-- OpenVMS;
-- a suitable C compiler;
-- TCP/IP networking for network-backed features;
-- HTTPS support for AI-provider and GitHub access; and
-- Git, strongly recommended for repository context, checkpoints, and GitHub integration.
-
-For the VSI Git environment used during development, reliable HTTPS Git operation requires:
+You need OpenVMS, a suitable C compiler, TCP/IP/HTTPS for network-backed features, and preferably Git. For the VSI Git environment used during development, HTTPS Git may require:
 
 ```text
 $ SET PROCESS/PARSE_STYLE=EXTENDED
 $ SET PROCESS/PRIVILEGE=SHARE
 ```
 
-`SHARE` must already be an authorized privilege for the account.
+`SHARE` must already be authorized for the account.
 
-See [`INSTALL.MD`](INSTALL.MD) for setup details and [`BUILD.MD`](BUILD.MD) for the authoritative build workflow.
+See `INSTALL.MD` and `BUILD.MD` for setup and build details.
 
-## Build and Run
+## Build and run
 
 From the project root:
 
@@ -84,7 +72,7 @@ From the project root:
 $ @BUILD
 ```
 
-A successful `1.0.0` build ends with:
+A successful 1.0.0 product build ends with:
 
 ```text
 Building OVMS Agent Version 1.0.0...
@@ -93,19 +81,13 @@ Build completed successfully.
 Run with: $ @OVMS_AGENT
 ```
 
-Start OVMS Agent with:
+Start the program with:
 
 ```text
 $ @OVMS_AGENT
 ```
 
-Exit the interactive program with:
-
-```text
-QUIT
-```
-
-## First Commands to Try
+Useful first commands include:
 
 ```text
 HELP
@@ -115,166 +97,76 @@ TREE
 STATUS
 PROVIDER LIST
 PROVIDER SHOW
+PROVIDER TEST
 MODEL
 ASK Explain this project in plain English.
 AGENT Explain the architecture of this project. Do not modify anything.
 AGENT/LANG
-AGENT/PARITY/FINAL
 AGENT/GITHUB/CHECK
 ```
 
-## Interactive Settings
+Exit with `QUIT` or `EXIT`.
 
-Run:
+## Provider configuration and health testing
 
-```text
-SETTINGS
-```
-
-The interactive settings menu covers guarded writes, DCL execution, the active provider profile, active model, maximum output-token limit, approval policy, network allow/deny lists, autonomous model/tool turns, and autonomous write actions.
-
-Ordinary settings are saved automatically in:
-
-```text
-SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT
-```
-
-Provider and model state continues to use:
+Named provider profiles are stored outside the repository in:
 
 ```text
 SYS$LOGIN:OVMS_AGENT_CONFIG.DAT
 ```
 
-Useful noninteractive forms are:
-
-```text
-SETTINGS SHOW
-SETTINGS GET name
-SETTINGS SET name value
-SETTINGS TOGGLE name
-SETTINGS RESET
-SETTINGS RELOAD
-```
-
-Existing `OVMS_AGENT_*` logical-name settings remain compatible. When a supported legacy logical is defined, it overrides the corresponding saved ordinary setting; `SETTINGS` reports that condition rather than silently replacing the explicit environment.
-
-## AI Provider Configuration
-
-OVMS Agent supports named AI-provider profiles without requiring a rebuild. A profile stores the service address, model, and service access key for one provider.
-
-Profiles are kept in:
-
-```text
-SYS$LOGIN:OVMS_AGENT_CONFIG.DAT
-```
-
-The service access key is entered without terminal echo and is masked in normal command output. The configuration file is outside the project repository and is written with restrictive permissions.
-
-Useful commands include:
+Useful commands are:
 
 ```text
 PROVIDER LIST
-PROVIDER SHOW
+PROVIDER SHOW [name]
+PROVIDER TEST [name]
 PROVIDER USE name
 PROVIDER ADD name
 PROVIDER DELETE name
-MODEL
-MODEL model-name
+MODEL [model-name]
 ```
 
-The configured service address may point directly to an AI provider or to an intermediary such as Requesty. Multi-turn agent work carries prior model output and tool results forward locally instead of depending on provider-specific server-side conversation state.
+`PROVIDER TEST` sends one bounded plain-text no-op request through each configured profile; `PROVIDER TEST name` tests one profile. It does not change the active profile. Responsive profiles report `OK`; failures are classified as `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, or `INVALID`. The test uses real provider transport and may consume a very small amount of provider usage. It is a basic response-health check, not a tool-call capability benchmark.
 
-## Guarded OpenVMS Editing
+Provider keys are entered without terminal echo, masked in normal output, and kept outside the repository.
 
-OVMS Agent's write path is designed around OpenVMS behavior rather than POSIX assumptions.
+## Guarded OpenVMS editing
 
-- COBOL files ending in `.COB`, `.COBOL`, or `.CBL` are recognized as source code.
-- `.CPY` files are available as supporting context without being treated as primary source files.
-- After an automatic write, saved file-read results are discarded so later reads see the newest OpenVMS file version.
-- Bounded automatic multi-file changes track the exact pre-run file versions and roll back affected files if the run stops incomplete.
-- Failed top-level builds preserve bounded diagnostics for repair planning; a later successful build clears stale failure evidence.
-- Supervised repair protects explicitly required behavior through goal checks before the normal patch/write path.
-- Git context is RMS-aware and avoids assuming that native Git can safely hash every multi-version OpenVMS working file directly.
+Ordinary `AGENT/WRITE` treats an existing-file edit as one atomic materialized write. The advertised existing-file primitive is `structured_patch`, which can carry multiple exact non-overlapping hunks for one file through one validation/confirmation/write operation. Supervised `AGENT/FIX` retains the older replace primitives. Raising `auto_writes` does not turn ordinary `AGENT/WRITE` into a sequence of independent existing-file patches.
 
-## GitHub Profiles and Guarded Authentication
+For cross-file transactional changes, use the change-set/transaction machinery rather than assuming one-file structured-patch atomicity extends across files.
 
-OVMS Agent can keep named GitHub profiles in:
+## Native source build profiles
+
+The guarded `build_source` agent tool can compile/interpret one source file using `LANGUAGE/<LANGUAGE>.BUILD` profiles. It requires full approval, guarded writes, and DCL execution. Profiles cover compiled, compile-only, interpreted, and DCL-procedure execution modes; native status and captured command output are returned to the agent.
+
+This tool supplements rather than replaces a project's normal `BUILD.COM` or equivalent build procedure.
+
+## Git and GitHub on OpenVMS
+
+OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible files and native build/runtime behavior are acceptance truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
+
+Authenticated raw Git uses `GITAUTH`. Operator-facing:
 
 ```text
-SYS$LOGIN:OVMS_AGENT_GITHUB.DAT
+$ GITAUTH --check
 ```
 
-Each profile stores a repository name, GitHub user name, branch, and token. Tokens are entered without terminal echo, masked in normal output, and kept outside the project repository.
+performs a non-mutating dry-run push preflight against the active profile's current origin to verify write authorization. `GIT_AUTH_SETUP.COM` uses an offline/config-only check during installation so setup itself does not depend on network availability.
 
-Profile commands include:
+`GITAUTH` uses short-lived repository-scoped authentication data and disables interactive credential prompting. Do not replace it with plaintext credential-helper storage.
 
-```text
-GITHUB LIST
-GITHUB SHOW
-GITHUB USE name
-GITHUB ADD name
-GITHUB DELETE name
-```
+## Compatibility
 
-Guarded GitHub commands include:
-
-```text
-AGENT/GITHUB
-AGENT/GITHUB/STATUS
-AGENT/GITHUB/REMOTE
-AGENT/GITHUB/CHECK
-AGENT/GITHUB/FETCH
-AGENT/GITHUB/PULL
-AGENT/GITHUB/PUSH
-AGENT/GITHUB/CLONE
-AGENT/GITHUB/ISSUES
-AGENT/GITHUB/PR
-```
-
-Before credentialed Git operations, OVMS Agent checks the required OpenVMS Git environment, creates short-lived repository-scoped authentication data, disables interactive credential prompting, and verifies that the saved credentials can read the configured repository. Temporary authentication and command files are removed across OpenVMS file versions afterward.
-
-For `FETCH`, `PULL`, and `PUSH`, the current checkout must identify the same repository as the active saved profile. A mismatch is refused rather than risking credential use against the wrong repository. Network Git operations remain subject to approval policy, and `PUSH` remains protected by `FULL` approval.
-
-GitHub PR and issue service operations use `GITHUB_BRIDGE.COM`. A normal `$ @OVMS_AGENT` launch defines `OVMS_AGENT_GITHUB_BRIDGE` to the bridge in the current checkout when no explicit override already exists.
-
-Supported service grammar includes:
-
-```text
-AGENT/GITHUB/PR help
-AGENT/GITHUB/PR list
-AGENT/GITHUB/PR create BASE HEAD ISSUE TITLE
-AGENT/GITHUB/ISSUES help
-AGENT/GITHUB/ISSUES list [open|closed|all]
-AGENT/GITHUB/ISSUES create TITLE
-```
-
-PR and issue titles are currently one whitespace-delimited token; use hyphens where spaces are needed. Fine-grained GitHub tokens must have the repository permissions required by the requested operation.
-
-## OpenVMS Language and Compatibility Notes
-
-OVMS Agent is aware of major OpenVMS development languages and tries to preserve each language's native conventions.
-
-For C development, the project observes historical DEC C/VAX constraints. Newly introduced external linker-visible identifiers must be 31 characters or fewer, and VAX-facing code remains compatible with the project's DEC C/C89 discipline unless an existing subsystem specifically requires otherwise.
+The current canonical acceptance environment is OpenVMS V9.2-3 x86-64. The project nevertheless preserves historical DEC C/VAX-facing compatibility constraints where they remain part of the product contract: externally visible C/linker names must remain 31 characters or fewer, implicit function declarations are not acceptable, and VAX-facing C remains compatible with the project's C89/DEC C discipline unless a subsystem specifically requires otherwise.
 
 ## Security
 
-- Do not commit service access keys, GitHub tokens, passwords, or other secrets.
-- Keep authentication material outside project repositories.
-- Review plans before approving write operations.
-- Use Git checkpoints before significant changes.
-- Do not grant `FULL` approval casually.
-- Preserve the project's `BUILD.COM` as the authoritative build procedure.
+Do not commit provider keys, GitHub tokens, passwords, authorization headers, or private `SYS$LOGIN` profile files. Use the least-permissive approval tier that fits the task, keep guarded writes/DCL disabled when not needed, and preserve `BUILD.COM` as the authoritative product build. See `SECURITY.MD`.
 
-See [`SECURITY.MD`](SECURITY.MD) for the full security model and reporting guidance.
+## Project philosophy
 
-## Project Philosophy
-
-OVMS Agent aims for practical modern agentic programming behavior adapted to OpenVMS. When Unix-oriented behavior does not map cleanly to OpenVMS, the project favors native OpenVMS semantics: DCL commands, OpenVMS filespecs and RMS versions, native build procedures, privilege handling, OpenVMS Git behavior, and architecture-appropriate compiler/linker constraints.
-
-The goal is to make AI-assisted development feel native on OpenVMS rather than bolted onto it.
-
-## License
-
-OVMS Agent is distributed under the MIT License. See [`LICENSE`](LICENSE) for the complete terms.
+OVMS Agent adapts modern coding-agent workflows to native OpenVMS rather than pretending OpenVMS is Unix. DCL, RMS versions, OpenVMS filespecs, native compiler/linker behavior, and the observed Git port all influence the design.
 
 This project was developed with extensive assistance from OpenAI-generated code.

@@ -1,155 +1,123 @@
 # Security Policy
 
-OVMS Agent can read source trees, call external AI services, write project files under guarded conditions, run selected OpenVMS commands, and perform authenticated GitHub operations. Its security model therefore depends on both credential hygiene and preserving the approval/write/network boundaries built into the program.
+OVMS Agent can read source trees, call external AI services, write project files under guarded conditions, run selected OpenVMS commands, and perform authenticated GitHub operations. Its security model depends on credential hygiene plus independent approval, write, DCL, network, path, transaction, and autonomous-execution boundaries.
+
+## Supported line and environment
+
+The current public release line is `1.0.x`. The current canonical native acceptance host is **OpenVMS V9.2-3 x86-64**. Historical VAX/DEC C compatibility remains relevant to source/linker correctness, but it is not the current security-support host description.
 
 ## Security-sensitive data
 
 Never commit or publish:
 
-- AI provider API keys;
+- provider API keys;
 - GitHub personal access tokens;
-- passwords or private authentication material;
-- temporary authorization-header files;
-- provider/GitHub profile files from `SYS$LOGIN`;
+- passwords/private authentication material;
+- temporary authorization headers;
+- `SYS$LOGIN` provider/GitHub profile files;
 - logs or fixtures containing live secrets.
 
-OVMS Agent intentionally stores user credentials outside the repository checkout.
-
-Provider profiles are stored in:
+Persistent stores are intentionally outside the repository:
 
 ```text
 SYS$LOGIN:OVMS_AGENT_CONFIG.DAT
-```
-
-Ordinary persistent settings are stored in:
-
-```text
 SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT
-```
-
-GitHub profiles are stored in:
-
-```text
 SYS$LOGIN:OVMS_AGENT_GITHUB.DAT
 ```
 
-Access keys and tokens are entered without normal terminal echo and are masked in normal command output. These files should retain restrictive OpenVMS protections appropriate to their contents.
+Keys/tokens are entered without normal terminal echo and masked in normal output. These files should retain restrictive OpenVMS protections.
 
 ## Approval and execution boundaries
 
-OVMS Agent separates several kinds of authority instead of treating one switch as permission for everything.
+Independent boundaries include:
 
-Important boundaries include:
-
-- session approval policy (`read-only`, `workspace`, `full`);
-- the guarded-write gate;
-- the DCL-execution gate;
+- session approval (`read-only`, `workspace`, `full`);
+- guarded-write enablement;
+- DCL-execution enablement;
+- project-root/path and sensitive-file checks;
 - network allow/deny policy;
-- autonomous turn/write ceilings;
-- the AUTOPILOT safety floor;
-- FULL-only external/GitHub operations.
+- autonomous turn/write limits;
+- AUTOPILOT's inability to satisfy FULL;
+- repository/profile matching for authenticated Git; and
+- transaction/rollback behavior.
 
-Enabling one gate does not bypass the others.
-
-Use `read-only` for analysis whenever possible. Use `workspace` for intentional controlled project changes. Use `full` only when an operation explicitly requires the highest policy tier.
-
-Do not leave guarded writes or DCL execution enabled merely for convenience when the current task does not need them.
+Enabling one boundary does not bypass the others. Prefer `read-only` for analysis, `workspace` for intentional controlled project edits, and `full` only when a feature explicitly requires it.
 
 ## AUTOPILOT safety floor
 
-`AGENT/AUTOPILOT` is intentionally limited to bounded local workspace repair/build behavior.
+`AGENT/AUTOPILOT` is limited to bounded local workspace repair/build behavior. It cannot satisfy FULL approval and therefore cannot silently authorize arbitrary DCL, PUSH, GitHub mutations, MCP/external actions, or other FULL-gated work.
 
-It must not automatically satisfy FULL-gated operations. In particular, AUTOPILOT does not authorize arbitrary DCL, GitHub writes, PUSH, MCP/external actions, or other FULL-only work.
-
-Autonomous runs also retain hard turn/write ceilings and must stop in explicit terminal states rather than silently continuing without bounds.
-
-Changes that weaken these floors should be treated as security-sensitive architecture changes and require explicit review, regression coverage, and documentation updates.
+One invocation consumes a bounded cumulative autonomous budget and must stop in an explicit terminal state with human-review evidence.
 
 ## DCL execution
 
-Direct DCL execution is a privileged capability. The DCL gate and approval policy exist to keep ordinary source inspection or editing from silently becoming command execution.
+Direct DCL is privileged. Prefer narrower project/read/build tools when possible. Changes to DCL filtering, approval, command-procedure handling, quoting/chaining/redirection, or execution logging are security-sensitive and require focused review/regression evidence.
 
-Prefer dedicated read/project commands over DCL when a narrower operation exists.
+## Guarded writes and atomic editing
 
-Do not broaden DCL allow/deny behavior casually. Changes to command filtering, approval requirements, command-procedure handling, chaining/redirection handling, or execution logging should receive focused security review.
+File-changing workflows should reuse established guarded/RMS-aware write primitives.
 
-## Guarded writes and transactions
+Ordinary `AGENT/WRITE` existing-file edits preserve a one-materialized-write invariant: `structured_patch` can carry multiple exact non-overlapping hunks for one file through one validation/preview/confirmation/write. Supervised `AGENT/FIX` retains replace primitives; raising `auto_writes` does not permit sequential existing-file patching in ordinary `AGENT/WRITE`.
 
-File-changing workflows should use the established guarded write and transaction primitives rather than introducing a parallel writer.
+One-file structured-patch atomicity is not cross-file atomicity. Coordinated multi-file all-or-rollback work belongs to transaction/`CHANGESET` machinery.
 
-The existing design provides bounded project scope, confirmation/approval checks, exact change accounting, and rollback behavior for incomplete automatic multi-file work.
+Security-sensitive regressions include bypassing root checks/confirmation/approval, weakening rollback, damaging RMS record semantics, or creating a parallel writer outside the established policy path.
 
-Security-sensitive write-path changes include:
+## Provider endpoints and provider-health testing
 
-- bypassing project-root checks;
-- bypassing confirmation/approval;
-- losing rollback guarantees;
-- writing through a path that damages OpenVMS RMS record semantics;
-- creating files outside the approved workspace without explicit FULL-gated design.
+A profile may point directly to a provider or an OpenAI-compatible intermediary such as Requesty. Endpoint changes are trust-boundary changes because prompts, source excerpts, tool results, and credentials are sent to that endpoint.
 
-## GitHub authentication
+`PROVIDER TEST` makes a **real** bounded provider request. It must:
 
-Saved GitHub profiles contain repository/user/branch information and a token. Authenticated Git network operations on OpenVMS use short-lived repository-scoped configuration through the `GITAUTH` wrapper.
+- leave the active provider/model unchanged;
+- never print the access key or Authorization header;
+- use dedicated temporary request/header/response files;
+- remove all RMS versions of those temporary files after the probe; and
+- remain bounded by provider transport timeout/retry policy.
+
+A green/`OK` result means basic response health only. It does not certify tool-call capability, model safety, or suitability for guarded write workflows.
+
+## GitHub authentication and GITAUTH
+
+Saved GitHub profiles contain repository/user/branch/token information. Raw authenticated Git uses short-lived repository-scoped configuration through `GITAUTH`; interactive credential prompting is disabled.
 
 Do not replace this with plaintext global credential storage.
 
-The shipped GitHub bridge creates short-lived authorization-header, JSON body, and API-response files as needed. Credential-bearing temporary files are protected against group/world access and removed across OpenVMS file versions after use.
+`GITAUTH --check` is a live authenticated **write-authorization preflight**. It performs a non-mutating dry-run push to the active profile/current origin and therefore catches stale/wrong profile selection and tokens lacking repository write authorization. `GIT_AUTH_SETUP.COM` uses the config-only check so installation is not dependent on current network availability.
 
-A checkout/profile repository mismatch must fail closed rather than send credentials to the wrong repository.
+The dry-run authorization-check ref must not be created remotely. A successful check should be independently verified when acceptance depends on that fact.
 
-PUSH and GitHub service mutations remain protected by FULL approval.
+The GitHub service bridge also uses protected short-lived authorization/body/response files and removes them across RMS versions. Checkout/profile repository mismatch must fail closed. PUSH and GitHub service mutations retain FULL approval requirements.
 
-## Provider endpoints and intermediaries
+## OpenVMS Git/RMS integrity
 
-A provider profile may point directly to an AI provider or to an OpenAI-compatible intermediary such as Requesty.
+Do not treat an odd Git/OpenVMS status, blank/nonblank porcelain, or a successful reset/checkout as sufficient proof of repository state. The observed OpenVMS Git port can expose separate Git metadata and RMS-visible working-file truth.
 
-Treat endpoint changes as trust-boundary changes. Before using a new endpoint, understand which service receives prompts, source excerpts, tool results, and credentials.
+When acceptance depends on exact state, verify `.git` control files, physical source files, GitHub refs, and native build/runtime evidence independently. Follow `DOC/OPENVMS_GIT_QUIRKS.MD`.
 
-Do not hard-code provider secrets or endpoint-specific assumptions into generic source paths when profiles/settings already provide the appropriate boundary.
+Encoded POSIX-exit statuses must be decoded before applying generic native odd/even reasoning; a numerically odd status can still encode a nonzero POSIX failure.
 
-## Network policy
+## Network policy and transport changes
 
-Use `net_allow` and `net_deny` when outbound access must be constrained.
+Use `net_allow` / `net_deny` where outbound access must be constrained. New network-capable features should reuse established transport/policy/credential handling rather than creating bypass paths.
 
-A network-capable feature should not silently create an alternate transport that bypasses the existing network policy, approval checks, or credential handling.
+Changes involving HTTPS/curl, SSE/response parsing, provider transports, Git, or external bridges must be reviewed for:
 
-## Dependency and transport changes
-
-Changes involving HTTPS, `curl`, provider request/response handling, SSE/stream transport, Git, or external service bridges can alter security boundaries even when the visible command syntax does not change.
-
-Review such changes for:
-
-- credential exposure in command lines or logs;
+- credential leakage in command lines/logs;
 - insecure temporary files;
-- unintended redirects or destination changes;
-- repository/profile mismatches;
-- unsafe shell/DCL quoting;
-- failure to remove temporary files across RMS versions;
+- redirects/destination changes;
+- repository/profile mismatch;
+- unsafe DCL quoting;
+- failure to remove all RMS temp versions;
+- unbounded timeout/retry behavior; and
 - provider-specific assumptions leaking into generic paths.
 
 ## Reporting a vulnerability
 
-Do not post live credentials, exploit payloads containing secrets, or unnecessarily detailed private-environment information in a public issue.
+Do not post live credentials or unnecessary private-environment data in public issues. Use GitHub private vulnerability reporting/Security Advisories when available. If no private channel is available, open a minimal public issue requesting a private contact path without sensitive exploit detail.
 
-If GitHub private vulnerability reporting or a repository Security Advisory channel is available, use that for sensitive reports. If no private reporting channel is available, open a minimal public issue stating that you have a security concern and request a private contact path without including sensitive exploit details.
-
-For non-sensitive hardening defects that do not expose users or secrets, a normal GitHub issue is appropriate.
-
-A useful report includes:
-
-- affected commit/tag/version;
-- affected command or subsystem;
-- required approval/settings state;
-- impact;
-- minimal reproduction steps with secrets removed;
-- whether the issue is specific to VAX/OpenVMS, RMS behavior, Git integration, or a provider/GitHub endpoint.
-
-## Supported versions
-
-The current stable release line is `1.0.x`. Security fixes are expected to land on maintained `main` first and, when appropriate, be released as a compatible `1.0.x` patch release.
-
-Older milestone-only tags remain historical reference points and are not separate supported security branches unless an explicit backport policy is announced. A future minor or major release may replace the supported stable line; this section should be updated when that happens.
+A useful report includes affected commit/tag/version, subsystem/command, required settings/approval state, impact, minimal secret-free reproduction, and whether the behavior is OpenVMS/RMS/Git/provider-specific.
 
 ## Security documentation responsibility
 
-When a change materially alters credentials, approvals, network boundaries, DCL execution, guarded writes, GitHub authentication, autonomous safety floors, or temporary sensitive data handling, update this file in the same milestone.
+When a change materially alters credentials, provider transport, approvals, network boundaries, DCL execution, guarded writes, Git/GitHub authentication, autonomous safety floors, or temporary sensitive-data handling, update this file in the same milestone.
