@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M294**, plus the M295 Groq/Qwen tool-transport candidate on this branch.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M295**.
 
 ## Project inspection and context
 

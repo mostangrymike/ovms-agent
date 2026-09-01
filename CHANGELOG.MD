@@ -6,7 +6,11 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-### M295 — Groq Qwen tool transport compatibility
+No additional user-visible product changes are currently recorded beyond M295 below.
+
+## M295 — Groq Qwen tool transport compatibility
+
+Tag: `m295`
 
 - Revalidated historical Groq/Qwen issues #120 and #125 on OpenVMS V9.2-3 x86-64 using `qwen/qwen3.6-27b`.
 - Current streaming tool requests failed before a usable tool exchange, while the same read-only tool workflow succeeded through the bounded blocking Responses transport.
