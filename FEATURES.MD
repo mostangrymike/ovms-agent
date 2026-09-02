@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M298**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M299**.
 
 ## Project inspection and context
 
@@ -15,6 +15,31 @@ COBOL files ending in `.COB`, `.COBOL`, or `.CBL` are recognized as source; `.CP
 Ordinary settings live in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT`; provider/model state remains in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT`. Supported legacy `OVMS_AGENT_*` logical names retain higher precedence and are reported as overrides.
 
 Noninteractive forms include `SETTINGS SHOW`, `GET`, `SET`, `TOGGLE`, `RESET`, and `RELOAD`.
+
+## Native multiline prompt and goal input
+
+M299 adds native `.END`-terminated multiline entry for commands whose remaining operand is a free-form LLM prompt or goal. Normal one-line forms remain immediate; multiline collection starts only when an eligible command has all required fixed leading arguments but no free-form tail.
+
+For example:
+
+```text
+ASK
+Explain this project.
+Then summarize the main OpenVMS-specific constraints.
+.END
+```
+
+Eligible no-fixed-argument forms include ASK, CHAT, AGENT, AGENT/WRITE, AGENT/BUILD, AGENT/FIX, AGENT/RETRY, AGENT/REPAIR, AGENT/CREATE, AGENT/PLAN, AGENT/EXEC, AGENT/EXEC/DRY, AGENT/EXEC/RESUME, AGENT/EXEC/RESUME/CREATE, and AGENT/AUTOPILOT.
+
+Fixed-leading-argument forms enter multiline mode only after their structured prefix is complete:
+
+```text
+AGENT/IMAGE image-path
+AGENT/SESSION/EXEC <id>
+AGENT/EXEC/FORK <new-name> ::
+```
+
+M299 reuses the existing M251 multiline reader, so `.END` must appear by itself on a physical line; embedded newlines before it are preserved, and the existing overflow/EOF behavior remains authoritative. `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands are not broadened into implicit multiline input.
 
 ## AI provider profiles and health diagnostics
 
