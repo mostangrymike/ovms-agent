@@ -1,4 +1,7 @@
+#include <stdlib.h>
+
 #include "llm_internal.h"
+#include "LLM_AGENT_LIMITS.H"
 #include "LLM_PROMPTS.H"
 #include "LLM_PROJECT_MAP.H"
 
@@ -13,24 +16,54 @@ static void llm_agent_instr(agent_state *state,
                             int build_after_write,
                             int workflow)
 {
-    char instr_goal[12288];
-    char project_goal[24576];
-    char model_goal[32768];
+    char *instr_goal;
+    char *project_goal;
+    char *model_goal;
+
+    instr_goal = (char *)malloc((size_t)LLM_AGENT_INSTR_GOAL_MAX);
+    project_goal = (char *)malloc((size_t)LLM_AGENT_PROJECT_GOAL_MAX);
+    model_goal = (char *)malloc((size_t)LLM_AGENT_MODEL_GOAL_MAX);
+
+    if (instr_goal == NULL || project_goal == NULL || model_goal == NULL) {
+        free(instr_goal);
+        free(project_goal);
+        free(model_goal);
+        (void)puts("Unable to allocate agent context buffers.");
+        return;
+    }
 
     if (!llm_instr_compose(
-            state, goal, instr_goal, sizeof(instr_goal))) {
+            state,
+            goal,
+            instr_goal,
+            (size_t)LLM_AGENT_INSTR_GOAL_MAX)) {
+        free(instr_goal);
+        free(project_goal);
+        free(model_goal);
         (void)puts("Unable to compose project instructions.");
         return;
     }
 
     if (!llm_project_compose(
-            state, instr_goal, project_goal, sizeof(project_goal))) {
+            state,
+            instr_goal,
+            project_goal,
+            (size_t)LLM_AGENT_PROJECT_GOAL_MAX)) {
+        free(instr_goal);
+        free(project_goal);
+        free(model_goal);
         (void)puts("Unable to compose repository map.");
         return;
     }
 
     if (!llm_git_compose(
-            state, project_goal, model_goal, sizeof(model_goal))) {
+            state,
+            project_goal,
+            model_goal,
+            (size_t)LLM_AGENT_MODEL_GOAL_MAX)) {
+        free(instr_goal);
+        free(project_goal);
+        free(model_goal);
         (void)puts("Unable to compose Git context.");
         return;
     }
@@ -42,6 +75,10 @@ static void llm_agent_instr(agent_state *state,
         build_after_write,
         workflow
     );
+
+    free(instr_goal);
+    free(project_goal);
+    free(model_goal);
 }
 
 void llm_agent(agent_state *state, const char *goal)
