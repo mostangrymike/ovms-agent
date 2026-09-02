@@ -331,7 +331,7 @@ static int m263_git_rms_diff(void)
         if (next == NULL) {
             break;
         }
-        cursor = next + 1U;
+        cursor = next + 1;
     }
 
     llm_git_diff_ok = 1;
