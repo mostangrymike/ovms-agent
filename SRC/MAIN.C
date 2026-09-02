@@ -195,7 +195,6 @@ static int main_one_shot(agent_state *state,
         (void)fputs(",\"condition\":\"", stdout);
         (void)printf("%%X%08lX", status);
         (void)fputs("\",\"success\":", stdout);
-        (void)fputs(",\"success\":", stdout);
         (void)fputs(
             executed && ((status & 1UL) != 0UL) ? "true" : "false",
             stdout
