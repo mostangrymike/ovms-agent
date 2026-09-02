@@ -6,6 +6,8 @@
  * Scoped files are applied from broad to specific; later scopes override
  * conflicting earlier guidance.
  */
+#include <stdlib.h>
+
 #include "LLM_INSTRUCTIONS.C"
 
 #define M257_SCOPE_MAX 8U
@@ -294,11 +296,20 @@ int llm_instr_compose(const agent_state *state,
                       char *output,
                       size_t output_size)
 {
-    char base[LLM_INSTR_PROMPT];
+    char *base;
     int written;
+    int ok;
 
-    if (!llm_instr_compose_base(state, goal, base, sizeof(base)) ||
-        !m257_load_scopes(state, goal)) return 0;
+    if (output == NULL || output_size == 0U) return 0;
+
+    base = (char *)malloc(output_size);
+    if (base == NULL) return 0;
+
+    if (!llm_instr_compose_base(state, goal, base, output_size) ||
+        !m257_load_scopes(state, goal)) {
+        free(base);
+        return 0;
+    }
 
     if (m257_active_count == 0U) {
         written = snprintf(output, output_size, "%s", base);
@@ -312,7 +323,9 @@ int llm_instr_compose(const agent_state *state,
             base, m257_active_data);
     }
 
-    return written >= 0 && (size_t)written < output_size;
+    ok = written >= 0 && (size_t)written < output_size;
+    free(base);
+    return ok;
 }
 
 int llm_instr_status_text(const agent_state *state,
