@@ -4,6 +4,9 @@ int llm_m251_size_old(void);
 int llm_m251_size_new(void);
 int llm_m251_payload_ok_test(void);
 int llm_m251_narr_ok(void);
+int llm_m189_scope_prose(void);
+int llm_m189_missing_modify(void);
+int llm_m189_explicit_scope(void);
 
 {
     const char *path =
@@ -93,6 +96,46 @@ int llm_m251_narr_ok(void);
         &failed_count
     );
 }
+
+{
+    int ok;
+
+    ok = llm_m189_scope_prose();
+
+    llm_selftest_report(
+        "M189 explanatory path prose ignored",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = llm_m189_missing_modify();
+
+    llm_selftest_report(
+        "M189 explicit missing modify rejected",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int ok;
+
+    ok = llm_m189_explicit_scope();
+
+    llm_selftest_report(
+        "M189 explicit fallback scope accepted",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
 {
     int ok;
 
