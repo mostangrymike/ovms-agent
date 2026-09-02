@@ -35,6 +35,12 @@ The normal entry point is:
 
 `SRC/COMMAND*.C` and related modules parse and dispatch project, SETTINGS, provider, GitHub, agent, repair, session, refactoring, and tool commands while enforcing command-specific syntax/policy.
 
+M299 separates native multiline **trigger selection** from multiline **body reading**. `SRC/COMMAND_INPUT_M299.INC` decides whether the first physical command record is an eligible free-form prompt/goal command with no free-form tail yet. If so, `SRC/MAIN.C` invokes the existing M251 multiline reader, which remains authoritative for exact `.END` termination, embedded-newline preservation, overflow draining, and EOF handling.
+
+The trigger is deliberately syntax-aware. Commands with no fixed leading operands, such as ASK or AGENT/WRITE, enter multiline mode only when entered without their free-form text. Commands with required leading operands, such as `AGENT/IMAGE image-path`, `AGENT/SESSION/EXEC <id>`, and `AGENT/EXEC/FORK <new-name> ::`, enter multiline mode only after that fixed syntax is present and the free-form goal is still absent. Normal one-line forms therefore remain immediate and unambiguous.
+
+The legacy `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` spellings remain compatibility aliases. Structured command grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands do not acquire generic implicit multiline behavior.
+
 `OVMS_AGENT.HLP` is the authoritative human-oriented command/SETTINGS reference. User-visible command/settings changes must update it in the same milestone.
 
 ## Project and RMS layer
@@ -209,4 +215,4 @@ See `SECURITY.MD` for the security contract.
 - `CHANGELOG.MD` — promoted user-visible history;
 - `OVMS_AGENT.HLP` — command/SETTINGS reference;
 - `RULES.MD` — durable current project rules;
-- `DOC/` — historical reconciliation/parity records and the current Git/RMS operating guide.
+- `DOC/` — historical reconciliation/parity records, milestone notes, and the current Git/RMS operating guide.

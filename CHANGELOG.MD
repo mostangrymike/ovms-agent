@@ -6,7 +6,22 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M298 below.
+No additional user-visible product changes are currently recorded beyond M299 below.
+
+## M299 — Native `.END` multiline prompt/goal input
+
+Tag: `m299`
+
+- Added native multiline entry for eligible free-form LLM prompt/goal commands without requiring a `/MULTILINE` qualifier.
+- Preserved immediate one-line behavior when prompt/goal text is present on the command line.
+- Added multiline triggering after required fixed leading arguments for `AGENT/IMAGE image-path`, `AGENT/SESSION/EXEC <id>`, and `AGENT/EXEC/FORK <new-name> ::` when the free-form goal is omitted.
+- Preserved M251 reader semantics: `.END` must appear by itself on a physical line, embedded newlines before it are preserved, and existing overflow/EOF handling remains authoritative.
+- Kept `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` as compatibility aliases.
+- Deliberately left structured/safety-sensitive grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands outside implicit multiline behavior.
+- Added focused trigger-selection regression coverage and synchronized `OVMS_AGENT.HLP`, including the `OVMS_AGENT COMMANDS MULTILINE_INPUT` topic.
+- Exact canonical native-accepted candidate `0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81` (tree `a861600d498abf4b910e793e8808c82e878ac4c5`) passed full `@BUILD` with `BUILD_STATUS = "%X00000001"`, focused M251/M299 regression, HELP-library creation/lookup, and live blocking-transport multiline ASK acceptance.
+- Promotion PR #180 produced main `18a78a656825f6eb0841c60e1f924fc027980659`, whose tree exactly equals the native-accepted candidate tree; permanent tag `m299` points to that promoted main commit.
+- A separate pre-existing streaming completion-status defect exposed during validation is tracked as issue #179 and is not part of the M299 multiline implementation.
 
 ## M298 — OpenVMS platform knowledge packs
 

@@ -5,7 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M298`
+- **Latest promoted milestone:** `M299`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -26,7 +26,7 @@ Historical VAX/DEC C compatibility remains an intentional source constraint wher
 | [`CHANGELOG.MD`](CHANGELOG.MD) | Promoted milestone/release history and current unreleased work. |
 | [`OVMS_AGENT.HLP`](OVMS_AGENT.HLP) | Complete OpenVMS HELP source for commands and persistent SETTINGS. |
 | [`RULES.MD`](RULES.MD) | Durable project-development and acceptance rules. |
-| [`DOC/`](DOC/) | Historical reconciliation/parity records plus the current OpenVMS Git/RMS operating guide. |
+| [`DOC/`](DOC/) | Historical reconciliation/parity records, milestone notes, and the current OpenVMS Git/RMS operating guide. |
 | [`LANGUAGE/`](LANGUAGE/) | Native-validated language knowledge packs and build profiles. |
 | [`KNOWLEDGE/`](KNOWLEDGE/) | Validated OpenVMS Git/RMS/DCL platform knowledge packs. |
 
@@ -36,6 +36,7 @@ OVMS Agent currently provides:
 
 - project/tree/file inspection and search;
 - ASK, CHAT, REVIEW, read-only agent analysis, planning, and persistent sessions;
+- native `.END`-terminated multiline entry for eligible free-form prompt/goal commands while preserving immediate one-line forms;
 - guarded file creation and modification with OpenVMS RMS-aware behavior;
 - atomic multi-hunk `structured_patch` editing for ordinary `AGENT/WRITE` existing-file changes;
 - transactional multi-file change sets and rollback-oriented repair workflows;
@@ -108,6 +109,29 @@ AGENT/GITHUB/CHECK
 ```
 
 Exit with `QUIT` or `EXIT`.
+
+## Native multiline prompt and goal input
+
+M299 lets eligible free-form prompt/goal commands enter multiline mode without a `/MULTILINE` qualifier. A normal one-line command still executes immediately. To enter multiline text, supply the command with no free-form tail; OVMS Agent then reads physical records until `.END` appears by itself on a line.
+
+For example:
+
+```text
+ASK
+Explain how the project handles RMS files.
+Compare that with ordinary Unix file assumptions.
+.END
+```
+
+Commands with required fixed leading arguments enter multiline mode only after those arguments are present, for example:
+
+```text
+AGENT/IMAGE image-path
+AGENT/SESSION/EXEC <id>
+AGENT/EXEC/FORK <new-name> ::
+```
+
+The historical `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` spellings remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands do not gain implicit multiline behavior. See `OVMS_AGENT.HLP` topic `OVMS_AGENT COMMANDS MULTILINE_INPUT` and `DOC/M299_NATIVE_MULTILINE_INPUT.MD`.
 
 ## Provider configuration and health testing
 
