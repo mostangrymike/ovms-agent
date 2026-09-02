@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T09:54:04-05:00",
+  "updated_at": "2026-09-02T09:59:38-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -136,22 +136,20 @@
       "m298-platform-knowledge-packs",
       "m299-native-multiline-input"
     ],
-    "temporary_branches_pending_cleanup": [
-      "m299-documentation-sync"
-    ],
+    "temporary_branches_pending_cleanup": [],
     "verified_remote_branches": [
       "main",
       "chat-session-state",
       "m298-platform-knowledge-packs",
-      "m299-native-multiline-input",
-      "m299-documentation-sync"
+      "m299-native-multiline-input"
     ],
     "open_prs": 0,
     "open_issues": 1,
     "recent_pruned": [
       "m296-openrouter-free-tool-transport",
       "m298-promotion-metadata",
-      "m297-reasoning-output-budget"
+      "m297-reasoning-output-budget",
+      "m299-documentation-sync"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -162,10 +160,8 @@
       "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659"
     },
-    "pending_ref_operations": [
-      "Delete temporary merged branch m299-documentation-sync; it contains no unique unpromoted work because PR #181 is merged to main."
-    ],
-    "cleanup_note": "M299 product retention remains correct: permanent main/chat-session-state plus retained completed M298/M299. The permanent m299 tag remains on the original product-promotion commit 18a78a656825f6eb0841c60e1f924fc027980659. Current main 25042e97... is later docs-only housekeeping. The temporary docs branch should be deleted after merge."
+    "pending_ref_operations": [],
+    "cleanup_note": "M299 documentation cleanup is complete. Permanent main/chat-session-state plus retained completed M298/M299 satisfy branch retention; temporary merged branch m299-documentation-sync is deleted. The permanent m299 tag remains on the original product-promotion commit 18a78a656825f6eb0841c60e1f924fc027980659, while current main 25042e97... is later docs-only housekeeping."
   },
   "openvms_worktree": {
     "head": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
