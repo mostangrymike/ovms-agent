@@ -34,6 +34,9 @@ int main(void)
             settings_effective_bool("guarded_writes", NULL, 0) == 0,
             "default guarded writes") ||
         !m280_expect(
+            settings_effective_bool("streaming", NULL, 1) == 0,
+            "default streaming off") ||
+        !m280_expect(
             settings_effective_long(
                 "max_output_tokens", NULL, 2048L, 64L, 32768L) == 2048L,
             "default token limit") ||
@@ -48,7 +51,11 @@ int main(void)
         !m280_expect(
             strcmp(settings_value_source("guarded_writes", NULL),
                    "default") == 0,
-            "default source")) {
+            "default source") ||
+        !m280_expect(
+            strcmp(settings_value_source("streaming", NULL),
+                   "default") == 0,
+            "default streaming source")) {
         m280_cleanup();
         return 2;
     }
@@ -57,6 +64,8 @@ int main(void)
                      "save guarded writes") ||
         !m280_expect(settings_set_bool("dcl_execution", 1),
                      "save DCL") ||
+        !m280_expect(settings_set_bool("streaming", 1),
+                     "save streaming") ||
         !m280_expect(settings_set_long("max_output_tokens", 4096L),
                      "save token limit") ||
         !m280_expect(settings_set_long("auto_turns", 20L),
@@ -81,6 +90,9 @@ int main(void)
             settings_effective_bool("dcl_execution", NULL, 0) == 1,
             "persist DCL") ||
         !m280_expect(
+            settings_effective_bool("streaming", NULL, 0) == 1,
+            "persist streaming") ||
+        !m280_expect(
             settings_effective_long(
                 "max_output_tokens", NULL, 2048L, 64L, 32768L) == 4096L,
             "persist token limit") ||
@@ -96,6 +108,10 @@ int main(void)
             strcmp(settings_value_source("auto_turns", NULL),
                    "saved") == 0,
             "saved autonomous source") ||
+        !m280_expect(
+            strcmp(settings_value_source("streaming", NULL),
+                   "saved") == 0,
+            "saved streaming source") ||
         !m280_expect(
             strcmp(settings_get("approval_policy"), "workspace") == 0,
             "persist approval") ||
@@ -136,6 +152,9 @@ int main(void)
         !m280_expect(
             settings_effective_bool("dcl_execution", NULL, 1) == 0,
             "reset DCL") ||
+        !m280_expect(
+            settings_effective_bool("streaming", NULL, 1) == 0,
+            "reset streaming") ||
         !m280_expect(
             settings_effective_long(
                 "max_output_tokens", NULL, 1L, 64L, 32768L) == 2048L,
