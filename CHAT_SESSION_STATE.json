@@ -1,14 +1,14 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T09:59:38-05:00",
+  "updated_at": "2026-09-02T10:49:30-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
-    "tree": "5adaa4fe7e4128055b31eb839e26b478510f07c3",
-    "latest_milestone": "M299",
-    "latest_code_milestone": "M299",
+    "main": "1423e660df7166797347c3ec9154564d8b34dd36",
+    "tree": "ce740f5b253a85294166ad446744bd3de22429d9",
+    "latest_milestone": "M300",
+    "latest_code_milestone": "M300",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
     "open_issues": 1,
@@ -30,7 +30,7 @@
     "result": "Responses incomplete/max_output_tokens with no assistant text produce a bounded diagnostic instead of raw provider JSON."
   },
   "m298": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETENTION_PRUNE_PENDING",
     "issue": 144,
     "branch": "m298-platform-knowledge-packs",
     "baseline_main": "1224014d544b43cea6e9c602ff17217969cb46c6",
@@ -106,6 +106,38 @@
       "post_promotion_documentation": "PR #181 changed Markdown documentation only. No product source, build procedure, launcher, SETTINGS, or OVMS_AGENT.HLP source changed, so no additional native product build was required under RULES.MD."
     }
   },
+  "m300": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAG_PENDING_RETENTION_PENDING",
+    "issue": 182,
+    "related_open_issue": 179,
+    "branch": "m300-blocking-default-streaming-opt-in",
+    "baseline_main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
+    "native_source_checkpoint": "576ce40727648158ddedf41000ed490788b8b94c",
+    "final_candidate": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
+    "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
+    "promotion_pr": 183,
+    "promoted_main": "1423e660df7166797347c3ec9154564d8b34dd36",
+    "promoted_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
+    "tag": null,
+    "result": "Bounded blocking Responses transport is the default. Persistent streaming defaults OFF and has no new enable logical; explicit ON permits only eligible interactive non-tool SSE presentation, while all tool-bearing requests remain blocking. Existing OVMS_AGENT_NOSTREAM remains a force-blocking compatibility override and OVMS_AGENT_STREAM_DEBUG remains diagnostic only.",
+    "acceptance": {
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build": "Build completed successfully.",
+      "focused_policy": "M300 stream policy regression passed.; %X00000001",
+      "focused_settings": "M280 settings regression passed.; %X00000001",
+      "help_library": "%X10000001",
+      "help_lookup": "%X00000001",
+      "help_lookup_topic": "OVMS_AGENT SETTINGS STREAMING",
+      "live_default_blocking": "streaming=OFF source=default; ASK returned exactly M300 DEFAULT BLOCKING OK with no stream-child or provider-failure diagnostic.",
+      "live_optional_streaming": "With streaming=ON and OVMS_AGENT_STREAM_DEBUG=1, ASK emitted all requested M300 STREAM LINE 01 through 20, then reproduced issue #179: M290 stream transport child failed; blocking retry suppressed.; AI provider request failed.",
+      "live_tool_blocking": "With streaming=ON, read-only AGENT successfully executed read_file_range SRC/SETTINGS.C 1-30 and reported configured streaming default OFF; the tool-bearing request remained blocking.",
+      "saved_setting_restored": "streaming=OFF source=saved",
+      "promoted_tree_equals_final_candidate": true,
+      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
+      "issue_179": "Remains open; M300 makes the defect non-impacting to default operation but does not fix optional SSE child completion/status handling."
+    }
+  },
   "historical_milestones": {
     "m294": "completed/promoted/tagged/pruned",
     "m295": "completed/promoted/tagged/pruned",
@@ -117,11 +149,11 @@
       {
         "number": 179,
         "title": "Streaming ASK emits assistant text then reports transport failure",
-        "classification": "pre-existing streaming transport completion/status defect, isolated from M299 by one-line A/B test"
+        "classification": "optional SSE streaming child-completion/status defect; reproduced under M300 only after explicit streaming=ON, while default blocking and tool-bearing requests are non-impacting"
       }
     ],
     "provider_model_compatibility": [],
-    "note": "M299 issue #178 is closed after promotion. Issue #179 remains open and is the only known open follow-up at this checkpoint."
+    "note": "M300 issue #182 is closed after promotion. Issue #179 remains open and is the only known open follow-up at this checkpoint."
   },
   "github_hygiene": {
     "permanent": [
@@ -130,18 +162,20 @@
     ],
     "retained_completed_current": [
       "m298-platform-knowledge-packs",
-      "m299-native-multiline-input"
+      "m299-native-multiline-input",
+      "m300-blocking-default-streaming-opt-in"
     ],
     "retained_completed_target": [
-      "m298-platform-knowledge-packs",
-      "m299-native-multiline-input"
+      "m299-native-multiline-input",
+      "m300-blocking-default-streaming-opt-in"
     ],
     "temporary_branches_pending_cleanup": [],
     "verified_remote_branches": [
       "main",
       "chat-session-state",
       "m298-platform-knowledge-packs",
-      "m299-native-multiline-input"
+      "m299-native-multiline-input",
+      "m300-blocking-default-streaming-opt-in"
     ],
     "open_prs": 0,
     "open_issues": 1,
@@ -160,19 +194,22 @@
       "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659"
     },
-    "pending_ref_operations": [],
-    "cleanup_note": "M299 documentation cleanup is complete. Permanent main/chat-session-state plus retained completed M298/M299 satisfy branch retention; temporary merged branch m299-documentation-sync is deleted. The permanent m299 tag remains on the original product-promotion commit 18a78a656825f6eb0841c60e1f924fc027980659, while current main 25042e97... is later docs-only housekeeping."
+    "pending_ref_operations": [
+      "Create permanent lightweight tag m300 at promoted main 1423e660df7166797347c3ec9154564d8b34dd36 and verify it remotely.",
+      "After m300 tag verification, delete completed branch m298-platform-knowledge-packs and verify the remote branch is absent."
+    ],
+    "cleanup_note": "M300 is promoted and its promoted main tree exactly equals the native-accepted candidate tree. Branch retention is temporarily one over target until permanent m300 tagging is verified and retained M298 is pruned; target retained completed branches are M299 and M300."
   },
   "openvms_worktree": {
-    "head": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
-    "branch": "m299-native-multiline-input",
-    "native_source": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
-    "native_source_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
-    "final_candidate": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
-    "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "head": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
+    "branch": "m300-blocking-default-streaming-opt-in",
+    "native_source": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
+    "native_source_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
+    "final_candidate": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
+    "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
     "authoritative_status": [],
-    "status_note": "Exact M299 candidate was materialized with GIT_RESTORE and passed full build, focused regression, HELP library/lookup, and live blocking-transport multiline acceptance. Product promotion main 18a78a... carried the identical accepted tree. Current GitHub main 25042e97... adds Markdown documentation only and is not separately claimed as native-built.",
-    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch. The permanent m299 tag remains on the product-promotion commit; later main changes are documentation-only."
+    "status_note": "Exact final M300 candidate was materialized with bounded GIT_RESTORE batches after an overlong restore attempt produced %DCL-W-TKNOVF and was discarded as evidence. The exact candidate then passed full build, focused policy/settings regressions, HELP library/lookup, default blocking ASK, optional-stream reproduction of #179, and tool-bearing blocking while streaming=ON.",
+    "note": "The local OpenVMS checkout remains on the exact native-accepted M300 milestone branch. Promoted main 1423e660... carries the identical accepted tree and is not separately claimed as the exact native-built SHA."
   },
   "local_notes": {},
   "status_semantics": {
