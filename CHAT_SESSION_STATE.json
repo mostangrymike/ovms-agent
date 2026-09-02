@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T10:49:30-05:00",
+  "updated_at": "2026-09-02T10:56:52-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -30,7 +30,7 @@
     "result": "Responses incomplete/max_output_tokens with no assistant text produce a bounded diagnostic instead of raw provider JSON."
   },
   "m298": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETENTION_PRUNE_PENDING",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 144,
     "branch": "m298-platform-knowledge-packs",
     "baseline_main": "1224014d544b43cea6e9c602ff17217969cb46c6",
@@ -58,11 +58,7 @@
       "help_lookup": "%X00000001",
       "help_lookup_topic": "OVMS_AGENT COMMANDS TOOLS PLATFORM_KNOWLEDGE displayed Git/RMS/DCL packs, 8 KiB per-pack and 16 KiB combined bounds, guidance-not-evidence policy, and OVMS_AGENT_KNOWLEDGE_DIR launcher behavior.",
       "first_promotion_tree_equals_final_candidate": true,
-      "final_main_diff_from_accepted_candidate": [
-        "CHANGELOG.MD",
-        "FEATURES.MD",
-        "README.MD"
-      ],
+      "final_main_diff_from_accepted_candidate": ["CHANGELOG.MD", "FEATURES.MD", "README.MD"],
       "final_main_source_runtime_help_equivalent": true,
       "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true
     }
@@ -83,13 +79,7 @@
     "documentation_sync_head": "57d693a9b7b873c7a64306525cab06bf5c57bcd9",
     "documentation_main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
     "documentation_tree": "5adaa4fe7e4128055b31eb839e26b478510f07c3",
-    "documentation_changed_files": [
-      "ARCHITECTURE.MD",
-      "CHANGELOG.MD",
-      "DOC/M299_NATIVE_MULTILINE_INPUT.MD",
-      "FEATURES.MD",
-      "README.MD"
-    ],
+    "documentation_changed_files": ["ARCHITECTURE.MD", "CHANGELOG.MD", "DOC/M299_NATIVE_MULTILINE_INPUT.MD", "FEATURES.MD", "README.MD"],
     "documentation_main_source_runtime_help_equivalent": true,
     "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input when their free-form tail is omitted; one-line forms remain immediate, fixed leading arguments are preserved where required, /MULTILINE aliases remain compatible, and structured command grammars remain unchanged.",
     "acceptance": {
@@ -107,7 +97,7 @@
     }
   },
   "m300": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAG_PENDING_RETENTION_PENDING",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 182,
     "related_open_issue": 179,
     "branch": "m300-blocking-default-streaming-opt-in",
@@ -118,7 +108,7 @@
     "promotion_pr": 183,
     "promoted_main": "1423e660df7166797347c3ec9154564d8b34dd36",
     "promoted_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "tag": null,
+    "tag": "1423e660df7166797347c3ec9154564d8b34dd36",
     "result": "Bounded blocking Responses transport is the default. Persistent streaming defaults OFF and has no new enable logical; explicit ON permits only eligible interactive non-tool SSE presentation, while all tool-bearing requests remain blocking. Existing OVMS_AGENT_NOSTREAM remains a force-blocking compatibility override and OVMS_AGENT_STREAM_DEBUG remains diagnostic only.",
     "acceptance": {
       "build_status": "%X00000001",
@@ -135,6 +125,7 @@
       "saved_setting_restored": "streaming=OFF source=saved",
       "promoted_tree_equals_final_candidate": true,
       "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
+      "tag_verified_remote": true,
       "issue_179": "Remains open; M300 makes the defect non-impacting to default operation but does not fix optional SSE child completion/status handling."
     }
   },
@@ -142,49 +133,27 @@
     "m294": "completed/promoted/tagged/pruned",
     "m295": "completed/promoted/tagged/pruned",
     "m296": "completed/promoted/tagged/pruned after M298; tag retained",
+    "m298": "completed/promoted/native-validated/tagged/pruned after M300 retention rollover",
     "note": "Detailed historical acceptance remains in GitHub issues, tags, CHANGELOG.MD, and prior chat-session-state commits."
   },
   "open_followups": {
-    "issues": [
-      {
-        "number": 179,
-        "title": "Streaming ASK emits assistant text then reports transport failure",
-        "classification": "optional SSE streaming child-completion/status defect; reproduced under M300 only after explicit streaming=ON, while default blocking and tool-bearing requests are non-impacting"
-      }
-    ],
+    "issues": [{
+      "number": 179,
+      "title": "Streaming ASK emits assistant text then reports transport failure",
+      "classification": "optional SSE streaming child-completion/status defect; reproduced under M300 only after explicit streaming=ON, while default blocking and tool-bearing requests are non-impacting"
+    }],
     "provider_model_compatibility": [],
-    "note": "M300 issue #182 is closed after promotion. Issue #179 remains open and is the only known open follow-up at this checkpoint."
+    "note": "M300 issue #182 is closed after promotion. Issue #179 remains open and is the only known open follow-up."
   },
   "github_hygiene": {
-    "permanent": [
-      "main",
-      "chat-session-state"
-    ],
-    "retained_completed_current": [
-      "m298-platform-knowledge-packs",
-      "m299-native-multiline-input",
-      "m300-blocking-default-streaming-opt-in"
-    ],
-    "retained_completed_target": [
-      "m299-native-multiline-input",
-      "m300-blocking-default-streaming-opt-in"
-    ],
+    "permanent": ["main", "chat-session-state"],
+    "retained_completed_current": ["m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
+    "retained_completed_target": ["m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
     "temporary_branches_pending_cleanup": [],
-    "verified_remote_branches": [
-      "main",
-      "chat-session-state",
-      "m298-platform-knowledge-packs",
-      "m299-native-multiline-input",
-      "m300-blocking-default-streaming-opt-in"
-    ],
+    "verified_remote_branches": ["main", "chat-session-state", "m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
     "open_prs": 0,
     "open_issues": 1,
-    "recent_pruned": [
-      "m296-openrouter-free-tool-transport",
-      "m298-promotion-metadata",
-      "m297-reasoning-output-budget",
-      "m299-documentation-sync"
-    ],
+    "recent_pruned": ["m296-openrouter-free-tool-transport", "m298-promotion-metadata", "m297-reasoning-output-budget", "m299-documentation-sync", "m298-platform-knowledge-packs"],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m294": "53150b29e42b5063a9aef0bec76781494c217c69",
@@ -192,13 +161,11 @@
       "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
       "m297": "1224014d544b43cea6e9c602ff17217969cb46c6",
       "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-      "m299": "18a78a656825f6eb0841c60e1f924fc027980659"
+      "m299": "18a78a656825f6eb0841c60e1f924fc027980659",
+      "m300": "1423e660df7166797347c3ec9154564d8b34dd36"
     },
-    "pending_ref_operations": [
-      "Create permanent lightweight tag m300 at promoted main 1423e660df7166797347c3ec9154564d8b34dd36 and verify it remotely.",
-      "After m300 tag verification, delete completed branch m298-platform-knowledge-packs and verify the remote branch is absent."
-    ],
-    "cleanup_note": "M300 is promoted and its promoted main tree exactly equals the native-accepted candidate tree. Branch retention is temporarily one over target until permanent m300 tagging is verified and retained M298 is pruned; target retained completed branches are M299 and M300."
+    "pending_ref_operations": [],
+    "cleanup_note": "M300 tagging and retention cleanup are complete. The remote m300 tag resolves to promoted main 1423e660df7166797347c3ec9154564d8b34dd36; m298-platform-knowledge-packs is absent. Permanent main/chat-session-state plus retained M299/M300 satisfy branch-retention policy."
   },
   "openvms_worktree": {
     "head": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
@@ -209,13 +176,13 @@
     "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
     "authoritative_status": [],
     "status_note": "Exact final M300 candidate was materialized with bounded GIT_RESTORE batches after an overlong restore attempt produced %DCL-W-TKNOVF and was discarded as evidence. The exact candidate then passed full build, focused policy/settings regressions, HELP library/lookup, default blocking ASK, optional-stream reproduction of #179, and tool-bearing blocking while streaming=ON.",
-    "note": "The local OpenVMS checkout remains on the exact native-accepted M300 milestone branch. Promoted main 1423e660... carries the identical accepted tree and is not separately claimed as the exact native-built SHA."
+    "note": "The local symbolic HEAD remains on the exact native-accepted M300 milestone branch. A later GITAUTH fetch of main set FETCH_HEAD to promoted main for tagging but did not change symbolic HEAD. The permanent local/remote m300 tag points to promoted main 1423e660..., whose tree equals the accepted candidate tree."
   },
   "local_notes": {},
   "status_semantics": {
     "base": "0x0035A000UL",
     "mask": "0x0FFFF800UL",
-    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure. Do not use F$FAO(\"!8XL\", status) as authoritative status rendering on the canonical x86-64 host; SHOW SYMBOL or numeric comparison correctly showed BUILD_STATUS=%X00000001."
+    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure. Do not use F$FAO(\"!8XL\", status) as authoritative status rendering on the canonical x86-64 host; SHOW SYMBOL or numeric comparison is authoritative."
   },
   "standing_rules": [
     "At chat start read RULES.MD on main and this state, then verify live GitHub refs/issues before acting.",
