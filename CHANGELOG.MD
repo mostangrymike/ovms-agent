@@ -6,7 +6,21 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M299 below.
+No additional user-visible product changes are currently recorded beyond M300 below.
+
+## M300 — Blocking-default LLM transport with opt-in streaming
+
+Tag: `m300`
+
+- Made bounded blocking Responses transport the canonical/default provider path instead of attempting SSE streaming by default.
+- Added persistent Boolean setting `streaming`, default `OFF`, stored with ordinary settings in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT`.
+- Added `SETTINGS GET streaming`, `SETTINGS SET streaming ON|OFF`, `SETTINGS TOGGLE streaming`, interactive menu display/change, persistence, and reset/default coverage.
+- Added no new logical to enable streaming. The existing `OVMS_AGENT_NOSTREAM` logical remains only as a compatibility/debug force-blocking override during M300.
+- When `streaming=ON`, only otherwise eligible interactive non-tool textual responses may use SSE presentation. Requests containing tool definitions always use bounded blocking transport regardless of provider/model; redirected/plain-output operation and completed-response workflows such as `AGENT/PLAN` remain blocking/non-incremental.
+- Replaced the normal M294-M296 provider/model stream-exception decision with the generic tool-bearing blocking invariant while preserving the common Responses API and the proven M273 byte-oriented SSE implementation for optional presentation.
+- Added deterministic M300 stream-policy regression coverage and extended M280 settings regression coverage for default OFF, persistence, and reset behavior.
+- Exact native-green source checkpoint `576ce40727648158ddedf41000ed490788b8b94c` (tree `7d530fad4f09d0d2f288d2e623ca98bb3b7b494e`) passed canonical OpenVMS V9.2-3 x86-64 full `@BUILD` with `BUILD_STATUS = "%X00000001"`, focused M300 transport-policy regression, and focused M280 settings regression.
+- Issue #179 remains the separate optional-streaming child-completion/status defect; M300 removes it from default operation rather than falsely declaring the optional SSE path fixed before its live gate.
 
 ## M299 — Native `.END` multiline prompt/goal input
 
