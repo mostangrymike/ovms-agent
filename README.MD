@@ -5,7 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M299`
+- **Latest promoted milestone:** `M300`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -47,7 +47,7 @@ OVMS Agent currently provides:
 - persistent provider, GitHub, and ordinary SETTINGS configuration;
 - provider-neutral support for direct providers and OpenAI-compatible intermediaries such as Requesty;
 - `PROVIDER TEST` / `PROVIDER TEST name` response-health diagnostics;
-- bounded provider transport plus compatibility-aware stream selection for tool workflows;
+- bounded blocking provider transport by default, with optional interactive SSE presentation for eligible non-tool text requests;
 - bounded autonomous execution and AUTOPILOT safety controls;
 - image input and external/MCP tool integration under approval controls; and
 - native-validated language and platform guidance.
@@ -155,7 +155,18 @@ MODEL [model-name]
 
 `PROVIDER TEST` sends one bounded plain-text no-op request through each configured profile; `PROVIDER TEST name` tests one profile. It does not change the active profile. Responsive profiles report `OK`; failures are classified as `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, or `INVALID`. The test uses real provider transport and may consume a very small amount of provider usage. It is a basic response-health check, not a tool-call capability benchmark.
 
-Provider/model tool-call compatibility can differ from plain-text health. M294 keeps the Responses API as the common request contract but selects the bounded blocking transport before send for Groq `openai/gpt-oss-*` requests that actually contain tool definitions. M295 extends the same pre-send selection to the proven Groq `qwen/qwen3.6-27b` tool workflow. M296 extends it narrowly to the OpenRouter endpoint when the configured model is exact `openrouter/free` and the request contains tool definitions. This avoids proven streaming incompatibilities while preserving normal streaming for non-tool requests and other provider/model combinations. No manual `OVMS_AGENT_NOSTREAM` override is required for these supported tool workflows.
+M300 makes the bounded blocking Responses transport the normal provider path. Streaming is an optional persistent presentation setting rather than the default wire mode:
+
+```text
+SETTINGS GET streaming
+SETTINGS SET streaming ON
+SETTINGS SET streaming OFF
+SETTINGS TOGGLE streaming
+```
+
+`streaming` defaults to `OFF` and is stored with ordinary persistent settings in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT`. No new logical is required to enable it. The existing `OVMS_AGENT_NOSTREAM` logical remains a compatibility/debug force-blocking override during M300.
+
+Even when `streaming=ON`, a serialized request containing tool definitions is sent through the bounded blocking transport. This generic rule supersedes the normal need for the M294-M296 provider/model-specific stream exception matrix. Optional SSE therefore applies only to otherwise eligible interactive non-tool text presentation, and noninteractive/plain-output operation remains blocking. `AGENT/PLAN` also remains non-incremental because its completed plan has persistence semantics.
 
 Provider keys are entered without terminal echo, masked in normal output, and kept outside the repository.
 

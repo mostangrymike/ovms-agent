@@ -3,10 +3,18 @@
 
 #include "llm_internal.h"
 #include "LLM_USAGE.H"
+#include "SETTINGS.H"
 
 /* M276 bounded provider-rate-limit parsing is part of the transport object. */
 #include "LLM_RATE_LIMIT.C"
+#include "LLM_STREAM_POLICY_M300.INC"
 
+/*
+ * Retain the M294-M296 compatibility classifier for its historical regression
+ * contract.  M300 no longer uses provider/model exceptions for active stream
+ * selection: the saved streaming setting and generic tool-request policy are
+ * evaluated before the transport attempts SSE.
+ */
 int llm_m294_stream_ok(const char *url,
                        const char *model,
                        const char *request)
@@ -38,7 +46,7 @@ int llm_m294_stream_ok(const char *url,
     return 1;
 }
 
-static char *m294_transport_env(const char *name)
+static char *m300_transport_env(const char *name)
 {
     char *value;
     char *request;
@@ -52,20 +60,29 @@ static char *m294_transport_env(const char *name)
         return getenv(name);
     }
 
+    /* Existing compatibility/debug override remains authoritative. */
     value = getenv(name);
     if (value != NULL) {
         return value;
     }
 
+    /*
+     * M300 makes blocking transport the normal path.  There is deliberately
+     * no new logical that enables streaming; only the saved OVMS Agent setting
+     * can opt an otherwise eligible interactive text request into SSE.
+     */
+    if (!settings_effective_bool("streaming", NULL, 0)) {
+        return "1";
+    }
+
     request = read_entire_file(LLM_REQUEST_FILE, NULL);
-    stream_ok = llm_m294_stream_ok(
-        llm_api_url(), llm_model(), request);
+    stream_ok = m300_stream_request_ok(request);
     free(request);
 
     return stream_ok ? NULL : "1";
 }
 
-#define getenv m294_transport_env
+#define getenv m300_transport_env
 #define perform_openai_request m273_raw_request
 #include "LLM_TRANSPORT.C"
 #undef perform_openai_request

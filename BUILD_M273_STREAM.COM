@@ -51,6 +51,23 @@ $ LINK/EXECUTABLE=[.BUILD]M273_STREAM_TEST.EXE -
      [.BUILD]M273_JSON_PARSE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAIL
 $
+$! M300 keeps the SSE implementation but makes it optional.  This
+$! provider-free regression proves the generic request-shape policy:
+$! textual requests may be eligible, while any tools field is blocking.
+$ CC/OBJECT=[.BUILD]M300_STREAM_POLICY_TEST.OBJ -
+     /STANDARD=RELAXED_ANSI89 -
+     /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+     /INCLUDE_DIRECTORY=([.SRC]) -
+     [.SRC]M300_STREAM_POLICY_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
+$ LINK/EXECUTABLE=[.BUILD]M300_STREAM_POLICY_TEST.EXE -
+     [.BUILD]M300_STREAM_POLICY_TEST.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
+$ RUN [.BUILD]M300_STREAM_POLICY_TEST
+$ IF .NOT. $STATUS THEN GOTO FAIL
+$
 $! Build a child command procedure for an actual incremental-delivery
 $! check. It emits one line, waits, creates a sentinel, then emits a
 $! second line. The parent test must receive the first line before the

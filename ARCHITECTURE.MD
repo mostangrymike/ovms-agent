@@ -27,7 +27,7 @@ The normal entry point is:
 @OVMS_AGENT
 ```
 
-`OVMS_AGENT.COM` resolves the checkout/build image, exposes the shipped GitHub bridge, language directory, and platform knowledge directory unless explicitly overridden, enables the scoped stream-pipe behavior required by network transport, and runs the image.
+`OVMS_AGENT.COM` resolves the checkout/build image, exposes the shipped GitHub bridge, language directory, and platform knowledge directory unless explicitly overridden, enables the scoped stream-pipe behavior required only when optional SSE presentation is selected, and runs the image.
 
 `BUILD.COM` is authoritative for the OVMS Agent product build and canonical regressions. Command and LLM module groups are built through their dedicated DCL procedures/options files; generated objects, tests, logs, and `OVMS_AGENT.EXE` live under `[.BUILD]`.
 
@@ -92,13 +92,15 @@ Direct providers and OpenAI-compatible intermediaries such as Requesty are selec
 
 Other states distinguish `CONFIG`, `LOCAL ERROR`, `TRANSPORT`, `API ERROR`, `EMPTY`, and `INVALID`. This diagnostic tests basic response health, not tool-call/capability compatibility.
 
-### Tool transport compatibility selection
+### Blocking-default transport and optional streaming
 
-M294-M296 keep the Responses API as the common request contract while separating protocol choice from transport mode. Before a request is sent, the transport layer inspects the configured endpoint/model plus whether the serialized request actually contains tool definitions.
+M300 makes the bounded blocking Responses path the canonical/default provider transport. The persistent `streaming` setting defaults to `OFF`; no new enable logical is introduced. The existing `OVMS_AGENT_NOSTREAM` logical remains a compatibility/debug force-blocking override.
 
-For the proven Groq `openai/gpt-oss-*` tool-call compatibility case and the M295-proven Groq `qwen/qwen3.6-27b` tool workflow, the request is sent once through the existing bounded blocking Responses transport instead of SSE streaming. M296 adds the same narrow pre-send decision for the OpenRouter endpoint when the configured model is exact `openrouter/free` and the request actually contains tool definitions. This is a pre-send capability decision, not a retry after a failed stream, so it does not duplicate a request after an actual network/child-process failure. Non-tool traffic and other provider/model combinations continue through the existing streaming decision unless the user has independently disabled streaming.
+When the setting is OFF, provider requests never attempt SSE. When it is ON, `SRC/LLM_TRANSPORT_M273.C` still performs a pre-send eligibility decision before the legacy M273 streaming path can run. `SRC/LLM_STREAM_POLICY_M300.INC` provides the generic request-shape rule: any serialized request containing tool definitions is ineligible for streaming, regardless of provider or model. Interactive non-tool textual responses may stream when terminal presentation is eligible; redirected/plain output remains blocking. `AGENT/PLAN` remains non-incremental because the completed plan object has persistence semantics.
 
-The selector is deliberately narrow and provider/model evidence-driven. It does not make `PROVIDER TEST` a tool capability test and does not introduce a second API dialect.
+M294-M296 remain important compatibility evidence: Groq GPT-OSS, Groq Qwen, and OpenRouter/free tool workflows each demonstrated cases where blocking worked while streaming did not. M300 supersedes the normal provider/model exception matrix with a simpler invariant—tool-bearing requests block generically—while retaining the common Responses API contract and the already proven M273 byte-oriented SSE parser for optional presentation.
+
+This is a pre-send transport decision, not a retry after a failed stream. A request is sent once through the selected mode, preserving the M290 no-duplicate-retry safety boundary.
 
 ## Settings and profile persistence
 
@@ -120,7 +122,7 @@ GitHub profiles:
 SYS$LOGIN:OVMS_AGENT_GITHUB.DAT
 ```
 
-Credential-bearing state stays outside the source checkout. Supported legacy logical names remain higher-precedence compatibility overrides for corresponding ordinary settings.
+Credential-bearing state stays outside the source checkout. Supported legacy logical names remain higher-precedence compatibility overrides for corresponding ordinary settings. M300's `streaming` setting is intentionally internal-only for normal enablement: it is persisted in the settings file and has no new enable logical. `OVMS_AGENT_NOSTREAM` remains only as a force-blocking compatibility/debug override.
 
 ## Agent planning, tools, and native source builds
 

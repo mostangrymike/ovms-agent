@@ -21,6 +21,7 @@ typedef struct setting_entry {
 static setting_entry setting_entries[] = {
     { "guarded_writes", "OFF", "", 0 },
     { "dcl_execution", "OFF", "", 0 },
+    { "streaming", "OFF", "", 0 },
     { "max_output_tokens", "2048", "", 0 },
     { "auto_turns", "12", "", 0 },
     { "auto_writes", "3", "", 0 },
