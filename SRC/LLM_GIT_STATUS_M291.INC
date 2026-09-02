@@ -27,7 +27,8 @@ static int m291_git_tmp_basename(
         M291_TMP_MATCH(M290_GIT_INDEX_TMP) ||
         M291_TMP_MATCH(M290_GIT_CACHED_TMP) ||
         M291_TMP_MATCH(M290_GIT_OTHER_TMP) ||
-        M291_TMP_MATCH(M290_GIT_HASH_TMP)) {
+        M291_TMP_MATCH(M290_GIT_HASH_TMP) ||
+        M291_TMP_MATCH(M290_GIT_TOP_TMP)) {
         return 1;
     }
 
