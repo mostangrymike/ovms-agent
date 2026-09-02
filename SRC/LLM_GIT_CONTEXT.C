@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define llm_git_refresh llm_git_refresh_base
 #define llm_git_status_text llm_git_status_text_base
@@ -29,6 +30,7 @@
 #define M263_GIT_RMS_TMP  "OVMS_AGENT_GIT_RMS.TMP"
 #define M263_GIT_ONE_TMP  "OVMS_AGENT_GIT_ONE.TXT"
 #define M263_GIT_ONE_COM  "OVMS_AGENT_GIT_ONE.COM"
+#define M290_GIT_TOP_TMP  "OVMS_AGENT_GIT_TOP.TMP"
 
 static int m263_git_path_ok(const char *path)
 {
@@ -336,8 +338,61 @@ static int m263_git_rms_diff(void)
     return found || llm_git_status[0] == '\0';
 }
 
+static int m290_git_enter_top(char *saved, size_t saved_size)
+{
+    FILE *file;
+    char prefix[LLM_GIT_LINE_MAX];
+    size_t length;
+    size_t index;
+
+    if (saved == NULL || saved_size == 0U ||
+        getcwd(saved, saved_size) == NULL) {
+        return 0;
+    }
+
+    if (!m290_git_run_to_file(
+            "\"rev-parse\" \"--show-prefix\"",
+            M290_GIT_TOP_TMP)) {
+        return 0;
+    }
+
+    prefix[0] = '\0';
+    file = fopen(M290_GIT_TOP_TMP, "r");
+    if (file == NULL) {
+        llm_git_remove(M290_GIT_TOP_TMP);
+        return 0;
+    }
+    if (fgets(prefix, sizeof(prefix), file) == NULL && ferror(file)) {
+        (void)fclose(file);
+        llm_git_remove(M290_GIT_TOP_TMP);
+        return 0;
+    }
+    if (fclose(file) != 0) {
+        llm_git_remove(M290_GIT_TOP_TMP);
+        return 0;
+    }
+    llm_git_remove(M290_GIT_TOP_TMP);
+
+    length = strlen(prefix);
+    while (length > 0U &&
+           (prefix[length - 1U] == '\n' || prefix[length - 1U] == '\r')) {
+        prefix[--length] = '\0';
+    }
+
+    for (index = 0U; index < length; ++index) {
+        if (prefix[index] == '/' && chdir("..") != 0) {
+            (void)chdir(saved);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 int llm_git_refresh(const agent_state *state)
 {
+    char saved[LLM_GIT_LINE_MAX];
+
     (void)state;
 
     if (llm_git_test_status != NULL || llm_git_test_diff != NULL) {
@@ -350,10 +405,20 @@ int llm_git_refresh(const agent_state *state)
     llm_git_diff_ok = 0;
     llm_git_truncated = 0;
 
+    if (!m290_git_enter_top(saved, sizeof(saved))) {
+        llm_git_loaded = 1;
+        return 0;
+    }
+
     llm_git_status_ok = m290_git_rms_status();
 
     if (llm_git_status_ok) {
         (void)m263_git_rms_diff();
+    }
+
+    if (chdir(saved) != 0) {
+        llm_git_status_ok = 0;
+        llm_git_diff_ok = 0;
     }
 
     llm_git_loaded = 1;
