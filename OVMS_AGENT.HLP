@@ -28,8 +28,10 @@
  intentionally enabled.
 
  Persistent operational configuration belongs in SETTINGS.  Legacy
- OVMS_AGENT_* logical names remain compatible and, when defined, override the
- corresponding saved setting.
+ OVMS_AGENT_* logical names remain compatible for settings that historically
+ have them.  The streaming setting has no enable logical; the existing
+ OVMS_AGENT_NOSTREAM logical only forces blocking transport for compatibility
+ or diagnostics.
 
 2 SAFETY
  Use the least-permissive mechanism that can complete the task.
@@ -60,20 +62,22 @@
    SETTINGS SHOW
    SETTINGS GET name
    SETTINGS SET name value
-   SETTINGS TOGGLE guarded_writes|dcl_execution
+   SETTINGS TOGGLE guarded_writes|dcl_execution|streaming
    SETTINGS RESET
    SETTINGS RELOAD
 
  Use SETTINGS with no arguments for the numbered interactive menu.  Use SHOW
  for a noninteractive snapshot, GET when troubleshooting or scripts need one
- value, SET for an explicit saved value, TOGGLE for the two Boolean execution
- gates, RESET to restore saved defaults, and RELOAD after the settings file was
- changed outside the current process.
+ value, SET for an explicit saved value, TOGGLE for Boolean settings, RESET to
+ restore saved defaults, and RELOAD after the settings file was changed outside
+ the current process.
 
  Saved settings normally come from SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT.  A
- defined legacy logical takes precedence over its saved value.  SETTINGS shows
- the effective source and warns when a saved value is changed while a legacy
- logical still overrides it.
+ defined legacy logical takes precedence for settings that have one.  SETTINGS
+ shows the effective source and warns when a saved value is changed while a
+ legacy logical still overrides it.  streaming has no enable logical; defining
+ OVMS_AGENT_NOSTREAM only forces blocking transport and does not become the
+ saved streaming value.
 
  Interactive menu:
    1  guarded_writes
@@ -86,6 +90,7 @@
    8  net_deny
    9  auto_turns
   10  auto_writes
+  11  streaming
 
  Interactive menu commands:
    R or RELOAD    Reload saved settings.
@@ -250,6 +255,29 @@
  A legacy logical override wins over the saved value.  Regression-test-only
  overrides remain higher precedence inside tests.
 
+3 STREAMING
+ Setting: streaming
+ Default: OFF
+ Values: ON, OFF
+
+ Performs:
+   Controls whether otherwise eligible interactive non-tool text responses may
+   use SSE incremental presentation.  OFF uses the bounded blocking Responses
+   transport, which is the M300 default.
+
+ Use when:
+   Leave it OFF for the simplest and most provider-compatible behavior.  Turn
+   it ON only when incremental text presentation is useful.  Tool-bearing
+   requests still use blocking transport regardless of this setting, as do
+   noninteractive/plain-output requests.  AGENT/PLAN remains non-incremental
+   because the completed plan has persistence semantics.
+
+ No logical is required to enable streaming.  The existing OVMS_AGENT_NOSTREAM
+ logical remains a compatibility/debug force-blocking override, and
+ OVMS_AGENT_STREAM_DEBUG remains diagnostic only.
+
+ Accepted SET values include ON/OFF, YES/NO, TRUE/FALSE, and 1/0.
+
 2 COMMANDS
  The command topics are grouped by purpose.  Slash commands are written
  literally in each entry; HELP topic keys use underscores for simple OpenVMS
@@ -339,11 +367,12 @@
    the textual status on plain terminals and in logs.  TEST uses real provider
    transport and may consume a very small amount of provider usage.  It checks
    basic response health only; it is not a tool-call or capability benchmark.
-   Tool-call compatibility can differ from TEST.  Groq requests using
-   openai/gpt-oss-* or exact qwen/qwen3.6-27b, and OpenRouter requests using
-   exact openrouter/free, automatically use bounded blocking Responses transport
-   for requests with tool definitions; no OVMS_AGENT_NOSTREAM override is required.
-   Non-tool requests and other provider/model combinations keep normal streaming.
+   M300 uses bounded blocking Responses transport by default.  streaming=ON may
+   enable optional SSE presentation only for otherwise eligible interactive
+   non-tool text responses.  Requests containing tool definitions always use
+   blocking transport regardless of provider/model.  OVMS_AGENT_NOSTREAM can
+   still force blocking for compatibility/debugging; no new enable logical is
+   required.
 
 4 GITHUB_PROFILE
  Command: GITHUB [LIST|SHOW [name]|USE name|ADD name|DELETE name]
@@ -1299,7 +1328,7 @@
 4 SESSION_FORK
  Command: AGENT/SESSION/FORK ...
  Performs: Forks a persistent session.
- Use when: Exploring an alternative path while preserving the original history.
+ Use when: Exploring an alternative approach while preserving the original history.
 
 4 SESSION_RENAME
  Command: AGENT/SESSION/RENAME ...
