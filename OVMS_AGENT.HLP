@@ -306,6 +306,12 @@
  collects physical input records until .END appears by itself on a line.
  Embedded newlines before .END are preserved.
 
+ M301 collects the multiline body in a dedicated 32768-byte (32 KiB) buffer;
+ the body must fit in that capacity together with its terminating NUL.  The
+ ordinary one-line command buffer remains 8192 bytes.  If the multiline bound
+ is exceeded, OVMS Agent drains through .END and reports that the multiline
+ prompt is too long before reading the next command.
+
  Eligible commands with no fixed leading argument are ASK, CHAT, AGENT,
  AGENT/WRITE, AGENT/BUILD, AGENT/FIX, AGENT/RETRY, AGENT/REPAIR, AGENT/CREATE,
  AGENT/PLAN, AGENT/EXEC, AGENT/EXEC/DRY, AGENT/EXEC/RESUME,
