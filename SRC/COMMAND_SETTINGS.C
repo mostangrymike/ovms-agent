@@ -27,6 +27,7 @@
 #define SET_KIND_NET_DENY 8
 #define SET_KIND_AUTO_TURNS 9
 #define SET_KIND_AUTO_WRITES 10
+#define SET_KIND_STREAMING 11
 
 static int set_equal_ci(const char *left, const char *right)
 {
@@ -127,6 +128,10 @@ static int set_kind(const char *name)
         set_equal_ci(name, "write_actions")) {
         return SET_KIND_AUTO_WRITES;
     }
+    if (set_equal_ci(name, "streaming") ||
+        set_equal_ci(name, "stream")) {
+        return SET_KIND_STREAMING;
+    }
     return SET_KIND_UNKNOWN;
 }
 
@@ -143,6 +148,7 @@ static const char *set_kind_name(int kind)
     case SET_KIND_NET_DENY: return "net_deny";
     case SET_KIND_AUTO_TURNS: return "auto_turns";
     case SET_KIND_AUTO_WRITES: return "auto_writes";
+    case SET_KIND_STREAMING: return "streaming";
     default: return "unknown";
     }
 }
@@ -206,6 +212,7 @@ static void set_show_menu(const agent_state *state)
     long tokens;
     long auto_turns;
     long auto_writes;
+    int streaming;
     const char *allow;
     const char *deny;
 
@@ -227,6 +234,7 @@ static void set_show_menu(const agent_state *state)
         3L,
         SET_AUTO_WRITES_MIN,
         SET_AUTO_WRITES_MAX);
+    streaming = settings_effective_bool("streaming", NULL, 0);
     allow = settings_effective_text(
         "net_allow", "OVMS_AGENT_NET_ALLOW", "");
     deny = settings_effective_text(
@@ -285,6 +293,11 @@ static void set_show_menu(const agent_state *state)
     set_source_suffix("auto_writes", "OVMS_AGENT_AUTO_WRITES");
     (void)putchar('\n');
     (void)puts("");
+    (void)puts("  Presentation");
+    (void)puts("  ------------");
+    (void)printf(" 11. Streaming responses             [%s]\n",
+                 streaming ? "ON" : "OFF");
+    (void)puts("");
     (void)puts("Enter a setting number to change it.");
     (void)puts("ON/OFF settings toggle immediately.");
     (void)puts("Changes are saved automatically.");
@@ -332,15 +345,23 @@ static int set_toggle(agent_state *state, int kind)
     int current;
     const char *key;
     const char *logical;
+    const char *label;
 
     if (kind == SET_KIND_WRITES) {
         key = "guarded_writes";
         logical = "OVMS_AGENT_WRITE_ENABLED";
+        label = "Guarded writes";
         current = settings_effective_bool(key, logical, 0);
     } else if (kind == SET_KIND_DCL) {
         key = "dcl_execution";
         logical = "OVMS_AGENT_DCL_ENABLED";
+        label = "DCL execution";
         current = settings_effective_bool(key, logical, 0);
+    } else if (kind == SET_KIND_STREAMING) {
+        key = "streaming";
+        logical = NULL;
+        label = "Streaming responses";
+        current = settings_effective_bool(key, NULL, 0);
     } else {
         return 0;
     }
@@ -352,11 +373,12 @@ static int set_toggle(agent_state *state, int kind)
 
     set_apply_state(state);
     (void)printf("%s: %s -> %s\n",
-                 kind == SET_KIND_WRITES ?
-                     "Guarded writes" : "DCL execution",
+                 label,
                  current ? "ON" : "OFF",
                  !current ? "ON" : "OFF");
-    set_warn_override(key, logical);
+    if (logical != NULL) {
+        set_warn_override(key, logical);
+    }
     return 1;
 }
 
@@ -697,8 +719,11 @@ static void set_interactive(agent_state *state)
                 "Autonomous write actions",
                 3L, SET_AUTO_WRITES_MIN, SET_AUTO_WRITES_MAX);
             break;
+        case 11:
+            (void)set_toggle(state, SET_KIND_STREAMING);
+            break;
         default:
-            (void)puts("Setting number must be 1 through 10.");
+            (void)puts("Setting number must be 1 through 11.");
             break;
         }
     }
@@ -771,6 +796,12 @@ static void set_show_one(const agent_state *state, int kind)
             "auto_writes", "OVMS_AGENT_AUTO_WRITES");
         (void)printf("auto_writes=%ld source=%s\n", number, source);
         break;
+    case SET_KIND_STREAMING:
+        source = settings_value_source("streaming", NULL);
+        (void)printf("streaming=%s source=%s\n",
+            settings_effective_bool("streaming", NULL, 0) ? "ON" : "OFF",
+            source);
+        break;
     default:
         (void)puts("Unknown setting name.");
         break;
@@ -801,6 +832,12 @@ static int set_noninteractive(agent_state *state,
         }
         set_apply_state(state);
         set_warn_override("dcl_execution", "OVMS_AGENT_DCL_ENABLED");
+        return 1;
+    case SET_KIND_STREAMING:
+        if (!set_parse_bool(value, &enabled) ||
+            !settings_set_bool("streaming", enabled)) {
+            return 0;
+        }
         return 1;
     case SET_KIND_PROVIDER:
         if (value == NULL || *value == '\0' || !llm_prov_use(value)) {
@@ -950,8 +987,12 @@ static void command_settings(agent_state *state,
         extra = command_next_argument(&cursor);
         kind = set_kind(name);
         if (name == NULL || extra != NULL ||
-            (kind != SET_KIND_WRITES && kind != SET_KIND_DCL)) {
-            (void)puts("Usage: SETTINGS TOGGLE guarded_writes|dcl_execution");
+            (kind != SET_KIND_WRITES &&
+             kind != SET_KIND_DCL &&
+             kind != SET_KIND_STREAMING)) {
+            (void)puts(
+                "Usage: SETTINGS TOGGLE guarded_writes|dcl_execution|streaming"
+            );
             return;
         }
         (void)set_toggle(state, kind);
