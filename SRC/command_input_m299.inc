@@ -11,6 +11,9 @@
  * but no free-form tail yet.
  */
 
+#include <ctype.h>
+#include <string.h>
+
 typedef struct main_m299_rule {
     const char *name;
     unsigned int fixed_arguments;
