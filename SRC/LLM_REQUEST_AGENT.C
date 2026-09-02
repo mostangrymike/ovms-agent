@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_AGENT_LIMITS.H"
 #include "LLM_REQUEST_AGENT.H"
 #include "LLM_TOOL_SCHEMA.H"
 #include "LLM_AGENT_CTX.H"
@@ -11,9 +12,7 @@
 #include "LLM_LANGUAGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
 
-#define LLM_AGENT_GOAL_MAX 32768U
-
-static char llm_agent_goal[LLM_AGENT_GOAL_MAX];
+static char llm_agent_goal[LLM_AGENT_MODEL_GOAL_MAX];
 
 int llm_m279_tool_model_ok(const char *url,
                            const char *model)
