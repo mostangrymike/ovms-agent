@@ -278,7 +278,7 @@ static int plan_token_candidate(
            strcmp(candidate, "BUILD_LLM_MODULES.COM") == 0;
 }
 
-static int plan_collect_section(
+static int plan_collect_line(
     const char *start,
     const char *end,
     int expect_missing,
@@ -286,61 +286,137 @@ static int plan_collect_section(
     unsigned int *count)
 {
     const char *position;
+    const char *token_start;
+    const char *marker;
+    size_t length;
+    char candidate[LLM_PLAN_PATH_SIZE];
+
+    position = start;
+    while (position < end &&
+           (*position == ' ' || *position == '\t')) {
+        ++position;
+    }
+
+    if (position >= end) {
+        return 1;
+    }
+
+    if ((*position == '-' || *position == '*') &&
+        position + 1 < end &&
+        (position[1] == ' ' || position[1] == '\t')) {
+        ++position;
+        while (position < end &&
+               (*position == ' ' || *position == '\t')) {
+            ++position;
+        }
+    } else if (isdigit((unsigned char)*position)) {
+        marker = position;
+        while (marker < end &&
+               isdigit((unsigned char)*marker)) {
+            ++marker;
+        }
+        if (marker + 1 < end &&
+            (*marker == '.' || *marker == ')') &&
+            (marker[1] == ' ' || marker[1] == '\t')) {
+            position = marker + 1;
+            while (position < end &&
+                   (*position == ' ' || *position == '\t')) {
+                ++position;
+            }
+        }
+    }
+
+    if (position < end && *position == '`') {
+        ++position;
+    }
+
+    if (position >= end ||
+        !(isalpha((unsigned char)*position) ||
+          *position == '.' ||
+          *position == '_')) {
+        return 1;
+    }
+
+    token_start = position;
+    while (position < end &&
+           (plan_path_char((unsigned char)*position) ||
+            *position == ';' ||
+            *position == '$')) {
+        ++position;
+    }
+
+    length = (size_t)(position - token_start);
+    while (length > 0U &&
+           (token_start[length - 1U] == '.' ||
+            token_start[length - 1U] == ',')) {
+        --length;
+    }
+
+    if (length == 0U || length >= sizeof(candidate)) {
+        return 1;
+    }
+
+    (void)memcpy(candidate, token_start, length);
+    candidate[length] = '\0';
+
+    if (!plan_token_candidate(candidate)) {
+        return 1;
+    }
+
+    return plan_scope_add(
+        files,
+        count,
+        candidate,
+        expect_missing);
+}
+
+static int plan_collect_section(
+    const char *start,
+    const char *end,
+    int expect_missing,
+    plan_scope_file files[],
+    unsigned int *count)
+{
+    const char *line_start;
+    const char *cursor;
 
     if (start == NULL) {
         return 1;
     }
 
-    position = start;
+    line_start = start;
+    cursor = start;
 
-    while (*position != '\0' &&
-           (end == NULL || position < end)) {
-        const char *token_start;
-        size_t length;
-        char candidate[LLM_PLAN_PATH_SIZE];
+    for (;;) {
+        if (*cursor == '\n' ||
+            *cursor == '\0' ||
+            (end != NULL && cursor >= end)) {
+            const char *line_end;
 
-        if (!(isalpha((unsigned char)*position) ||
-              *position == '.' ||
-              *position == '_')) {
-            ++position;
-            continue;
-        }
+            line_end = cursor;
+            if (line_end > line_start &&
+                line_end[-1] == '\r') {
+                --line_end;
+            }
 
-        token_start = position;
+            if (!plan_collect_line(
+                    line_start,
+                    line_end,
+                    expect_missing,
+                    files,
+                    count)) {
+                return 0;
+            }
 
-        while (*position != '\0' &&
-               (end == NULL || position < end) &&
-               (plan_path_char((unsigned char)*position) ||
-                *position == ';' ||
-                *position == '$')) {
-            ++position;
-        }
+            if (*cursor == '\0' ||
+                (end != NULL && cursor >= end)) {
+                break;
+            }
 
-        length = (size_t)(position - token_start);
-
-        while (length > 0U &&
-               (token_start[length - 1U] == '.' ||
-                token_start[length - 1U] == ',')) {
-            --length;
-        }
-
-        if (length == 0U || length >= sizeof(candidate)) {
-            continue;
-        }
-
-        (void)memcpy(candidate, token_start, length);
-        candidate[length] = '\0';
-
-        if (!plan_token_candidate(candidate)) {
-            continue;
-        }
-
-        if (!plan_scope_add(
-                files,
-                count,
-                candidate,
-                expect_missing)) {
-            return 0;
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
         }
     }
 
@@ -406,6 +482,8 @@ static int plan_collect_paths(
     *count_out = count;
     return 1;
 }
+
+#include "LLM_PLAN_M189_VALIDATE.INC"
 
 static int plan_write_contents(
     FILE *file,
