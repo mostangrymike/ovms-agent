@@ -146,7 +146,7 @@
  Setting: model
 
  Performs:
-   Selects the model name for the active AI provider profile.
+   Selects the model name for the active provider profile.
 
  Use when:
    Change it when the same provider offers multiple compatible models and you
