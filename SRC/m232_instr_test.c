@@ -3,8 +3,10 @@
 #include <string.h>
 
 #include "llm_internal.h"
+#include "LLM_AGENT_LIMITS.H"
 
 #define TEST_FILE "M232_INSTRUCTIONS.TXT"
+#define M187_LONG_GOAL 16384U
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -30,6 +32,50 @@ static void cleanup(void)
 {
     llm_test_instr_path(NULL);
     remove_all(TEST_FILE);
+}
+
+static int m187_large_instr(const agent_state *state)
+{
+    static const char marker[] = "M187-LONG-GOAL-END";
+    char *goal;
+    char *output;
+    size_t marker_length;
+    int ok;
+
+    goal = (char *)malloc((size_t)M187_LONG_GOAL + 1U);
+    output = (char *)malloc((size_t)LLM_AGENT_INSTR_GOAL_MAX);
+    if (goal == NULL || output == NULL) {
+        free(goal);
+        free(output);
+        return 0;
+    }
+
+    (void)memset(goal, 'A', (size_t)M187_LONG_GOAL);
+    marker_length = strlen(marker);
+    if (marker_length > (size_t)M187_LONG_GOAL) {
+        free(goal);
+        free(output);
+        return 0;
+    }
+
+    (void)memcpy(
+        goal + (size_t)M187_LONG_GOAL - marker_length,
+        marker,
+        marker_length);
+    goal[M187_LONG_GOAL] = '\0';
+
+    ok =
+        llm_instr_compose(
+            state,
+            goal,
+            output,
+            (size_t)LLM_AGENT_INSTR_GOAL_MAX) &&
+        strstr(output, "PROJECT INSTRUCTIONS") != NULL &&
+        strstr(output, marker) != NULL;
+
+    free(goal);
+    free(output);
+    return ok;
 }
 
 int main(void)
@@ -110,6 +156,12 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (!m187_large_instr(&state)) {
+        (void)puts("M187 failed: large instruction composition.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
     if (!llm_parity_text(output, sizeof(output)) ||
         strstr(output, "Project instructions:  available") == NULL ||
         strstr(output, "Instruction reload:    available") == NULL) {
@@ -120,5 +172,6 @@ int main(void)
 
     cleanup();
     (void)puts("Project instruction context bundle test passed.");
+    (void)puts("M187 large instruction composition regression passed.");
     return EXIT_SUCCESS;
 }
