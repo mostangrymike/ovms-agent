@@ -10,43 +10,13 @@
 
 #include "command_input_m149.inc"
 #include "command_input_m251.inc"
+#include "COMMAND_INPUT_M299.INC"
 
 #define MAIN_FAILURE_STATUS 0x10000002U
 #define MAIN_ONESHOT_OUTPUT 8192U
 
 void m273_cmd_set_gitdiff(int (*callback)(void));
 void m273_retry_set_gitdiff(int (*callback)(void));
-
-static const char *main_multiline_prefix(char *input)
-{
-    size_t length;
-
-    if (input == NULL) {
-        return NULL;
-    }
-
-    length = strlen(input);
-
-    while (length > 0U &&
-           (input[length - 1U] == '\n' ||
-            input[length - 1U] == '\r')) {
-        input[--length] = '\0';
-    }
-
-    if (strcmp(input, "AGENT/MULTILINE") == 0) {
-        return "AGENT";
-    }
-
-    if (strcmp(input, "AGENT/CREATE/MULTILINE") == 0) {
-        return "AGENT/CREATE";
-    }
-
-    if (strcmp(input, "AGENT/REPAIR/MULTILINE") == 0) {
-        return "AGENT/REPAIR";
-    }
-
-    return NULL;
-}
 
 static int main_read_multiline(
     char *input,
@@ -258,6 +228,7 @@ int main(void)
 {
     agent_state state;
     char input[OVMS_AGENT_INPUT_SIZE];
+    char multiline_prefix[OVMS_AGENT_INPUT_SIZE];
     const char *one_shot;
     const char *result_mode;
     int read_status;
@@ -282,8 +253,6 @@ int main(void)
     }
 
     while (agent_is_running(&state)) {
-        const char *multiline_prefix;
-
         ansi_term_status_clear();
         command_prompt();
 
@@ -302,9 +271,10 @@ int main(void)
             continue;
         }
 
-        multiline_prefix = main_multiline_prefix(input);
-
-        if (multiline_prefix != NULL) {
+        if (main_multiline_prefix(
+                input,
+                multiline_prefix,
+                sizeof(multiline_prefix))) {
             read_status = main_read_multiline(
                 input,
                 sizeof(input),

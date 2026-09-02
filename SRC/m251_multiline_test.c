@@ -4,6 +4,7 @@
 
 #include "agent.h"
 #include "command_input_m251.inc"
+#include "COMMAND_INPUT_M299.INC"
 
 #define TEST_OK "M251_MULTI_OK.TMP"
 #define TEST_OVER "M251_MULTI_OVER.TMP"
@@ -200,6 +201,79 @@ static int test_empty(void)
     return ok;
 }
 
+static int test_trigger(const char *text,
+                        int expected,
+                        const char *expected_prefix)
+{
+    char input[OVMS_AGENT_INPUT_SIZE];
+    char prefix[OVMS_AGENT_INPUT_SIZE];
+    int status;
+
+    if (text == NULL || strlen(text) >= sizeof(input)) {
+        return 0;
+    }
+
+    (void)strcpy(input, text);
+    status = main_multiline_prefix(input, prefix, sizeof(prefix));
+
+    if (status != expected) {
+        return 0;
+    }
+
+    if (!expected) {
+        return prefix[0] == '\0';
+    }
+
+    return expected_prefix != NULL &&
+           strcmp(prefix, expected_prefix) == 0;
+}
+
+static int test_native_triggers(void)
+{
+    return
+        test_trigger("AGENT/WRITE\n", 1, "AGENT/WRITE") &&
+        test_trigger("ASK", 1, "ASK") &&
+        test_trigger("chat", 1, "chat") &&
+        test_trigger(
+            "AGENT/IMAGE SYS$DISK:[IMAGES]PANEL.PNG",
+            1,
+            "AGENT/IMAGE SYS$DISK:[IMAGES]PANEL.PNG") &&
+        test_trigger(
+            "AGENT/IMAGE \"SYS$DISK:[MY IMAGES]PANEL.PNG\"",
+            1,
+            "AGENT/IMAGE \"SYS$DISK:[MY IMAGES]PANEL.PNG\"") &&
+        test_trigger(
+            "AGENT/SESSION/EXEC 00000001",
+            1,
+            "AGENT/SESSION/EXEC 00000001") &&
+        test_trigger(
+            "AGENT/EXEC/FORK experiment ::",
+            1,
+            "AGENT/EXEC/FORK experiment ::") &&
+        test_trigger(
+            "AGENT/EXEC/RESUME/CREATE",
+            1,
+            "AGENT/EXEC/RESUME/CREATE") &&
+        test_trigger("AGENT/MULTILINE", 1, "AGENT") &&
+        test_trigger(
+            "agent/create/multiline",
+            1,
+            "AGENT/CREATE") &&
+        test_trigger("AGENT/WRITE one line", 0, NULL) &&
+        test_trigger(
+            "AGENT/IMAGE image.png describe this",
+            0,
+            NULL) &&
+        test_trigger("AGENT/IMAGE", 0, NULL) &&
+        test_trigger(
+            "AGENT/EXEC/FORK experiment :: one line",
+            0,
+            NULL) &&
+        test_trigger("AGENT/EXEC/FORK ::", 0, NULL) &&
+        test_trigger("DCL", 0, NULL) &&
+        test_trigger("AGENT/PATCH", 0, NULL);
+}
+
 int main(void)
 {
     if (!test_preserve_and_recover()) {
@@ -230,6 +304,14 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (!test_native_triggers()) {
+        (void)puts(
+            "M299 failed: native multiline trigger selection changed."
+        );
+        return EXIT_FAILURE;
+    }
+
     (void)puts("M251.5b true multiline input regression passed.");
+    (void)puts("M299 native multiline trigger regression passed.");
     return EXIT_SUCCESS;
 }
