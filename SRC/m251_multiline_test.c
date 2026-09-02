@@ -4,7 +4,7 @@
 
 #include "agent.h"
 #include "command_input_m251.inc"
-#include "command_input_m299.inc"
+#include "COMMAND_INPUT_M299.INC"
 
 #define TEST_OK "M251_MULTI_OK.TMP"
 #define TEST_OVER "M251_MULTI_OVER.TMP"
