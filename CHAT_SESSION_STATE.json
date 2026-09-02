@@ -1,12 +1,12 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T09:44:23-05:00",
+  "updated_at": "2026-09-02T09:54:04-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "18a78a656825f6eb0841c60e1f924fc027980659",
-    "tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
+    "tree": "5adaa4fe7e4128055b31eb839e26b478510f07c3",
     "latest_milestone": "M299",
     "latest_code_milestone": "M299",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
@@ -79,6 +79,18 @@
     "promoted_main": "18a78a656825f6eb0841c60e1f924fc027980659",
     "promoted_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "tag": "18a78a656825f6eb0841c60e1f924fc027980659",
+    "documentation_sync_pr": 181,
+    "documentation_sync_head": "57d693a9b7b873c7a64306525cab06bf5c57bcd9",
+    "documentation_main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
+    "documentation_tree": "5adaa4fe7e4128055b31eb839e26b478510f07c3",
+    "documentation_changed_files": [
+      "ARCHITECTURE.MD",
+      "CHANGELOG.MD",
+      "DOC/M299_NATIVE_MULTILINE_INPUT.MD",
+      "FEATURES.MD",
+      "README.MD"
+    ],
+    "documentation_main_source_runtime_help_equivalent": true,
     "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input when their free-form tail is omitted; one-line forms remain immediate, fixed leading arguments are preserved where required, /MULTILINE aliases remain compatible, and structured command grammars remain unchanged.",
     "acceptance": {
       "build_status": "%X00000001",
@@ -90,7 +102,8 @@
       "help_lookup_topic": "OVMS_AGENT COMMANDS MULTILINE_INPUT",
       "live_multiline": "With OVMS_AGENT_NOSTREAM=1, bare ASK entered multiline mode, waited for .END, and returned exactly M299 FINAL LIVE OK without a failure diagnostic.",
       "promoted_tree_equals_final_candidate": true,
-      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true
+      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
+      "post_promotion_documentation": "PR #181 changed Markdown documentation only. No product source, build procedure, launcher, SETTINGS, or OVMS_AGENT.HLP source changed, so no additional native product build was required under RULES.MD."
     }
   },
   "historical_milestones": {
@@ -123,11 +136,15 @@
       "m298-platform-knowledge-packs",
       "m299-native-multiline-input"
     ],
+    "temporary_branches_pending_cleanup": [
+      "m299-documentation-sync"
+    ],
     "verified_remote_branches": [
       "main",
       "chat-session-state",
       "m298-platform-knowledge-packs",
-      "m299-native-multiline-input"
+      "m299-native-multiline-input",
+      "m299-documentation-sync"
     ],
     "open_prs": 0,
     "open_issues": 1,
@@ -145,8 +162,10 @@
       "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659"
     },
-    "pending_ref_operations": [],
-    "cleanup_note": "Post-M299 GitHub branches satisfy retention: permanent main/chat-session-state plus retained completed M298/M299. Permanent m299 tag resolves exactly to promoted main 18a78a656825f6eb0841c60e1f924fc027980659; M297 branch is pruned while its m297 tag remains."
+    "pending_ref_operations": [
+      "Delete temporary merged branch m299-documentation-sync; it contains no unique unpromoted work because PR #181 is merged to main."
+    ],
+    "cleanup_note": "M299 product retention remains correct: permanent main/chat-session-state plus retained completed M298/M299. The permanent m299 tag remains on the original product-promotion commit 18a78a656825f6eb0841c60e1f924fc027980659. Current main 25042e97... is later docs-only housekeeping. The temporary docs branch should be deleted after merge."
   },
   "openvms_worktree": {
     "head": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
@@ -156,8 +175,8 @@
     "final_candidate": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
     "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "authoritative_status": [],
-    "status_note": "Exact M299 candidate was materialized with GIT_RESTORE and passed full build, focused regression, HELP library/lookup, and live blocking-transport multiline acceptance. Promoted main has the same tree but has not been separately materialized/rebuilt on the canonical host.",
-    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch at this checkpoint; GitHub main is promoted at 18a78a... with the identical accepted tree. The permanent m299 tag has been pushed and verified remotely."
+    "status_note": "Exact M299 candidate was materialized with GIT_RESTORE and passed full build, focused regression, HELP library/lookup, and live blocking-transport multiline acceptance. Product promotion main 18a78a... carried the identical accepted tree. Current GitHub main 25042e97... adds Markdown documentation only and is not separately claimed as native-built.",
+    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch. The permanent m299 tag remains on the product-promotion commit; later main changes are documentation-only."
   },
   "local_notes": {},
   "status_semantics": {
