@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M299**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M300**.
 
 ## Project inspection and context
 
@@ -10,9 +10,9 @@ COBOL files ending in `.COB`, `.COBOL`, or `.CBL` are recognized as source; `.CP
 
 ## Interactive settings
 
-`SETTINGS` provides persistent user configuration for guarded writes, DCL execution, active provider/model, maximum output tokens, approval policy, network allow/deny lists, autonomous turns, and autonomous write limits.
+`SETTINGS` provides persistent user configuration for guarded writes, DCL execution, active provider/model, maximum output tokens, approval policy, network allow/deny lists, autonomous turns, autonomous write limits, and optional LLM streaming presentation.
 
-Ordinary settings live in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT`; provider/model state remains in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT`. Supported legacy `OVMS_AGENT_*` logical names retain higher precedence and are reported as overrides.
+Ordinary settings live in `SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT`; provider/model state remains in `SYS$LOGIN:OVMS_AGENT_CONFIG.DAT`. Supported legacy `OVMS_AGENT_*` logical names retain higher precedence and are reported as overrides where a setting has such a logical. M300's `streaming` setting intentionally has no new enable logical.
 
 Noninteractive forms include `SETTINGS SHOW`, `GET`, `SET`, `TOGGLE`, `RESET`, and `RELOAD`.
 
@@ -58,11 +58,22 @@ The diagnostic uses real provider transport and a small amount of provider usage
 
 Direct providers and OpenAI-compatible intermediaries such as Requesty are supported through configured endpoints. Multi-turn agent state is carried locally rather than requiring provider-held conversation identifiers.
 
-### Tool transport compatibility selection
+### Blocking-default transport and optional streaming
 
-M294 preserves the common Responses API request contract while handling a proven Groq transport compatibility exception before send. When the configured endpoint is Groq, the outgoing request actually contains tool definitions, and the model is either `openai/gpt-oss-*` or the M295-proven `qwen/qwen3.6-27b`, OVMS Agent selects the existing bounded blocking transport instead of attempting SSE streaming. M296 adds the same pre-send selection for the OpenRouter endpoint when the configured model is exact `openrouter/free` and the serialized request contains tool definitions.
+M300 makes bounded blocking Responses transport the normal provider path. The persistent `streaming` setting defaults to `OFF` and can be changed through:
 
-This is capability selection, not a failed-stream retry: the request is sent once through the compatible transport, avoiding duplicate requests after a real network failure. Non-tool requests and other provider/model combinations keep the existing streaming decision. Users do not need to define `OVMS_AGENT_NOSTREAM` for the supported Groq GPT-OSS/Qwen or OpenRouter/free tool workflows.
+```text
+SETTINGS GET streaming
+SETTINGS SET streaming ON
+SETTINGS SET streaming OFF
+SETTINGS TOGGLE streaming
+```
+
+No new logical is required to enable streaming. The existing `OVMS_AGENT_NOSTREAM` logical remains a compatibility/debug force-blocking override.
+
+When `streaming=ON`, SSE remains available only as an interactive presentation feature for otherwise eligible non-tool textual responses. A serialized request containing tool definitions always uses bounded blocking transport regardless of provider/model. Noninteractive/plain-output operation remains blocking, and `AGENT/PLAN` remains non-incremental because the completed plan has persistence semantics.
+
+This generic tool-bearing blocking rule supersedes the normal need for the M294-M296 provider/model-specific stream exception matrix. Those milestones established the compatibility evidence that motivated the policy change; M300 removes that matrix from the normal execution decision rather than retrying a failed stream.
 
 ### Reasoning/output-budget exhaustion handling
 
