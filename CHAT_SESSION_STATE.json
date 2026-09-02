@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T09:38:13-05:00",
+  "updated_at": "2026-09-02T09:44:23-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -15,7 +15,7 @@
     "open_prs": 0
   },
   "m297": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETENTION_PRUNE_PENDING",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 173,
     "resolved_issue": 124,
     "branch": "m297-reasoning-output-budget",
@@ -68,7 +68,7 @@
     }
   },
   "m299": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAG_PENDING",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 178,
     "branch": "m299-native-multiline-input",
     "baseline_main": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
@@ -78,7 +78,7 @@
     "promotion_pr": 180,
     "promoted_main": "18a78a656825f6eb0841c60e1f924fc027980659",
     "promoted_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
-    "tag": null,
+    "tag": "18a78a656825f6eb0841c60e1f924fc027980659",
     "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input when their free-form tail is omitted; one-line forms remain immediate, fixed leading arguments are preserved where required, /MULTILINE aliases remain compatible, and structured command grammars remain unchanged.",
     "acceptance": {
       "build_status": "%X00000001",
@@ -116,7 +116,6 @@
       "chat-session-state"
     ],
     "retained_completed_current": [
-      "m297-reasoning-output-budget",
       "m298-platform-knowledge-packs",
       "m299-native-multiline-input"
     ],
@@ -127,7 +126,6 @@
     "verified_remote_branches": [
       "main",
       "chat-session-state",
-      "m297-reasoning-output-budget",
       "m298-platform-knowledge-packs",
       "m299-native-multiline-input"
     ],
@@ -135,7 +133,8 @@
     "open_issues": 1,
     "recent_pruned": [
       "m296-openrouter-free-tool-transport",
-      "m298-promotion-metadata"
+      "m298-promotion-metadata",
+      "m297-reasoning-output-budget"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -143,13 +142,11 @@
       "m295": "3fd26e344866e25779fa216696286eac8eb1447a",
       "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
       "m297": "1224014d544b43cea6e9c602ff17217969cb46c6",
-      "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8"
+      "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
+      "m299": "18a78a656825f6eb0841c60e1f924fc027980659"
     },
-    "pending_ref_operations": [
-      "Create permanent lightweight tag m299 at promoted main 18a78a656825f6eb0841c60e1f924fc027980659.",
-      "After verifying tag m299 remotely, delete completed branch m297-reasoning-output-budget so only M298 and M299 completed milestone branches remain."
-    ],
-    "cleanup_note": "GitHub connector used in this session does not expose tag creation or branch deletion, so the two pending ref operations require the established authenticated Git path before final tagged/retained state can be recorded."
+    "pending_ref_operations": [],
+    "cleanup_note": "Post-M299 GitHub branches satisfy retention: permanent main/chat-session-state plus retained completed M298/M299. Permanent m299 tag resolves exactly to promoted main 18a78a656825f6eb0841c60e1f924fc027980659; M297 branch is pruned while its m297 tag remains."
   },
   "openvms_worktree": {
     "head": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
@@ -160,7 +157,7 @@
     "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "authoritative_status": [],
     "status_note": "Exact M299 candidate was materialized with GIT_RESTORE and passed full build, focused regression, HELP library/lookup, and live blocking-transport multiline acceptance. Promoted main has the same tree but has not been separately materialized/rebuilt on the canonical host.",
-    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch at this checkpoint; GitHub main is promoted at 18a78a... with the identical accepted tree."
+    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch at this checkpoint; GitHub main is promoted at 18a78a... with the identical accepted tree. The permanent m299 tag has been pushed and verified remotely."
   },
   "local_notes": {},
   "status_semantics": {
