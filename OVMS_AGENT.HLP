@@ -146,7 +146,7 @@
  Setting: model
 
  Performs:
-   Selects the model name for the active provider profile.
+   Selects the model name for the active AI provider profile.
 
  Use when:
    Change it when the same provider offers multiple compatible models and you
@@ -267,6 +267,31 @@
    AUTOMATION  Autonomous-loop and AUTOPILOT commands.
    CONTEXT     Project instructions and bounded repository context.
    PATCHING    Structured multi-hunk patch commands.
+
+ Multiline input behavior is documented under COMMANDS MULTILINE_INPUT.
+
+3 MULTILINE_INPUT
+ Eligible free-form prompt and goal commands support native multiline entry
+ without requiring a /MULTILINE qualifier.  If the free-form prompt or goal is
+ present on the command line, the command executes immediately as before.  If
+ the free-form tail is omitted after all required fixed arguments, OVMS Agent
+ collects physical input records until .END appears by itself on a line.
+ Embedded newlines before .END are preserved.
+
+ Eligible commands with no fixed leading argument are ASK, CHAT, AGENT,
+ AGENT/WRITE, AGENT/BUILD, AGENT/FIX, AGENT/RETRY, AGENT/REPAIR, AGENT/CREATE,
+ AGENT/PLAN, AGENT/EXEC, AGENT/EXEC/DRY, AGENT/EXEC/RESUME,
+ AGENT/EXEC/RESUME/CREATE, and AGENT/AUTOPILOT.
+
+ Commands with required fixed leading syntax enter multiline mode only after
+ that syntax is present: AGENT/IMAGE image-path, AGENT/SESSION/EXEC <id>, and
+ AGENT/EXEC/FORK <new-name> ::.  Structured command grammars not listed here,
+ including DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands,
+ do not acquire implicit multiline behavior.
+
+ Compatibility aliases AGENT/MULTILINE, AGENT/CREATE/MULTILINE, and
+ AGENT/REPAIR/MULTILINE remain accepted, but they are no longer required for
+ multiline entry.
 
 3 CORE
  General commands and persistent profile/configuration commands.
@@ -651,18 +676,21 @@
  Direct LLM interaction and primary agent workflows.
 
 4 ASK
- Command: ASK prompt
+ Command: ASK [prompt]
  Performs: Sends one prompt to the configured LLM without maintaining CHAT context.
  Use when: You have a one-off question or transformation that needs no conversation history.
- Notes: If the provider returns an incomplete response because max_output_tokens
-   was exhausted before assistant text was produced, ASK reports a bounded
-   diagnostic, any reported output/reasoning token counts, and retry guidance
-   instead of displaying the raw provider response.
+ Notes: If prompt is omitted, enter one or more lines and terminate with .END on
+   a line by itself.  If the provider returns an incomplete response because
+   max_output_tokens was exhausted before assistant text was produced, ASK
+   reports a bounded diagnostic, any reported output/reasoning token counts,
+   and retry guidance instead of displaying the raw provider response.
 
 4 CHAT
- Command: CHAT prompt
+ Command: CHAT [prompt]
  Performs: Continues a stateful LLM conversation.
  Use when: Follow-up questions depend on earlier CHAT context.
+ Notes: If prompt is omitted, enter one or more lines and terminate with .END on
+   a line by itself.
 
 4 CHAT_RESET
  Command: CHAT/RESET
@@ -675,21 +703,24 @@
  Use when: You want focused code-review feedback without a write workflow.
 
 4 AGENT
- Command: AGENT goal
+ Command: AGENT [goal]
  Performs: Runs the read-only AI agent against the project.
  Use when: A goal needs tool/file investigation but no project writes.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.  AGENT/MULTILINE remains a compatibility alias.
 
 4 AGENT_WRITE
- Command: AGENT/WRITE goal
+ Command: AGENT/WRITE [goal]
  Performs: Runs the guarded write agent.
  Use when: An AI-directed goal legitimately requires project edits and write/policy
  gates are intentionally enabled.
- Notes: Ordinary AGENT/WRITE existing-file edits are atomic.  structured_patch is
-   the only advertised existing-file write tool; one or more exact non-overlapping
-   hunks in one file are validated and confirmed together before one RMS write.
-   replace_text and replace_lines remain available to supervised AGENT/FIX paths,
-   not ordinary AGENT/WRITE.  Raising auto_writes does not permit sequential
-   existing-file patches in an AGENT/WRITE run.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.  Ordinary AGENT/WRITE existing-file edits are atomic.
+   structured_patch is the only advertised existing-file write tool; one or more
+   exact non-overlapping hunks in one file are validated and confirmed together
+   before one RMS write.  replace_text and replace_lines remain available to
+   supervised AGENT/FIX paths, not ordinary AGENT/WRITE.  Raising auto_writes
+   does not permit sequential existing-file patches in an AGENT/WRITE run.
    M289 adds the guarded build_source tool for one native source file.  It
    loads the matching LANGUAGE/<LANGUAGE>.BUILD profile and executes only when
    full approval, guarded writes, and DCL execution are all enabled.  Compiled
@@ -701,20 +732,26 @@
    PYTHON, PERL, and DCL.
 
 4 AGENT_BUILD
- Command: AGENT/BUILD goal
+ Command: AGENT/BUILD [goal]
  Performs: Runs controlled project build analysis.
  Use when: The task centers on building, interpreting failures, and identifying fixes.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_FIX
- Command: AGENT/FIX goal
+ Command: AGENT/FIX [goal]
  Performs: Applies one confirmed fix and builds.
  Use when: A supervised single correction is understood and should be verified immediately.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_RETRY
- Command: AGENT/RETRY goal
+ Command: AGENT/RETRY [goal]
  Performs: Retries one supervised fix using prior build diagnostics.
  Use when: The previous supervised fix/build failed and saved diagnostics should guide
  one more bounded attempt.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_SELFTEST
  Command: AGENT/SELFTEST
@@ -732,19 +769,25 @@
  Use when: You want both guard checks and build evidence before accepting a tree.
 
 4 AGENT_CREATE
- Command: AGENT/CREATE goal
+ Command: AGENT/CREATE [goal]
  Performs: Creates one new confirmed project file through the guarded creation path.
  Use when: The desired result is specifically one new file rather than general editing.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.  AGENT/CREATE/MULTILINE remains a compatibility alias.
 
 4 AGENT_IMAGE
- Command: AGENT/IMAGE image-path goal
+ Command: AGENT/IMAGE image-path [goal]
  Performs: Runs a read-only agent with a local image supplied as context.
  Use when: Analysis depends on a screenshot, diagram, scan, or other local visual evidence.
+ Notes: image-path remains required.  If goal is omitted after image-path, enter
+   one or more lines and terminate with .END on a line by itself.
 
 4 AGENT_PLAN
- Command: AGENT/PLAN goal
+ Command: AGENT/PLAN [goal]
  Performs: Creates and saves a read-only implementation plan.
  Use when: A nontrivial change should be reviewed separately from execution.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_PLAN_SHOW
  Command: AGENT/PLAN/SHOW
@@ -797,29 +840,39 @@
  Use when: Verifying root, policy, provider, and other context the agent is actually using.
 
 4 AGENT_EXEC
- Command: AGENT/EXEC goal
+ Command: AGENT/EXEC [goal]
  Performs: Runs a goal using the current approval policy.
  Use when: You want the policy-aware execution framework to choose allowed guarded work.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_EXEC_DRY
- Command: AGENT/EXEC/DRY goal
+ Command: AGENT/EXEC/DRY [goal]
  Performs: Creates a read-only implementation plan through the execution framework.
  Use when: Previewing what AGENT/EXEC would attempt without making changes.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_EXEC_RESUME
- Command: AGENT/EXEC/RESUME goal
+ Command: AGENT/EXEC/RESUME [goal]
  Performs: Executes a goal in the current persistent session.
  Use when: Continuing a task that should retain current persistent session context.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 AGENT_EXEC_FORK
- Command: AGENT/EXEC/FORK goal
+ Command: AGENT/EXEC/FORK <new-name> :: [goal]
  Performs: Forks the current session and executes a goal in the fork.
  Use when: Exploring an alternative approach without disturbing the original session line.
+ Notes: <new-name> and :: remain required.  If goal is omitted after ::, enter
+   one or more lines and terminate with .END on a line by itself.
 
 4 AGENT_EXEC_RESUME_CREATE
- Command: AGENT/EXEC/RESUME/CREATE goal
+ Command: AGENT/EXEC/RESUME/CREATE [goal]
  Performs: Resumes persistent context and creates one guarded file.
  Use when: A continuing session specifically needs one new file while retaining context.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.
 
 4 OBSERVABILITY
  Activity, persistent state, and local history commands.
@@ -863,10 +916,12 @@
  Supervised repair workflow and persisted repair-history analysis.
 
 4 AGENT_REPAIR
- Command: AGENT/REPAIR goal
+ Command: AGENT/REPAIR [goal]
  Performs: Runs the dedicated repair workflow for a goal.
  Use when: A build/project failure should be handled by the repair path rather than a
  generic write agent.
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+   line by itself.  AGENT/REPAIR/MULTILINE remains a compatibility alias.
 
 4 REPAIR_PLAN
  Command: AGENT/REPAIR/PLAN
@@ -1297,9 +1352,11 @@
  Use when: Offline review, archival, sharing, or milestone evidence is needed.
 
 4 SESSION_EXEC
- Command: AGENT/SESSION/EXEC ...
+ Command: AGENT/SESSION/EXEC <id> [goal]
  Performs: Resumes a session and executes a goal.
  Use when: Continuing a persistent task and immediately running new work in its context.
+ Notes: <id> remains required.  If goal is omitted after <id>, enter one or more
+   lines and terminate with .END on a line by itself.
 
 3 AUTOMATION
  Autonomous-loop status/limits and bounded AUTOPILOT.
@@ -1320,13 +1377,14 @@
  Use when: Starting a fresh measurement window and previous counters are irrelevant.
 
 4 AUTOPILOT
- Command: AGENT/AUTOPILOT goal
+ Command: AGENT/AUTOPILOT [goal]
  Performs: Runs the bounded local build/repair/rebuild loop using the established
  guarded workspace safety floor.
  Use when: A well-scoped local repair benefits from repeated plan/fix/build
  iterations with hard turn/write budgets and an explicit terminal state.
- Notes: AUTOPILOT never satisfies FULL approval and cannot automate push,
- GitHub writes, MCP/external operations, or arbitrary DCL.  It stops as
+ Notes: If goal is omitted, enter one or more lines and terminate with .END on a
+ line by itself.  AUTOPILOT never satisfies FULL approval and cannot automate
+ push, GitHub writes, MCP/external operations, or arbitrary DCL.  It stops as
  CLEAN_BUILD, RETRY_BUDGET_EXHAUSTED, or GOAL_GUARD_REJECTED and leaves a
  human-review artifact.
 
