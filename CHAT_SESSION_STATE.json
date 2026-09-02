@@ -1,21 +1,21 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-01T17:43:27-05:00",
+  "updated_at": "2026-09-02T09:38:13-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-    "tree": "34511c8882508802f34f2e6181cbf204d76e3e58",
-    "latest_milestone": "M298",
-    "latest_code_milestone": "M298",
+    "main": "18a78a656825f6eb0841c60e1f924fc027980659",
+    "tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "latest_milestone": "M299",
+    "latest_code_milestone": "M299",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 0,
+    "open_issues": 1,
     "open_prs": 0
   },
   "m297": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETENTION_PRUNE_PENDING",
     "issue": 173,
     "resolved_issue": 124,
     "branch": "m297-reasoning-output-budget",
@@ -58,8 +58,38 @@
       "help_lookup": "%X00000001",
       "help_lookup_topic": "OVMS_AGENT COMMANDS TOOLS PLATFORM_KNOWLEDGE displayed Git/RMS/DCL packs, 8 KiB per-pack and 16 KiB combined bounds, guidance-not-evidence policy, and OVMS_AGENT_KNOWLEDGE_DIR launcher behavior.",
       "first_promotion_tree_equals_final_candidate": true,
-      "final_main_diff_from_accepted_candidate": ["CHANGELOG.MD", "FEATURES.MD", "README.MD"],
+      "final_main_diff_from_accepted_candidate": [
+        "CHANGELOG.MD",
+        "FEATURES.MD",
+        "README.MD"
+      ],
       "final_main_source_runtime_help_equivalent": true,
+      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true
+    }
+  },
+  "m299": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAG_PENDING",
+    "issue": 178,
+    "branch": "m299-native-multiline-input",
+    "baseline_main": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
+    "initial_native_candidate": "fcdecadcea9927c263eebe1eb7d9e5d917a9a0a5",
+    "final_candidate": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
+    "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "promotion_pr": 180,
+    "promoted_main": "18a78a656825f6eb0841c60e1f924fc027980659",
+    "promoted_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "tag": null,
+    "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input when their free-form tail is omitted; one-line forms remain immediate, fixed leading arguments are preserved where required, /MULTILINE aliases remain compatible, and structured command grammars remain unchanged.",
+    "acceptance": {
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build": "Build completed successfully.",
+      "focused_m251_m299": "M251.5b true multiline input regression passed.; M299 native multiline trigger regression passed.",
+      "help_library": "%X10000001",
+      "help_lookup": "%X00000001",
+      "help_lookup_topic": "OVMS_AGENT COMMANDS MULTILINE_INPUT",
+      "live_multiline": "With OVMS_AGENT_NOSTREAM=1, bare ASK entered multiline mode, waited for .END, and returned exactly M299 FINAL LIVE OK without a failure diagnostic.",
+      "promoted_tree_equals_final_candidate": true,
       "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true
     }
   },
@@ -70,17 +100,43 @@
     "note": "Detailed historical acceptance remains in GitHub issues, tags, CHANGELOG.MD, and prior chat-session-state commits."
   },
   "open_followups": {
-    "issues": [],
+    "issues": [
+      {
+        "number": 179,
+        "title": "Streaming ASK emits assistant text then reports transport failure",
+        "classification": "pre-existing streaming transport completion/status defect, isolated from M299 by one-line A/B test"
+      }
+    ],
     "provider_model_compatibility": [],
-    "note": "No open GitHub issues remain after M298 closed #144 completed."
+    "note": "M299 issue #178 is closed after promotion. Issue #179 remains open and is the only known open follow-up at this checkpoint."
   },
   "github_hygiene": {
-    "permanent": ["main", "chat-session-state"],
-    "retained_completed": ["m297-reasoning-output-budget", "m298-platform-knowledge-packs"],
-    "verified_remote_branches": ["main", "chat-session-state", "m297-reasoning-output-budget", "m298-platform-knowledge-packs"],
+    "permanent": [
+      "main",
+      "chat-session-state"
+    ],
+    "retained_completed_current": [
+      "m297-reasoning-output-budget",
+      "m298-platform-knowledge-packs",
+      "m299-native-multiline-input"
+    ],
+    "retained_completed_target": [
+      "m298-platform-knowledge-packs",
+      "m299-native-multiline-input"
+    ],
+    "verified_remote_branches": [
+      "main",
+      "chat-session-state",
+      "m297-reasoning-output-budget",
+      "m298-platform-knowledge-packs",
+      "m299-native-multiline-input"
+    ],
     "open_prs": 0,
-    "open_issues": 0,
-    "recent_pruned": ["m296-openrouter-free-tool-transport", "m298-promotion-metadata"],
+    "open_issues": 1,
+    "recent_pruned": [
+      "m296-openrouter-free-tool-transport",
+      "m298-promotion-metadata"
+    ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m294": "53150b29e42b5063a9aef0bec76781494c217c69",
@@ -89,21 +145,22 @@
       "m297": "1224014d544b43cea6e9c602ff17217969cb46c6",
       "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8"
     },
-    "cleanup_note": "Post-M298 GitHub branches are exactly permanent main/chat-session-state plus retained completed M297/M298. Permanent m298 tag resolves exactly to final canonical main."
+    "pending_ref_operations": [
+      "Create permanent lightweight tag m299 at promoted main 18a78a656825f6eb0841c60e1f924fc027980659.",
+      "After verifying tag m299 remotely, delete completed branch m297-reasoning-output-budget so only M298 and M299 completed milestone branches remain."
+    ],
+    "cleanup_note": "GitHub connector used in this session does not expose tag creation or branch deletion, so the two pending ref operations require the established authenticated Git path before final tagged/retained state can be recorded."
   },
   "openvms_worktree": {
-    "head": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-    "branch": "main",
-    "native_source": "d9ecacd80238b157a5b3ebd6f2af62d2f2025785",
-    "native_source_tree": "9955a9814adcf432d5bedd46d443c43a5bcc060b",
-    "final_candidate": "a388c918d4f2233c8ce9c858d482aeb6b6498636",
-    "final_candidate_tree": "07f4afbce0561c6e07df48e979fc477ccdb53191",
-    "local_heads": ["main", "m297-reasoning-output-budget", "m298-platform-knowledge-packs"],
-    "remote_tracking_refs": ["origin/HEAD", "origin/main"],
+    "head": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
+    "branch": "m299-native-multiline-input",
+    "native_source": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
+    "native_source_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
+    "final_candidate": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
+    "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "authoritative_status": [],
-    "status_note": "After final M298 promotion metadata was restored from canonical main, AGENT/GIT/REFRESH reported 0 changed paths and AGENT/GIT/STATUS reported clean.",
-    "knowledge_directory": "[.KNOWLEDGE] exists and contains OPENVMS_GIT.MD, OPENVMS_RMS.MD, OPENVMS_DCL.MD, and README.MD.",
-    "note": "VAX metadata is on final canonical main. M298 source acceptance remains exact native source d9ecacd...; final candidate adds accepted documentation; final main adds only post-promotion README/FEATURES/CHANGELOG status synchronization."
+    "status_note": "Exact M299 candidate was materialized with GIT_RESTORE and passed full build, focused regression, HELP library/lookup, and live blocking-transport multiline acceptance. Promoted main has the same tree but has not been separately materialized/rebuilt on the canonical host.",
+    "note": "The local OpenVMS checkout remains on the exact native-accepted M299 milestone branch at this checkpoint; GitHub main is promoted at 18a78a... with the identical accepted tree."
   },
   "local_notes": {},
   "status_semantics": {
