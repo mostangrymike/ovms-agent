@@ -10,7 +10,7 @@
 
 #include "command_input_m149.inc"
 #include "command_input_m251.inc"
-#include "command_input_m299.inc"
+#include "COMMAND_INPUT_M299.INC"
 
 #define MAIN_FAILURE_STATUS 0x10000002U
 #define MAIN_ONESHOT_OUTPUT 8192U
