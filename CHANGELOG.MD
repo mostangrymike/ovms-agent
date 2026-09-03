@@ -6,7 +6,21 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M300 below.
+No additional user-visible product changes are currently recorded beyond M301 below.
+
+## M301 — Larger native multiline prompts
+
+Tag: `m301`
+
+- Raised native `.END` multiline prompt/goal capacity from the ordinary 8192-byte command buffer to a dedicated bounded 32768-byte (32 KiB) buffer while preserving the 8192-byte one-line limit.
+- Kept M251 `.END`, embedded-newline, empty/EOF, and overflow-drain semantics plus M299 trigger selection and `/MULTILINE` compatibility aliases unchanged.
+- Added deterministic regression coverage proving preservation of multiline input above 8 KiB and drain/recovery when the new 32 KiB bound is exceeded.
+- During acceptance, separately fixed and promoted prerequisite defects #185, #187, and #189 so the original long COBOL `AGENT/PLAN` stress prompt could proceed through RMS-safe Git refresh, large project-instruction composition, and saved-plan scope validation rather than failing downstream after successful multiline capture.
+- Final source-green candidate `64595b01f218e12aec32daea5c92749942211c04` (tree `dbe88790861d7cbe53443f41b45ae54600d63a30`) passed canonical OpenVMS V9.2-3 x86-64 full `@BUILD` with `All regression tests passed.`, `Build completed successfully.`, `%X00000001`, and fresh M251/M299/M301 focused regression `%X00000001`.
+- The original unshortened COBOL `AGENT/PLAN` prompt then completed normal provider/tool planning and persisted `Implementation plan saved to OVMS_AGENT_PLAN.TXT.` without execution.
+- HELP-only final candidate `21ee3f1fd81625010f42e4409d4d552656781ca8` (tree `6077bf3df9124e6189ab50931d460d2a36f9b786`) passed `LIBRARY/HELP/CREATE=(KEYSIZE:64)` with `%X10000001` and `OVMS_AGENT COMMANDS MULTILINE_INPUT` lookup with `%X00000001`.
+- Promotion PR #191 produced main `0d09a5575bcf5e05c5e83ff19e10f38675f74e2f`, whose tree exactly equals the final accepted M301 tree. Permanent tag `m301` resolves to that promoted main commit; the merge SHA itself was not separately native-built.
+- Issue #192 tracks a separate operating-guide correction after M301 validation proved the then-documented RMS `.git` filespec examples invalid on the canonical host.
 
 ## M300 — Blocking-default LLM transport with opt-in streaming
 

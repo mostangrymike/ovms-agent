@@ -37,6 +37,8 @@ The normal entry point is:
 
 M299 separates native multiline **trigger selection** from multiline **body reading**. `SRC/COMMAND_INPUT_M299.INC` decides whether the first physical command record is an eligible free-form prompt/goal command with no free-form tail yet. If so, `SRC/MAIN.C` invokes the existing M251 multiline reader, which remains authoritative for exact `.END` termination, embedded-newline preservation, overflow draining, and EOF handling.
 
+M301 separates native multiline **capacity** from the ordinary one-line command buffer. `OVMS_AGENT_INPUT_SIZE` remains 8192 bytes for normal command records, while `OVMS_AGENT_MULTILINE_SIZE` is 32768 bytes and is allocated on demand only after multiline trigger selection succeeds. The completed multiline command is executed from that dedicated buffer and then freed. Overflow beyond the larger bound still drains through `.END` before the next command is read.
+
 The trigger is deliberately syntax-aware. Commands with no fixed leading operands, such as ASK or AGENT/WRITE, enter multiline mode only when entered without their free-form text. Commands with required leading operands, such as `AGENT/IMAGE image-path`, `AGENT/SESSION/EXEC <id>`, and `AGENT/EXEC/FORK <new-name> ::`, enter multiline mode only after that fixed syntax is present and the free-form goal is still absent. Normal one-line forms therefore remain immediate and unambiguous.
 
 The legacy `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` spellings remain compatibility aliases. Structured command grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands do not acquire generic implicit multiline behavior.
@@ -176,7 +178,7 @@ Git is used for repository context, milestone/ref management, history, and GitHu
 - Git index/ref metadata as a separate state that may require independent verification; and
 - exact-SHA native acceptance from tree-equivalent promotion.
 
-The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow. M298's `OPENVMS_GIT` knowledge pack can carry these validated operating lessons into relevant AI requests, but it does not replace live Git/RMS inspection or make remembered state authoritative.
+The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow. M298's `OPENVMS_GIT` knowledge pack can carry validated operating lessons into relevant AI requests, but it does not replace live Git/RMS inspection or make remembered state authoritative. Issue #192 tracks correction of RMS `.git` filespec examples that were rejected on the canonical host during M301 validation; those specific examples must be natively corrected before they are treated as current operating guidance.
 
 M290/M291 hardening also keeps internal Git-status scratch files out of synthesized user status and preserves native/POSIX status semantics rather than trusting simple odd/even checks.
 

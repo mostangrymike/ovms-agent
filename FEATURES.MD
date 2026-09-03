@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M300**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M301**.
 
 ## Project inspection and context
 
@@ -19,6 +19,8 @@ Noninteractive forms include `SETTINGS SHOW`, `GET`, `SET`, `TOGGLE`, `RESET`, a
 ## Native multiline prompt and goal input
 
 M299 adds native `.END`-terminated multiline entry for commands whose remaining operand is a free-form LLM prompt or goal. Normal one-line forms remain immediate; multiline collection starts only when an eligible command has all required fixed leading arguments but no free-form tail.
+
+M301 separates multiline capacity from the ordinary command-line buffer. One-line input remains bounded at 8192 bytes, while native multiline bodies use a dedicated on-demand 32768-byte (32 KiB) buffer including the terminating NUL. Multiline input above the new bound is not silently truncated: the reader drains through `.END`, reports that the multiline prompt is too long, and leaves the next command readable.
 
 For example:
 
@@ -39,7 +41,7 @@ AGENT/SESSION/EXEC <id>
 AGENT/EXEC/FORK <new-name> ::
 ```
 
-M299 reuses the existing M251 multiline reader, so `.END` must appear by itself on a physical line; embedded newlines before it are preserved, and the existing overflow/EOF behavior remains authoritative. `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands are not broadened into implicit multiline input.
+M301 retains the M251 multiline reader and M299 trigger selection, so `.END` must appear by itself on a physical line; embedded newlines before it are preserved, and the existing empty/EOF/overflow-drain behavior remains authoritative. `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands are not broadened into implicit multiline input.
 
 ## AI provider profiles and health diagnostics
 
@@ -160,7 +162,7 @@ Guarded FETCH/PULL/PUSH require repository/profile matching; PUSH and service mu
 
 Because the observed OpenVMS Git port can return misleading/blank porcelain or update metadata without materializing RMS-visible files, the accepted workflow independently verifies `FETCH_HEAD`, `HEAD`, branch-ref files, index metadata, and physical files where relevant. `GIT_RESTORE.COM` provides the established RMS-aware tracked-file restore path.
 
-See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules.
+See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules. Issue #192 tracks a canonical-host correction to invalid RMS `.git` filespec examples discovered during M301 acceptance; do not copy those specific examples until that issue is resolved and natively validated.
 
 ## Safety controls
 
