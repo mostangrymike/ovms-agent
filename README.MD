@@ -5,7 +5,7 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M300`
+- **Latest promoted milestone:** `M301`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
@@ -36,7 +36,7 @@ OVMS Agent currently provides:
 
 - project/tree/file inspection and search;
 - ASK, CHAT, REVIEW, read-only agent analysis, planning, and persistent sessions;
-- native `.END`-terminated multiline entry for eligible free-form prompt/goal commands while preserving immediate one-line forms;
+- native `.END`-terminated multiline entry for eligible free-form prompt/goal commands with a dedicated bounded 32 KiB multiline buffer while preserving the 8 KiB ordinary one-line command buffer;
 - guarded file creation and modification with OpenVMS RMS-aware behavior;
 - atomic multi-hunk `structured_patch` editing for ordinary `AGENT/WRITE` existing-file changes;
 - transactional multi-file change sets and rollback-oriented repair workflows;
@@ -114,6 +114,8 @@ Exit with `QUIT` or `EXIT`.
 
 M299 lets eligible free-form prompt/goal commands enter multiline mode without a `/MULTILINE` qualifier. A normal one-line command still executes immediately. To enter multiline text, supply the command with no free-form tail; OVMS Agent then reads physical records until `.END` appears by itself on a line.
 
+M301 gives that native multiline path a dedicated bounded 32768-byte (32 KiB) buffer, including its terminating NUL, while leaving the ordinary one-line command buffer at 8192 bytes. If multiline input exceeds the larger bound, OVMS Agent drains through `.END`, reports that the multiline prompt is too long, and leaves the next command readable instead of silently truncating input.
+
 For example:
 
 ```text
@@ -131,7 +133,7 @@ AGENT/SESSION/EXEC <id>
 AGENT/EXEC/FORK <new-name> ::
 ```
 
-The historical `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` spellings remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands do not gain implicit multiline behavior. See `OVMS_AGENT.HLP` topic `OVMS_AGENT COMMANDS MULTILINE_INPUT` and `DOC/M299_NATIVE_MULTILINE_INPUT.MD`.
+The historical `AGENT/MULTILINE`, `AGENT/CREATE/MULTILINE`, and `AGENT/REPAIR/MULTILINE` spellings remain compatibility aliases. Structured grammars such as DCL, RUN, PATCH, MCP, GitHub operations, and history/query commands do not gain implicit multiline behavior. See `OVMS_AGENT.HLP` topic `OVMS_AGENT COMMANDS MULTILINE_INPUT`, `DOC/M299_NATIVE_MULTILINE_INPUT.MD`, and `DOC/M301_LARGE_MULTILINE_PROMPTS.MD`.
 
 ## Provider configuration and health testing
 
