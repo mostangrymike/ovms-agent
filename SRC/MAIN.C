@@ -229,6 +229,8 @@ int main(void)
     agent_state state;
     char input[OVMS_AGENT_INPUT_SIZE];
     char multiline_prefix[OVMS_AGENT_INPUT_SIZE];
+    char *execute_input;
+    char *multiline_input;
     const char *one_shot;
     const char *result_mode;
     int read_status;
@@ -255,6 +257,8 @@ int main(void)
     while (agent_is_running(&state)) {
         ansi_term_status_clear();
         command_prompt();
+        execute_input = input;
+        multiline_input = NULL;
 
         read_status = command_read_stream(
             stdin,
@@ -275,18 +279,27 @@ int main(void)
                 input,
                 multiline_prefix,
                 sizeof(multiline_prefix))) {
+            multiline_input =
+                (char *)malloc((size_t)OVMS_AGENT_MULTILINE_SIZE);
+            if (multiline_input == NULL) {
+                (void)puts("Unable to allocate multiline prompt buffer.");
+                continue;
+            }
+
             read_status = main_read_multiline(
-                input,
-                sizeof(input),
+                multiline_input,
+                (size_t)OVMS_AGENT_MULTILINE_SIZE,
                 multiline_prefix
             );
 
             if (read_status == -1) {
+                free(multiline_input);
                 (void)puts("Multiline prompt is too long.");
                 continue;
             }
 
             if (read_status == -2) {
+                free(multiline_input);
                 (void)puts(
                     "Multiline prompt ended before the .END terminator."
                 );
@@ -294,17 +307,24 @@ int main(void)
             }
 
             if (read_status == -3) {
+                free(multiline_input);
                 (void)puts("Multiline prompt is empty.");
                 continue;
             }
 
             if (read_status <= 0) {
+                free(multiline_input);
                 (void)puts("Unable to read multiline prompt.");
                 continue;
             }
+
+            execute_input = multiline_input;
         }
 
-        command_execute(&state, input);
+        command_execute(&state, execute_input);
+        if (multiline_input != NULL) {
+            free(multiline_input);
+        }
     }
 
     ansi_term_status_clear();

@@ -9,6 +9,8 @@
 #define TEST_OK "M251_MULTI_OK.TMP"
 #define TEST_OVER "M251_MULTI_OVER.TMP"
 #define TEST_EOF "M251_MULTI_EOF.TMP"
+#define TEST_LARGE "M301_MULTI_LARGE.TMP"
+#define M301_LINE_WIDTH 80U
 
 static void remove_all(const char *path)
 {
@@ -201,6 +203,157 @@ static int test_empty(void)
     return ok;
 }
 
+static int m301_write_lines(FILE *file, size_t line_count)
+{
+    size_t line;
+    size_t column;
+    int ch;
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    for (line = 0U; line < line_count; ++line) {
+        ch = 'A' + (int)(line % 26U);
+        for (column = 0U; column < M301_LINE_WIDTH; ++column) {
+            if (fputc(ch, file) == EOF) {
+                return 0;
+            }
+        }
+        if (fputc('\n', file) == EOF) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int test_m301_large_capacity(void)
+{
+    FILE *file;
+    char *body;
+    char next[64];
+    size_t line_count;
+    size_t expected_length;
+    int status;
+    int ok;
+
+    if ((size_t)OVMS_AGENT_MULTILINE_SIZE <=
+        (size_t)OVMS_AGENT_INPUT_SIZE) {
+        return 0;
+    }
+
+    line_count = 128U;
+    expected_length =
+        line_count * ((size_t)M301_LINE_WIDTH + 1U);
+    if (expected_length <= (size_t)OVMS_AGENT_INPUT_SIZE ||
+        expected_length + 1U >=
+            (size_t)OVMS_AGENT_MULTILINE_SIZE) {
+        return 0;
+    }
+
+    body = (char *)malloc((size_t)OVMS_AGENT_MULTILINE_SIZE);
+    if (body == NULL) {
+        return 0;
+    }
+
+    remove_all(TEST_LARGE);
+    file = fopen(TEST_LARGE, "w");
+    if (file == NULL) {
+        free(body);
+        return 0;
+    }
+
+    if (!m301_write_lines(file, line_count) ||
+        fputs(".END\nSTATUS\n", file) == EOF ||
+        fclose(file) != 0) {
+        free(body);
+        remove_all(TEST_LARGE);
+        return 0;
+    }
+
+    file = fopen(TEST_LARGE, "r");
+    if (file == NULL) {
+        free(body);
+        remove_all(TEST_LARGE);
+        return 0;
+    }
+
+    status = command_read_multiline(
+        file,
+        body,
+        (size_t)OVMS_AGENT_MULTILINE_SIZE);
+    next[0] = '\0';
+    (void)fgets(next, sizeof(next), file);
+
+    ok = status == 1 &&
+         strlen(body) == expected_length &&
+         strcmp(next, "STATUS\n") == 0;
+
+    (void)fclose(file);
+    free(body);
+    remove_all(TEST_LARGE);
+    return ok;
+}
+
+static int test_m301_bound_recovery(void)
+{
+    FILE *file;
+    char *body;
+    char next[64];
+    size_t line_size;
+    size_t line_count;
+    int status;
+    int ok;
+
+    line_size = (size_t)M301_LINE_WIDTH + 1U;
+    line_count =
+        ((size_t)OVMS_AGENT_MULTILINE_SIZE / line_size) + 2U;
+
+    body = (char *)malloc((size_t)OVMS_AGENT_MULTILINE_SIZE);
+    if (body == NULL) {
+        return 0;
+    }
+
+    remove_all(TEST_LARGE);
+    file = fopen(TEST_LARGE, "w");
+    if (file == NULL) {
+        free(body);
+        return 0;
+    }
+
+    if (!m301_write_lines(file, line_count) ||
+        fputs(".END\nSTATUS\n", file) == EOF ||
+        fclose(file) != 0) {
+        free(body);
+        remove_all(TEST_LARGE);
+        return 0;
+    }
+
+    file = fopen(TEST_LARGE, "r");
+    if (file == NULL) {
+        free(body);
+        remove_all(TEST_LARGE);
+        return 0;
+    }
+
+    status = command_read_multiline(
+        file,
+        body,
+        (size_t)OVMS_AGENT_MULTILINE_SIZE);
+    next[0] = '\0';
+    (void)fgets(next, sizeof(next), file);
+
+    ok = status == -1 &&
+         body[0] == '\0' &&
+         strcmp(next, "STATUS\n") == 0;
+
+    (void)fclose(file);
+    free(body);
+    remove_all(TEST_LARGE);
+    return ok;
+}
+
 static int test_trigger(const char *text,
                         int expected,
                         const char *expected_prefix)
@@ -304,6 +457,20 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    if (!test_m301_large_capacity()) {
+        (void)puts(
+            "M301 failed: multiline input above 8 KiB was not preserved."
+        );
+        return EXIT_FAILURE;
+    }
+
+    if (!test_m301_bound_recovery()) {
+        (void)puts(
+            "M301 failed: 32 KiB overflow did not drain through .END."
+        );
+        return EXIT_FAILURE;
+    }
+
     if (!test_native_triggers()) {
         (void)puts(
             "M299 failed: native multiline trigger selection changed."
@@ -313,5 +480,6 @@ int main(void)
 
     (void)puts("M251.5b true multiline input regression passed.");
     (void)puts("M299 native multiline trigger regression passed.");
+    (void)puts("M301 large multiline capacity regression passed.");
     return EXIT_SUCCESS;
 }
