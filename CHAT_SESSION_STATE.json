@@ -1,6 +1,6 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-03T14:42:00-05:00",
+  "updated_at": "2026-09-03T14:43:26-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
@@ -116,13 +116,12 @@
       "m300-blocking-default-streaming-opt-in",
       "m301-large-multiline-prompts"
     ],
-    "temporary_branches_pending_cleanup": ["m301-documentation-sync"],
-    "verified_remote_branches_before_docs_cleanup": [
+    "temporary_branches_pending_cleanup": [],
+    "verified_remote_branches": [
       "main",
       "chat-session-state",
       "m300-blocking-default-streaming-opt-in",
-      "m301-large-multiline-prompts",
-      "m301-documentation-sync"
+      "m301-large-multiline-prompts"
     ],
     "open_prs": 0,
     "open_issues": 2,
@@ -131,7 +130,8 @@
       "m301-prereq-nested-git-root",
       "m301-prereq-large-agent-context",
       "m301-prereq-plan-scope-prose",
-      "tmp-m301-pre187-rebase"
+      "tmp-m301-pre187-rebase",
+      "m301-documentation-sync"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -139,8 +139,8 @@
       "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
       "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f"
     },
-    "pending_ref_operations": ["Delete merged temporary branch m301-documentation-sync."],
-    "cleanup_note": "The M301 product tag intentionally remains on product-promotion main 0d09a557...; later PR #193 is Markdown-only documentation synchronization."
+    "pending_ref_operations": [],
+    "cleanup_note": "M301 promotion, tag creation, docs synchronization, and branch-retention cleanup are complete. The permanent m301 tag remains on product-promotion main 0d09a557...; later main 244adacf... is Markdown-only documentation synchronization."
   },
   "openvms_worktree": {
     "head": "21ee3f1fd81625010f42e4409d4d552656781ca8",
