@@ -1,197 +1,172 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-02T10:56:52-05:00",
+  "updated_at": "2026-09-03T14:42:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "1423e660df7166797347c3ec9154564d8b34dd36",
-    "tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "latest_milestone": "M300",
-    "latest_code_milestone": "M300",
+    "main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "tree": "93de6bfca71dcd6fb086756df8d42fcd11feccff",
+    "latest_milestone": "M301",
+    "latest_code_milestone": "M301",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 1,
+    "open_issues": 2,
     "open_prs": 0
   },
-  "m297": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
-    "issue": 173,
-    "resolved_issue": 124,
-    "branch": "m297-reasoning-output-budget",
-    "native_source": "67240e303f2d6217314547931502ac928ecebf50",
-    "native_source_tree": "4ad9b68bab1b817660c42176b095bafe7bd7368d",
-    "final_candidate": "6368d2cc00367de72e276fc169bba7c0f8dfbcbb",
-    "final_candidate_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
-    "promotion_pr": 175,
-    "promoted_main": "1224014d544b43cea6e9c602ff17217969cb46c6",
-    "promoted_tree": "4fbab9f2648c0d2182df1845101a15124bb0aa56",
-    "tag": "1224014d544b43cea6e9c602ff17217969cb46c6",
-    "result": "Responses incomplete/max_output_tokens with no assistant text produce a bounded diagnostic instead of raw provider JSON."
-  },
-  "m298": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
-    "issue": 144,
-    "branch": "m298-platform-knowledge-packs",
-    "baseline_main": "1224014d544b43cea6e9c602ff17217969cb46c6",
-    "native_source": "d9ecacd80238b157a5b3ebd6f2af62d2f2025785",
-    "native_source_tree": "9955a9814adcf432d5bedd46d443c43a5bcc060b",
-    "final_candidate": "a388c918d4f2233c8ce9c858d482aeb6b6498636",
-    "final_candidate_tree": "07f4afbce0561c6e07df48e979fc477ccdb53191",
-    "promotion_pr": 176,
-    "first_promoted_main": "0c4e7e3cd521936b3ea8cdedda9677744fca09ac",
-    "first_promoted_tree": "07f4afbce0561c6e07df48e979fc477ccdb53191",
-    "metadata_pr": 177,
-    "promoted_main": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-    "promoted_tree": "34511c8882508802f34f2e6181cbf204d76e3e58",
-    "tag": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-    "result": "Separate bounded KNOWLEDGE platform packs for OpenVMS Git, RMS, and DCL are injected only when strong topic evidence matches; relevant packs compose with one another and M288 language guidance while unrelated requests remain unchanged and safety/evidence policy remains dominant.",
-    "acceptance": {
-      "build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build": "Build completed successfully.",
-      "focused_m288": "%X00000001",
-      "focused_m298": "%X00000001",
-      "live_positive": "Blocking Git ASK reported Platform knowledge: OPENVMS_GIT (2169 bytes) and returned OpenVMS Git guidance.",
-      "live_negative": "Blocking unrelated binary-search ASK reported no Platform knowledge line and completed normally.",
-      "help_library": "%X10000001",
-      "help_lookup": "%X00000001",
-      "help_lookup_topic": "OVMS_AGENT COMMANDS TOOLS PLATFORM_KNOWLEDGE displayed Git/RMS/DCL packs, 8 KiB per-pack and 16 KiB combined bounds, guidance-not-evidence policy, and OVMS_AGENT_KNOWLEDGE_DIR launcher behavior.",
-      "first_promotion_tree_equals_final_candidate": true,
-      "final_main_diff_from_accepted_candidate": ["CHANGELOG.MD", "FEATURES.MD", "README.MD"],
-      "final_main_source_runtime_help_equivalent": true,
-      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true
-    }
-  },
   "m299": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 178,
-    "branch": "m299-native-multiline-input",
-    "baseline_main": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
-    "initial_native_candidate": "fcdecadcea9927c263eebe1eb7d9e5d917a9a0a5",
-    "final_candidate": "0827cb80ab25e7cf6e5336a5b25396fc8ebd3b81",
-    "final_candidate_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "promotion_pr": 180,
     "promoted_main": "18a78a656825f6eb0841c60e1f924fc027980659",
-    "promoted_tree": "a861600d498abf4b910e793e8808c82e878ac4c5",
     "tag": "18a78a656825f6eb0841c60e1f924fc027980659",
-    "documentation_sync_pr": 181,
-    "documentation_sync_head": "57d693a9b7b873c7a64306525cab06bf5c57bcd9",
-    "documentation_main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
-    "documentation_tree": "5adaa4fe7e4128055b31eb839e26b478510f07c3",
-    "documentation_changed_files": ["ARCHITECTURE.MD", "CHANGELOG.MD", "DOC/M299_NATIVE_MULTILINE_INPUT.MD", "FEATURES.MD", "README.MD"],
-    "documentation_main_source_runtime_help_equivalent": true,
-    "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input when their free-form tail is omitted; one-line forms remain immediate, fixed leading arguments are preserved where required, /MULTILINE aliases remain compatible, and structured command grammars remain unchanged.",
-    "acceptance": {
-      "build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build": "Build completed successfully.",
-      "focused_m251_m299": "M251.5b true multiline input regression passed.; M299 native multiline trigger regression passed.",
-      "help_library": "%X10000001",
-      "help_lookup": "%X00000001",
-      "help_lookup_topic": "OVMS_AGENT COMMANDS MULTILINE_INPUT",
-      "live_multiline": "With OVMS_AGENT_NOSTREAM=1, bare ASK entered multiline mode, waited for .END, and returned exactly M299 FINAL LIVE OK without a failure diagnostic.",
-      "promoted_tree_equals_final_candidate": true,
-      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
-      "post_promotion_documentation": "PR #181 changed Markdown documentation only. No product source, build procedure, launcher, SETTINGS, or OVMS_AGENT.HLP source changed, so no additional native product build was required under RULES.MD."
-    }
+    "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input without requiring /MULTILINE; one-line and structured grammar behavior remain compatible.",
+    "note": "Detailed M299 acceptance remains in issue #178, PR #180, tag m299, DOC/M299_NATIVE_MULTILINE_INPUT.MD, and CHANGELOG.MD."
   },
   "m300": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 182,
     "related_open_issue": 179,
     "branch": "m300-blocking-default-streaming-opt-in",
-    "baseline_main": "25042e97f2e329587756fbb3c8a500ff8eeeaccc",
-    "native_source_checkpoint": "576ce40727648158ddedf41000ed490788b8b94c",
     "final_candidate": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
     "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
     "promotion_pr": 183,
     "promoted_main": "1423e660df7166797347c3ec9154564d8b34dd36",
     "promoted_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
     "tag": "1423e660df7166797347c3ec9154564d8b34dd36",
-    "result": "Bounded blocking Responses transport is the default. Persistent streaming defaults OFF and has no new enable logical; explicit ON permits only eligible interactive non-tool SSE presentation, while all tool-bearing requests remain blocking. Existing OVMS_AGENT_NOSTREAM remains a force-blocking compatibility override and OVMS_AGENT_STREAM_DEBUG remains diagnostic only.",
+    "result": "Bounded blocking Responses transport is the default. Persistent streaming defaults OFF; explicit ON permits eligible interactive non-tool SSE, while all tool-bearing requests remain blocking.",
     "acceptance": {
       "build_status": "%X00000001",
       "regressions": "All regression tests passed.",
       "build": "Build completed successfully.",
-      "focused_policy": "M300 stream policy regression passed.; %X00000001",
-      "focused_settings": "M280 settings regression passed.; %X00000001",
       "help_library": "%X10000001",
       "help_lookup": "%X00000001",
-      "help_lookup_topic": "OVMS_AGENT SETTINGS STREAMING",
-      "live_default_blocking": "streaming=OFF source=default; ASK returned exactly M300 DEFAULT BLOCKING OK with no stream-child or provider-failure diagnostic.",
-      "live_optional_streaming": "With streaming=ON and OVMS_AGENT_STREAM_DEBUG=1, ASK emitted all requested M300 STREAM LINE 01 through 20, then reproduced issue #179: M290 stream transport child failed; blocking retry suppressed.; AI provider request failed.",
-      "live_tool_blocking": "With streaming=ON, read-only AGENT successfully executed read_file_range SRC/SETTINGS.C 1-30 and reported configured streaming default OFF; the tool-bearing request remained blocking.",
       "saved_setting_restored": "streaming=OFF source=saved",
+      "issue_179": "Remains open as the optional SSE child-completion/status defect."
+    }
+  },
+  "m301": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 184,
+    "branch": "m301-large-multiline-prompts",
+    "baseline_main": "0399838e0fbd26cf00fa0d5d891035494777b59a",
+    "source_green_candidate": "64595b01f218e12aec32daea5c92749942211c04",
+    "source_green_tree": "dbe88790861d7cbe53443f41b45ae54600d63a30",
+    "final_candidate": "21ee3f1fd81625010f42e4409d4d552656781ca8",
+    "final_candidate_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
+    "promotion_pr": 191,
+    "promoted_main": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
+    "promoted_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
+    "tag": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
+    "documentation_sync_pr": 193,
+    "documentation_sync_head": "b84a93129ed3aeccdb7bee94263fc29a9494f3b7",
+    "documentation_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "documentation_tree": "93de6bfca71dcd6fb086756df8d42fcd11feccff",
+    "documentation_changed_files": [
+      "ARCHITECTURE.MD",
+      "CHANGELOG.MD",
+      "DOC/M301_LARGE_MULTILINE_PROMPTS.MD",
+      "FEATURES.MD",
+      "README.MD"
+    ],
+    "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Existing M251 reader semantics, M299 trigger selection, fixed-leading-argument behavior, and /MULTILINE compatibility aliases are preserved.",
+    "prerequisite_fixes": {
+      "185": "Nested RMS-safe Git refresh from folded subdirectory; promoted via PR #186.",
+      "187": "Large agent context composition buffers; promoted via PR #188.",
+      "189": "Fallback saved-plan scope prose parsing; promoted via PR #190."
+    },
+    "acceptance": {
+      "build_status": "%X00000001",
+      "regressions": "All regression tests passed.",
+      "build": "Build completed successfully.",
+      "focused_m251_m299_m301": "M251.5b true multiline input regression passed.; M299 native multiline trigger regression passed.; M301 large multiline capacity regression passed.; %X00000001",
+      "live_long_plan": "The original full unshortened COBOL AGENT/PLAN prompt was accepted without multiline rejection, composed with #187 present, passed saved-plan scope validation with #189 present, completed provider/tool planning, and persisted Implementation plan saved to OVMS_AGENT_PLAN.TXT.; no execution was performed.",
+      "help_library": "%X10000001",
+      "help_lookup": "%X00000001",
+      "help_lookup_topic": "OVMS_AGENT COMMANDS MULTILINE_INPUT displayed the 32768-byte multiline bound, unchanged 8192-byte one-line bound, overflow-drain behavior, eligible commands, and compatibility aliases.",
+      "final_head_ref_verified": "GIT rev-parse FETCH_HEAD and refs/heads/m301-large-multiline-prompts both returned 21ee3f1fd81625010f42e4409d4d552656781ca8.",
       "promoted_tree_equals_final_candidate": true,
       "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
       "tag_verified_remote": true,
-      "issue_179": "Remains open; M300 makes the defect non-impacting to default operation but does not fix optional SSE child completion/status handling."
+      "post_promotion_documentation": "PR #193 changed Markdown documentation only. No product source/header, build procedure, launcher, SETTINGS, or OVMS_AGENT.HLP input changed, so no additional native product build was required."
     }
   },
-  "historical_milestones": {
-    "m294": "completed/promoted/tagged/pruned",
-    "m295": "completed/promoted/tagged/pruned",
-    "m296": "completed/promoted/tagged/pruned after M298; tag retained",
-    "m298": "completed/promoted/native-validated/tagged/pruned after M300 retention rollover",
-    "note": "Detailed historical acceptance remains in GitHub issues, tags, CHANGELOG.MD, and prior chat-session-state commits."
-  },
   "open_followups": {
-    "issues": [{
-      "number": 179,
-      "title": "Streaming ASK emits assistant text then reports transport failure",
-      "classification": "optional SSE streaming child-completion/status defect; reproduced under M300 only after explicit streaming=ON, while default blocking and tool-bearing requests are non-impacting"
-    }],
-    "provider_model_compatibility": [],
-    "note": "M300 issue #182 is closed after promotion. Issue #179 remains open and is the only known open follow-up."
+    "issues": [
+      {
+        "number": 179,
+        "title": "Streaming ASK emits assistant text then reports transport failure",
+        "classification": "Optional SSE streaming child-completion/status defect; default blocking and tool-bearing requests are non-impacting."
+      },
+      {
+        "number": 192,
+        "title": "OpenVMS Git guide uses invalid RMS .git filespec on canonical host",
+        "classification": "Documentation/operating-guide correctness. Determine and natively validate the correct RMS-visible .git control-file syntax before changing the guide/rules."
+      }
+    ],
+    "note": "M301 issue #184 is closed. PRs #191 and #193 are merged."
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_current": ["m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
-    "retained_completed_target": ["m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
-    "temporary_branches_pending_cleanup": [],
-    "verified_remote_branches": ["main", "chat-session-state", "m299-native-multiline-input", "m300-blocking-default-streaming-opt-in"],
+    "retained_completed_current": [
+      "m300-blocking-default-streaming-opt-in",
+      "m301-large-multiline-prompts"
+    ],
+    "retained_completed_target": [
+      "m300-blocking-default-streaming-opt-in",
+      "m301-large-multiline-prompts"
+    ],
+    "temporary_branches_pending_cleanup": ["m301-documentation-sync"],
+    "verified_remote_branches_before_docs_cleanup": [
+      "main",
+      "chat-session-state",
+      "m300-blocking-default-streaming-opt-in",
+      "m301-large-multiline-prompts",
+      "m301-documentation-sync"
+    ],
     "open_prs": 0,
-    "open_issues": 1,
-    "recent_pruned": ["m296-openrouter-free-tool-transport", "m298-promotion-metadata", "m297-reasoning-output-budget", "m299-documentation-sync", "m298-platform-knowledge-packs"],
+    "open_issues": 2,
+    "recent_pruned": [
+      "m299-native-multiline-input",
+      "m301-prereq-nested-git-root",
+      "m301-prereq-large-agent-context",
+      "m301-prereq-plan-scope-prose",
+      "tmp-m301-pre187-rebase"
+    ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
-      "m294": "53150b29e42b5063a9aef0bec76781494c217c69",
-      "m295": "3fd26e344866e25779fa216696286eac8eb1447a",
-      "m296": "a9efe5c6501a1b98bcd2c55f9accc048a80f3f3b",
-      "m297": "1224014d544b43cea6e9c602ff17217969cb46c6",
-      "m298": "a0b522ca74f7ccf1ebc6ed0e60439fbb9196aba8",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659",
-      "m300": "1423e660df7166797347c3ec9154564d8b34dd36"
+      "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
+      "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f"
     },
-    "pending_ref_operations": [],
-    "cleanup_note": "M300 tagging and retention cleanup are complete. The remote m300 tag resolves to promoted main 1423e660df7166797347c3ec9154564d8b34dd36; m298-platform-knowledge-packs is absent. Permanent main/chat-session-state plus retained M299/M300 satisfy branch-retention policy."
+    "pending_ref_operations": ["Delete merged temporary branch m301-documentation-sync."],
+    "cleanup_note": "The M301 product tag intentionally remains on product-promotion main 0d09a557...; later PR #193 is Markdown-only documentation synchronization."
   },
   "openvms_worktree": {
-    "head": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
-    "branch": "m300-blocking-default-streaming-opt-in",
-    "native_source": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
-    "native_source_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "final_candidate": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
-    "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "authoritative_status": [],
-    "status_note": "Exact final M300 candidate was materialized with bounded GIT_RESTORE batches after an overlong restore attempt produced %DCL-W-TKNOVF and was discarded as evidence. The exact candidate then passed full build, focused policy/settings regressions, HELP library/lookup, default blocking ASK, optional-stream reproduction of #179, and tool-bearing blocking while streaming=ON.",
-    "note": "The local symbolic HEAD remains on the exact native-accepted M300 milestone branch. A later GITAUTH fetch of main set FETCH_HEAD to promoted main for tagging but did not change symbolic HEAD. The permanent local/remote m300 tag points to promoted main 1423e660..., whose tree equals the accepted candidate tree."
+    "head": "21ee3f1fd81625010f42e4409d4d552656781ca8",
+    "branch": "m301-large-multiline-prompts",
+    "native_source": "64595b01f218e12aec32daea5c92749942211c04",
+    "native_source_tree": "dbe88790861d7cbe53443f41b45ae54600d63a30",
+    "final_candidate": "21ee3f1fd81625010f42e4409d4d552656781ca8",
+    "final_candidate_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
+    "status_note": "The M301 source candidate passed full build and focused regressions before the HELP-only final head. OVMS_AGENT.HLP was then RMS-restored from exact final head and passed HELP library creation/lookup. A later GITAUTH fetch of main for m301 tag creation changed FETCH_HEAD only; symbolic HEAD remains on m301-large-multiline-prompts.",
+    "note": "Do not use the currently documented [.^.GIT] RMS control-file examples as evidence on this host; issue #192 tracks their native correction. Git rev-parse ref checks plus RMS-aware GIT_RESTORE were used for the final HELP gate."
   },
-  "local_notes": {},
+  "historical_milestones": {
+    "m294_to_m298": "completed/promoted/native-validated/tagged; development branches pruned per retention policy",
+    "note": "Detailed older acceptance remains in GitHub issues/PRs, permanent mNNN tags, CHANGELOG.MD, DOC records, and prior chat-session-state history."
+  },
   "status_semantics": {
     "base": "0x0035A000UL",
     "mask": "0x0FFFF800UL",
-    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure. Do not use F$FAO(\"!8XL\", status) as authoritative status rendering on the canonical x86-64 host; SHOW SYMBOL or numeric comparison is authoritative."
+    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure. SHOW SYMBOL or numeric comparison is authoritative for captured native status rendering."
   },
   "standing_rules": [
     "At chat start read RULES.MD on main and this state, then verify live GitHub refs/issues before acting.",
     "GitHub is source/control plane; OpenVMS V9.2-3 x86-64 is canonical compile/link/RMS/runtime acceptance.",
     "Omit literal OVMS-AGENT> from commands supplied for paste; native DCL $ prompts are acceptable.",
     "Use GITAUTH for authenticated Git network operations and keep core.filemode=false.",
-    "Never trust OpenVMS Git porcelain/ref output or $STATUS alone when RMS-visible files/control files can verify.",
-    "For OpenVMS working-tree state, use AGENT/GIT/REFRESH and AGENT/GIT/STATUS when direct Git encounters known #149 RMS short-read behavior.",
-    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing materialization workflows.",
+    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing materialization workflows, but until #192 is resolved do not reuse its invalid [.^.GIT] RMS filespec examples.",
     "When source/build/runtime inputs change, native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
     "Distinguish exact native-tested SHA from tree/source/HLP-equivalent promoted commits; never call an untested GitHub head native-green.",
     "Keep OVMS_AGENT.HLP synchronized with user-visible command/settings/material behavior changes.",
