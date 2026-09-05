@@ -1,176 +1,84 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-03T14:43:26-05:00",
+  "updated_at": "2026-09-05T18:50:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
     "main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "tree": "93de6bfca71dcd6fb086756df8d42fcd11feccff",
-    "latest_milestone": "M301",
+    "latest_milestone": "M302",
     "latest_code_milestone": "M301",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 2,
+    "open_issues": 43,
     "open_prs": 0
-  },
-  "m299": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
-    "issue": 178,
-    "promotion_pr": 180,
-    "promoted_main": "18a78a656825f6eb0841c60e1f924fc027980659",
-    "tag": "18a78a656825f6eb0841c60e1f924fc027980659",
-    "result": "Eligible free-form prompt/goal commands support native .END-terminated multiline input without requiring /MULTILINE; one-line and structured grammar behavior remain compatible.",
-    "note": "Detailed M299 acceptance remains in issue #178, PR #180, tag m299, DOC/M299_NATIVE_MULTILINE_INPUT.MD, and CHANGELOG.MD."
-  },
-  "m300": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
-    "issue": 182,
-    "related_open_issue": 179,
-    "branch": "m300-blocking-default-streaming-opt-in",
-    "final_candidate": "82e79d7f8a80db2d7efee58cb699fc3c3b5d9a2b",
-    "final_candidate_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "promotion_pr": 183,
-    "promoted_main": "1423e660df7166797347c3ec9154564d8b34dd36",
-    "promoted_tree": "ce740f5b253a85294166ad446744bd3de22429d9",
-    "tag": "1423e660df7166797347c3ec9154564d8b34dd36",
-    "result": "Bounded blocking Responses transport is the default. Persistent streaming defaults OFF; explicit ON permits eligible interactive non-tool SSE, while all tool-bearing requests remain blocking.",
-    "acceptance": {
-      "build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build": "Build completed successfully.",
-      "help_library": "%X10000001",
-      "help_lookup": "%X00000001",
-      "saved_setting_restored": "streaming=OFF source=saved",
-      "issue_179": "Remains open as the optional SSE child-completion/status defect."
-    }
   },
   "m301": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 184,
     "branch": "m301-large-multiline-prompts",
-    "baseline_main": "0399838e0fbd26cf00fa0d5d891035494777b59a",
-    "source_green_candidate": "64595b01f218e12aec32daea5c92749942211c04",
-    "source_green_tree": "dbe88790861d7cbe53443f41b45ae54600d63a30",
-    "final_candidate": "21ee3f1fd81625010f42e4409d4d552656781ca8",
-    "final_candidate_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
-    "promotion_pr": 191,
     "promoted_main": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
-    "promoted_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
-    "tag": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
-    "documentation_sync_pr": 193,
-    "documentation_sync_head": "b84a93129ed3aeccdb7bee94263fc29a9494f3b7",
     "documentation_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
-    "documentation_tree": "93de6bfca71dcd6fb086756df8d42fcd11feccff",
-    "documentation_changed_files": [
-      "ARCHITECTURE.MD",
-      "CHANGELOG.MD",
-      "DOC/M301_LARGE_MULTILINE_PROMPTS.MD",
-      "FEATURES.MD",
-      "README.MD"
-    ],
-    "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Existing M251 reader semantics, M299 trigger selection, fixed-leading-argument behavior, and /MULTILINE compatibility aliases are preserved.",
-    "prerequisite_fixes": {
-      "185": "Nested RMS-safe Git refresh from folded subdirectory; promoted via PR #186.",
-      "187": "Large agent context composition buffers; promoted via PR #188.",
-      "189": "Fallback saved-plan scope prose parsing; promoted via PR #190."
-    },
-    "acceptance": {
-      "build_status": "%X00000001",
-      "regressions": "All regression tests passed.",
-      "build": "Build completed successfully.",
-      "focused_m251_m299_m301": "M251.5b true multiline input regression passed.; M299 native multiline trigger regression passed.; M301 large multiline capacity regression passed.; %X00000001",
-      "live_long_plan": "The original full unshortened COBOL AGENT/PLAN prompt was accepted without multiline rejection, composed with #187 present, passed saved-plan scope validation with #189 present, completed provider/tool planning, and persisted Implementation plan saved to OVMS_AGENT_PLAN.TXT.; no execution was performed.",
-      "help_library": "%X10000001",
-      "help_lookup": "%X00000001",
-      "help_lookup_topic": "OVMS_AGENT COMMANDS MULTILINE_INPUT displayed the 32768-byte multiline bound, unchanged 8192-byte one-line bound, overflow-drain behavior, eligible commands, and compatibility aliases.",
-      "final_head_ref_verified": "GIT rev-parse FETCH_HEAD and refs/heads/m301-large-multiline-prompts both returned 21ee3f1fd81625010f42e4409d4d552656781ca8.",
-      "promoted_tree_equals_final_candidate": true,
-      "promoted_merge_is_tree_equivalent_not_exact_native_build_sha": true,
-      "tag_verified_remote": true,
-      "post_promotion_documentation": "PR #193 changed Markdown documentation only. No product source/header, build procedure, launcher, SETTINGS, or OVMS_AGENT.HLP input changed, so no additional native product build was required."
-    }
+    "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Full canonical native acceptance completed."
   },
-  "open_followups": {
-    "issues": [
-      {
-        "number": 179,
-        "title": "Streaming ASK emits assistant text then reports transport failure",
-        "classification": "Optional SSE streaming child-completion/status defect; default blocking and tool-bearing requests are non-impacting."
-      },
-      {
-        "number": 192,
-        "title": "OpenVMS Git guide uses invalid RMS .git filespec on canonical host",
-        "classification": "Documentation/operating-guide correctness. Determine and natively validate the correct RMS-visible .git control-file syntax before changing the guide/rules."
-      }
-    ],
-    "note": "M301 issue #184 is closed. PRs #191 and #193 are merged."
+  "m302": {
+    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION",
+    "issue": 194,
+    "branch": "m302-cobol-agent-stress",
+    "branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "sandbox_repository": "mostangrymike/vms-cobol-sandbox",
+    "sandbox_branch": "m302-agent-stress",
+    "sandbox_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
+    "sandbox_wc_hash": "c6f4816b64dbcffdee906d65af1ba239e9724eba",
+    "sandbox_readme_hash": "d12d026bc9e3c4dd449cb0ebda61e758d58d2572",
+    "result": "End-to-end COBOL stress campaign completed. Planning, multiline capture, persisted-plan restart, exact-32 operation transactions, multi-file transaction materialization/rollback, whitespace fidelity, and final mixed multiline rollback gates were exercised. The sandbox was restored exactly to its accepted baseline. No OVMS Agent product source was changed or promoted during M302.",
+    "final_gate": "Two-operation mixed multiline transaction (create_file + WC.COB replace_block) staged both files, materialized both, deliberately failed controlled build with missing BUILD.COM status 98962, and reported Plan-wide rollback: PASS. Created file absent afterward; WC.COB baseline hash restored; tracked diff empty.",
+    "harvested_issue_range": "M302 findings are tracked individually in open issues #195-#236 where applicable; #194 is closed completed.",
+    "priority_next": {
+      "security_boundary": [206, 207, 208, 217, 218, 219, 220, 221, 223, 224, 225],
+      "plan_parser_state": [200, 202, 203, 204, 232, 233, 234],
+      "capacity_diagnostics": [195, 205, 236]
+    }
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_current": [
-      "m300-blocking-default-streaming-opt-in",
-      "m301-large-multiline-prompts"
-    ],
-    "retained_completed_target": [
-      "m300-blocking-default-streaming-opt-in",
-      "m301-large-multiline-prompts"
-    ],
-    "temporary_branches_pending_cleanup": [],
-    "verified_remote_branches": [
-      "main",
-      "chat-session-state",
-      "m300-blocking-default-streaming-opt-in",
-      "m301-large-multiline-prompts"
-    ],
+    "retained_completed_target": ["m301-large-multiline-prompts", "m302-cobol-agent-stress"],
+    "verified_m302_branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "open_prs": 0,
-    "open_issues": 2,
-    "recent_pruned": [
-      "m299-native-multiline-input",
-      "m301-prereq-nested-git-root",
-      "m301-prereq-large-agent-context",
-      "m301-prereq-plan-scope-prose",
-      "tmp-m301-pre187-rebase",
-      "m301-documentation-sync"
+    "open_issues": 43,
+    "pending_ref_operations": [
+      "Prune m300-blocking-default-streaming-opt-in when a safe branch-delete path is available; permanent m300 tag already exists."
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659",
       "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
       "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f"
-    },
-    "pending_ref_operations": [],
-    "cleanup_note": "M301 promotion, tag creation, docs synchronization, and branch-retention cleanup are complete. The permanent m301 tag remains on product-promotion main 0d09a557...; later main 244adacf... is Markdown-only documentation synchronization."
+    }
   },
-  "openvms_worktree": {
-    "head": "21ee3f1fd81625010f42e4409d4d552656781ca8",
-    "branch": "m301-large-multiline-prompts",
-    "native_source": "64595b01f218e12aec32daea5c92749942211c04",
-    "native_source_tree": "dbe88790861d7cbe53443f41b45ae54600d63a30",
-    "final_candidate": "21ee3f1fd81625010f42e4409d4d552656781ca8",
-    "final_candidate_tree": "6077bf3df9124e6189ab50931d460d2a36f9b786",
-    "status_note": "The M301 source candidate passed full build and focused regressions before the HELP-only final head. OVMS_AGENT.HLP was then RMS-restored from exact final head and passed HELP library creation/lookup. A later GITAUTH fetch of main for m301 tag creation changed FETCH_HEAD only; symbolic HEAD remains on m301-large-multiline-prompts.",
-    "note": "Do not use the currently documented [.^.GIT] RMS control-file examples as evidence on this host; issue #192 tracks their native correction. Git rev-parse ref checks plus RMS-aware GIT_RESTORE were used for the final HELP gate."
+  "openvms_sandbox_hygiene": {
+    "project_root": "SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX]",
+    "expected_branch": "m302-agent-stress",
+    "expected_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
+    "expected_wc_hash": "c6f4816b64dbcffdee906d65af1ba239e9724eba",
+    "expected_readme_hash": "d12d026bc9e3c4dd449cb0ebda61e758d58d2572",
+    "status": "M302 final gate proved tracked baseline restored. Perform one final generated-runtime/RMS-generation cleanup oracle before beginning M303."
   },
-  "historical_milestones": {
-    "m294_to_m298": "completed/promoted/native-validated/tagged; development branches pruned per retention policy",
-    "note": "Detailed older acceptance remains in GitHub issues/PRs, permanent mNNN tags, CHANGELOG.MD, DOC records, and prior chat-session-state history."
-  },
-  "status_semantics": {
-    "base": "0x0035A000UL",
-    "mask": "0x0FFFF800UL",
-    "rule": "Decode encoded POSIX exit before native odd/even. %X0035A401=POSIX 128 failure; %X1035A00A=POSIX 1 failure; %X00030001=native odd success; %X0F0180EA=curl timeout failure. SHOW SYMBOL or numeric comparison is authoritative for captured native status rendering."
+  "next_milestone_direction": {
+    "suggested": "M303 defect hardening",
+    "first_slice": "Execution/write authorization boundary enforcement",
+    "note": "Prefer one coherent security-boundary family at a time with deterministic regression fixtures, smallest source change, exact candidate SHA, canonical OpenVMS full build, then adversarial acceptance."
   },
   "standing_rules": [
-    "At chat start read RULES.MD on main and this state, then verify live GitHub refs/issues before acting.",
-    "GitHub is source/control plane; OpenVMS V9.2-3 x86-64 is canonical compile/link/RMS/runtime acceptance.",
-    "Omit literal OVMS-AGENT> from commands supplied for paste; native DCL $ prompts are acceptable.",
-    "Use GITAUTH for authenticated Git network operations and keep core.filemode=false.",
-    "Consult DOC/OPENVMS_GIT_QUIRKS.MD before inventing materialization workflows, but until #192 is resolved do not reuse its invalid [.^.GIT] RMS filespec examples.",
-    "When source/build/runtime inputs change, native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
-    "Distinguish exact native-tested SHA from tree/source/HLP-equivalent promoted commits; never call an untested GitHub head native-green.",
-    "Keep OVMS_AGENT.HLP synchronized with user-visible command/settings/material behavior changes.",
-    "Externally visible DEC C/VAX-facing identifiers remain <=31 chars and C89/DEC C compatible unless required otherwise.",
-    "Permanently keep main and chat-session-state; retain only the two most recently completed milestone branches unless unique unpromoted work requires retention."
+    "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
+    "GitHub is the development control plane; OpenVMS V9.2-3 x86-64 is canonical native acceptance authority.",
+    "Omit literal OVMS-AGENT> from commands supplied for paste.",
+    "Use maximum practical work per cut and paste; split only when an intermediate result must be inspected for safety/evidence.",
+    "Use GITAUTH for authenticated raw Git network operations; keep core.filemode=false.",
+    "Do not trust OpenVMS Git porcelain alone when RMS/materialization evidence matters.",
+    "Do not reuse the invalid RMS .git filespec examples while issue #192 remains open.",
+    "When product/build/runtime inputs change, canonical native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
+    "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work requires retention."
   ]
 }
