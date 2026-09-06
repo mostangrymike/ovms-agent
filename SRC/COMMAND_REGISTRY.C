@@ -11,6 +11,8 @@ void command_register_settings(void);
 void command_register_github(void);
 void m303_cmd_set_approval(
     const char *(*callback)(void));
+void m303_cmd_set_change_approval(
+    const char *(*callback)(void));
 
 static command_entry command_registry[COMMAND_REGISTRY_MAX];
 static size_t command_registry_used;
@@ -64,6 +66,7 @@ void command_registry_initialize(void)
 
     command_registry_used = 0U;
     m303_cmd_set_approval(llm_approval_name);
+    m303_cmd_set_change_approval(llm_approval_name);
 
     command_register_core();
     command_register_project();
