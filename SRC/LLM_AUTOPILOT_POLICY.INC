@@ -81,7 +81,11 @@ int llm_set_approval(const char *arguments)
     }
 
     m268_autopilot_policy = 0;
-    return llm_set_approval_base(arguments);
+    ok = llm_set_approval_base(arguments);
+    if (ok && strcmp(llm_approval_name(), "read-only") == 0) {
+        llm_plan_approval_clear();
+    }
+    return ok;
 }
 
 void llm_set_approval_cmd(const char *arguments)
