@@ -18,6 +18,39 @@ void m303_cmd_set_approval(
     m303_approval_fn = callback;
 }
 
+static const char *m303_approval_name(void)
+{
+    return m303_approval_fn != NULL ?
+        m303_approval_fn() : NULL;
+}
+
+static int m303_write_allowed(
+    const agent_state *state,
+    const char *command_name)
+{
+    int gate;
+
+    gate = m303_write_gate(state, m303_approval_name());
+
+    if (gate == M303_BUILD_GATE_POLICY) {
+        (void)printf(
+            "%s refused: workspace approval policy required.\n",
+            command_name
+        );
+        return 0;
+    }
+
+    if (gate == M303_BUILD_GATE_WRITE) {
+        (void)printf(
+            "%s refused: guarded writes are disabled.\n",
+            command_name
+        );
+        return 0;
+    }
+
+    return 1;
+}
+
 static void m273_cmd_git_diff(const agent_state *state)
 {
     int status;
@@ -49,9 +82,13 @@ static void m273_cmd_git_diff(const agent_state *state)
 #define project_git_diff m273_cmd_git_diff
 #define project_commands m303_project_commands_raw
 #define command_build m303_command_build_raw
+#define command_edit m303_command_edit_raw
+#define command_patch m303_command_patch_raw
 #define command_register_project m303_register_raw
 #include "COMMAND_PROJECT.C"
 #undef command_register_project
+#undef command_patch
+#undef command_edit
 #undef command_build
 #undef project_commands
 #undef project_git_diff
@@ -59,7 +96,6 @@ static void m273_cmd_git_diff(const agent_state *state)
 void command_build(agent_state *state,
                    const char *arguments)
 {
-    const char *approval;
     int gate;
 
     if (state == NULL ||
@@ -69,9 +105,7 @@ void command_build(agent_state *state,
         return;
     }
 
-    approval = m303_approval_fn != NULL ?
-        m303_approval_fn() : NULL;
-    gate = m303_build_gate(state, approval);
+    gate = m303_build_gate(state, m303_approval_name());
 
     if (gate == M303_BUILD_GATE_POLICY) {
         (void)puts(
@@ -95,6 +129,26 @@ void command_build(agent_state *state,
     }
 
     m303_command_build_raw(state, arguments);
+}
+
+void command_edit(agent_state *state,
+                  const char *arguments)
+{
+    if (!m303_write_allowed(state, "EDIT")) {
+        return;
+    }
+
+    m303_command_edit_raw(state, arguments);
+}
+
+void command_patch(agent_state *state,
+                   const char *arguments)
+{
+    if (!m303_write_allowed(state, "PATCH")) {
+        return;
+    }
+
+    m303_command_patch_raw(state, arguments);
 }
 
 static const command_entry m303_project_commands[] = {

@@ -3,7 +3,7 @@
 #define M303_BUILD_GATE_WRITE 2
 #define M303_BUILD_GATE_DCL 3
 
-static int m303_build_gate(
+static int m303_write_gate(
     const agent_state *state,
     const char *approval_name)
 {
@@ -17,6 +17,20 @@ static int m303_build_gate(
 
     if (!state->write_enabled) {
         return M303_BUILD_GATE_WRITE;
+    }
+
+    return M303_BUILD_GATE_OK;
+}
+
+static int m303_build_gate(
+    const agent_state *state,
+    const char *approval_name)
+{
+    int gate;
+
+    gate = m303_write_gate(state, approval_name);
+    if (gate != M303_BUILD_GATE_OK) {
+        return gate;
     }
 
     if (!state->dcl_enabled) {

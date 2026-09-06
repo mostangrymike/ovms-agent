@@ -4,12 +4,20 @@
 #include "agent.h"
 #include "COMMAND_BUILD_GATE.INC"
 
-static int expect_gate(
+static int expect_build_gate(
     agent_state *state,
     const char *approval,
     int expected)
 {
     return m303_build_gate(state, approval) == expected;
+}
+
+static int expect_write_gate(
+    agent_state *state,
+    const char *approval,
+    int expected)
+{
+    return m303_write_gate(state, approval) == expected;
 }
 
 int main(void)
@@ -24,26 +32,38 @@ int main(void)
     state.dcl_enabled = 1;
 
     ok =
-        expect_gate(
+        expect_build_gate(
             &state,
             "read-only",
             M303_BUILD_GATE_POLICY) &&
-        expect_gate(
+        expect_build_gate(
             &state,
             "workspace",
             M303_BUILD_GATE_OK) &&
-        expect_gate(
+        expect_build_gate(
             &state,
             "full",
             M303_BUILD_GATE_OK) &&
-        expect_gate(
+        expect_build_gate(
             &state,
             "autopilot",
+            M303_BUILD_GATE_OK) &&
+        expect_write_gate(
+            &state,
+            "read-only",
+            M303_BUILD_GATE_POLICY) &&
+        expect_write_gate(
+            &state,
+            "workspace",
             M303_BUILD_GATE_OK);
 
     state.write_enabled = 0;
     ok = ok &&
-        expect_gate(
+        expect_build_gate(
+            &state,
+            "workspace",
+            M303_BUILD_GATE_WRITE) &&
+        expect_write_gate(
             &state,
             "workspace",
             M303_BUILD_GATE_WRITE);
@@ -51,30 +71,46 @@ int main(void)
     state.write_enabled = 1;
     state.dcl_enabled = 0;
     ok = ok &&
-        expect_gate(
+        expect_build_gate(
             &state,
             "workspace",
-            M303_BUILD_GATE_DCL);
+            M303_BUILD_GATE_DCL) &&
+        expect_write_gate(
+            &state,
+            "workspace",
+            M303_BUILD_GATE_OK);
 
     ok = ok &&
-        expect_gate(
+        expect_build_gate(
             NULL,
             "workspace",
             M303_BUILD_GATE_POLICY) &&
-        expect_gate(
+        expect_build_gate(
             &state,
             NULL,
             M303_BUILD_GATE_POLICY) &&
-        expect_gate(
+        expect_build_gate(
+            &state,
+            "dangerous",
+            M303_BUILD_GATE_POLICY) &&
+        expect_write_gate(
+            NULL,
+            "workspace",
+            M303_BUILD_GATE_POLICY) &&
+        expect_write_gate(
+            &state,
+            NULL,
+            M303_BUILD_GATE_POLICY) &&
+        expect_write_gate(
             &state,
             "dangerous",
             M303_BUILD_GATE_POLICY);
 
     if (!ok) {
-        (void)puts("M303 BUILD gate regression failed.");
+        (void)puts("M303 command gate regression failed.");
         return 2;
     }
 
-    (void)puts("M303 BUILD gate regression passed.");
+    (void)puts("M303 command gate regression passed.");
     return 1;
 }
