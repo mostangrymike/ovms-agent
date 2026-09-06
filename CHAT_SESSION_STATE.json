@@ -1,83 +1,83 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-05T18:50:00-05:00",
+  "updated_at": "2026-09-06T13:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
-    "tree": "93de6bfca71dcd6fb086756df8d42fcd11feccff",
-    "latest_milestone": "M302",
-    "latest_code_milestone": "M301",
+    "main": "d6539c5b6395ecb101044a6fb0c565a11f783072",
+    "tree": "6264e5817daacebe4c48002ca19b7dd64accb00e",
+    "latest_milestone": "M303",
+    "latest_code_milestone": "M303",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 43,
+    "open_issues": 33,
     "open_prs": 0
   },
   "m301": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNE_ELIGIBLE",
     "issue": 184,
     "branch": "m301-large-multiline-prompts",
     "promoted_main": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
     "documentation_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "tag": "m301",
     "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Full canonical native acceptance completed."
   },
   "m302": {
-    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION",
+    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION_RETAINED",
     "issue": 194,
     "branch": "m302-cobol-agent-stress",
     "branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "sandbox_repository": "mostangrymike/vms-cobol-sandbox",
     "sandbox_branch": "m302-agent-stress",
     "sandbox_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
-    "sandbox_wc_hash": "c6f4816b64dbcffdee906d65af1ba239e9724eba",
-    "sandbox_readme_hash": "d12d026bc9e3c4dd449cb0ebda61e758d58d2572",
-    "result": "End-to-end COBOL stress campaign completed. Planning, multiline capture, persisted-plan restart, exact-32 operation transactions, multi-file transaction materialization/rollback, whitespace fidelity, and final mixed multiline rollback gates were exercised. The sandbox was restored exactly to its accepted baseline. No OVMS Agent product source was changed or promoted during M302.",
-    "final_gate": "Two-operation mixed multiline transaction (create_file + WC.COB replace_block) staged both files, materialized both, deliberately failed controlled build with missing BUILD.COM status 98962, and reported Plan-wide rollback: PASS. Created file absent afterward; WC.COB baseline hash restored; tracked diff empty.",
-    "harvested_issue_range": "M302 findings are tracked individually in open issues #195-#236 where applicable; #194 is closed completed.",
-    "priority_next": {
-      "security_boundary": [206, 207, 208, 217, 218, 219, 220, 221, 223, 224, 225],
-      "plan_parser_state": [200, 202, 203, 204, 232, 233, 234],
-      "capacity_diagnostics": [195, 205, 236]
-    }
+    "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion."
+  },
+  "m303": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 237,
+    "branch": "m303-authorization-boundaries",
+    "baseline_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "accepted_candidate": "8add07fb27d29114947405def166921059484007",
+    "accepted_tree": "6264e5817daacebe4c48002ca19b7dd64accb00e",
+    "promoted_main": "d6539c5b6395ecb101044a6fb0c565a11f783072",
+    "tag": "m303",
+    "pr": 240,
+    "closed_defects": [206, 207, 208, 217, 218, 219, 220, 221, 223, 224],
+    "result": "Authorization and execution-boundary hardening completed. Current approval policy, guarded-write state, and DCL execution state are enforced at saved-plan, BUILD, EDIT/PATCH, CHANGESET APPLY, AGENT/WRITE, and AGENT/FIX boundaries. Promoted main was built natively at the exact merge SHA with all regressions passing and %X00000001."
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m301-large-multiline-prompts", "m302-cobol-agent-stress"],
-    "verified_m302_branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
+    "retained_completed_target": ["m302-cobol-agent-stress", "m303-authorization-boundaries"],
     "open_prs": 0,
-    "open_issues": 43,
+    "open_issues": 33,
     "pending_ref_operations": [
-      "Prune m300-blocking-default-streaming-opt-in when a safe branch-delete path is available; permanent m300 tag already exists."
+      "Prune m300-blocking-default-streaming-opt-in; permanent m300 tag exists.",
+      "Prune m301-large-multiline-prompts now that M302 and M303 are the two newest completed milestone branches; permanent m301 tag exists."
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659",
       "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
-      "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f"
+      "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
+      "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072"
     }
   },
-  "openvms_sandbox_hygiene": {
-    "project_root": "SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX]",
-    "expected_branch": "m302-agent-stress",
-    "expected_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
-    "expected_wc_hash": "c6f4816b64dbcffdee906d65af1ba239e9724eba",
-    "expected_readme_hash": "d12d026bc9e3c4dd449cb0ebda61e758d58d2572",
-    "status": "M302 final gate proved tracked baseline restored. Perform one final generated-runtime/RMS-generation cleanup oracle before beginning M303."
-  },
   "next_milestone_direction": {
-    "suggested": "M303 defect hardening",
-    "first_slice": "Execution/write authorization boundary enforcement",
-    "note": "Prefer one coherent security-boundary family at a time with deterministic regression fixtures, smallest source change, exact candidate SHA, canonical OpenVMS full build, then adversarial acceptance."
+    "suggested": "M304 project-root and runtime isolation hardening",
+    "first_slice": "#225 model-facing OpenVMS parent-directory traversal",
+    "related_security_followups": [225, 212, 210],
+    "note": "Start with #225 as the highest-priority confinement defect. Keep #212 runtime-artifact isolation and #210 resumed-session policy drift as separate bounded slices unless source inspection proves a clean shared primitive."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
     "GitHub is the development control plane; OpenVMS V9.2-3 x86-64 is canonical native acceptance authority.",
+    "Make development/source edits in GitHub on the milestone branch; use OpenVMS for exact-SHA native validation.",
     "Omit literal OVMS-AGENT> from commands supplied for paste.",
     "Use maximum practical work per cut and paste; split only when an intermediate result must be inspected for safety/evidence.",
     "Use GITAUTH for authenticated raw Git network operations; keep core.filemode=false.",
     "Do not trust OpenVMS Git porcelain alone when RMS/materialization evidence matters.",
-    "Do not reuse the invalid RMS .git filespec examples while issue #192 remains open.",
+    "Close individual defect issues immediately after deterministic coverage plus canonical native acceptance.",
     "When product/build/runtime inputs change, canonical native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
     "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work requires retention."
   ]
