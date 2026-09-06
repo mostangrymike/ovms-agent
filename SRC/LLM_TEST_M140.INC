@@ -125,3 +125,57 @@
         &failed_count
     );
 }
+
+{
+    int llm_m303_readonly_invalidates(const char *path);
+    const char *path =
+        "OVMS_AGENT_TEST_M303_DOWNGRADE.TMP";
+    int ok;
+
+    (void)llm_plan_clear_files(path);
+    ok = llm_m303_readonly_invalidates(path);
+    (void)llm_plan_clear_files(path);
+
+    llm_selftest_report(
+        "read-only policy downgrade invalidates saved-plan approval",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int llm_m303_relax_no_resurrect(const char *path);
+    const char *path =
+        "OVMS_AGENT_TEST_M303_RELAX.TMP";
+    int ok;
+
+    (void)llm_plan_clear_files(path);
+    ok = llm_m303_relax_no_resurrect(path);
+    (void)llm_plan_clear_files(path);
+
+    llm_selftest_report(
+        "policy relaxation does not resurrect approval",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int llm_m303_bad_policy_keeps(const char *path);
+    const char *path =
+        "OVMS_AGENT_TEST_M303_BADPOLICY.TMP";
+    int ok;
+
+    (void)llm_plan_clear_files(path);
+    ok = llm_m303_bad_policy_keeps(path);
+    (void)llm_plan_clear_files(path);
+
+    llm_selftest_report(
+        "invalid policy does not revoke saved-plan approval",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}

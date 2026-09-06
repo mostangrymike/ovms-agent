@@ -4,12 +4,14 @@
 
 #include "llm_internal.h"
 #include "command_internal.h"
+#include "SETTINGS.H"
 
 #define TEST_SESS "M229_SESSIONS.DAT"
 #define TEST_CUR  "M229_SESSION.CUR"
 #define TEST_TX   "M229_TRANSCRIPT.DAT"
 #define TEST_OUT  "M229_EXPORT.TXT"
 #define TEST_LOG  "M254_DCL_ACTIVITY.LOG"
+#define TEST_SETTINGS "M229_SETTINGS_TEST.DAT"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -36,12 +38,14 @@ static void cleanup(void)
     llm_test_session_paths(NULL, NULL);
     llm_test_tx_path(NULL);
     llm_test_set_log_path(NULL);
+    settings_test_path(NULL);
     llm_test_reset_approval();
     remove_all(TEST_SESS);
     remove_all(TEST_CUR);
     remove_all(TEST_TX);
     remove_all(TEST_OUT);
     remove_all(TEST_LOG);
+    remove_all(TEST_SETTINGS);
 }
 
 int main(void)
@@ -53,6 +57,8 @@ int main(void)
     unsigned long dcl_status;
 
     cleanup();
+    settings_test_path(TEST_SETTINGS);
+    llm_test_reset_approval();
 
     (void)memset(&state, 0, sizeof(state));
     state.project_root = ".";

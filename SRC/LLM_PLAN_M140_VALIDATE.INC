@@ -135,3 +135,56 @@ int llm_m140_prewrite_guard(
     return llm_plan_approve_file(path) &&
         llm_plan_approval_valid(path);
 }
+
+int llm_m303_readonly_invalidates(
+    const char *path)
+{
+    int ok;
+
+    llm_plan_approval_clear();
+    ok =
+        llm_set_approval("workspace") &&
+        llm_m140_write_plan(path, "active") &&
+        llm_plan_approve_file(path) &&
+        llm_plan_approval_valid(path) &&
+        llm_set_approval("read-only") &&
+        !llm_plan_approval_valid(path);
+    llm_plan_approval_clear();
+    return ok;
+}
+
+int llm_m303_relax_no_resurrect(
+    const char *path)
+{
+    int ok;
+
+    llm_plan_approval_clear();
+    ok =
+        llm_set_approval("workspace") &&
+        llm_m140_write_plan(path, "active") &&
+        llm_plan_approve_file(path) &&
+        llm_plan_approval_valid(path) &&
+        llm_set_approval("read-only") &&
+        !llm_plan_approval_valid(path) &&
+        llm_set_approval("workspace") &&
+        !llm_plan_approval_valid(path);
+    llm_plan_approval_clear();
+    return ok;
+}
+
+int llm_m303_bad_policy_keeps(
+    const char *path)
+{
+    int ok;
+
+    llm_plan_approval_clear();
+    ok =
+        llm_set_approval("workspace") &&
+        llm_m140_write_plan(path, "active") &&
+        llm_plan_approve_file(path) &&
+        llm_plan_approval_valid(path) &&
+        !llm_set_approval("dangerous") &&
+        llm_plan_approval_valid(path);
+    llm_plan_approval_clear();
+    return ok;
+}

@@ -639,6 +639,7 @@ void llm_plan_execute(agent_state *state)
     llm_saved_operation *operations;
     edit_txn *transaction;
     char *build_output;
+    const char *approval_name;
     unsigned int operation_count;
     unsigned int index;
     int build_status;
@@ -674,6 +675,47 @@ void llm_plan_execute(agent_state *state)
         llm_log_event(
             "AGENT/EXECUTE",
             "plan_invalid",
+            0
+        );
+        return;
+    }
+
+    approval_name = llm_approval_name();
+    if (approval_name == NULL ||
+        (strcmp(approval_name, "workspace") != 0 &&
+         strcmp(approval_name, "full") != 0 &&
+         strcmp(approval_name, "autopilot") != 0)) {
+        llm_plan_approval_clear();
+        (void)puts(
+            "Saved plan execution refused by current approval policy."
+        );
+        llm_log_event(
+            "AGENT/EXECUTE",
+            "policy_refused",
+            0
+        );
+        return;
+    }
+
+    if (!state->write_enabled) {
+        (void)puts(
+            "Saved plan execution refused because guarded writes are disabled."
+        );
+        llm_log_event(
+            "AGENT/EXECUTE",
+            "write_gate",
+            0
+        );
+        return;
+    }
+
+    if (!state->dcl_enabled) {
+        (void)puts(
+            "Saved plan execution refused because DCL execution is disabled."
+        );
+        llm_log_event(
+            "AGENT/EXECUTE",
+            "dcl_gate",
             0
         );
         return;
