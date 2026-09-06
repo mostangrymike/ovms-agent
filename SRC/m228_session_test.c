@@ -6,6 +6,7 @@
 
 #define TEST_DATA "M228_SESSIONS.DAT"
 #define TEST_CUR  "M228_SESSION.CUR"
+#define TEST_CHILD "M228_POLICY_CHILD.TMP"
 
 int command_line_complete(const char *input,
                           size_t input_size,
@@ -27,12 +28,53 @@ static void remove_all(const char *path)
     }
 }
 
+static int file_exists(const char *path)
+{
+    FILE *file;
+
+    file = fopen(path, "r");
+    if (file == NULL) return 0;
+    (void)fclose(file);
+    return 1;
+}
+
 static void cleanup(void)
 {
     llm_test_session_paths(NULL, NULL);
     llm_test_reset_approval();
     remove_all(TEST_DATA);
     remove_all(TEST_CUR);
+    remove_all(TEST_CHILD);
+}
+
+static int policy_child(void)
+{
+    char id[9];
+    char output[8192];
+
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
+
+    if (!llm_set_approval("workspace") ||
+        strcmp(llm_approval_name(), "workspace") != 0 ||
+        !llm_session_current_id(id) ||
+        !llm_session_show_text(id, output, sizeof(output)) ||
+        strstr(output, "Policy:        read-only") == NULL) {
+        (void)puts("M304 child failed: persisted read-only setup.");
+        return EXIT_FAILURE;
+    }
+
+    if (!llm_session_resume(id) ||
+        strcmp(llm_approval_name(), "read-only") != 0 ||
+        !llm_session_note_goal("continued after restart") ||
+        !llm_session_show_text(id, output, sizeof(output)) ||
+        strstr(output, "Policy:        read-only") == NULL ||
+        strstr(output, "Executions:    2") == NULL) {
+        (void)puts("M304 child failed: resume policy binding.");
+        return EXIT_FAILURE;
+    }
+
+    (void)puts("M304 child session policy binding passed.");
+    return EXIT_SUCCESS;
 }
 
 int main(void)
@@ -40,6 +82,10 @@ int main(void)
     char first[9];
     char forked[9];
     char output[8192];
+
+    if (file_exists(TEST_CHILD)) {
+        return policy_child();
+    }
 
     cleanup();
     llm_test_session_paths(TEST_DATA, TEST_CUR);
@@ -141,7 +187,47 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    /* M304 #210: prove policy binding across a fresh process image. */
+    cleanup();
+    llm_test_session_paths(TEST_DATA, TEST_CUR);
+
+    if (!llm_set_approval("read-only") ||
+        !llm_session_new("M304 policy restart", first) ||
+        !llm_session_note_goal("read-only before restart") ||
+        !llm_session_show_text(first, output, sizeof(output)) ||
+        strstr(output, "Policy:        read-only") == NULL ||
+        strstr(output, "Executions:    1") == NULL) {
+        (void)puts("M304 failed: cross-process setup.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
+    {
+        FILE *marker;
+
+        marker = fopen(TEST_CHILD, "w");
+        if (marker == NULL ||
+            fputs("child\n", marker) == EOF ||
+            fclose(marker) != 0) {
+            if (marker != NULL) (void)fclose(marker);
+            (void)puts("M304 failed: child marker.");
+            cleanup();
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (system("MCR [.BUILD]M228_SESSION_TEST") == -1 ||
+        !llm_session_show_text(first, output, sizeof(output)) ||
+        strstr(output, "Policy:        read-only") == NULL ||
+        strstr(output, "Current goal:  continued after restart") == NULL ||
+        strstr(output, "Executions:    2") == NULL) {
+        (void)puts("M304 failed: cross-process resume evidence.");
+        cleanup();
+        return EXIT_FAILURE;
+    }
+
     cleanup();
     (void)puts("Persistent session parity bundle test passed.");
+    (void)puts("M304 cross-process session policy regression passed.");
     return EXIT_SUCCESS;
 }
