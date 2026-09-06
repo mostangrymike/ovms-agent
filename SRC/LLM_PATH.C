@@ -3,6 +3,69 @@
 
 #include "llm_path.h"
 
+static int llm_vms_dir_is_safe(const char *path)
+{
+    const char *square;
+    const char *angle;
+    const char *open;
+    const char *close;
+    const char *cursor;
+    char close_char;
+
+    square = strchr(path, '[');
+    angle = strchr(path, '<');
+
+    if (square != NULL && angle != NULL) {
+        return 0;
+    }
+
+    open = square != NULL ? square : angle;
+    if (open == NULL) {
+        return 1;
+    }
+
+    if (open != path) {
+        return 0;
+    }
+
+    close_char = *open == '[' ? ']' : '>';
+    close = strchr(open + 1, close_char);
+    if (close == NULL ||
+        strchr(close + 1, *open) != NULL ||
+        strchr(close + 1, close_char) != NULL) {
+        return 0;
+    }
+
+    if (open + 1 == close) {
+        return 1;
+    }
+
+    if (open[1] != '.') {
+        return 0;
+    }
+
+    cursor = open + 2;
+    while (cursor < close) {
+        const char *component;
+
+        component = cursor;
+        while (cursor < close && *cursor != '.') {
+            ++cursor;
+        }
+
+        if (component == cursor ||
+            (*component == '-' && component + 1 == cursor)) {
+            return 0;
+        }
+
+        if (cursor < close) {
+            ++cursor;
+        }
+    }
+
+    return 1;
+}
+
 int llm_path_is_safe(const char *path)
 {
     if (path == NULL || *path == '\0') {
@@ -11,7 +74,8 @@ int llm_path_is_safe(const char *path)
 
     if (*path == '/' ||
         strchr(path, ':') != NULL ||
-        strstr(path, "..") != NULL) {
+        strstr(path, "..") != NULL ||
+        !llm_vms_dir_is_safe(path)) {
         return 0;
     }
 
