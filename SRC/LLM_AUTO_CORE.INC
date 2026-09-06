@@ -15,6 +15,7 @@ static unsigned int llm_auto_cur_tools = 0U;
 static unsigned int llm_auto_cur_writes = 0U;
 static int llm_auto_cur_workflow = LLM_WORKFLOW_NONE;
 static int llm_auto_write_blocked = 0;
+static int llm_auto_cur_prior_evidence = 0;
 
 static unsigned int llm_auto_last_turns = 0U;
 static unsigned int llm_auto_last_tools = 0U;
@@ -82,6 +83,32 @@ static unsigned int llm_auto_write_cfg(void)
     );
 }
 
+static int llm_auto_prior_session_evidence(void)
+{
+    char session[9];
+    char parent[9];
+    char evidence[256];
+
+    if (!llm_session_current_id(session)) {
+        return 0;
+    }
+
+    if (llm_context_evidence_text(
+            session, evidence, sizeof(evidence))) {
+        return 1;
+    }
+
+    if (llm_session_parent(session, parent) &&
+        strcmp(parent, "-") != 0 &&
+        strlen(parent) == 8U &&
+        llm_context_evidence_text(
+            parent, evidence, sizeof(evidence))) {
+        return 1;
+    }
+
+    return 0;
+}
+
 void llm_auto_begin(int workflow)
 {
     llm_auto_cur_turns = 0U;
@@ -89,6 +116,9 @@ void llm_auto_begin(int workflow)
     llm_auto_cur_writes = 0U;
     llm_auto_cur_workflow = workflow;
     llm_auto_write_blocked = 0;
+    llm_auto_cur_prior_evidence =
+        workflow == LLM_WORKFLOW_AGENT ?
+            llm_auto_prior_session_evidence() : 0;
 
     if (workflow == LLM_WORKFLOW_WRITE) {
         rms_run_begin();
@@ -119,6 +149,11 @@ void llm_auto_note_tool(void)
 int llm_auto_final_has_evidence(int workflow)
 {
     if (workflow == LLM_WORKFLOW_PLAN) {
+        return 1;
+    }
+
+    if (workflow == LLM_WORKFLOW_AGENT &&
+        llm_auto_cur_prior_evidence) {
         return 1;
     }
 
@@ -313,6 +348,7 @@ void llm_auto_reset(void)
     llm_auto_last_tools = 0U;
     llm_auto_last_writes = 0U;
     llm_auto_last_workflow = LLM_WORKFLOW_NONE;
+    llm_auto_cur_prior_evidence = 0;
     (void)strcpy(llm_auto_last_reason, "none");
 }
 
