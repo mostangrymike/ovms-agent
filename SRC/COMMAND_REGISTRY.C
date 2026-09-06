@@ -2,12 +2,15 @@
 #include <string.h>
 
 #include "command_internal.h"
+#include "LLM.H"
 
 #define COMMAND_REGISTRY_MAX 256U
 
 void command_register_provider(void);
 void command_register_settings(void);
 void command_register_github(void);
+void m303_cmd_set_approval(
+    const char *(*callback)(void));
 
 static command_entry command_registry[COMMAND_REGISTRY_MAX];
 static size_t command_registry_used;
@@ -60,6 +63,7 @@ void command_registry_initialize(void)
     }
 
     command_registry_used = 0U;
+    m303_cmd_set_approval(llm_approval_name);
 
     command_register_core();
     command_register_project();
