@@ -1,14 +1,56 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "llm_internal.h"
 #include "LLM_AGENT_LIMITS.H"
 #include "LLM_PROMPTS.H"
 #include "LLM_PROJECT_MAP.H"
+#include "M303_WORKFLOW_GATE.INC"
 
 #ifndef LLM_PLAN_MAX_TURNS
 #define LLM_PLAN_MAX_TURNS 24
 #endif
 
+static int llm_agent_workflow_allowed(
+    agent_state *state,
+    const char *command_name,
+    int require_dcl)
+{
+    int gate;
+
+    gate = m303_workflow_gate(
+        state,
+        llm_approval_name(),
+        require_dcl
+    );
+
+    if (gate == M303_WORKFLOW_POLICY) {
+        (void)printf(
+            "%s refused: workspace approval policy required.\n",
+            command_name
+        );
+        return 0;
+    }
+
+    if (gate == M303_WORKFLOW_WRITE) {
+        (void)printf(
+            "%s refused: guarded writes are disabled.\n",
+            command_name
+        );
+        return 0;
+    }
+
+    if (gate == M303_WORKFLOW_DCL) {
+        (void)printf(
+            "%s refused: DCL execution is disabled.\n",
+            command_name
+        );
+        return 0;
+    }
+
+    return 1;
+}
 
 static void llm_agent_instr(agent_state *state,
                             const char *goal,
@@ -97,6 +139,13 @@ void llm_agent_plan(agent_state *state, const char *goal)
 
 void llm_agent_write(agent_state *state, const char *goal)
 {
+    if (!llm_agent_workflow_allowed(
+            state,
+            "AGENT/WRITE",
+            0)) {
+        return;
+    }
+
     llm_agent_instr(
         state, goal, 1, 0, LLM_WORKFLOW_WRITE
     );
@@ -104,6 +153,13 @@ void llm_agent_write(agent_state *state, const char *goal)
 
 void llm_agent_fix(agent_state *state, const char *goal)
 {
+    if (!llm_agent_workflow_allowed(
+            state,
+            "AGENT/FIX",
+            1)) {
+        return;
+    }
+
     llm_agent_instr(
         state, goal, 1, 1, LLM_WORKFLOW_FIX
     );
