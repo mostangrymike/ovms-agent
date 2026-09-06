@@ -7,6 +7,11 @@ static int expect_path(const char *path, int expected)
     return llm_path_is_safe(path) == expected;
 }
 
+static int expect_current(const char *path, int expected)
+{
+    return llm_path_is_current_dir(path) == expected;
+}
+
 static int expect_sensitive(const char *path, int expected)
 {
     return llm_path_is_sensitive(path) == expected;
@@ -43,6 +48,15 @@ int main(void)
         expect_path("OVMS_AGENT_FAILED_OPERATIONS.TXT;3", 0) &&
         expect_path("OVMS_AGENT_LANGUAGE.MD", 1) &&
         expect_path("SRC/OVMS_AGENT_LANGUAGE.MD", 1) &&
+        expect_current("", 1) &&
+        expect_current(".", 1) &&
+        expect_current("./", 1) &&
+        expect_current("[]", 1) &&
+        expect_current("<>", 1) &&
+        expect_current("[.]", 1) &&
+        expect_current("<.>", 1) &&
+        expect_current("[.SUB]", 0) &&
+        expect_current("README.MD", 0) &&
         expect_sensitive("OVMS_AGENT_TRANSCRIPT.DAT", 0) &&
         expect_sensitive("OVMS_AGENT_RESPONSE.JSON", 0) &&
         expect_sensitive("OPENAIKEY.TXT", 1) &&
@@ -56,5 +70,6 @@ int main(void)
     }
 
     (void)puts("M304 path/isolation regression passed.");
+    (void)puts("M304 current-directory alias regression passed.");
     return 1;
 }

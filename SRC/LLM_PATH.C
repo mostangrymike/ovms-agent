@@ -68,6 +68,21 @@ static int llm_vms_dir_is_safe(const char *path)
     return 1;
 }
 
+int llm_path_is_current_dir(const char *path)
+{
+    if (path == NULL) {
+        return 0;
+    }
+
+    return *path == '\0' ||
+           strcmp(path, ".") == 0 ||
+           strcmp(path, "./") == 0 ||
+           strcmp(path, "[]") == 0 ||
+           strcmp(path, "<>") == 0 ||
+           strcmp(path, "[.]") == 0 ||
+           strcmp(path, "<.>") == 0;
+}
+
 int llm_path_is_safe(const char *path)
 {
     if (path == NULL || *path == '\0') {
