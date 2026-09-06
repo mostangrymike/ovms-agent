@@ -451,3 +451,173 @@ int llm_m150d_tamper(void)
 
     return result;
 }
+
+static unsigned int llm_m303_build_calls = 0U;
+
+static char *llm_m303_build_hook(int *build_status)
+{
+    ++llm_m303_build_calls;
+    if (build_status != NULL) {
+        *build_status = 1;
+    }
+    return llm_duplicate_text("M303 unexpected build dispatch");
+}
+
+static int llm_m303_save_active(
+    char **plan_text,
+    char **checksum_text)
+{
+    *plan_text = NULL;
+    *checksum_text = NULL;
+
+    if (llm_m150d_exists(LLM_PLAN_FILE)) {
+        *plan_text = llm_read_text_file(LLM_PLAN_FILE);
+        if (*plan_text == NULL) {
+            return 0;
+        }
+    }
+
+    if (llm_m150d_exists("OVMS_AGENT_PLAN.TXT.CHK")) {
+        *checksum_text =
+            llm_read_text_file("OVMS_AGENT_PLAN.TXT.CHK");
+        if (*checksum_text == NULL) {
+            free(*plan_text);
+            *plan_text = NULL;
+            return 0;
+        }
+    }
+
+    llm_m150d_remove_pair(LLM_PLAN_FILE);
+    return 1;
+}
+
+static int llm_m303_restore_active(
+    char *plan_text,
+    char *checksum_text)
+{
+    int ok;
+
+    llm_m150d_remove_pair(LLM_PLAN_FILE);
+    ok = 1;
+
+    if (plan_text != NULL &&
+        !llm_m150d_write(LLM_PLAN_FILE, plan_text)) {
+        ok = 0;
+    }
+
+    if (checksum_text != NULL &&
+        !llm_m150d_write(
+            "OVMS_AGENT_PLAN.TXT.CHK",
+            checksum_text)) {
+        ok = 0;
+    }
+
+    free(plan_text);
+    free(checksum_text);
+    return ok;
+}
+
+static int llm_m303_exec_case(
+    int policy_read_only,
+    int write_enabled,
+    int dcl_enabled,
+    int expect_approval)
+{
+    const char *target =
+        "OVMS_AGENT_TEST_M303_EXEC.TMP";
+    const char *plan_text =
+        "Goal\n"
+        "M303 saved-plan gate regression.\n"
+        "Files to inspect\n"
+        "None.\n"
+        "Files to modify\n"
+        "None.\n"
+        "Files to create\n"
+        "OVMS_AGENT_TEST_M303_EXEC.TMP\n"
+        "Ordered edits\n"
+        "Create the validation file.\n"
+        "Validation\n"
+        "$ @BUILD\n"
+        "Risks\n"
+        "Validation-only fixture.\n"
+        "Authority required\n"
+        "Workspace approval plus write and DCL gates.\n"
+        "operation_count=1\n"
+        "BEGIN_OPERATION\n"
+        "type=create_file\n"
+        "path=OVMS_AGENT_TEST_M303_EXEC.TMP\n"
+        "BEGIN_NEW_TEXT\n"
+        "M303 executor gate content\n"
+        "END_NEW_TEXT\n"
+        "END_OPERATION\n";
+    agent_state state;
+    char *saved_plan;
+    char *saved_checksum;
+    int ok;
+
+    if (!llm_m303_save_active(
+            &saved_plan,
+            &saved_checksum)) {
+        return 0;
+    }
+
+    while (remove(target) == 0) {
+    }
+
+    llm_test_reset_approval();
+    llm_m303_build_calls = 0U;
+    llm_test_set_build_hook(llm_m303_build_hook);
+
+    ok =
+        llm_set_approval("workspace") &&
+        llm_plan_save("M303 executor gate", plan_text) &&
+        llm_plan_approve_file(LLM_PLAN_FILE) &&
+        llm_plan_approval_valid(LLM_PLAN_FILE);
+
+    if (ok && policy_read_only) {
+        ok = llm_set_approval("read-only");
+    }
+
+    (void)memset(&state, 0, sizeof(state));
+    state.project_root = ".";
+    state.write_enabled = write_enabled;
+    state.dcl_enabled = dcl_enabled;
+
+    if (ok) {
+        llm_plan_execute(&state);
+        ok =
+            !llm_m150d_exists(target) &&
+            llm_m303_build_calls == 0U &&
+            (llm_plan_approval_valid(LLM_PLAN_FILE) ==
+             expect_approval);
+    }
+
+    llm_test_set_build_hook(NULL);
+    llm_test_reset_approval();
+    while (remove(target) == 0) {
+    }
+    llm_m150d_remove_pair(LLM_PLAN_FILE);
+
+    if (!llm_m303_restore_active(
+            saved_plan,
+            saved_checksum)) {
+        ok = 0;
+    }
+
+    return ok;
+}
+
+int llm_m303_exec_policy(void)
+{
+    return llm_m303_exec_case(1, 1, 1, 0);
+}
+
+int llm_m303_exec_write_gate(void)
+{
+    return llm_m303_exec_case(0, 0, 1, 1);
+}
+
+int llm_m303_exec_dcl_gate(void)
+{
+    return llm_m303_exec_case(0, 1, 0, 1);
+}

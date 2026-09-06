@@ -36,3 +36,45 @@
         &failed_count
     );
 }
+
+{
+    int llm_m303_exec_policy(void);
+    int ok;
+
+    ok = llm_m303_exec_policy();
+
+    llm_selftest_report(
+        "M303 read-only blocks saved-plan execution",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int llm_m303_exec_write_gate(void);
+    int ok;
+
+    ok = llm_m303_exec_write_gate();
+
+    llm_selftest_report(
+        "M303 write gate blocks saved-plan execution",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    int llm_m303_exec_dcl_gate(void);
+    int ok;
+
+    ok = llm_m303_exec_dcl_gate();
+
+    llm_selftest_report(
+        "M303 DCL gate blocks saved-plan execution",
+        ok,
+        &passed_count,
+        &failed_count
+    );
+}
