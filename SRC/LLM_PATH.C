@@ -3,6 +3,8 @@
 
 #include "llm_path.h"
 
+static int llm_runtime_artifact(const char *path);
+
 static int llm_vms_dir_is_safe(const char *path)
 {
     const char *square;
@@ -75,7 +77,8 @@ int llm_path_is_safe(const char *path)
     if (*path == '/' ||
         strchr(path, ':') != NULL ||
         strstr(path, "..") != NULL ||
-        !llm_vms_dir_is_safe(path)) {
+        !llm_vms_dir_is_safe(path) ||
+        llm_runtime_artifact(path)) {
         return 0;
     }
 
@@ -115,6 +118,72 @@ int llm_contains_ignore_case(const char *text,
     return 0;
 }
 
+static int llm_equal_ignore_case_n(const char *left,
+                                   const char *right,
+                                   size_t length)
+{
+    size_t index;
+
+    for (index = 0U; index < length; ++index) {
+        if (tolower((int)(unsigned char)left[index]) !=
+            tolower((int)(unsigned char)right[index])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int llm_runtime_artifact(const char *path)
+{
+    static const char *runtime[] = {
+        "OVMS_AGENT.STATE",
+        "OVMS_AGENT_ACTIVITY.LOG",
+        "OVMS_AGENT_ACTIVITY_OLD.LOG",
+        "OVMS_AGENT_REQUEST.JSON",
+        "OVMS_AGENT_RESPONSE.JSON",
+        "OVMS_AGENT_SESSIONS.DAT",
+        "OVMS_AGENT_SESSION.CUR",
+        "OVMS_AGENT_TRANSCRIPT.DAT",
+        "OVMS_AGENT_FAILED_BUILD.TXT",
+        "OVMS_AGENT_FAILED_OPERATIONS.TXT",
+        NULL
+    };
+    const char *base;
+    const char *end;
+    const char **name;
+    size_t length;
+
+    if (path == NULL || *path == '\0') {
+        return 0;
+    }
+
+    base = path;
+    for (end = path; *end != '\0'; ++end) {
+        if (*end == '/' || *end == ']' || *end == '>') {
+            base = end + 1;
+        }
+    }
+
+    end = strchr(base, ';');
+    if (end == NULL) {
+        end = base + strlen(base);
+    }
+    length = (size_t)(end - base);
+
+    for (name = runtime; *name != NULL; ++name) {
+        size_t name_length;
+
+        name_length = strlen(*name);
+        if (length == name_length &&
+            llm_equal_ignore_case_n(base, *name, length)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 int llm_path_is_sensitive(const char *path)
 {
     static const char *blocked[] = {
@@ -146,8 +215,6 @@ int llm_listing_entry_hidden(const char *name)
     static const char *hidden[] = {
         "OPENAIKEY",
         "OVMS_AGENT_HEADERS",
-        "OVMS_AGENT_REQUEST.JSON",
-        "OVMS_AGENT_RESPONSE.JSON",
         "OPENAI_MODELS.JSON",
         "_BACKUP",
         "_BEFORE_",
@@ -157,6 +224,10 @@ int llm_listing_entry_hidden(const char *name)
     size_t length;
 
     if (name == NULL) {
+        return 1;
+    }
+
+    if (llm_runtime_artifact(name)) {
         return 1;
     }
 
