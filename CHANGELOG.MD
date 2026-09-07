@@ -6,7 +6,67 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M301 below.
+No additional user-visible product changes are currently recorded beyond M307 below.
+
+## M307 — Repair pipeline portability and serialization
+
+Tag: `m307`
+
+- Made repair diagnostic discovery portable across supported native compiler facilities instead of depending only on `%CC-`/`%ILINK-` diagnostics.
+- Added safe OpenVMS filespec-to-project-relative resolution for root-level and nested in-project targets while refusing paths outside the configured project root.
+- Updated `AGENT/REPAIR/PLAN` failed-operation parsing to consume the executor's current structured multiline `BEGIN_OLD_TEXT` / `BEGIN_NEW_TEXT` serialization and preserve escaped terminator lines.
+- Added deterministic coverage for COBOL root-level diagnostics, C nested diagnostics, an additional non-C compiler facility, outside-root refusal, multiline round-trip fidelity, and malformed/truncated evidence rejection.
+- Exact accepted candidate `cd52e2a4125862b1f2ca40d6bc5167144a90f362` (tree `c2b1b507b6042dab4be5a06d1bc7f17f220e1f0f`) passed focused M307 regression, full canonical OpenVMS `@BUILD`, and focused executable rerun with `%X00000001`.
+- Promotion PR #248 produced main `3fea2a2506e79176981f16eef7af7ee28cbed487`; that exact promoted merge SHA was then independently rematerialized and passed the same focused/full canonical OpenVMS acceptance before M307 was declared complete.
+- Closed defects #201 and #203. Permanent tag `m307` resolves to the exact promoted merge commit.
+
+## M306 — External-tool and MCP diagnostics consistency
+
+Tag: `m306`
+
+- Made `AGENT/TOOLS/INFO` resolve the externally registered `mcp_call`, `github_git`, and `github_service` tools advertised by `AGENT/TOOLS/EXT`.
+- Distinguished syntactically valid unknown MCP servers from malformed CALL/EXEC command syntax while preserving existing `Usage:` diagnostics for malformed requests.
+- Preserved FULL-approval ordering and existing transport/network/executor refusal behavior.
+- Exact accepted candidate `9ab06125ff48c0b9a7fd8aa21aa7b1fa13045989` (tree `e5fcb2ed1db55dfa0d2f359e73e89cb877b6dbba`) and exact promoted main `1feb6faa50c6216567c2dce7a7679168092a946b` both passed canonical OpenVMS acceptance.
+- Closed defects #214 and #215.
+
+## M305 — RMS-safe direct PATCH hardening
+
+Tag: `m305`
+
+- Reworked direct `AGENT/TOOL/RUN PATCH` replacement to reuse the established RMS-safe text replacement primitive instead of raw byte-stream `fwrite` output on record-oriented OpenVMS text files.
+- Preserved project-root confinement, approval and guarded-write gates, confirmation behavior, exact-text semantics, and Stream_LF behavior.
+- Added focused regression coverage for the direct `project_patch()` path, including native variable-record preservation.
+- Exact accepted candidate `4c7b8a8d1b1cf0ed7d8920f79a4887f7920aa1b7` (tree `09685c9f56def32bd30c711bd6ed7dd7d6e3405f`) was promoted as main `9ffd6e0e76393e6ca0f337325f54141b6fca5255` and passed exact promoted-merge native acceptance.
+- Closed defect #216.
+
+## M304 — Project-root and runtime isolation hardening
+
+Tag: `m304`
+
+- Hardened model-facing project file access against native OpenVMS parent/sibling traversal while preserving legitimate project-relative filespecs and explicit RMS versions.
+- Extended project-root/runtime isolation across the bounded M302-derived security follow-up set without weakening ordinary in-project inspection.
+- Exact accepted candidate `c72a61e8c3b64044267497597e0b9b554f1b9221` (tree `9ef6f2fe811eef4f6bfd94c3dff4146ca43d7efd`) was promoted as main `4771a92ff862ec51b86a7da436843b9cf35fb785` after canonical OpenVMS acceptance.
+- Closed defects #210, #211, #212, #213, #222, #225, #227, and #230.
+
+## M303 — Authorization and execution-boundary hardening
+
+Tag: `m303`
+
+- Made current effective approval policy authoritative at write/execute boundaries rather than allowing prior saved-plan approval to bypass later policy downgrades.
+- Enforced guarded-write and DCL-execution gates independently before project mutation, saved-plan execution, direct BUILD, CHANGESET apply, EDIT/PATCH, `AGENT/WRITE`, and `AGENT/FIX` paths.
+- Preserved local confirmation as an additional barrier rather than a substitute for policy/write/DCL gates, and kept authorized positive paths functional.
+- Exact accepted candidate `8add07fb27d29114947405def166921059484007` (tree `6264e5817daacebe4c48002ca19b7dd64accb00e`) was promoted as main `d6539c5b6395ecb101044a6fb0c565a11f783072` after canonical OpenVMS acceptance.
+- Closed defects #206, #207, #208, #217, #218, #219, #220, #221, #223, and #224.
+
+## M302 — COBOL agent stress campaign
+
+No product tag or product promotion was created for M302.
+
+- Ran a bounded end-to-end COBOL workload as an OVMS Agent stress/defect-harvesting campaign on the canonical OpenVMS host.
+- Preserved the campaign branch at the then-current product baseline only long enough to prove it contained no unique product commits, then pruned it under the branch-retention policy.
+- Harvested the post-M302 authorization, isolation, repair, saved-plan framing/capacity, lifecycle, transaction/path, tool-loop/search, and native DCL generation/repair gaps tracked in subsequent issues and milestones.
+- M302 is intentionally recorded through issue #194 and durable project state rather than an `m302` tag.
 
 ## M301 — Larger native multiline prompts
 
@@ -96,7 +156,7 @@ Tag: `m295`
 - Kept non-tool Qwen traffic, other Qwen models, and non-Groq Qwen endpoints on the existing streaming decision.
 - Added deterministic selector coverage for the exact Qwen model, non-tool requests, another Qwen model, and a non-Groq endpoint.
 - Native exact source head `909a3c86b6028c16f1c489d3e2def208845449a1` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
-- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second write materialized.
+- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second RMS write materialized.
 - #124 remains separate reasoning/output-budget work; #123 remains separate OpenRouter/free compatibility work.
 
 ## M294 — Groq GPT-OSS tool transport compatibility
