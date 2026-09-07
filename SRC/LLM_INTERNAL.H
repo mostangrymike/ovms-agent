@@ -48,6 +48,7 @@
 #endif
 
 #include "LLM_INTERNAL_CORE.H"
+#include "LLM_PLAN_M309.H"
 
 int llm_git_rms_copy(const char *path, const char *target);
 
