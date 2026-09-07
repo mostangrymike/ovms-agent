@@ -1,3 +1,41 @@
+static int m291_git_tmp_name_equal(
+    const char *left,
+    size_t left_length,
+    const char *right)
+{
+    size_t index;
+
+    if (left == NULL || right == NULL ||
+        left_length != strlen(right)) {
+        return 0;
+    }
+
+    for (index = 0U; index < left_length; ++index) {
+        unsigned char left_ch;
+        unsigned char right_ch;
+
+        left_ch = (unsigned char)left[index];
+        right_ch = (unsigned char)right[index];
+
+        if (left_ch >= (unsigned char)'A' &&
+            left_ch <= (unsigned char)'Z') {
+            left_ch = (unsigned char)(left_ch - (unsigned char)'A' +
+                                      (unsigned char)'a');
+        }
+        if (right_ch >= (unsigned char)'A' &&
+            right_ch <= (unsigned char)'Z') {
+            right_ch = (unsigned char)(right_ch - (unsigned char)'A' +
+                                       (unsigned char)'a');
+        }
+
+        if (left_ch != right_ch) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 static int m291_git_tmp_basename(
     const char *path,
     size_t length)
@@ -20,8 +58,7 @@ static int m291_git_tmp_basename(
     base_length = length - (size_t)(base - path);
 
 #define M291_TMP_MATCH(name) \
-    (base_length == sizeof(name) - 1U && \
-     memcmp(base, name, sizeof(name) - 1U) == 0)
+    m291_git_tmp_name_equal(base, base_length, name)
 
     if (M291_TMP_MATCH(M290_GIT_META_COM) ||
         M291_TMP_MATCH(M290_GIT_INDEX_TMP) ||
