@@ -379,14 +379,52 @@ int llm_mcp_run_result(const char *config,
                           void *context,
                           llm_mcp_result *result)
 {
+    llm_mcp_server_desc servers[LLM_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[LLM_MCP_NAME_MAX];
+    char tool[LLM_MCP_NAME_MAX];
     char detail[512];
     int ok;
 
-    if (result == NULL) return 0;
+    if (result == NULL || arguments == NULL) return 0;
     if (!m258_mcp_net_gate(config, arguments, detail, sizeof(detail))) {
         llm_mcp_res_clear(result);
         result->status = LLM_MCP_RES_REFUSED;
         llm_mcp_res_copy(result->detail, sizeof(result->detail), detail);
+        return 1;
+    }
+
+    cursor = arguments;
+    if (!llm_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !llm_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !llm_mcp_name_valid(server) || !llm_mcp_name_valid(tool)) {
+        return 0;
+    }
+    payload = llm_skip_ws(cursor);
+    if (!llm_mcp_call_args_valid(payload)) return 0;
+
+    llm_mcp_res_clear(result);
+    llm_mcp_res_copy(result->server, sizeof(result->server), server);
+    llm_mcp_res_copy(result->tool, sizeof(result->tool), tool);
+
+    if (strcmp(llm_approval_name(), "full") != 0) {
+        result->status = LLM_MCP_RES_REFUSED;
+        llm_mcp_res_copy(result->detail, sizeof(result->detail),
+            "MCP transport execution refused: FULL approval policy is required.\n");
+        return 1;
+    }
+
+    count = llm_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (llm_equal_ci(server, servers[index].name)) break;
+    }
+    if (index == count) {
+        result->status = LLM_MCP_RES_REFUSED;
+        (void)snprintf(result->detail, sizeof(result->detail),
+            "MCP server is not configured: %s\n", server);
         return 1;
     }
 

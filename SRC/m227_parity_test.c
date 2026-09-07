@@ -60,6 +60,18 @@ int main(void)
         !llm_tool_info_text("build_source", output, sizeof(output)) ||
         strstr(output, "Effect:      execute") == NULL ||
         strstr(output, "Approval:    full + write + DCL") == NULL ||
+        !llm_tool_info_text("mcp_call", output, sizeof(output)) ||
+        strstr(output, "Name:        mcp_call") == NULL ||
+        strstr(output, "Effect:      external") == NULL ||
+        strstr(output, "Approval:    full") == NULL ||
+        !llm_tool_info_text("github_git", output, sizeof(output)) ||
+        strstr(output, "Name:        github_git") == NULL ||
+        strstr(output, "Effect:      external") == NULL ||
+        strstr(output, "Approval:    mixed") == NULL ||
+        !llm_tool_info_text("github_service", output, sizeof(output)) ||
+        strstr(output, "Name:        github_service") == NULL ||
+        strstr(output, "Effect:      external") == NULL ||
+        strstr(output, "Approval:    full") == NULL ||
         llm_tool_info_text("unknown_tool", output, sizeof(output))) {
         (void)puts("M227 failed: tool metadata.");
         settings_test_path(NULL);
