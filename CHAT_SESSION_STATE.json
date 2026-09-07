@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-07T12:20:00-05:00",
+  "updated_at": "2026-09-07T14:59:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "8bd3e802bc0f98f9d89b23534812f36eec876cc9",
-    "tree": "9ef6f2fe811eef4f6bfd94c3dff4146ca43d7efd",
-    "latest_milestone": "M304",
-    "latest_code_milestone": "M304",
-    "latest_code_milestone_main": "4771a92ff862ec51b86a7da436843b9cf35fb785",
+    "main": "9ffd6e0e76393e6ca0f337325f54141b6fca5255",
+    "tree": "09685c9f56def32bd30c711bd6ed7dd7d6e3405f",
+    "latest_milestone": "M305",
+    "latest_code_milestone": "M305",
+    "latest_code_milestone_main": "9ffd6e0e76393e6ca0f337325f54141b6fca5255",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 25,
+    "open_issues": 24,
     "open_prs": 0
   },
   "m301": {
@@ -35,7 +35,7 @@
     "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion. The OVMS Agent development branch contained no unique commits and was pruned. No m302 tag was created because there was no canonical promoted main commit; issue #194 and durable state preserve the campaign record."
   },
   "m303": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 237,
     "branch": "m303-authorization-boundaries",
     "baseline_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
@@ -45,7 +45,7 @@
     "tag": "m303",
     "pr": 240,
     "closed_defects": [206, 207, 208, 217, 218, 219, 220, 221, 223, 224],
-    "result": "Authorization and execution-boundary hardening completed. Promoted main was built natively at the exact merge SHA with all regressions passing and %X00000001."
+    "result": "Authorization and execution-boundary hardening completed. Promoted main was built natively at the exact merge SHA with all regressions passing and %X00000001. The development branch was pruned after permanent m303 tag verification once M305 completed."
   },
   "m304": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
@@ -60,16 +60,30 @@
     "closed_defects": [210, 211, 212, 213, 222, 225, 227, 230],
     "result": "Project-root/runtime isolation hardening completed. Native OpenVMS parent traversal is rejected, runtime/control artifacts are hidden from ordinary project and Git-derived context, resumed session policy/evidence behavior is hardened, native current-directory listing is normalized, Git scratch/runtime filtering is case-safe, and shipped build profiles resolve from external target projects. Exact promoted merge SHA passed canonical OpenVMS full build and permanent m304 tag is remote-verified."
   },
+  "m305": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 243,
+    "branch": "m305-rms-safe-direct-patch",
+    "baseline_main": "8bd3e802bc0f98f9d89b23534812f36eec876cc9",
+    "accepted_candidate": "4c7b8a8d1b1cf0ed7d8920f79a4887f7920aa1b7",
+    "accepted_tree": "09685c9f56def32bd30c711bd6ed7dd7d6e3405f",
+    "promoted_main": "9ffd6e0e76393e6ca0f337325f54141b6fca5255",
+    "tag": "m305",
+    "pr": 244,
+    "closed_defects": [216],
+    "result": "Direct AGENT/TOOL/RUN PATCH now routes final replacement writes through the RMS-safe text replacement primitive. Deterministic focused coverage passed, live native PATCH preserved one logical record plus VFC/Print carriage-control attributes, reverse PATCH succeeded, read-only and guarded-writes-OFF refusals remained intact, and the exact promoted merge SHA passed the full canonical OpenVMS build with %X00000001."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m303-authorization-boundaries", "m304-project-root-isolation"],
+    "retained_completed_target": ["m304-project-root-isolation", "m305-rms-safe-direct-patch"],
     "open_prs": 0,
-    "open_issues": 25,
+    "open_issues": 24,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
       "m301-large-multiline-prompts",
-      "m302-cobol-agent-stress"
+      "m302-cobol-agent-stress",
+      "m303-authorization-boundaries"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -77,16 +91,16 @@
       "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
       "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
       "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072",
-      "m304": "4771a92ff862ec51b86a7da436843b9cf35fb785"
+      "m304": "4771a92ff862ec51b86a7da436843b9cf35fb785",
+      "m305": "9ffd6e0e76393e6ca0f337325f54141b6fca5255"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M305 choose the next bounded M302 defect cluster",
+    "suggested": "M306 choose the next bounded M302 defect cluster",
     "candidate_clusters": [
       "saved-plan framing/capacity: #195, #196, #204, #205, #209, #234, #236",
       "repair pipeline portability/serialization: #201, #203",
-      "direct RMS-safe PATCH: #216",
       "external-tool/MCP diagnostics: #214, #215"
     ],
     "note": "Select one coherent bounded cluster; do not mix unrelated M302 backlog categories in a single milestone."
