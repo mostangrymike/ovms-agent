@@ -1,12 +1,12 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-07T17:04:08-05:00",
+  "updated_at": "2026-09-07T17:09:44-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
-    "tree": "c2b1b507b6042dab4be5a06d1bc7f17f220e1f0f",
+    "main": "f83782f5afe1bfedc502099366498be1e57e56f4",
+    "tree": "8d4ee02d24c1ad847b8e71a4ffdf0b09e981c9bf",
     "latest_milestone": "M307",
     "latest_code_milestone": "M307",
     "latest_code_milestone_main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
@@ -55,7 +55,7 @@
     "closed_defects": [210, 211, 212, 213, 222, 225, 227, 230]
   },
   "m305": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PENDING_PRUNE",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 243,
     "branch": "m305-rms-safe-direct-patch",
     "baseline_main": "8bd3e802bc0f98f9d89b23534812f36eec876cc9",
@@ -81,33 +81,32 @@
     "result": "External TOOLS/INFO resolves registered M247/M250 tools; MCP CALL/EXEC distinguish valid unknown servers from malformed syntax while preserving FULL-approval ordering and existing fail-closed transport behavior. Exact promoted merge SHA passed full canonical OpenVMS build and focused/live acceptance."
   },
   "m307": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_PENDING_TAG_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
     "issue": 247,
     "branch": "m307-repair-portability-serialization",
     "baseline_main": "1feb6faa50c6216567c2dce7a7679168092a946b",
     "accepted_candidate": "cd52e2a4125862b1f2ca40d6bc5167144a90f362",
     "accepted_tree": "c2b1b507b6042dab4be5a06d1bc7f17f220e1f0f",
     "promoted_main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
-    "expected_tag": "m307",
+    "tag": "m307",
+    "post_milestone_docs_main": "f83782f5afe1bfedc502099366498be1e57e56f4",
     "pr": 248,
     "closed_defects": [201, 203],
-    "result": "Repair planning now consumes portable supported native diagnostics and safely resolves root-level/nested project files while current multiline failed-operation serialization round-trips correctly. Exact candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance."
+    "result": "Repair planning now consumes portable supported native diagnostics and safely resolves root-level/nested project files while current multiline failed-operation serialization round-trips correctly. Exact candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance. Post-milestone CHANGELOG-only synchronization advanced main without changing product/build/runtime inputs."
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
     "retained_completed_target": ["m306-external-tool-mcp-diagnostics", "m307-repair-portability-serialization"],
     "open_prs": 0,
     "open_issues": 20,
-    "pending_ref_operations": [
-      "create lightweight tag m307 at 3fea2a2506e79176981f16eef7af7ee28cbed487",
-      "delete remote branch m305-rms-safe-direct-patch after ref verification"
-    ],
+    "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
       "m301-large-multiline-prompts",
       "m302-cobol-agent-stress",
       "m303-authorization-boundaries",
-      "m304-project-root-isolation"
+      "m304-project-root-isolation",
+      "m305-rms-safe-direct-patch"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -117,7 +116,8 @@
       "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072",
       "m304": "4771a92ff862ec51b86a7da436843b9cf35fb785",
       "m305": "9ffd6e0e76393e6ca0f337325f54141b6fca5255",
-      "m306": "1feb6faa50c6216567c2dce7a7679168092a946b"
+      "m306": "1feb6faa50c6216567c2dce7a7679168092a946b",
+      "m307": "3fea2a2506e79176981f16eef7af7ee28cbed487"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
