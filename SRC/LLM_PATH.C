@@ -3,7 +3,7 @@
 
 #include "llm_path.h"
 
-static int llm_runtime_artifact(const char *path);
+int llm_runtime_artifact(const char *path);
 
 static int llm_vms_dir_is_safe(const char *path)
 {
@@ -134,7 +134,7 @@ static int llm_equal_ignore_case_n(const char *left,
     return 1;
 }
 
-static int llm_runtime_artifact(const char *path)
+int llm_runtime_artifact(const char *path)
 {
     static const char *runtime[] = {
         "OVMS_AGENT.STATE",
