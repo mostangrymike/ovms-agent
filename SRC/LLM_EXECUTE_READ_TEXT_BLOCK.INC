@@ -16,6 +16,12 @@ static int m308_payload_escape(
     content = line + 1;
     content_length = line_length - 1U;
 
+    while (content_length > 0U &&
+           content[0] == '\\') {
+        ++content;
+        --content_length;
+    }
+
     if (end_marker != NULL) {
         marker_length = strlen(end_marker);
         if (content_length == marker_length &&
