@@ -1508,3 +1508,25 @@
  Command: AGENT/PATCH/LAST
  Performs: Shows the most recent structured patch result.
  Use when: Inspecting the recorded outcome immediately after validation/application.
+3 SAVED_PLAN_LIMITS
+ Structured executable plans have bounded representation limits.
+
+ AGENT/PLAN supports at most 32 executable operation blocks in one saved
+ plan.  A completed plan above that limit is refused explicitly; it is not
+ truncated or misreported as malformed operation framing.
+
+ BEGIN_OLD_TEXT and BEGIN_NEW_TEXT payloads have a maximum decoded size of
+ 4094 bytes each.  A payload above that limit is refused explicitly and the
+ prior valid saved plan remains unchanged.
+
+ Literal payload lines that would otherwise collide with structured-plan
+ control syntax are represented with one leading backslash.  This applies to
+ operation_count= lines and the BEGIN_OPERATION, END_OPERATION,
+ BEGIN_OLD_TEXT, END_OLD_TEXT, BEGIN_NEW_TEXT, and END_NEW_TEXT markers.
+ If the literal source line already begins with a backslash before one of
+ those reserved forms, the leading backslash is doubled so decoding remains
+ exact and lossless.
+
+ Saved-plan execution interprets structured operation grammar only from the
+ canonical [plan] region.  Reserved-looking text in [goal] or other saved
+ metadata does not become executable syntax.
