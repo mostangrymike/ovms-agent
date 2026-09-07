@@ -168,3 +168,4 @@ When a newer explicit user instruction conflicts with this file, the newer instr
 
 - GAP-010 was explicitly discarded and must not be revived unless the user explicitly requests it.
 - Branch `m287-groq-gptoss-responses` was explicitly assessed as semantically superseded by M294 and pruned; do not revive or retain it solely because its historical commits were once unique.
+- M302 was a stress-only milestone with **no OVMS Agent product promotion**. Its development branch `m302-cobol-agent-stress` points exactly to historical `main` commit `244adacfa790df348d5e8d5473ccd1ad48e1a776` and contains no unique commits. Because there is no canonical promoted M302 product commit, do **not** fabricate an `m302` tag merely to satisfy the normal promoted-milestone retention rule. Issue #194 and `CHAT_SESSION_STATE.json` are the durable campaign record; after verifying those facts, the branch may be pruned without an `m302` tag.
