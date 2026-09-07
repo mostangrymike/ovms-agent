@@ -1,3 +1,22 @@
+        if (!saw_declared_count &&
+            declared_operation_count == 0U &&
+            !in_operation &&
+            strncmp(line, "format=", 7U) == 0) {
+            declared_operation_count = operation_capacity + 2U;
+            continue;
+        }
+
+        if (!saw_declared_count &&
+            declared_operation_count == operation_capacity + 2U) {
+            if (strcmp(line, "[plan]\n") == 0 ||
+                strcmp(line, "[plan]\r\n") == 0 ||
+                strcmp(line, "[plan]\r") == 0 ||
+                strcmp(line, "[plan]") == 0) {
+                declared_operation_count = operation_capacity + 1U;
+            }
+            continue;
+        }
+
         if (strcmp(line, "[plan]\n") == 0 ||
             strcmp(line, "[plan]\r\n") == 0 ||
             strcmp(line, "[plan]\r") == 0 ||
@@ -13,11 +32,6 @@
             }
 
             declared_operation_count = operation_capacity + 1U;
-            continue;
-        }
-
-        if (!saw_declared_count &&
-            declared_operation_count == 0U) {
             continue;
         }
 
