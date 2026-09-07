@@ -16,6 +16,7 @@ static int llm_path_is_current_dir(const char *path)
 }
 
 int llm_path_is_safe(const char *path);
+int llm_runtime_artifact(const char *path);
 int llm_contains_ignore_case(const char *text,
                              const char *pattern);
 int llm_path_is_sensitive(const char *path);
