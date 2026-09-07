@@ -1,3 +1,26 @@
+        if (strcmp(line, "[plan]\n") == 0 ||
+            strcmp(line, "[plan]\r\n") == 0 ||
+            strcmp(line, "[plan]\r") == 0 ||
+            strcmp(line, "[plan]") == 0) {
+            if (in_operation ||
+                saw_declared_count ||
+                declared_operation_count != 0U) {
+                (void)puts(
+                    "Saved plan contains a duplicate or misplaced [plan] section."
+                );
+                (void)fclose(file);
+                return 0;
+            }
+
+            declared_operation_count = operation_capacity + 1U;
+            continue;
+        }
+
+        if (!saw_declared_count &&
+            declared_operation_count == 0U) {
+            continue;
+        }
+
         if (strncmp(line, "operation_count=", 16U) == 0) {
             const char *count_text;
             const char *cursor;
