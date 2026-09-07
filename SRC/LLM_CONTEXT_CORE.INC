@@ -84,7 +84,8 @@ int llm_context_evidence_text(const char *session,
     used = 0U;
 
     if (llm_session_result_last(
-            session, last, sizeof(last))) {
+            session, last, sizeof(last)) &&
+        strstr(last, "No normalized results found.") == NULL) {
         (void)llm_context_append(
             output, output_size, &used,
             "LATEST NORMALIZED RESULT\n");
@@ -95,7 +96,8 @@ int llm_context_evidence_text(const char *session,
     }
 
     if (llm_session_results_text(
-            session, recent, sizeof(recent))) {
+            session, recent, sizeof(recent)) &&
+        strstr(recent, "Results: 0\n") == NULL) {
         (void)llm_context_append(
             output, output_size, &used,
             "RECENT NORMALIZED RESULTS\n");

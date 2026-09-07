@@ -18,6 +18,7 @@ int main(void)
     while (remove("M240_TX.TMP") == 0) {
     }
 
+    llm_test_session_paths("M240_NO_SESSION.DAT", "M240_NO_CUR.DAT");
     llm_test_tx_path("M240_TX.TMP");
 
     for (index = 0U; index < 36U; ++index) {
@@ -53,6 +54,8 @@ int main(void)
     while (remove("M240_TX.TMP") == 0) {
     }
 
+    llm_test_session_paths(NULL, NULL);
+    llm_test_tx_path(NULL);
     (void)puts("Prioritized continuation evidence regression passed.");
     return EXIT_SUCCESS;
 }

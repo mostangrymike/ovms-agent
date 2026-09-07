@@ -181,6 +181,7 @@ int main(void)
     unsigned int index;
 
     cleanup();
+    llm_test_session_paths("M230_NO_SESSION.DAT", "M230_NO_CUR.DAT");
     llm_test_tx_path(TEST_TX);
     llm_auto_test_limits(5U, 2U);
 

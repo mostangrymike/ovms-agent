@@ -15,6 +15,7 @@ int main(void)
     while (remove("M239_TX.TMP") == 0) {
     }
 
+    llm_test_session_paths("M239_NO_SESSION.DAT", "M239_NO_CUR.DAT");
     llm_test_tx_path("M239_TX.TMP");
 
     llm_tx_model_result(
@@ -76,6 +77,8 @@ int main(void)
     while (remove("M239_TX.TMP") == 0) {
     }
 
+    llm_test_session_paths(NULL, NULL);
+    llm_test_tx_path(NULL);
     (void)puts("First-class session evidence regression passed.");
     return EXIT_SUCCESS;
 }

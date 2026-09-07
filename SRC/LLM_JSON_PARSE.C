@@ -5,6 +5,7 @@
 
 #include "llm_internal.h"
 #include "LLM_JSON_PARSE.H"
+#include "LLM_PATH.H"
 
 char *read_entire_file(const char *path, size_t *length_out)
 {
@@ -476,6 +477,7 @@ int extract_function_call(const char *json,
 char *extract_path_argument(const char *arguments)
 {
     const char *value;
+    char *path;
 
     value = find_string_value(arguments, "path");
 
@@ -483,13 +485,18 @@ char *extract_path_argument(const char *arguments)
         return NULL;
     }
 
-    return json_decode_string(value, NULL);
+    path = json_decode_string(value, NULL);
+    if (path != NULL && llm_path_is_current_dir(path)) {
+        (void)strcpy(path, ".");
+    }
+    return path;
 }
 
 char *extract_string_argument(const char *arguments,
                                      const char *name)
 {
     const char *value;
+    char *decoded;
 
     value = find_string_value(arguments, name);
 
@@ -497,7 +504,13 @@ char *extract_string_argument(const char *arguments,
         return NULL;
     }
 
-    return json_decode_string(value, NULL);
+    decoded = json_decode_string(value, NULL);
+    if (decoded != NULL &&
+        strcmp(name, "path") == 0 &&
+        llm_path_is_current_dir(decoded)) {
+        (void)strcpy(decoded, ".");
+    }
+    return decoded;
 }
 
 int extract_integer_argument(const char *arguments,
