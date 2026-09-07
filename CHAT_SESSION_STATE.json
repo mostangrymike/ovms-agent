@@ -1,17 +1,17 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-06T13:55:00-05:00",
+  "updated_at": "2026-09-07T12:09:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "d6539c5b6395ecb101044a6fb0c565a11f783072",
-    "tree": "6264e5817daacebe4c48002ca19b7dd64accb00e",
-    "latest_milestone": "M303",
-    "latest_code_milestone": "M303",
+    "main": "4771a92ff862ec51b86a7da436843b9cf35fb785",
+    "tree": "9ef6f2fe811eef4f6bfd94c3dff4146ca43d7efd",
+    "latest_milestone": "M304",
+    "latest_code_milestone": "M304",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 33,
+    "open_issues": 25,
     "open_prs": 0
   },
   "m301": {
@@ -24,14 +24,14 @@
     "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Full canonical native acceptance completed."
   },
   "m302": {
-    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION_RETAINED",
+    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION_RETENTION_REVIEW",
     "issue": 194,
     "branch": "m302-cobol-agent-stress",
     "branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "sandbox_repository": "mostangrymike/vms-cobol-sandbox",
     "sandbox_branch": "m302-agent-stress",
     "sandbox_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
-    "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion."
+    "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion. Branch retention now needs explicit tag-policy review because M302 had no product promotion."
   },
   "m303": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
@@ -44,30 +44,49 @@
     "tag": "m303",
     "pr": 240,
     "closed_defects": [206, 207, 208, 217, 218, 219, 220, 221, 223, 224],
-    "result": "Authorization and execution-boundary hardening completed. Current approval policy, guarded-write state, and DCL execution state are enforced at saved-plan, BUILD, EDIT/PATCH, CHANGESET APPLY, AGENT/WRITE, and AGENT/FIX boundaries. Promoted main was built natively at the exact merge SHA with all regressions passing and %X00000001."
+    "result": "Authorization and execution-boundary hardening completed. Promoted main was built natively at the exact merge SHA with all regressions passing and %X00000001."
+  },
+  "m304": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 241,
+    "branch": "m304-project-root-isolation",
+    "baseline_main": "d6539c5b6395ecb101044a6fb0c565a11f783072",
+    "accepted_candidate": "c72a61e8c3b64044267497597e0b9b554f1b9221",
+    "accepted_tree": "9ef6f2fe811eef4f6bfd94c3dff4146ca43d7efd",
+    "promoted_main": "4771a92ff862ec51b86a7da436843b9cf35fb785",
+    "tag": "m304",
+    "pr": 242,
+    "closed_defects": [210, 211, 212, 213, 222, 225, 227, 230],
+    "result": "Project-root/runtime isolation hardening completed. Native OpenVMS parent traversal is rejected, runtime/control artifacts are hidden from ordinary project and Git-derived context, resumed session policy/evidence behavior is hardened, native current-directory listing is normalized, Git scratch/runtime filtering is case-safe, and shipped build profiles resolve from external target projects. Exact promoted merge SHA passed canonical OpenVMS full build and permanent m304 tag is remote-verified."
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m302-cobol-agent-stress", "m303-authorization-boundaries"],
+    "retained_completed_target": ["m303-authorization-boundaries", "m304-project-root-isolation"],
     "open_prs": 0,
-    "open_issues": 33,
+    "open_issues": 25,
     "pending_ref_operations": [
       "Prune m300-blocking-default-streaming-opt-in; permanent m300 tag exists.",
-      "Prune m301-large-multiline-prompts now that M302 and M303 are the two newest completed milestone branches; permanent m301 tag exists."
+      "Prune m301-large-multiline-prompts; permanent m301 tag exists.",
+      "Review m302-cobol-agent-stress retention/tag policy before pruning because M302 intentionally had no product promotion."
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
       "m299": "18a78a656825f6eb0841c60e1f924fc027980659",
       "m300": "1423e660df7166797347c3ec9154564d8b34dd36",
       "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
-      "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072"
+      "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072",
+      "m304": "4771a92ff862ec51b86a7da436843b9cf35fb785"
     }
   },
   "next_milestone_direction": {
-    "suggested": "M304 project-root and runtime isolation hardening",
-    "first_slice": "#225 model-facing OpenVMS parent-directory traversal",
-    "related_security_followups": [225, 212, 210],
-    "note": "Start with #225 as the highest-priority confinement defect. Keep #212 runtime-artifact isolation and #210 resumed-session policy drift as separate bounded slices unless source inspection proves a clean shared primitive."
+    "suggested": "M305 choose the next bounded M302 defect cluster",
+    "candidate_clusters": [
+      "saved-plan framing/capacity: #195, #196, #204, #205, #209, #234, #236",
+      "repair pipeline portability/serialization: #201, #203",
+      "direct RMS-safe PATCH: #216",
+      "external-tool/MCP diagnostics: #214, #215"
+    ],
+    "note": "Select one coherent bounded cluster; do not mix unrelated M302 backlog categories in a single milestone."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
@@ -79,6 +98,7 @@
     "Do not trust OpenVMS Git porcelain alone when RMS/materialization evidence matters.",
     "Close individual defect issues immediately after deterministic coverage plus canonical native acceptance.",
     "When product/build/runtime inputs change, canonical native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
-    "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work requires retention."
+    "Exact-SHA acceptance and tree-equivalent promotion are distinct facts; promoted merge SHA itself must be built before calling it native-green.",
+    "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work or tag-policy constraints require retention."
   ]
 }
