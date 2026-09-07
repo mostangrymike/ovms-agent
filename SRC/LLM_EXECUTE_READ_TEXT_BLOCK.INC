@@ -1,3 +1,53 @@
+static int m308_payload_escape(
+    const char *line,
+    size_t line_length,
+    const char *end_marker)
+{
+    const char *content;
+    size_t content_length;
+    size_t marker_length;
+
+    if (line == NULL ||
+        line_length < 2U ||
+        line[0] != '\\') {
+        return 0;
+    }
+
+    content = line + 1;
+    content_length = line_length - 1U;
+
+    while (content_length > 0U &&
+           content[0] == '\\') {
+        ++content;
+        --content_length;
+    }
+
+    if (end_marker != NULL) {
+        marker_length = strlen(end_marker);
+        if (content_length == marker_length &&
+            memcmp(content, end_marker, marker_length) == 0) {
+            return 1;
+        }
+    }
+
+    if ((content_length == 15U &&
+         memcmp(content, "BEGIN_OPERATION", 15U) == 0) ||
+        (content_length == 13U &&
+         memcmp(content, "END_OPERATION", 13U) == 0) ||
+        (content_length == 14U &&
+         (memcmp(content, "BEGIN_OLD_TEXT", 14U) == 0 ||
+          memcmp(content, "BEGIN_NEW_TEXT", 14U) == 0)) ||
+        (content_length == 12U &&
+         (memcmp(content, "END_OLD_TEXT", 12U) == 0 ||
+          memcmp(content, "END_NEW_TEXT", 12U) == 0)) ||
+        (content_length >= 16U &&
+         memcmp(content, "operation_count=", 16U) == 0)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static int execute_read_text_block(
     FILE *file,
     const char *end_marker,
@@ -43,9 +93,10 @@ static int execute_read_text_block(
 
         content = block_line;
 
-        if (line_length == marker_length + 1U &&
-            block_line[0] == '\\' &&
-            memcmp(block_line + 1, end_marker, marker_length) == 0) {
+        if (m308_payload_escape(
+                block_line,
+                line_length,
+                end_marker)) {
             content = block_line + 1;
             --line_length;
         }

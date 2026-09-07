@@ -3,6 +3,127 @@
     int operation_test_ok;
     int operation_test_created;
     const char *operation_test_path =
+        "OVMS_AGENT_TEST_M308_SECTION.TMP";
+
+    operation_test_ok = 0;
+    operation_test_created = 0;
+    operation_test_file = NULL;
+
+    if (!llm_selftest_file_exists(operation_test_path)) {
+        operation_test_file =
+            fopen(operation_test_path, "w");
+
+        if (operation_test_file != NULL) {
+            operation_test_created = 1;
+        }
+    }
+
+    if (operation_test_file != NULL) {
+        if (fprintf(
+                operation_test_file,
+                "format=1\n"
+                "status=active\n"
+                "\n[goal]\n"
+                "operation_count=32\n"
+                "BEGIN_OPERATION\n"
+                "END_OPERATION\n"
+                "\n[files]\n"
+                "file=SRC/llm_status.c|size=1|modified=1\n"
+                "\n[plan]\n"
+                "Goal\n"
+                "One deterministic operation.\n"
+                "operation_count=1\n"
+                "BEGIN_OPERATION\n"
+                "type=replace_text\n"
+                "path=SRC/llm_status.c\n"
+                "old_text=old\n"
+                "new_text=new\n"
+                "END_OPERATION\n") >= 0 &&
+            fclose(operation_test_file) == 0) {
+            operation_test_file = NULL;
+            operation_test_ok =
+                llm_exec_validate_ops_file(
+                    operation_test_path);
+        }
+    }
+
+    if (operation_test_file != NULL) {
+        (void)fclose(operation_test_file);
+    }
+
+    if (operation_test_created) {
+        (void)remove(operation_test_path);
+    }
+
+    llm_selftest_report(
+        "M308 executor ignores operation tokens before [plan]",
+        operation_test_ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    FILE *operation_test_file;
+    int operation_test_ok;
+    int operation_test_created;
+    const char *operation_test_path =
+        "OVMS_AGENT_TEST_M308_DUP_SECTION.TMP";
+
+    operation_test_ok = 0;
+    operation_test_created = 0;
+    operation_test_file = NULL;
+
+    if (!llm_selftest_file_exists(operation_test_path)) {
+        operation_test_file =
+            fopen(operation_test_path, "w");
+
+        if (operation_test_file != NULL) {
+            operation_test_created = 1;
+        }
+    }
+
+    if (operation_test_file != NULL) {
+        if (fprintf(
+                operation_test_file,
+                "[plan]\n"
+                "[plan]\n"
+                "operation_count=1\n"
+                "BEGIN_OPERATION\n"
+                "type=replace_text\n"
+                "path=SRC/llm_status.c\n"
+                "old_text=old\n"
+                "new_text=new\n"
+                "END_OPERATION\n") >= 0 &&
+            fclose(operation_test_file) == 0) {
+            operation_test_file = NULL;
+            operation_test_ok =
+                !llm_exec_validate_ops_file(
+                    operation_test_path);
+        }
+    }
+
+    if (operation_test_file != NULL) {
+        (void)fclose(operation_test_file);
+    }
+
+    if (operation_test_created) {
+        (void)remove(operation_test_path);
+    }
+
+    llm_selftest_report(
+        "M308 duplicate plan section rejected",
+        operation_test_ok,
+        &passed_count,
+        &failed_count
+    );
+}
+
+{
+    FILE *operation_test_file;
+    int operation_test_ok;
+    int operation_test_created;
+    const char *operation_test_path =
         "OVMS_AGENT_TEST_OPERATIONS.TMP";
 
     operation_test_ok = 0;
