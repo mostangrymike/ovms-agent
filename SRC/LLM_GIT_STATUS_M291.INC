@@ -1,3 +1,5 @@
+#include "LLM_PATH.H"
+
 static int m291_git_tmp_name_equal(
     const char *left,
     size_t left_length,
@@ -106,11 +108,22 @@ int llm_git_m291_filter_status(
             read_position[0] == '?' &&
             read_position[1] == '?' &&
             read_position[2] == ' ') {
+            char path_copy[1024];
+
             path_length = line_length - 3U;
             if (m291_git_tmp_basename(
                     read_position + 3U,
                     path_length)) {
                 keep = 0;
+            } else if (path_length < sizeof(path_copy)) {
+                (void)memcpy(
+                    path_copy,
+                    read_position + 3U,
+                    path_length);
+                path_copy[path_length] = '\0';
+                if (llm_runtime_artifact(path_copy)) {
+                    keep = 0;
+                }
             }
         }
 
