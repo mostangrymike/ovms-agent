@@ -30,20 +30,28 @@ int main(void)
         "?? OVMS_agent_GIT_other.TMP\n"
         "?? ovms_AGENT_git_HASH.tmp\n"
         "?? src/ovms_agent_git_top.tmp\n"
+        "?? ovms_agent_session.cur\n"
+        "?? SRC/OVMS_AGENT_SESSIONS.DAT\n"
+        "?? Ovms_Agent_Transcript.Dat\n"
+        "?? OVMS_AGENT_LANGUAGE.MD\n"
         "?? KEEP.TXT\n"
         " M ovms_agent_git_cached.tmp\n"
+        " M ovms_agent_session.cur\n"
         "?? ovms_agent_git_cached.tmp.bak");
 
     if (!llm_git_m291_filter_status(status, sizeof(status)) ||
         strcmp(
             status,
+            "?? OVMS_AGENT_LANGUAGE.MD\n"
             "?? KEEP.TXT\n"
             " M ovms_agent_git_cached.tmp\n"
+            " M ovms_agent_session.cur\n"
             "?? ovms_agent_git_cached.tmp.bak") != 0) {
-        (void)puts("M304 failed: Git scratch case filtering.");
+        (void)puts("M304 failed: Git runtime/scratch filtering.");
         return EXIT_FAILURE;
     }
 
     (void)puts("M304 Git scratch case-filter regression passed.");
+    (void)puts("M304 Git runtime-artifact isolation regression passed.");
     return EXIT_SUCCESS;
 }
