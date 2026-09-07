@@ -5,6 +5,12 @@ $! Native OpenVMS execution only.
 $!===========================================================
 $ SET NOON
 $ FINAL_STATUS = 1
+$ ORIGINAL_DEFAULT = F$ENVIRONMENT("DEFAULT")
+$ ROOT_DEVICE = F$PARSE(ORIGINAL_DEFAULT,,,"DEVICE")
+$ ROOT_DIRECTORY = F$PARSE(ORIGINAL_DEFAULT,,,"DIRECTORY")
+$ LANGUAGE_DIR = ROOT_DEVICE + -
+                 F$EXTRACT(0,F$LENGTH(ROOT_DIRECTORY)-1,ROOT_DIRECTORY) + -
+                 ".LANGUAGE]"
 $
 $ @BUILD_M289_PROFILE
 $ IF .NOT. $STATUS THEN GOTO FAILED
@@ -29,13 +35,27 @@ $ LINK/EXECUTABLE=[.BUILD]M289_NATIVE_BUILD_TEST.EXE -
 [.BUILD]M289_BUILD_PROFILE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAILED
 $
-$ RUN [.BUILD]M289_NATIVE_BUILD_TEST.EXE
-$ IF .NOT. $STATUS THEN GOTO FAILED
+$! M304 #213: run from a directory with no local LANGUAGE tree.  The shipped
+$! profile directory is supplied by the same launcher logical used by normal
+$! installed execution.
+$ SET DEFAULT [.BUILD]
+$ DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "''LANGUAGE_DIR'"
+$ RUN M289_NATIVE_BUILD_TEST.EXE
+$ RUN_STATUS = $STATUS
+$ SET DEFAULT 'ORIGINAL_DEFAULT'
+$ IF .NOT. RUN_STATUS
+$ THEN
+$     FINAL_STATUS = RUN_STATUS
+$     GOTO FAILED_FINAL
+$ ENDIF
 $
+$ WRITE SYS$OUTPUT "M304 external-root build profile regression passed."
 $ WRITE SYS$OUTPUT "M289 native build executor regression passed."
 $ EXIT 1
 $
 $ FAILED:
 $ FINAL_STATUS = $STATUS
+$ FAILED_FINAL:
+$ SET DEFAULT 'ORIGINAL_DEFAULT'
 $ WRITE SYS$ERROR "M289 native build executor regression failed."
 $ EXIT 'FINAL_STATUS'
