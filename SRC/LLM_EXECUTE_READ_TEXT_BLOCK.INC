@@ -4,7 +4,9 @@ static int m308_payload_escape(
     const char *end_marker)
 {
     const char *content;
+    const char *fence;
     size_t content_length;
+    size_t fence_length;
     size_t marker_length;
 
     if (line == NULL ||
@@ -45,7 +47,18 @@ static int m308_payload_escape(
         return 1;
     }
 
-    return 0;
+    fence = content;
+    fence_length = content_length;
+    while (fence_length > 0U &&
+           (*fence == ' ' || *fence == '\t')) {
+        ++fence;
+        --fence_length;
+    }
+
+    return fence_length >= 3U &&
+        fence[0] == '`' &&
+        fence[1] == '`' &&
+        fence[2] == '`';
 }
 
 static int execute_read_text_block(
