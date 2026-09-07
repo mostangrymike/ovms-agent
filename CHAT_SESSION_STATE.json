@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-07T16:22:00-05:00",
+  "updated_at": "2026-09-07T17:04:08-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "1feb6faa50c6216567c2dce7a7679168092a946b",
-    "tree": "e5fcb2ed1db55dfa0d2f359e73e89cb877b6dbba",
-    "latest_milestone": "M306",
-    "latest_code_milestone": "M306",
-    "latest_code_milestone_main": "1feb6faa50c6216567c2dce7a7679168092a946b",
+    "main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
+    "tree": "c2b1b507b6042dab4be5a06d1bc7f17f220e1f0f",
+    "latest_milestone": "M307",
+    "latest_code_milestone": "M307",
+    "latest_code_milestone_main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 22,
+    "open_issues": 20,
     "open_prs": 0
   },
   "m301": {
@@ -55,7 +55,7 @@
     "closed_defects": [210, 211, 212, 213, 222, 225, 227, 230]
   },
   "m305": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PENDING_PRUNE",
     "issue": 243,
     "branch": "m305-rms-safe-direct-patch",
     "baseline_main": "8bd3e802bc0f98f9d89b23534812f36eec876cc9",
@@ -80,12 +80,28 @@
     "closed_defects": [214, 215],
     "result": "External TOOLS/INFO resolves registered M247/M250 tools; MCP CALL/EXEC distinguish valid unknown servers from malformed syntax while preserving FULL-approval ordering and existing fail-closed transport behavior. Exact promoted merge SHA passed full canonical OpenVMS build and focused/live acceptance."
   },
+  "m307": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_PENDING_TAG_RETAINED",
+    "issue": 247,
+    "branch": "m307-repair-portability-serialization",
+    "baseline_main": "1feb6faa50c6216567c2dce7a7679168092a946b",
+    "accepted_candidate": "cd52e2a4125862b1f2ca40d6bc5167144a90f362",
+    "accepted_tree": "c2b1b507b6042dab4be5a06d1bc7f17f220e1f0f",
+    "promoted_main": "3fea2a2506e79176981f16eef7af7ee28cbed487",
+    "expected_tag": "m307",
+    "pr": 248,
+    "closed_defects": [201, 203],
+    "result": "Repair planning now consumes portable supported native diagnostics and safely resolves root-level/nested project files while current multiline failed-operation serialization round-trips correctly. Exact candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m305-rms-safe-direct-patch", "m306-external-tool-mcp-diagnostics"],
+    "retained_completed_target": ["m306-external-tool-mcp-diagnostics", "m307-repair-portability-serialization"],
     "open_prs": 0,
-    "open_issues": 22,
-    "pending_ref_operations": [],
+    "open_issues": 20,
+    "pending_ref_operations": [
+      "create lightweight tag m307 at 3fea2a2506e79176981f16eef7af7ee28cbed487",
+      "delete remote branch m305-rms-safe-direct-patch after ref verification"
+    ],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
       "m301-large-multiline-prompts",
@@ -106,13 +122,15 @@
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M307 repair pipeline portability/serialization",
+    "suggested": "M308 saved-plan framing/capacity",
     "candidate_clusters": [
-      "repair pipeline portability/serialization: #201, #203",
       "saved-plan framing/capacity: #195, #196, #204, #205, #209, #234, #236",
-      "saved-plan lifecycle/execution: #200, #202, #233, #235"
+      "saved-plan lifecycle/execution: #200, #202, #233, #235",
+      "transaction/path canonicalization: #232",
+      "tool-loop/search reporting: #228, #229, #231",
+      "native DCL generation/repair quality: #197, #198, #199"
     ],
-    "note": "Prefer the bounded repair pipeline cluster #201/#203 next; do not mix unrelated backlog categories."
+    "note": "Select a bounded coherent M308 subcluster before branching; do not combine the entire remaining M302 backlog into one milestone."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
