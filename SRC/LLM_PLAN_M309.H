@@ -154,17 +154,29 @@ static int llm_m309_plan_complete(const char *plan_text)
     return saw_count || saw_advisory;
 }
 
-static int llm_m309_response_complete(void)
+static int llm_m309_response_state(const char *plan_text)
 {
     char *json;
+    char *response_text;
     long output_tokens;
     long reasoning_tokens;
     int exhausted;
+    int state;
 
     json = read_entire_file(LLM_RESPONSE_FILE, NULL);
     if (json == NULL) {
-        return 1;
+        return 0;
     }
+
+    response_text = extract_output_text_from_json(json);
+    if (response_text == NULL ||
+        plan_text == NULL ||
+        strcmp(response_text, plan_text) != 0) {
+        free(response_text);
+        free(json);
+        return 0;
+    }
+    free(response_text);
 
     output_tokens = 0L;
     reasoning_tokens = 0L;
@@ -174,8 +186,9 @@ static int llm_m309_response_complete(void)
         &reasoning_tokens);
     free(json);
 
-    if (!exhausted) {
-        return 1;
+    state = exhausted ? -1 : 1;
+    if (state > 0) {
+        return state;
     }
 
     (void)puts(
@@ -188,19 +201,23 @@ static int llm_m309_response_complete(void)
             output_tokens,
             reasoning_tokens);
     }
-    return 0;
+    return state;
 }
 
 static int llm_m309_plan_save(
     const char *goal,
     const char *plan_text)
 {
+    int response_state;
+
     if (llm_last_workflow == LLM_WORKFLOW_PLAN) {
-        if (!llm_m309_response_complete()) {
+        response_state = llm_m309_response_state(plan_text);
+        if (response_state < 0) {
             return 0;
         }
 
-        if (!llm_m309_plan_complete(plan_text)) {
+        if (response_state > 0 &&
+            !llm_m309_plan_complete(plan_text)) {
             (void)puts(
                 "Implementation plan was not saved because the provider "
                 "did not return a complete plan.");
