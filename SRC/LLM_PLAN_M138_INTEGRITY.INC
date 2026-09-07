@@ -349,6 +349,37 @@ static int llm_m195_check_begin_order(
 }
 
 #define LLM_M251_TEXT_LIMIT 4096U
+#define LLM_M308_PAYLOAD_MAX 4094U
+#define LLM_M308_OPERATION_MAX 32U
+
+static int llm_m308_reserved_line(
+    const char *payload,
+    size_t payload_length)
+{
+    while (payload_length > 0U &&
+           payload[0] == '\\') {
+        ++payload;
+        --payload_length;
+    }
+
+    return
+        (payload_length == 15U &&
+         memcmp(payload, "BEGIN_OPERATION", 15U) == 0) ||
+        (payload_length == 13U &&
+         memcmp(payload, "END_OPERATION", 13U) == 0) ||
+        (payload_length == 14U &&
+         (memcmp(payload, "BEGIN_OLD_TEXT", 14U) == 0 ||
+          memcmp(payload, "BEGIN_NEW_TEXT", 14U) == 0)) ||
+        (payload_length == 12U &&
+         (memcmp(payload, "END_OLD_TEXT", 12U) == 0 ||
+          memcmp(payload, "END_NEW_TEXT", 12U) == 0)) ||
+        (payload_length >= 16U &&
+         memcmp(payload, "operation_count=", 16U) == 0) ||
+        (payload_length >= 3U &&
+         payload[0] == '`' &&
+         payload[1] == '`' &&
+         payload[2] == '`');
+}
 
 static int llm_m251_payload_ok(
     const char *plan_text)
@@ -427,22 +458,11 @@ static int llm_m251_payload_ok(
                 payload = line_start;
                 payload_length = content_length;
 
-                if (in_old &&
-                    payload_length == sizeof(end_old) &&
+                if (payload_length > 0U &&
                     payload[0] == '\\' &&
-                    memcmp(
+                    llm_m308_reserved_line(
                         payload + 1,
-                        end_old,
-                        sizeof(end_old) - 1U) == 0) {
-                    ++payload;
-                    --payload_length;
-                } else if (in_new &&
-                           payload_length == sizeof(end_new) &&
-                           payload[0] == '\\' &&
-                           memcmp(
-                               payload + 1,
-                               end_new,
-                               sizeof(end_new) - 1U) == 0) {
+                        payload_length - 1U)) {
                     ++payload;
                     --payload_length;
                 }
@@ -461,15 +481,19 @@ static int llm_m251_payload_ok(
                     payload[index + 2U] == '`') {
                     (void)puts(
                         "Implementation plan was not saved because "
-                        "an OLD or NEW payload contains a Markdown fence.");
+                        "an unescaped OLD or NEW payload line contains "
+                        "a Markdown fence.");
                     return 0;
                 }
 
                 if (used + payload_length + 1U >=
                     LLM_M251_TEXT_LIMIT) {
-                    (void)puts(
-                        "Implementation plan was not saved because "
-                        "an OLD or NEW payload exceeds executor capacity.");
+                    (void)printf(
+                        "Implementation plan was not saved because the %s "
+                        "payload exceeds executor capacity; maximum decoded "
+                        "payload is %u bytes.\n",
+                        in_old ? "OLD" : "NEW",
+                        (unsigned int)LLM_M308_PAYLOAD_MAX);
                     return 0;
                 }
 
@@ -487,6 +511,97 @@ static int llm_m251_payload_ok(
         }
     }
 
+    return !in_old && !in_new;
+}
+
+static int llm_m308_count_blocks(
+    const char *plan_text,
+    unsigned int *count_out)
+{
+    const char *cursor;
+    const char *line_start;
+    unsigned int count;
+    int in_operation;
+    int in_old;
+    int in_new;
+
+    if (plan_text == NULL || count_out == NULL) {
+        return 0;
+    }
+
+    cursor = plan_text;
+    line_start = plan_text;
+    count = 0U;
+    in_operation = 0;
+    in_old = 0;
+    in_new = 0;
+
+    for (;;) {
+        if (*cursor == '\n' || *cursor == '\0') {
+            const char *content_end;
+            size_t content_length;
+
+            content_end = cursor;
+            if (content_end > line_start &&
+                content_end[-1] == '\r') {
+                --content_end;
+            }
+            content_length =
+                (size_t)(content_end - line_start);
+
+            if (in_old) {
+                if (content_length == 12U &&
+                    memcmp(line_start, "END_OLD_TEXT", 12U) == 0) {
+                    in_old = 0;
+                }
+            } else if (in_new) {
+                if (content_length == 12U &&
+                    memcmp(line_start, "END_NEW_TEXT", 12U) == 0) {
+                    in_new = 0;
+                }
+            } else if (content_length == 15U &&
+                       memcmp(line_start, "BEGIN_OPERATION", 15U) == 0) {
+                if (in_operation) {
+                    return 0;
+                }
+                in_operation = 1;
+            } else if (content_length == 13U &&
+                       memcmp(line_start, "END_OPERATION", 13U) == 0) {
+                if (!in_operation) {
+                    return 0;
+                }
+                ++count;
+                in_operation = 0;
+            } else if (in_operation &&
+                       content_length == 14U &&
+                       memcmp(line_start, "BEGIN_OLD_TEXT", 14U) == 0) {
+                in_old = 1;
+            } else if (in_operation &&
+                       content_length == 14U &&
+                       memcmp(line_start, "BEGIN_NEW_TEXT", 14U) == 0) {
+                in_new = 1;
+            } else if (content_length == 12U &&
+                       (memcmp(line_start, "END_OLD_TEXT", 12U) == 0 ||
+                        memcmp(line_start, "END_NEW_TEXT", 12U) == 0)) {
+                return 0;
+            }
+
+            if (*cursor == '\0') {
+                break;
+            }
+
+            ++cursor;
+            line_start = cursor;
+        } else {
+            ++cursor;
+        }
+    }
+
+    if (in_operation || in_old || in_new) {
+        return 0;
+    }
+
+    *count_out = count;
     return 1;
 }
 
@@ -519,12 +634,21 @@ static char *llm_m195_normalize_count(
         return NULL;
     }
 
-    if (!llm_execute_count_ops(
+    if (!llm_m308_count_blocks(
             plan_text,
             &actual_count)) {
         (void)puts(
             "Implementation plan was not saved because "
             "its operation-block markers are invalid.");
+        return NULL;
+    }
+
+    if (actual_count > LLM_M308_OPERATION_MAX) {
+        (void)printf(
+            "Implementation plan exceeds executor capacity: %u operations; "
+            "maximum is %u.\n",
+            actual_count,
+            (unsigned int)LLM_M308_OPERATION_MAX);
         return NULL;
     }
 
