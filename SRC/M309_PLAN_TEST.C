@@ -36,14 +36,6 @@ int llm_plan_file_current_legacy(const char *plan_path,
     return 0;
 }
 
-int llm_plan_save(const char *goal, const char *plan_text)
-{
-    (void)goal;
-    (void)plan_text;
-    ++save_calls;
-    return 1;
-}
-
 char *read_entire_file(const char *path, size_t *size_out)
 {
     FILE *file;
@@ -117,7 +109,18 @@ int llm_response_token_exhausted(const char *json,
 }
 
 #include "LLM_EXECUTE_READ_TEXT_BLOCK.INC"
+#define llm_plan_save llm_m309_integrity_save
 #include "LLM_PLAN_M138_INTEGRITY.INC"
+#undef llm_plan_save
+
+int llm_plan_save(const char *goal, const char *plan_text)
+{
+    (void)goal;
+    (void)plan_text;
+    ++save_calls;
+    return 1;
+}
+
 #include "LLM_PLAN_M309.H"
 
 static int require_true(int condition, const char *message)
@@ -175,7 +178,7 @@ static int markdown_round_trip(void)
         fputs("\\\\```text\n"
               "inside\n"
               "\\\\  ```\n"
-              "\\\\\\literal\n"
+              "\\\\\\```raw\n"
               "END_NEW_TEXT\n",
               file) != EOF &&
         fclose(file) == 0;
@@ -206,7 +209,7 @@ static int markdown_round_trip(void)
                "```text\n"
                "inside\n"
                "  ```\n"
-               "\\literal") == 0;
+               "\\```raw") == 0;
 }
 
 int main(void)
