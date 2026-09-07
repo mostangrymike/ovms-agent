@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "project.h"
+#include "RMS_WRITE.H"
 
 #define READ_BUFFER_SIZE 1024
 #define NORMALIZED_PATH_SIZE 1024
@@ -1500,27 +1501,9 @@ after_length =
         return 0;
     }
 
-    file = fopen(normalized, "w");
-
-    if (file == NULL) {
+    if (!rms_replace_text_file(normalized, updated)) {
         (void)printf("Unable to write %s: %s\n",
                      normalized,
-                     strerror(errno));
-        free(updated);
-        free(original);
-        return 0;
-    }
-
-    if (fwrite(updated, 1U, updated_length, file) != updated_length) {
-        (void)puts("Unable to write complete replacement file.");
-        (void)fclose(file);
-        free(updated);
-        free(original);
-        return 0;
-    }
-
-    if (fclose(file) != 0) {
-        (void)printf("Unable to close replacement file: %s\n",
                      strerror(errno));
         free(updated);
         free(original);
