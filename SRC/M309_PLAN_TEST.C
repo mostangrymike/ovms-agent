@@ -10,6 +10,7 @@
 
 int llm_last_workflow = LLM_WORKFLOW_PLAN;
 static int save_calls = 0;
+static const char *response_text_fixture = NULL;
 
 void llm_plan_approval_clear(void)
 {
@@ -78,6 +79,25 @@ char *read_entire_file(const char *path, size_t *size_out)
         *size_out = count;
     }
     return text;
+}
+
+char *extract_output_text_from_json(const char *json)
+{
+    char *copy;
+    size_t length;
+
+    (void)json;
+    if (response_text_fixture == NULL) {
+        return NULL;
+    }
+
+    length = strlen(response_text_fixture);
+    copy = (char *)malloc(length + 1U);
+    if (copy == NULL) {
+        return NULL;
+    }
+    (void)memcpy(copy, response_text_fixture, length + 1U);
+    return copy;
 }
 
 int llm_response_token_exhausted(const char *json,
@@ -219,7 +239,10 @@ int main(void)
     char missing[2048];
     char *normalized;
     const char *fenced_plan;
+    const char *progress;
     int before;
+
+    progress = "I'll inspect the files first.\n";
 
     (void)snprintf(
         structured,
@@ -251,8 +274,7 @@ int main(void)
                       "complete structured plan recognized") ||
         !require_true(llm_m309_plan_complete(advisory),
                       "complete advisory plan recognized") ||
-        !require_true(!llm_m309_plan_complete(
-                          "I'll inspect the files first.\n"),
+        !require_true(!llm_m309_plan_complete(progress),
                       "progress-only text rejected") ||
         !require_true(!llm_m309_plan_complete(missing),
                       "missing mandatory heading rejected")) {
@@ -285,6 +307,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    response_text_fixture = structured;
     if (!require_true(write_response(
             "{\"status\":\"incomplete\","
             "\"incomplete_details\":{\"reason\":\"max_output_tokens\"}}"),
@@ -306,6 +329,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    response_text_fixture = structured;
     before = save_calls;
     if (!require_true(llm_m309_plan_save("goal", structured),
                       "complete structured response saved") ||
@@ -315,9 +339,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    response_text_fixture = progress;
     before = save_calls;
-    if (!require_true(!llm_m309_plan_save(
-                          "goal", "I'll inspect the files first.\n"),
+    if (!require_true(!llm_m309_plan_save("goal", progress),
                       "progress-only response rejected before save") ||
         !require_true(save_calls == before,
                       "progress-only response never reached underlying save")) {
@@ -325,11 +349,22 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+    response_text_fixture = advisory;
     before = save_calls;
     if (!require_true(llm_m309_plan_save("goal", advisory),
                       "explicit advisory plan saved") ||
         !require_true(save_calls == before + 1,
                       "advisory response reached underlying save")) {
+        (void)remove(LLM_RESPONSE_FILE);
+        return EXIT_FAILURE;
+    }
+
+    response_text_fixture = NULL;
+    before = save_calls;
+    if (!require_true(llm_m309_plan_save("internal", "INVALID"),
+                      "unrelated internal save bypasses live-response checks") ||
+        !require_true(save_calls == before + 1,
+                      "bypass reached underlying save")) {
         (void)remove(LLM_RESPONSE_FILE);
         return EXIT_FAILURE;
     }
