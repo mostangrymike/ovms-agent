@@ -41,11 +41,7 @@ static int m308_payload_escape(
          (memcmp(content, "END_OLD_TEXT", 12U) == 0 ||
           memcmp(content, "END_NEW_TEXT", 12U) == 0)) ||
         (content_length >= 16U &&
-         memcmp(content, "operation_count=", 16U) == 0) ||
-        (content_length >= 3U &&
-         content[0] == '`' &&
-         content[1] == '`' &&
-         content[2] == '`')) {
+         memcmp(content, "operation_count=", 16U) == 0)) {
         return 1;
     }
 
