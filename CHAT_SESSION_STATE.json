@@ -1,37 +1,38 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-07T12:09:00-05:00",
+  "updated_at": "2026-09-07T12:20:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "4771a92ff862ec51b86a7da436843b9cf35fb785",
+    "main": "8bd3e802bc0f98f9d89b23534812f36eec876cc9",
     "tree": "9ef6f2fe811eef4f6bfd94c3dff4146ca43d7efd",
     "latest_milestone": "M304",
     "latest_code_milestone": "M304",
+    "latest_code_milestone_main": "4771a92ff862ec51b86a7da436843b9cf35fb785",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
     "open_issues": 25,
     "open_prs": 0
   },
   "m301": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNE_ELIGIBLE",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 184,
     "branch": "m301-large-multiline-prompts",
     "promoted_main": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
     "documentation_main": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "tag": "m301",
-    "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Full canonical native acceptance completed."
+    "result": "Native .END multiline prompt/goal input uses a dedicated bounded 32768-byte buffer while ordinary one-line command input remains 8192 bytes. Full canonical native acceptance completed; development branch was later pruned after permanent tag verification."
   },
   "m302": {
-    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION_RETENTION_REVIEW",
+    "status": "COMPLETED_STRESS_CAMPAIGN_NO_PRODUCT_PROMOTION_PRUNED_NO_TAG",
     "issue": 194,
     "branch": "m302-cobol-agent-stress",
     "branch_head": "244adacfa790df348d5e8d5473ccd1ad48e1a776",
     "sandbox_repository": "mostangrymike/vms-cobol-sandbox",
     "sandbox_branch": "m302-agent-stress",
     "sandbox_head": "4e60021bb9e8500c597cfa5b1ec1531af0b93260",
-    "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion. Branch retention now needs explicit tag-policy review because M302 had no product promotion."
+    "result": "End-to-end COBOL stress campaign completed and harvested the M302 backlog without OVMS Agent product promotion. The OVMS Agent development branch contained no unique commits and was pruned. No m302 tag was created because there was no canonical promoted main commit; issue #194 and durable state preserve the campaign record."
   },
   "m303": {
     "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
@@ -64,10 +65,11 @@
     "retained_completed_target": ["m303-authorization-boundaries", "m304-project-root-isolation"],
     "open_prs": 0,
     "open_issues": 25,
-    "pending_ref_operations": [
-      "Prune m300-blocking-default-streaming-opt-in; permanent m300 tag exists.",
-      "Prune m301-large-multiline-prompts; permanent m301 tag exists.",
-      "Review m302-cobol-agent-stress retention/tag policy before pruning because M302 intentionally had no product promotion."
+    "pending_ref_operations": [],
+    "pruned_completed_branches": [
+      "m300-blocking-default-streaming-opt-in",
+      "m301-large-multiline-prompts",
+      "m302-cobol-agent-stress"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -76,7 +78,8 @@
       "m301": "0d09a5575bcf5e05c5e83ff19e10f38675f74e2f",
       "m303": "d6539c5b6395ecb101044a6fb0c565a11f783072",
       "m304": "4771a92ff862ec51b86a7da436843b9cf35fb785"
-    }
+    },
+    "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
     "suggested": "M305 choose the next bounded M302 defect cluster",
@@ -99,6 +102,7 @@
     "Close individual defect issues immediately after deterministic coverage plus canonical native acceptance.",
     "When product/build/runtime inputs change, canonical native acceptance requires All regression tests passed., Build completed successfully., and BUILD_STATUS=%X00000001 plus focused regressions as needed.",
     "Exact-SHA acceptance and tree-equivalent promotion are distinct facts; promoted merge SHA itself must be built before calling it native-green.",
-    "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work or tag-policy constraints require retention."
+    "Keep main and chat-session-state permanently; retain only the two most recently completed milestone development branches unless unique unpromoted work or an explicit no-promotion exception applies.",
+    "Do not invent an mNNN tag for a stress-only milestone with no canonical promoted main; record and prune it only after proving the branch contains no unique work."
   ]
 }
