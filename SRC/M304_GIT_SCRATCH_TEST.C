@@ -16,6 +16,7 @@ static int m290_git_rms_status_base(void)
     return 1;
 }
 
+#include "LLM_PATH.C"
 #include "LLM_GIT_STATUS_M291.INC"
 
 int main(void)
