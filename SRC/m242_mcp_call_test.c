@@ -68,9 +68,10 @@ int main(void)
     }
 
     if (!require_true(
-            !llm_mcp_call_text(
-                config, "missing search x", output, sizeof(output)),
-            "unknown server rejection")) {
+            llm_mcp_call_text(
+                config, "missing search x", output, sizeof(output)) &&
+            strstr(output, "MCP server is not configured: missing") != NULL,
+            "unknown server diagnostic")) {
         return 1;
     }
 
@@ -78,6 +79,13 @@ int main(void)
             !llm_mcp_call_text(
                 config, "docs bad/tool x", output, sizeof(output)),
             "unsafe tool-name rejection")) {
+        return 1;
+    }
+
+    if (!require_true(
+            !llm_mcp_call_text(
+                config, "missing", output, sizeof(output)),
+            "malformed syntax rejection")) {
         return 1;
     }
 

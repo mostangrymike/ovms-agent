@@ -19,6 +19,8 @@
 #define llm_show_tool_info llm_show_tool_info_base
 #define llm_context_text llm_context_text_base
 #define llm_show_context llm_show_context_base
+#define llm_mcp_call_text llm_mcp_call_text_base
+#define llm_show_mcp_call llm_show_mcp_call_base
 #include "LLM_PARITY_M258_CORE.C"
 #undef llm_approval_name
 #undef llm_approval_text
@@ -34,6 +36,8 @@
 #undef llm_show_tool_info
 #undef llm_context_text
 #undef llm_show_context
+#undef llm_mcp_call_text
+#undef llm_show_mcp_call
 
 #define M289_BUILD_SOURCE_LINE \
     "  build_source     effect=execute approval=full+write+DCL\n"
@@ -169,11 +173,50 @@ void llm_show_tools_ext(void)
     (void)fputs(output, stdout);
 }
 
+static int m306_tool_info_table(const char *arguments,
+                                const llm_tool_desc *tools,
+                                unsigned int count,
+                                char *output,
+                                size_t output_size)
+{
+    unsigned int index;
+    int written;
+
+    if (arguments == NULL || tools == NULL ||
+        output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    for (index = 0U; index < count; ++index) {
+        if (!llm_equal_ci(arguments, tools[index].name)) {
+            continue;
+        }
+
+        written = snprintf(
+            output, output_size,
+            "OVMS Agent tool information\n"
+            "---------------------------\n"
+            "Name:        %s\n"
+            "Effect:      %s\n"
+            "Approval:    %s\n"
+            "Description: %s\n",
+            tools[index].name,
+            tools[index].effect,
+            tools[index].approval,
+            tools[index].description
+        );
+        return written >= 0 && (size_t)written < output_size;
+    }
+
+    return 0;
+}
+
 int llm_tool_info_text(const char *arguments,
                        char *output,
                        size_t output_size)
 {
     int written;
+    unsigned int count;
 
     if (arguments != NULL && llm_equal_ci(arguments, "build_source")) {
         if (output == NULL || output_size == 0U) {
@@ -192,6 +235,20 @@ int llm_tool_info_text(const char *arguments,
         return written >= 0 && (size_t)written < output_size;
     }
 
+    count = (unsigned int)(sizeof(llm_m247_tools) /
+                           sizeof(llm_m247_tools[0]));
+    if (m306_tool_info_table(arguments, llm_m247_tools, count,
+                             output, output_size)) {
+        return 1;
+    }
+
+    count = (unsigned int)(sizeof(llm_m250_tools) /
+                           sizeof(llm_m250_tools[0]));
+    if (m306_tool_info_table(arguments, llm_m250_tools, count,
+                             output, output_size)) {
+        return 1;
+    }
+
     return llm_tool_info_text_base(arguments, output, output_size);
 }
 
@@ -201,6 +258,74 @@ void llm_show_tool_info(const char *arguments)
 
     if (!llm_tool_info_text(arguments, output, sizeof(output))) {
         (void)puts("Usage: AGENT/TOOLS/INFO <tool-name>");
+        return;
+    }
+
+    (void)fputs(output, stdout);
+}
+
+static int m306_mcp_unknown_call(const char *config,
+                                 const char *arguments,
+                                 char *output,
+                                 size_t output_size)
+{
+    llm_mcp_server_desc servers[LLM_MCP_MAX_SERVERS];
+    unsigned int count;
+    unsigned int index;
+    const char *cursor;
+    const char *payload;
+    char server[LLM_MCP_NAME_MAX];
+    char tool[LLM_MCP_NAME_MAX];
+    int written;
+
+    if (arguments == NULL || output == NULL || output_size == 0U) {
+        return 0;
+    }
+
+    cursor = arguments;
+    if (!llm_mcp_call_token(&cursor, server, sizeof(server)) ||
+        !llm_mcp_call_token(&cursor, tool, sizeof(tool)) ||
+        !llm_mcp_name_valid(server) || !llm_mcp_name_valid(tool)) {
+        return 0;
+    }
+
+    payload = llm_skip_ws(cursor);
+    if (!llm_mcp_call_args_valid(payload)) {
+        return 0;
+    }
+
+    count = llm_mcp_parse(config, servers, NULL);
+    for (index = 0U; index < count; ++index) {
+        if (llm_equal_ci(server, servers[index].name)) {
+            return 0;
+        }
+    }
+
+    written = snprintf(output, output_size,
+                       "MCP server is not configured: %s\n", server);
+    return written >= 0 && (size_t)written < output_size;
+}
+
+int llm_mcp_call_text(const char *config,
+                      const char *arguments,
+                      char *output,
+                      size_t output_size)
+{
+    if (llm_mcp_call_text_base(config, arguments, output, output_size)) {
+        return 1;
+    }
+
+    return m306_mcp_unknown_call(config, arguments, output, output_size);
+}
+
+void llm_show_mcp_call(const char *arguments)
+{
+    char output[4096];
+
+    if (!llm_mcp_call_text(getenv("OVMS_AGENT_MCP_SERVERS"),
+                           arguments, output, sizeof(output))) {
+        (void)puts(
+            "Usage: AGENT/MCP/CALL <server-name> <tool-name> [arguments]");
         return;
     }
 
