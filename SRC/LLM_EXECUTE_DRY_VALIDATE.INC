@@ -1,3 +1,5 @@
+#include "LLM_EXECUTE_M310_CHAIN.INC"
+
 int llm_exec_dry_validate(
     const char *operations_path,
     const char *target_path,
