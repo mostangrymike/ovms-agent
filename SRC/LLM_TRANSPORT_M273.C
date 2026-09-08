@@ -1,3 +1,7 @@
+#ifndef _VMS_WAIT
+#define _VMS_WAIT
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
