@@ -6,7 +6,21 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M309 below.
+No additional user-visible product changes are currently recorded beyond M310 below.
+
+## M310 — Saved-plan lifecycle and execution hardening
+
+Tag: `m310`
+
+- Invalidated saved-plan session approval when currentness/fingerprint validation discovers stale targets, and prevented stale approval from becoming usable again merely because target state later returns to its prior fingerprint.
+- Preserved a prior valid saved-plan artifact when a replacement plan is rejected while invalidating any prior execution authority associated with that artifact, avoiding silent follow-up execution as though the failed replacement had succeeded.
+- Added ordered create-then-modify saved-plan support on the same path, staging the operation chain in order and committing one final transaction target while still rejecting duplicate creates and invalid reuse patterns.
+- Prevented logging-triggered fresh-process saves from overwriting valid persisted workflow/build/rollback state with process defaults before existing state has been loaded and validated.
+- Added backward-compatible machine-readable `build=required|skip` policy before `operation_count=`. Legacy executable plans without the field remain build-required; `build=skip` bypasses only the post-write BUILD/DCL requirement while preserving guarded-write, approval, currentness, transaction, and consumption checks.
+- Added focused M310 regression coverage and synchronized `OVMS_AGENT.HLP` for the user-visible lifecycle, chain, state-preservation, and build-policy contracts.
+- Exact accepted candidate `4c9a082da18368dc6ecbd9e4a0a76a233857ec3b` (tree `04dcff2a527161cec2b6320ab067c09cee57e393`) passed focused M310 regression, full canonical OpenVMS `@BUILD`, focused rerun, and HELP verification with `%X00000001`.
+- Promotion PR #256 produced main `539824ddc888eb7ec6f3c4de7c07415b9d78ca82` with the exact same tree; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance before M310 was declared complete.
+- Closed defects #200, #202, #233, and #235 plus milestone tracker #255. Permanent tag `m310` resolves directly to the exact promoted native-green merge commit.
 
 ## M309 — Saved-plan completion and Markdown payload hardening
 
