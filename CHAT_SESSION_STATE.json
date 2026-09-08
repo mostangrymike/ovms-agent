@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T16:02:28-05:00",
+  "updated_at": "2026-09-08T16:41:30-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "e2fc4fe6e228dff7c91e451b5a08a77adab7620f",
-    "tree": "fba69d8b4ee804610d29d386e3d567d1e25bb2f9",
-    "latest_milestone": "M313",
-    "latest_code_milestone": "M313",
-    "latest_code_milestone_main": "85ea038458596e6dd9435a209a11535e1cc99620",
+    "main": "68aae8f58fe6f538bfe58513e31bde8f95ee337f",
+    "tree": "97f05c4c61e6c71d54b0894cb17f81efc0d025ce",
+    "latest_milestone": "M314",
+    "latest_code_milestone": "M314",
+    "latest_code_milestone_main": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 2,
+    "open_issues": 1,
     "open_prs": 0
   },
   "m301": {
@@ -150,7 +150,7 @@
     "result": "Transaction target identity now collapses redundant slash dot-components before uniqueness/staging decisions while preserving case-insensitive and leading-[] equivalence, unsafe-dotdot refusal, and distinct-target behavior. Canonical acceptance also corrected the C99-hidden native fgetname declaration and an implicit llm_set_approval declaration. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
   },
   "m312": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 259,
     "branch": "m312-tool-loop-search-reporting",
     "baseline_main": "e61078faeec5c04f0bbce66426d63c92822c75f0",
@@ -177,11 +177,25 @@
     "closed_defects": [197, 198, 199],
     "result": "M313 makes .COM prompts reliably select OpenVMS DCL platform knowledge and strengthens provider-neutral DCL generation/repair guidance for explicit SET NOON status handling, READ/END_OF_FILE channel lifetime, DEFINE/USER next-image SYS$OUTPUT lifetime, and evidence-backed cleanup tracing. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
+  "m314": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 263,
+    "branch": "m314-stream-completion-status",
+    "baseline_main": "e2fc4fe6e228dff7c91e451b5a08a77adab7620f",
+    "accepted_candidate": "66e573f15223cd16c7032412f8d7993b7fdae99b",
+    "accepted_tree": "cfdaa4d3f1dcd3fb0b3801fbf6e8f80a82077e14",
+    "promoted_main": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
+    "post_milestone_docs_main": "68aae8f58fe6f538bfe58513e31bde8f95ee337f",
+    "tag": "m314",
+    "pr": 264,
+    "closed_defects": [179],
+    "result": "M314 fixes optional SSE post-response false failures by compiling the live OpenVMS streaming transport with _VMS_WAIT so pclose returns a native child completion code for the existing status decoder. Genuine child failures still fail without blocking retry, streaming remains opt-in, and tool-bearing requests remain blocking. Exact candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance plus live streaming=ON ASK gates. HELP remained unchanged because no command or SETTINGS surface changed. A subsequent CHANGELOG-only synchronization advanced main without changing product/build/runtime inputs."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m312-tool-loop-search-reporting", "m313-native-dcl-generation-repair"],
+    "retained_completed_target": ["m313-native-dcl-generation-repair", "m314-stream-completion-status"],
     "open_prs": 0,
-    "open_issues": 2,
+    "open_issues": 1,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
@@ -195,7 +209,8 @@
       "m308-saved-plan-framing-capacity",
       "m309-saved-plan-completion-markdown",
       "m310-saved-plan-lifecycle-execution",
-      "m311-transaction-path-canonicalization"
+      "m311-transaction-path-canonicalization",
+      "m312-tool-loop-search-reporting"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -212,17 +227,17 @@
       "m310": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82",
       "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
       "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
-      "m313": "85ea038458596e6dd9435a209a11535e1cc99620"
+      "m313": "85ea038458596e6dd9435a209a11535e1cc99620",
+      "m314": "cd29bb93fbd4ed09224631570b992183e1fe03b5"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M314 optional streaming completion-status hardening",
+    "suggested": "M315 OpenVMS Git operating-guide correctness",
     "candidate_clusters": [
-      "optional streaming completion/status defect: #179",
-      "OpenVMS Git documentation correctness: #192"
+      "OpenVMS Git documentation/RMS filespec correctness: #192"
     ],
-    "note": "M313 closes the remaining M302-derived native DCL generation/repair cluster. Prefer #179 as the remaining product/runtime defect for M314; keep #192 as a separate documentation/native-operating-guide correction requiring exact host evidence before editing guidance."
+    "note": "M314 closes the final product/runtime defect in the current backlog. The only remaining open issue is documentation/operating-guide defect #192. Determine the correct RMS-visible .git control-file syntax on the canonical OpenVMS host from native evidence before editing DOC/OPENVMS_GIT_QUIRKS.MD or durable rules."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
