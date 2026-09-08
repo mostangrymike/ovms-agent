@@ -56,4 +56,8 @@ Promotion PR #191 merged as main `0d09a5575bcf5e05c5e83ff19e10f38675f74e2f`. Its
 
 ## Follow-up discovered during HELP validation
 
-Issue #192 tracks a separate operating-guide defect: the then-documented RMS `.git` filespec examples such as `[.^.GIT]FETCH_HEAD.` were rejected with `%DCL-W-DIRECT` on the canonical host. M301 acceptance did not depend on those invalid examples; exact Git ref identity, RMS-aware file restore, native build/regressions, live behavior, and HELP validation were independently established.
+Issue #192 recorded a separate operating-guide concern after an M301 acceptance session reported `%DCL-W-DIRECT` while using visually similar RMS `.git` filespec examples such as `[.^.GIT]FETCH_HEAD.`. M301 acceptance did not depend on that observation; exact Git ref identity, RMS-aware file restore, native build/regressions, live behavior, and HELP validation were independently established.
+
+## Later revalidation
+
+M315 re-ran the `.git` filespec probe from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT]` on the canonical OpenVMS V9.2-3 x86-64 host. `TYPE [.^.GIT]HEAD.` succeeded with `%SYSTEM-S-NORMAL`, the physical directory entry was visible as `[]^.GIT.DIR`, and the tempting `TYPE [^.GIT]HEAD.` form failed with `%RMS-E-DNF`. The current living guide therefore retains `[.^.GIT]...` as the validated syntax while preserving the original M301 observation as historical evidence.
