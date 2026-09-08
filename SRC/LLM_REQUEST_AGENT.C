@@ -11,6 +11,7 @@
 #include "LLM_AUTO.H"
 #include "LLM_LANGUAGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
+#include "LLM_M312_FINAL.INC"
 
 static char llm_agent_goal[LLM_AGENT_MODEL_GOAL_MAX];
 
@@ -283,13 +284,18 @@ int write_agent_final_request(
     const char *call_id,
     const char *tool_output)
 {
-    static const char instructions[] =
+    static const char base_instructions[] =
         "Produce the final answer now using only the evidence already gathered. "
         "Do not request, propose, or describe additional tool calls. "
         "State any remaining uncertainty explicitly. Do not claim to have "
         "inspected or changed anything not present in the supplied evidence.";
     FILE *file;
     char *effective_instructions;
+    char host_facts[256];
+    char instructions[1024];
+    unsigned int turns;
+    unsigned int tool_calls;
+    int written;
     int success;
 
     (void)previous_id;
@@ -310,6 +316,28 @@ int write_agent_final_request(
     }
 
     if (!llm_update_local_ctx(call_id, tool_output)) {
+        return 0;
+    }
+
+    turns = 0U;
+    tool_calls = 0U;
+    llm_auto_current_counts(&turns, &tool_calls);
+    if (!llm_m312_final_facts(
+            host_facts,
+            sizeof(host_facts),
+            turns,
+            tool_calls)) {
+        return 0;
+    }
+
+    written = snprintf(
+        instructions,
+        sizeof(instructions),
+        "%s %s",
+        base_instructions,
+        host_facts
+    );
+    if (written < 0 || (size_t)written >= sizeof(instructions)) {
         return 0;
     }
 

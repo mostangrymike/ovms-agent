@@ -4,6 +4,7 @@
 
 #include "llm_internal.h"
 #include "LLM_TOOL_REGISTRY.H"
+#include "LLM_M312_SEARCH.INC"
 
 static const llm_tool_descriptor tool_registry[] = {
     { "list_directory", LLM_TOOL_LIST_DIRECTORY, 1, 0, 0, 0 },
@@ -17,6 +18,123 @@ static const llm_tool_descriptor tool_registry[] = {
     { "build_source", LLM_TOOL_BUILD_SOURCE, 0, 0, 0, 1 },
     { NULL, 0, 0, 0, 0, 0 }
 };
+
+static char *llm_m312_search_file_tool(
+    const char *arguments,
+    char **display_path,
+    char **display_pattern)
+{
+    char *path;
+    char *pattern;
+    char *output;
+    FILE *file;
+    unsigned long total_matches;
+    unsigned long returned_matches;
+    int truncated;
+    size_t used;
+    int written;
+
+    *display_path = NULL;
+    *display_pattern = NULL;
+
+    path = extract_string_argument(arguments, "path");
+    pattern = extract_string_argument(arguments, "pattern");
+
+    if (path == NULL || pattern == NULL || *pattern == '\0') {
+        free(path);
+        free(pattern);
+        return make_tool_error(
+            "search_file requires valid path and pattern arguments",
+            NULL
+        );
+    }
+
+    *display_path = llm_duplicate_text(path);
+    *display_pattern = llm_duplicate_text(pattern);
+
+    if (!llm_path_is_safe(path)) {
+        output = make_tool_error(
+            "Unsafe or invalid project-relative path",
+            path
+        );
+        free(path);
+        free(pattern);
+        return output;
+    }
+
+    if (llm_path_is_sensitive(path)) {
+        output = make_tool_error(
+            "Access denied for sensitive path",
+            path
+        );
+        free(path);
+        free(pattern);
+        return output;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        output = make_tool_error("Unable to search file", path);
+        free(path);
+        free(pattern);
+        return output;
+    }
+
+    output = malloc(LLM_SEARCH_OUTPUT_LIMIT);
+    if (output == NULL) {
+        (void)fclose(file);
+        free(path);
+        free(pattern);
+        return make_tool_error("Insufficient memory for search", path);
+    }
+
+    total_matches = 0UL;
+    returned_matches = 0UL;
+    truncated = 0;
+
+    if (!llm_m312_search_stream(
+            file,
+            pattern,
+            output,
+            LLM_SEARCH_OUTPUT_LIMIT - LLM_M312_SUMMARY_RESERVE,
+            &total_matches,
+            &returned_matches,
+            &truncated)) {
+        (void)fclose(file);
+        free(output);
+        free(path);
+        free(pattern);
+        return make_tool_error("Unable to search file", NULL);
+    }
+
+    (void)fclose(file);
+
+    if (total_matches == 0UL) {
+        (void)strcpy(output, "No matching lines.\n");
+    }
+
+    used = strlen(output);
+    written = snprintf(
+        output + used,
+        LLM_SEARCH_OUTPUT_LIMIT - used,
+        "[search summary: total=%lu returned=%lu truncated=%s]\n",
+        total_matches,
+        returned_matches,
+        truncated ? "yes" : "no"
+    );
+
+    if (written < 0 ||
+        (size_t)written >= LLM_SEARCH_OUTPUT_LIMIT - used) {
+        free(output);
+        free(path);
+        free(pattern);
+        return make_tool_error("Unable to format search summary", NULL);
+    }
+
+    free(path);
+    free(pattern);
+    return output;
+}
 
 const llm_tool_descriptor *llm_tool_find(const char *name)
 {
@@ -137,7 +255,7 @@ char *llm_tool_execute_read(
 
         display_path = NULL;
         display_pattern = NULL;
-        tool_output = execute_search_file_tool(
+        tool_output = llm_m312_search_file_tool(
             arguments,
             &display_path,
             &display_pattern
