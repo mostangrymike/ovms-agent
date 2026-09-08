@@ -4,7 +4,7 @@
 
 #include "llm_internal.h"
 #include "LLM_TOOL_REGISTRY.H"
-#include "LLM_M312_REPORT.INC"
+#include "LLM_M312_SEARCH.INC"
 
 static const llm_tool_descriptor tool_registry[] = {
     { "list_directory", LLM_TOOL_LIST_DIRECTORY, 1, 0, 0, 0 },
