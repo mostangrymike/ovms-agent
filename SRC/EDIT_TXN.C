@@ -5,8 +5,6 @@
 #include "edit_txn.h"
 #include "rms_write.h"
 
-extern int fgetname(FILE *, char *);
-
 static unsigned int edit_txn_hold_serial = 0U;
 
 static int edit_txn_get_spec(
@@ -15,7 +13,7 @@ static int edit_txn_get_spec(
     size_t spec_size)
 {
     FILE *file;
-    int status;
+    char *resolved;
 
     if (path == NULL || spec == NULL || spec_size == 0U) {
         return 0;
@@ -26,10 +24,10 @@ static int edit_txn_get_spec(
         return 0;
     }
 
-    status = fgetname(file, spec);
+    resolved = fgetname(file, spec);
     (void)fclose(file);
 
-    if (status == 0) {
+    if (resolved == NULL) {
         return 0;
     }
 
