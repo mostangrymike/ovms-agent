@@ -1,6 +1,6 @@
 $!===========================================================
 $! BUILD_M289_NATIVE.COM
-$! Compile and run the M289 MACRO32 native-build executor regression.
+$! Compile and run guarded native build-source regressions.
 $! Native OpenVMS execution only.
 $!===========================================================
 $ SET NOON
@@ -15,11 +15,12 @@ $
 $ @BUILD_M289_PROFILE
 $ IF .NOT. $STATUS THEN GOTO FAILED
 $
+$! M316 wraps the accepted M289 executor without rewriting its source.
 $ CC/OBJECT=[.BUILD]M289_NATIVE_BUILD.OBJ -
 /STANDARD=RELAXED_ANSI89 -
 /INCLUDE=([.SRC]) -
 /PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
-[.SRC]M289_NATIVE_BUILD.C
+[.SRC]M316_NATIVE_BUILD.C
 $ IF .NOT. $STATUS THEN GOTO FAILED
 $
 $ CC/OBJECT=[.BUILD]M289_NATIVE_BUILD_TEST.OBJ -
@@ -35,12 +36,34 @@ $ LINK/EXECUTABLE=[.BUILD]M289_NATIVE_BUILD_TEST.EXE -
 [.BUILD]M289_BUILD_PROFILE.OBJ
 $ IF .NOT. $STATUS THEN GOTO FAILED
 $
+$ CC/OBJECT=[.BUILD]M316_DIAGNOSTIC_TEST.OBJ -
+/STANDARD=RELAXED_ANSI89 -
+/INCLUDE=([.SRC]) -
+/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES -
+[.SRC]M316_DIAGNOSTIC_TEST.C
+$ IF .NOT. $STATUS THEN GOTO FAILED
+$
+$ LINK/EXECUTABLE=[.BUILD]M316_DIAGNOSTIC_TEST.EXE -
+[.BUILD]M316_DIAGNOSTIC_TEST.OBJ, -
+[.BUILD]M289_NATIVE_BUILD.OBJ, -
+[.BUILD]M289_BUILD_PROFILE.OBJ
+$ IF .NOT. $STATUS THEN GOTO FAILED
+$
 $! M304 #213: run from a directory with no local LANGUAGE tree.  The shipped
 $! profile directory is supplied by the same launcher logical used by normal
 $! installed execution.
 $ SET DEFAULT [.BUILD]
 $ DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "''LANGUAGE_DIR'"
 $ RUN M289_NATIVE_BUILD_TEST.EXE
+$ RUN_STATUS = $STATUS
+$ IF .NOT. RUN_STATUS
+$ THEN
+$     FINAL_STATUS = RUN_STATUS
+$     GOTO FAILED_FINAL
+$ ENDIF
+$
+$ DEFINE/USER OVMS_AGENT_LANGUAGE_DIR "''LANGUAGE_DIR'"
+$ RUN M316_DIAGNOSTIC_TEST.EXE
 $ RUN_STATUS = $STATUS
 $ SET DEFAULT 'ORIGINAL_DEFAULT'
 $ IF .NOT. RUN_STATUS
@@ -51,11 +74,12 @@ $ ENDIF
 $
 $ WRITE SYS$OUTPUT "M304 external-root build profile regression passed."
 $ WRITE SYS$OUTPUT "M289 native build executor regression passed."
+$ WRITE SYS$OUTPUT "M316 compiler diagnostic normalization regression passed."
 $ EXIT 1
 $
 $ FAILED:
 $ FINAL_STATUS = $STATUS
 $ FAILED_FINAL:
 $ SET DEFAULT 'ORIGINAL_DEFAULT'
-$ WRITE SYS$ERROR "M289 native build executor regression failed."
+$ WRITE SYS$ERROR "M289/M316 native build regression failed."
 $ EXIT 'FINAL_STATUS'
