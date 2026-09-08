@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T12:36:00-05:00",
+  "updated_at": "2026-09-08T15:17:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "e61078faeec5c04f0bbce66426d63c92822c75f0",
-    "tree": "a85504f77304dcfa2de46870beee65cc095ea59f",
-    "latest_milestone": "M311",
-    "latest_code_milestone": "M311",
-    "latest_code_milestone_main": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
+    "main": "3b07119c93000d9b948724f3de3f5ed87cbd3135",
+    "tree": "a055004b8af1fe3bd0990add06946a3ca6fe44b5",
+    "latest_milestone": "M312",
+    "latest_code_milestone": "M312",
+    "latest_code_milestone_main": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 8,
+    "open_issues": 5,
     "open_prs": 0
   },
   "m301": {
@@ -122,7 +122,7 @@
     "result": "AGENT/PLAN now rejects provider-truncated output before structural classification, refuses incomplete progress-only/zero-operation planner responses unless explicitly advisory-only, and round-trips literal Markdown fence payloads with reversible two-backslash framing. Exact final candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
   "m310": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 255,
     "branch": "m310-saved-plan-lifecycle-execution",
     "baseline_main": "830e1c408bcdc306b29955a71f4e11d8bd34d68b",
@@ -149,11 +149,25 @@
     "closed_defects": [232],
     "result": "Transaction target identity now collapses redundant slash dot-components before uniqueness/staging decisions while preserving case-insensitive and leading-[] equivalence, unsafe-dotdot refusal, and distinct-target behavior. Canonical acceptance also corrected the C99-hidden native fgetname declaration and an implicit llm_set_approval declaration. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
   },
+  "m312": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 259,
+    "branch": "m312-tool-loop-search-reporting",
+    "baseline_main": "e61078faeec5c04f0bbce66426d63c92822c75f0",
+    "accepted_candidate": "0288e1233a20039841b15e24a2c5cf2899175083",
+    "accepted_tree": "5eddd25cb3bb4ef8c929d3fe43cdf1bec2ad4461",
+    "promoted_main": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
+    "post_milestone_docs_main": "3b07119c93000d9b948724f3de3f5ed87cbd3135",
+    "tag": "m312",
+    "pr": 260,
+    "closed_defects": [228, 229, 231],
+    "result": "Final synthesis now receives authoritative host tool-turn-limit facts and exact current turn/tool-call counters, while live search_file continues scanning after display truncation and reports deterministic total/returned/truncated summaries. The initial focused-green candidate exposed only production helper-include wiring diagnostics during full integration; two one-line direct includes corrected that without changing reporting semantics. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m310-saved-plan-lifecycle-execution", "m311-transaction-path-canonicalization"],
+    "retained_completed_target": ["m311-transaction-path-canonicalization", "m312-tool-loop-search-reporting"],
     "open_prs": 0,
-    "open_issues": 8,
+    "open_issues": 5,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
@@ -165,7 +179,8 @@
       "m306-external-tool-mcp-diagnostics",
       "m307-repair-portability-serialization",
       "m308-saved-plan-framing-capacity",
-      "m309-saved-plan-completion-markdown"
+      "m309-saved-plan-completion-markdown",
+      "m310-saved-plan-lifecycle-execution"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -180,19 +195,19 @@
       "m308": "3294e2004d1f3429ae7f348fb5970528170318e8",
       "m309": "cabfc6ec1ff4155d5946815f698d30e058cae744",
       "m310": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82",
-      "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71"
+      "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
+      "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M312 tool-loop/search reporting hardening",
+    "suggested": "M313 native DCL generation and repair hardening",
     "candidate_clusters": [
-      "tool-loop/search reporting: #228, #229, #231",
       "native DCL generation/repair quality: #197, #198, #199",
       "optional streaming completion: #179",
       "OpenVMS Git documentation correctness: #192"
     ],
-    "note": "Prefer the bounded tool-loop/search reporting cluster #228, #229, and #231 for M312; inspect exact live source and issue state before branching."
+    "note": "Prefer the bounded native DCL generation/repair cluster #197, #198, and #199 for M313; inspect exact live prompt/knowledge/repair source and issue state before branching."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
