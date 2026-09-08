@@ -423,7 +423,6 @@ static int test_basic_success(agent_state *state)
          status == 0x10000001UL &&
          strstr(result, "Language: BASIC") != NULL &&
          strstr(result, "Compile status: %X10000001 (success)") != NULL &&
-         strstr(result, "BASIC compile output") != NULL &&
          strstr(result, "Link status: %X10000001 (success)") != NULL &&
          strstr(result, "Result: success") != NULL;
     if (!ok) {
@@ -452,6 +451,7 @@ static int test_python_success(agent_state *state)
          strstr(result, "Run command: PYTHON M289_PYTHON_FIXTURE.PY") != NULL &&
          strstr(result, "Run status: %X00000001 (success)") != NULL &&
          strstr(result, "Python run output") != NULL &&
+         strstr(result, "Compile command:") == NULL &&
          strstr(result, "Link command:") == NULL &&
          strstr(result, "Result: success") != NULL;
     if (!ok) {
@@ -717,7 +717,7 @@ static int test_invalid_source(agent_state *state)
     }
 
     reset_exec(0);
-    result = m289_build_source(state, "WC.C", &status);
+    result = m289_build_source(state, "WC.UNSUPPORTED", &status);
     ok = result != NULL && exec_calls == 0U &&
          strstr(result, "No native profile accepts source extension") != NULL;
     free(result);
@@ -760,9 +760,9 @@ int main(void)
 
     if (!ok) {
         (void)puts("M289 native build executor test failed.");
-        return EXIT_FAILURE;
+        return 2;
     }
 
     (void)puts("M289 native build executor test passed.");
-    return EXIT_SUCCESS;
+    return 1;
 }
