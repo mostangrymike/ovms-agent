@@ -195,6 +195,92 @@ static char *llm_m309_read_response(void)
     return text;
 }
 
+static int llm_m309_response_has_text(
+    const char *json,
+    const char *plan_text)
+{
+    const unsigned char *cursor;
+    char *encoded;
+    char *output;
+    size_t length;
+    size_t capacity;
+    size_t used;
+    int result;
+
+    if (json == NULL || plan_text == NULL) {
+        return 0;
+    }
+
+    length = strlen(plan_text);
+    if (length > (SIZE_MAX - 3U) / 6U) {
+        return 0;
+    }
+    capacity = length * 6U + 3U;
+    encoded = (char *)malloc(capacity);
+    if (encoded == NULL) {
+        return 0;
+    }
+
+    output = encoded;
+    *output++ = '"';
+    used = 1U;
+    cursor = (const unsigned char *)plan_text;
+
+    while (*cursor != '\0') {
+        const char *escape;
+        char hex[7];
+        size_t escape_length;
+
+        escape = NULL;
+        escape_length = 0U;
+
+        if (*cursor == '"') {
+            escape = "\\\"";
+        } else if (*cursor == '\\') {
+            escape = "\\\\";
+        } else if (*cursor == '\b') {
+            escape = "\\b";
+        } else if (*cursor == '\f') {
+            escape = "\\f";
+        } else if (*cursor == '\n') {
+            escape = "\\n";
+        } else if (*cursor == '\r') {
+            escape = "\\r";
+        } else if (*cursor == '\t') {
+            escape = "\\t";
+        } else if (*cursor < 0x20U) {
+            (void)snprintf(hex, sizeof(hex), "\\u%04X",
+                           (unsigned int)*cursor);
+            escape = hex;
+        }
+
+        if (escape != NULL) {
+            escape_length = strlen(escape);
+            if (used + escape_length + 2U > capacity) {
+                free(encoded);
+                return 0;
+            }
+            (void)memcpy(output, escape, escape_length);
+            output += escape_length;
+            used += escape_length;
+        } else {
+            if (used + 3U > capacity) {
+                free(encoded);
+                return 0;
+            }
+            *output++ = (char)*cursor;
+            ++used;
+        }
+        ++cursor;
+    }
+
+    *output++ = '"';
+    *output = '\0';
+    result = strstr(json, encoded) != NULL;
+    free(encoded);
+    return result;
+}
+
 static long llm_m309_json_long(
     const char *json,
     const char *name)
@@ -236,7 +322,7 @@ static long llm_m309_json_long(
     return value;
 }
 
-static int llm_m309_response_state(void)
+static int llm_m309_response_state(const char *plan_text)
 {
     char *json;
     long output_tokens;
@@ -246,6 +332,11 @@ static int llm_m309_response_state(void)
 
     json = llm_m309_read_response();
     if (json == NULL) {
+        return 0;
+    }
+
+    if (!llm_m309_response_has_text(json, plan_text)) {
+        free(json);
         return 0;
     }
 
@@ -285,7 +376,7 @@ static int llm_m309_plan_save(
     int response_state;
 
     if (llm_last_workflow == LLM_WORKFLOW_PLAN) {
-        response_state = llm_m309_response_state();
+        response_state = llm_m309_response_state(plan_text);
         if (response_state < 0) {
             return 0;
         }
