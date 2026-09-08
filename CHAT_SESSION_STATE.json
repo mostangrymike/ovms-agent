@@ -1,12 +1,12 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T09:58:00-05:00",
+  "updated_at": "2026-09-08T10:06:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "cabfc6ec1ff4155d5946815f698d30e058cae744",
-    "tree": "fa245c997cd226526b9e034c87f4a6b028b808d5",
+    "main": "830e1c408bcdc306b29955a71f4e11d8bd34d68b",
+    "tree": "a292a97a8faaaadee6f4778f8f04ad8edbe7e401",
     "latest_milestone": "M309",
     "latest_code_milestone": "M309",
     "latest_code_milestone_main": "cabfc6ec1ff4155d5946815f698d30e058cae744",
@@ -115,10 +115,11 @@
     "accepted_candidate": "686aed3932f4c2e09d023e0b2b2af641f1b972b5",
     "accepted_tree": "fa245c997cd226526b9e034c87f4a6b028b808d5",
     "promoted_main": "cabfc6ec1ff4155d5946815f698d30e058cae744",
+    "post_milestone_docs_main": "830e1c408bcdc306b29955a71f4e11d8bd34d68b",
     "tag": "m309",
     "pr": 254,
     "closed_defects": [195, 196, 209],
-    "result": "AGENT/PLAN now rejects provider-truncated output before structural classification, refuses incomplete progress-only/zero-operation planner responses unless explicitly advisory-only, and round-trips literal Markdown fence payloads with reversible two-backslash framing. Exact final candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance."
+    "result": "AGENT/PLAN now rejects provider-truncated output before structural classification, refuses incomplete progress-only/zero-operation planner responses unless explicitly advisory-only, and round-trips literal Markdown fence payloads with reversible two-backslash framing. Exact final candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
