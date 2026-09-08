@@ -4,6 +4,8 @@ OVMS Agent is a native OpenVMS agentic programming assistant. Its architecture i
 
 The current canonical native acceptance host is **OpenVMS V9.2-3 x86-64**. Historical DEC C/VAX compatibility remains an explicit source/linker constraint where applicable.
 
+Current documentation is synchronized through **M315**. M315 is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs and passed exact promoted-SHA native acceptance.
+
 ## High-level structure
 
 OVMS Agent consists of:
@@ -58,9 +60,13 @@ The project/RMS layer handles:
 
 OpenVMS file versions are not treated as a Unix implementation detail. Where the observed Git port and RMS semantics conflict, OVMS Agent uses verified Git metadata plus RMS-aware materialization/comparison rather than assuming ordinary checkout/hash behavior is sufficient.
 
+M304 hardens project-root isolation against native OpenVMS parent/sibling traversal while preserving legitimate in-project filespecs and explicit RMS versions.
+
 ## Guarded writes and transactions
 
 Model text is not allowed to become arbitrary filesystem writes directly. The guarded architecture combines project/workspace scope, approval policy, the guarded-write gate, RMS-aware write primitives, confirmation, exact change accounting, and rollback/transaction mechanisms.
+
+M303 makes the current effective approval policy and the guarded-write/DCL gates authoritative at mutation/execution boundaries. Prior saved workflow state cannot silently override a later policy downgrade or disabled execution gate.
 
 ### Ordinary AGENT/WRITE existing-file behavior
 
@@ -71,6 +77,8 @@ M291 preserves a **one materialized existing-file write** invariant for ordinary
 This is one-file atomicity only. Cross-file all-or-rollback work belongs to `CHANGESET`/transaction machinery.
 
 Model-invoked `structured_patch` uses a local confirmation path before mutation. Language-specific structural guards remain separate concerns; do not infer that every structured patch automatically invokes every language guard.
+
+M305 routes direct PATCH replacement through the established RMS-safe replacement primitive rather than a raw byte-stream write. M311 canonicalizes redundant slash `.` components before transaction target-identity/uniqueness decisions while preserving unsafe `..` rejection and distinct-target behavior.
 
 ## LLM/provider layer
 
@@ -104,6 +112,8 @@ M294-M296 remain important compatibility evidence: Groq GPT-OSS, Groq Qwen, and 
 
 This is a pre-send transport decision, not a retry after a failed stream. A request is sent once through the selected mode, preserving the M290 no-duplicate-retry safety boundary.
 
+M314 fixes the optional SSE child-completion contract on OpenVMS by compiling the live transport wrapper with `_VMS_WAIT`. `pclose()` therefore returns the child image's OpenVMS completion code for the established status decoder: successful streamed responses do not produce a false post-response failure, while genuine child failures remain failures and are not retried through blocking transport.
+
 ## Settings and profile persistence
 
 Ordinary settings:
@@ -134,6 +144,12 @@ M289 added guarded `build_source` execution for one native source file using `LA
 
 `build_source` supplements rather than replaces a project's authoritative build procedure.
 
+### Saved-plan state and execution
+
+M308-M310 harden the persistent saved-plan path. Executable operations are parsed only from canonical plan framing; operation/payload capacity is bounded; literal control-looking payload lines and Markdown fences are reversibly escaped; provider-truncated or structurally incomplete plans fail closed; and zero-operation output must explicitly declare advisory-only mode.
+
+Saved-plan approval authority is invalidated when target currentness/fingerprint validation fails or a replacement plan is rejected. Ordered create-then-modify operations on the same target can be staged as one final transaction target, persisted workflow/build/rollback state is loaded before logging-triggered save paths can overwrite it with defaults, and the backward-compatible `build=required|skip` field controls only post-write build policy rather than weakening guarded-write, approval, currentness, transaction, or consumption checks.
+
 ## Language knowledge layer
 
 Shared language knowledge is data-driven. The launcher exposes `LANGUAGE/` through `OVMS_AGENT_LANGUAGE_DIR`; strong task/file evidence can load a bounded `<LANGUAGE>.MD` pack into request instructions. The guidance is explicitly subordinate to safety/evidence/approval/write policy.
@@ -157,11 +173,19 @@ Each individual platform pack is bounded to 8 KiB and the combined platform-know
 
 Platform guidance is explicitly subordinate to sandbox, safety, evidence, approval, write, network, and tool policy. It is guidance rather than proof: loading a Git/RMS/DCL pack is never evidence that a current ref, file, status, record format, logical name, or system state actually exists. Live inspection and native evidence remain authoritative.
 
+M313 ensures `.COM` prompts reliably select the OpenVMS DCL pack and strengthens native lifetime/status guidance around explicit failure control, immediate `$STATUS` capture, `READ/END_OF_FILE` channel lifetime, and `DEFINE/USER` next-image lifetime.
+
 ## Builds, repairs, and autonomous execution
 
 Build workflows capture native status and diagnostics. Repair workflows reason from captured failures, generate guarded candidates, protect required behavior, rebuild, and record history/artifacts.
 
+M307 makes repair-diagnostic discovery portable across supported native compiler facilities, safely resolves root-level/nested project targets, and consumes the executor's current structured multiline failed-operation serialization.
+
 Persistent `auto_turns`/`auto_writes` settings bound autonomous work. `AGENT/AUTOPILOT` adds a hard safety floor: it automates bounded local workspace repair/build behavior, cannot satisfy `FULL`, cannot silently authorize GitHub/PUSH/MCP/arbitrary-DCL work, consumes a cumulative budget, and stops in an explicit terminal state with human-review evidence.
+
+## Tool-loop and search reporting
+
+M312 gives final synthesis authoritative host facts at the configured tool-turn limit, including exact turn/tool-call counters. Search execution continues scanning after formatted output fills and reports true `total`, `returned`, and `truncated` values independently from display capacity.
 
 ## Symbol/refactoring subsystem
 
@@ -178,7 +202,9 @@ Git is used for repository context, milestone/ref management, history, and GitHu
 - Git index/ref metadata as a separate state that may require independent verification; and
 - exact-SHA native acceptance from tree-equivalent promotion.
 
-The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow. M298's `OPENVMS_GIT` knowledge pack can carry validated operating lessons into relevant AI requests, but it does not replace live Git/RMS inspection or make remembered state authoritative. Issue #192 tracks correction of RMS `.git` filespec examples that were rejected on the canonical host during M301 validation; those specific examples must be natively corrected before they are treated as current operating guidance.
+The observed OpenVMS Git port can return misleading/blank porcelain or update metadata without reconstructing physical RMS files. `DOC/OPENVMS_GIT_QUIRKS.MD` documents the accepted `FETCH_HEAD`, `read-tree`, `update-ref`, `symbolic-ref`, and `GIT_RESTORE` workflow. M298's `OPENVMS_GIT` knowledge pack can carry validated operating lessons into relevant AI requests, but it does not replace live Git/RMS inspection or make remembered state authoritative.
+
+M315 revalidated the ODS-5 literal `.git` syntax on the canonical host. `TYPE [.^.GIT]HEAD.` succeeds and the physical directory is visible as `[]^.GIT.DIR`; the tempting `TYPE [^.GIT]HEAD.` form fails with directory-not-found. The historical M301 `%DCL-W-DIRECT` observation remains part of the historical record but does not override this later controlled native evidence.
 
 M290/M291 hardening also keeps internal Git-status scratch files out of synthesized user status and preserves native/POSIX status semantics rather than trusting simple odd/even checks.
 

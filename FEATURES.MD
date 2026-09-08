@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M301**.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M315**. M315 itself is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs.
 
 ## Project inspection and context
 
@@ -77,6 +77,8 @@ When `streaming=ON`, SSE remains available only as an interactive presentation f
 
 This generic tool-bearing blocking rule supersedes the normal need for the M294-M296 provider/model-specific stream exception matrix. Those milestones established the compatibility evidence that motivated the policy change; M300 removes that matrix from the normal execution decision rather than retrying a failed stream.
 
+M314 hardens the optional SSE child-completion path on OpenVMS. The live transport wrapper uses `_VMS_WAIT`, so `pclose()` returns the child image's OpenVMS completion code for the established status decoder. Successful streamed assistant text no longer produces a false post-response transport failure, while a genuine child failure still fails without a blocking retry.
+
 ### Reasoning/output-budget exhaustion handling
 
 M297 hardens plain ASK response handling when a provider returns an incomplete response because `max_output_tokens` was reached before any assistant text was produced. Instead of falling through to the raw provider-response fallback, OVMS Agent emits a bounded diagnostic explaining the exhaustion condition, includes reported output/reasoning token counts when available, and suggests retrying with a larger output budget or a more constrained prompt. Normal successful responses and unrelated provider failures keep their existing behavior.
@@ -87,19 +89,35 @@ OVMS Agent can create and modify project files through guarded OpenVMS-aware pat
 
 After a successful automatic write, cached reads are invalidated so subsequent reads see the newest RMS version.
 
+### Authorization and project-root hardening
+
+M303 makes the current effective approval policy and the guarded-write/DCL gates authoritative at execution boundaries rather than allowing prior workflow state to bypass a later downgrade. M304 extends project-root isolation so model-facing file access cannot escape through OpenVMS parent/sibling traversal forms.
+
 ### Atomic ordinary AGENT/WRITE edits
 
 Ordinary `AGENT/WRITE` existing-file work preserves a one-materialized-write invariant. The advertised existing-file primitive is `structured_patch`: one action can contain multiple exact, non-overlapping hunks for one file and validates/previews/confirms them together before a single RMS write.
 
 The older `replace_text` / `replace_lines` primitives remain available to supervised `AGENT/FIX`; increasing `auto_writes` does not allow sequential existing-file patching in ordinary `AGENT/WRITE`.
 
-For coordinated cross-file work, use `CHANGESET`/transaction behavior rather than assuming one-file structured-patch atomicity spans files.
+For coordinated cross-file work, use `CHANGESET`/transaction behavior rather than assuming one-file structured-patch atomicity spans files. M311 additionally canonicalizes redundant slash `.` components for transaction target identity while preserving unsafe `..` rejection and distinct-target behavior.
+
+M305 reuses the RMS-safe replacement primitive for direct PATCH replacement so record-oriented OpenVMS text is not rewritten through an unsafe raw byte-stream path.
+
+## Saved plans and execution lifecycle
+
+M308-M310 harden the saved-plan path without changing its overall workflow model. Executable operations are confined to canonical plan framing, decoded operation/payload bounds are explicit, literal control-looking payload lines and Markdown fences round-trip safely, provider-truncated/incomplete planner output fails closed, and advisory-only plans must declare that mode explicitly.
+
+Saved-plan approval is invalidated when currentness/fingerprint validation discovers stale targets or a replacement plan is rejected. Ordered create-then-modify chains on one path are supported as one final transaction target, persisted workflow/build/rollback state is protected from fresh-process defaults, and the backward-compatible `build=required|skip` policy controls only the post-write build requirement rather than weakening write/currentness/approval checks.
 
 ## Build and repair support
 
 The repository/project build procedure remains authoritative. OVMS Agent can run controlled builds, preserve bounded failed-build evidence, reason from compiler/linker/test diagnostics, generate guarded repair candidates, rebuild, and retain repair history/results.
 
 Supervised repair can protect explicitly required behavior and reject a candidate that would remove required code-like goal terms unless removal/disablement was itself requested.
+
+M307 makes repair planning consume portable supported native diagnostics, resolves root-level and nested in-project targets safely, and consumes the executor's current structured multiline failed-operation serialization without losing escaped terminator lines.
+
+M313 strengthens OpenVMS DCL generation/repair guidance: `.COM` prompts reliably select the DCL knowledge pack; intentional failures require explicit failure control such as `SET NOON` before status capture; `READ/END_OF_FILE` channel lifetime and `DEFINE/USER` next-image lifetime are modeled explicitly; and cleanup edits are expected to follow observed native lifetime evidence rather than guesses.
 
 ## Guarded native source builds
 
@@ -134,6 +152,10 @@ Each platform pack is bounded to 8 KiB and the combined platform-knowledge budge
 
 Platform packs are guidance only. They cannot override sandbox, safety, evidence, approval, write, network, or tool policy, and loading a pack is never evidence that any current ref, file, status, record format, logical name, or system state actually exists. Provider-free regression coverage verifies positive topic detection, combined-topic behavior, false-positive suppression, actual pack injection, unchanged unrelated requests, and composition with the existing language layer.
 
+## Tool-loop and search reporting
+
+M312 gives final synthesis authoritative host facts when the tool-turn limit is reached and reports exact tool-turn/tool-call counters. The live `search_file` path continues scanning after display truncation and reports deterministic `total`, `returned`, and `truncated` values instead of confusing formatted-output capacity with the true match count.
+
 ## Git context and RMS integrity
 
 The Git/RMS engine treats GitHub/tree state, Git metadata, and physical RMS-visible files as separate evidence. It can compare committed content against current RMS versions without blindly asking Git to hash problematic multi-version files directly.
@@ -162,7 +184,7 @@ Guarded FETCH/PULL/PUSH require repository/profile matching; PUSH and service mu
 
 Because the observed OpenVMS Git port can return misleading/blank porcelain or update metadata without materializing RMS-visible files, the accepted workflow independently verifies `FETCH_HEAD`, `HEAD`, branch-ref files, index metadata, and physical files where relevant. `GIT_RESTORE.COM` provides the established RMS-aware tracked-file restore path.
 
-See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules. Issue #192 tracks a canonical-host correction to invalid RMS `.git` filespec examples discovered during M301 acceptance; do not copy those specific examples until that issue is resolved and natively validated.
+See `DOC/OPENVMS_GIT_QUIRKS.MD` for exact operating rules. M315 revalidated the current ODS-5 literal `.git` directory syntax on the canonical host: `TYPE [.^.GIT]HEAD.` succeeds, while the tempting `TYPE [^.GIT]HEAD.` form fails with directory-not-found. The historical M301 `%DCL-W-DIRECT` observation is retained as historical evidence, but it no longer represents the current operating rule.
 
 ## Safety controls
 
@@ -173,6 +195,8 @@ OVMS Agent combines approval policy, guarded-write and DCL gates, path/sensitive
 ## Sessions, plans, image input, and external tools
 
 The product also includes persistent sessions/transcripts/results, saved implementation plans and plan validation/execution, image input for read-only agent analysis, structured refactoring/symbol tools, MCP/external tool surfaces under approval policy, GitHub issue/PR service operations, and detailed repair-history reporting.
+
+M306 aligns external-tool/MCP diagnostics so the externally registered `mcp_call`, `github_git`, and `github_service` tools resolve through `AGENT/TOOLS/INFO`, and valid unknown MCP servers are distinguished from malformed CALL/EXEC syntax without weakening FULL-approval ordering.
 
 ## Compatibility
 

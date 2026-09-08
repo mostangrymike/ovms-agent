@@ -54,4 +54,8 @@ Acceptance evidence:
 
 Promotion PR #180 produced canonical main `18a78a656825f6eb0841c60e1f924fc027980659`, whose tree is exactly the accepted candidate tree. Permanent tag `m299` points to that promoted main commit.
 
-A separate pre-existing streaming completion-status defect discovered during M299 validation is tracked as issue #179 and is not part of the multiline-input implementation.
+A separate pre-existing streaming completion-status defect discovered during M299 validation was tracked as issue #179 and was not part of the multiline-input implementation.
+
+## Later resolution
+
+M314 later resolved #179 on the canonical OpenVMS host by making the optional SSE transport consume the child image's OpenVMS completion code through `_VMS_WAIT`. The M299 multiline behavior and acceptance evidence above remain unchanged.

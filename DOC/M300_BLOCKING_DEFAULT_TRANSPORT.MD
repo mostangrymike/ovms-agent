@@ -85,4 +85,8 @@ This establishes the source/runtime shape before the HELP/living-document layer.
 
 ## Issue #179 boundary
 
-M300 intentionally makes #179 non-impacting to default operation by making blocking the default. It does not declare #179 fixed unless the optional streaming live gate proves the child-completion/status defect is actually corrected. If `streaming=ON` still reproduces #179, M300 may still satisfy its default-transport goal while #179 remains open for the optional path, subject to the final acceptance decision recorded in issue #182.
+M300 intentionally made #179 non-impacting to default operation by making blocking the default. It did not declare #179 fixed unless the optional streaming live gate proved the child-completion/status defect was actually corrected. At M300 completion, #179 therefore remained separate from the default-transport milestone.
+
+## Later resolution
+
+M314 later fixed #179 on the optional streaming path by compiling the live OpenVMS transport wrapper with `_VMS_WAIT`, so `pclose()` returns the child image's OpenVMS completion code for the established status decoder. The M300 blocking-default/tool-bearing-blocking policy remains unchanged.

@@ -5,11 +5,14 @@ OVMS Agent is a native agentic programming assistant for OpenVMS. It brings mode
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M301`
+- **Latest promoted milestone:** `M315`
+- **Latest native-green code milestone:** `M314`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
 - **License:** MIT
+
+M315 is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs and passed exact promoted-SHA native acceptance.
 
 Historical VAX/DEC C compatibility remains an intentional source constraint where it affects external identifiers, C89-era syntax, or linker behavior; it is not the current canonical acceptance host.
 
@@ -40,6 +43,7 @@ OVMS Agent currently provides:
 - guarded file creation and modification with OpenVMS RMS-aware behavior;
 - atomic multi-hunk `structured_patch` editing for ordinary `AGENT/WRITE` existing-file changes;
 - transactional multi-file change sets and rollback-oriented repair workflows;
+- hardened saved-plan framing, currentness, approval, lifecycle, and create-then-modify execution;
 - project builds and captured build diagnostics;
 - guarded native `build_source` execution using language-specific toolchain profiles;
 - Git-aware project context and RMS-safe status/diff handling;
@@ -48,6 +52,7 @@ OVMS Agent currently provides:
 - provider-neutral support for direct providers and OpenAI-compatible intermediaries such as Requesty;
 - `PROVIDER TEST` / `PROVIDER TEST name` response-health diagnostics;
 - bounded blocking provider transport by default, with optional interactive SSE presentation for eligible non-tool text requests;
+- native OpenVMS streaming child-completion handling that avoids false post-response failures while preserving no-duplicate-retry safety;
 - bounded autonomous execution and AUTOPILOT safety controls;
 - image input and external/MCP tool integration under approval controls; and
 - native-validated language and platform guidance.
@@ -170,6 +175,8 @@ SETTINGS TOGGLE streaming
 
 Even when `streaming=ON`, a serialized request containing tool definitions is sent through the bounded blocking transport. This generic rule supersedes the normal need for the M294-M296 provider/model-specific stream exception matrix. Optional SSE therefore applies only to otherwise eligible interactive non-tool text presentation, and noninteractive/plain-output operation remains blocking. `AGENT/PLAN` also remains non-incremental because its completed plan has persistence semantics.
 
+M314 hardens the optional SSE path on OpenVMS by compiling the live transport wrapper with `_VMS_WAIT`, allowing `pclose()` to return the child image's OpenVMS completion code. Successful streamed responses no longer produce a false post-response transport failure; genuine streaming-child failures still fail without a blocking retry.
+
 Provider keys are entered without terminal echo, masked in normal output, and kept outside the repository.
 
 ## Guarded OpenVMS editing
@@ -187,6 +194,8 @@ This tool supplements rather than replaces a project's normal `BUILD.COM` or equ
 ## Git and GitHub on OpenVMS
 
 OpenVMS Git is treated as RMS-sensitive. GitHub branch content is the repository source of truth, while RMS-visible files and native build/runtime behavior are acceptance truth. Do not rely on porcelain/ref output or `$STATUS` alone when `.git` control files or physical RMS files can verify the fact directly. See `DOC/OPENVMS_GIT_QUIRKS.MD`.
+
+M315 revalidated the current ODS-5 RMS filespec for the literal `.git` directory on the canonical host: forms such as `TYPE [.^.GIT]HEAD.` are valid, while the tempting `TYPE [^.GIT]HEAD.` form fails with directory-not-found. Preserve the escaped `[.^.GIT]` form documented in the operating guide.
 
 Authenticated raw Git uses `GITAUTH`. Operator-facing:
 
