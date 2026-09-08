@@ -73,7 +73,7 @@
  the current process.
 
  Saved settings normally come from SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT.  A
- defined legacy logical takes precedence for settings that has one.  SETTINGS
+ defined legacy logical takes precedence for settings that have one.  SETTINGS
  shows the effective source and warns when a saved value is changed while a
  legacy logical still overrides it.  streaming has no enable logical; defining
  OVMS_AGENT_NOSTREAM only forces blocking transport and does not become the
