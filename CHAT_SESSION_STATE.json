@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T15:17:00-05:00",
+  "updated_at": "2026-09-08T16:02:28-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "3b07119c93000d9b948724f3de3f5ed87cbd3135",
-    "tree": "a055004b8af1fe3bd0990add06946a3ca6fe44b5",
-    "latest_milestone": "M312",
-    "latest_code_milestone": "M312",
-    "latest_code_milestone_main": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
+    "main": "e2fc4fe6e228dff7c91e451b5a08a77adab7620f",
+    "tree": "fba69d8b4ee804610d29d386e3d567d1e25bb2f9",
+    "latest_milestone": "M313",
+    "latest_code_milestone": "M313",
+    "latest_code_milestone_main": "85ea038458596e6dd9435a209a11535e1cc99620",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 5,
+    "open_issues": 2,
     "open_prs": 0
   },
   "m301": {
@@ -136,7 +136,7 @@
     "result": "M310 invalidates stale/rejected-replacement saved-plan approval authority, preserves durable state before logging-triggered saves, supports ordered create-then-modify chains as one final staged target, and adds backward-compatible build=required|skip execution policy. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
   "m311": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 257,
     "branch": "m311-transaction-path-canonicalization",
     "baseline_main": "4a0734f921003b1fc983699367ad2cc257985709",
@@ -163,11 +163,25 @@
     "closed_defects": [228, 229, 231],
     "result": "Final synthesis now receives authoritative host tool-turn-limit facts and exact current turn/tool-call counters, while live search_file continues scanning after display truncation and reports deterministic total/returned/truncated summaries. The initial focused-green candidate exposed only production helper-include wiring diagnostics during full integration; two one-line direct includes corrected that without changing reporting semantics. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
   },
+  "m313": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 261,
+    "branch": "m313-native-dcl-generation-repair",
+    "baseline_main": "3b07119c93000d9b948724f3de3f5ed87cbd3135",
+    "accepted_candidate": "766e0fac5a8909bae9c613967ca5040e1720e47d",
+    "accepted_tree": "e07e748e49651064672250d749f86c2f838b7edd",
+    "promoted_main": "85ea038458596e6dd9435a209a11535e1cc99620",
+    "post_milestone_docs_main": "e2fc4fe6e228dff7c91e451b5a08a77adab7620f",
+    "tag": "m313",
+    "pr": 262,
+    "closed_defects": [197, 198, 199],
+    "result": "M313 makes .COM prompts reliably select OpenVMS DCL platform knowledge and strengthens provider-neutral DCL generation/repair guidance for explicit SET NOON status handling, READ/END_OF_FILE channel lifetime, DEFINE/USER next-image SYS$OUTPUT lifetime, and evidence-backed cleanup tracing. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m311-transaction-path-canonicalization", "m312-tool-loop-search-reporting"],
+    "retained_completed_target": ["m312-tool-loop-search-reporting", "m313-native-dcl-generation-repair"],
     "open_prs": 0,
-    "open_issues": 5,
+    "open_issues": 2,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
@@ -180,7 +194,8 @@
       "m307-repair-portability-serialization",
       "m308-saved-plan-framing-capacity",
       "m309-saved-plan-completion-markdown",
-      "m310-saved-plan-lifecycle-execution"
+      "m310-saved-plan-lifecycle-execution",
+      "m311-transaction-path-canonicalization"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -196,18 +211,18 @@
       "m309": "cabfc6ec1ff4155d5946815f698d30e058cae744",
       "m310": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82",
       "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
-      "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2"
+      "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
+      "m313": "85ea038458596e6dd9435a209a11535e1cc99620"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M313 native DCL generation and repair hardening",
+    "suggested": "M314 optional streaming completion-status hardening",
     "candidate_clusters": [
-      "native DCL generation/repair quality: #197, #198, #199",
-      "optional streaming completion: #179",
+      "optional streaming completion/status defect: #179",
       "OpenVMS Git documentation correctness: #192"
     ],
-    "note": "Prefer the bounded native DCL generation/repair cluster #197, #198, and #199 for M313; inspect exact live prompt/knowledge/repair source and issue state before branching."
+    "note": "M313 closes the remaining M302-derived native DCL generation/repair cluster. Prefer #179 as the remaining product/runtime defect for M314; keep #192 as a separate documentation/native-operating-guide correction requiring exact host evidence before editing guidance."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
