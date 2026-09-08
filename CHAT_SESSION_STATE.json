@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T11:40:00-05:00",
+  "updated_at": "2026-09-08T12:36:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "4a0734f921003b1fc983699367ad2cc257985709",
-    "tree": "3da5b8cb21268cc98d80cb60765a08d4a6133e27",
-    "latest_milestone": "M310",
-    "latest_code_milestone": "M310",
-    "latest_code_milestone_main": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82",
+    "main": "e61078faeec5c04f0bbce66426d63c92822c75f0",
+    "tree": "a85504f77304dcfa2de46870beee65cc095ea59f",
+    "latest_milestone": "M311",
+    "latest_code_milestone": "M311",
+    "latest_code_milestone_main": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 9,
+    "open_issues": 8,
     "open_prs": 0
   },
   "m301": {
@@ -108,7 +108,7 @@
     "result": "Saved-plan execution now parses executable grammar only in the canonical [plan] region, distinguishes over-capacity plans from malformed framing, reversibly escapes literal reserved control-marker lines in OLD/NEW payloads, and documents/enforces the 32-operation and 4094-byte decoded payload limits. Exact final candidate and exact promoted merge SHA both passed focused and full canonical OpenVMS acceptance."
   },
   "m309": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 251,
     "branch": "m309-saved-plan-completion-markdown",
     "baseline_main": "3294e2004d1f3429ae7f348fb5970528170318e8",
@@ -135,11 +135,25 @@
     "closed_defects": [200, 202, 233, 235],
     "result": "M310 invalidates stale/rejected-replacement saved-plan approval authority, preserves durable state before logging-triggered saves, supports ordered create-then-modify chains as one final staged target, and adds backward-compatible build=required|skip execution policy. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
+  "m311": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 257,
+    "branch": "m311-transaction-path-canonicalization",
+    "baseline_main": "4a0734f921003b1fc983699367ad2cc257985709",
+    "accepted_candidate": "0f37b47256f23a7ad15c7efad96cbb26db6fdb3c",
+    "accepted_tree": "c54162cdcb1600c9503fac9eaf19724c25a9660e",
+    "promoted_main": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
+    "post_milestone_docs_main": "e61078faeec5c04f0bbce66426d63c92822c75f0",
+    "tag": "m311",
+    "pr": 258,
+    "closed_defects": [232],
+    "result": "Transaction target identity now collapses redundant slash dot-components before uniqueness/staging decisions while preserving case-insensitive and leading-[] equivalence, unsafe-dotdot refusal, and distinct-target behavior. Canonical acceptance also corrected the C99-hidden native fgetname declaration and an implicit llm_set_approval declaration. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m309-saved-plan-completion-markdown", "m310-saved-plan-lifecycle-execution"],
+    "retained_completed_target": ["m310-saved-plan-lifecycle-execution", "m311-transaction-path-canonicalization"],
     "open_prs": 0,
-    "open_issues": 9,
+    "open_issues": 8,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
@@ -150,7 +164,8 @@
       "m305-rms-safe-direct-patch",
       "m306-external-tool-mcp-diagnostics",
       "m307-repair-portability-serialization",
-      "m308-saved-plan-framing-capacity"
+      "m308-saved-plan-framing-capacity",
+      "m309-saved-plan-completion-markdown"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -164,20 +179,20 @@
       "m307": "3fea2a2506e79176981f16eef7af7ee28cbed487",
       "m308": "3294e2004d1f3429ae7f348fb5970528170318e8",
       "m309": "cabfc6ec1ff4155d5946815f698d30e058cae744",
-      "m310": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82"
+      "m310": "539824ddc888eb7ec6f3c4de7c07415b9d78ca82",
+      "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M311 transaction/path canonicalization hardening",
+    "suggested": "M312 tool-loop/search reporting hardening",
     "candidate_clusters": [
-      "transaction/path canonicalization: #232",
       "tool-loop/search reporting: #228, #229, #231",
       "native DCL generation/repair quality: #197, #198, #199",
       "optional streaming completion: #179",
       "OpenVMS Git documentation correctness: #192"
     ],
-    "note": "Prefer the bounded transaction/path canonicalization defect #232 for M311; inspect exact live source and issue state before branching."
+    "note": "Prefer the bounded tool-loop/search reporting cluster #228, #229, and #231 for M312; inspect exact live source and issue state before branching."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
