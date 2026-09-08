@@ -1,4 +1,5 @@
 #include "LLM_EXECUTE_M310_CHAIN.INC"
+#include "LLM_EXECUTE_M310_POLICY.INC"
 
 int llm_exec_dry_validate(
     const char *operations_path,
