@@ -1,0 +1,9 @@
+language=C
+extensions=.C
+kind=compiled
+compile_command=CC {compile_options} {source}
+compile_options=
+link_command=LINK {link_options} {object}
+link_options=
+object_extension=.OBJ
+executable_extension=.EXE
