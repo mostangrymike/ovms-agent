@@ -207,33 +207,64 @@ static int edit_txn_file_exists(const char *path)
     return 1;
 }
 
-static int edit_txn_path_equal(const char *left, const char *right)
+static int edit_txn_identity(
+    const char *path,
+    char *identity,
+    size_t identity_size)
 {
-    unsigned char left_char;
-    unsigned char right_char;
+    const char *cursor;
+    size_t used;
+    int component_start;
 
-    if (left == NULL || right == NULL) {
+    if (path == NULL || identity == NULL || identity_size == 0U) {
         return 0;
     }
 
-    if (left[0] == '[' && left[1] == ']') {
-        left += 2;
-    }
-    if (right[0] == '[' && right[1] == ']') {
-        right += 2;
+    cursor = path;
+    if (cursor[0] == '[' && cursor[1] == ']') {
+        cursor += 2;
     }
 
-    while (*left != '\0' && *right != '\0') {
-        left_char = (unsigned char)*left;
-        right_char = (unsigned char)*right;
-        if (toupper(left_char) != toupper(right_char)) {
+    used = 0U;
+    component_start = 1;
+
+    while (*cursor != '\0') {
+        if (component_start && cursor[0] == '.' &&
+            (cursor[1] == '/' || cursor[1] == '\0')) {
+            if (cursor[1] == '/') {
+                cursor += 2;
+                component_start = 1;
+            } else {
+                ++cursor;
+            }
+            continue;
+        }
+
+        if (used + 1U >= identity_size) {
             return 0;
         }
-        ++left;
-        ++right;
+
+        identity[used++] =
+            (char)toupper((unsigned char)*cursor);
+        component_start = *cursor == '/';
+        ++cursor;
     }
 
-    return *left == '\0' && *right == '\0';
+    identity[used] = '\0';
+    return 1;
+}
+
+static int edit_txn_path_equal(const char *left, const char *right)
+{
+    char left_identity[EDIT_TXN_PATH_SIZE];
+    char right_identity[EDIT_TXN_PATH_SIZE];
+
+    if (!edit_txn_identity(left, left_identity, sizeof(left_identity)) ||
+        !edit_txn_identity(right, right_identity, sizeof(right_identity))) {
+        return 0;
+    }
+
+    return strcmp(left_identity, right_identity) == 0;
 }
 
 static int edit_txn_find(const edit_txn *transaction, const char *path)
