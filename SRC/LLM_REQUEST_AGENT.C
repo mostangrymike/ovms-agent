@@ -11,7 +11,7 @@
 #include "LLM_AUTO.H"
 #include "LLM_LANGUAGE.H"
 #include "LLM_REQUEST_LIMIT.INC"
-#include "LLM_M312_REPORT.INC"
+#include "LLM_M312_FINAL.INC"
 
 static char llm_agent_goal[LLM_AGENT_MODEL_GOAL_MAX];
 
