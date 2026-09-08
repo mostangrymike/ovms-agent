@@ -17,6 +17,18 @@
 #undef llm_auto_allow_write
 #undef llm_auto_finish
 
+void llm_auto_current_counts(
+    unsigned int *turns,
+    unsigned int *tool_calls)
+{
+    if (turns != NULL) {
+        *turns = llm_auto_cur_turns;
+    }
+    if (tool_calls != NULL) {
+        *tool_calls = llm_auto_cur_tools;
+    }
+}
+
 #include "LLM_AUTO_M291.INC"
 #include "LLM_AUTOPILOT_AUTO.INC"
 #include "LLM_AUTO_CREATE_M279.INC"
