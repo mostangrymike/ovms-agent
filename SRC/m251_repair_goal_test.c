@@ -19,6 +19,7 @@ int llm_last_build_known = 0;
 int llm_last_build_status = 0;
 unsigned long llm_approved_hash = 0UL;
 int llm_plan_approved = 0;
+int llm_approval_invalidated = 0;
 
 const char *llm_workflow_name()
 {
