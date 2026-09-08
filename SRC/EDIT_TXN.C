@@ -5,6 +5,8 @@
 #include "edit_txn.h"
 #include "rms_write.h"
 
+extern char *fgetname(FILE *, char *, ...);
+
 static unsigned int edit_txn_hold_serial = 0U;
 
 static int edit_txn_get_spec(
