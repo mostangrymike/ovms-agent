@@ -6,7 +6,20 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M310 below.
+No additional user-visible product changes are currently recorded beyond M311 below.
+
+## M311 — Transaction path canonicalization hardening
+
+Tag: `m311`
+
+- Hardened transaction target identity so redundant slash `.` components are canonicalized before uniqueness/staging decisions, causing aliases such as `FILE.DAT`, `./FILE.DAT`, `././FILE.DAT`, and `SUBDIR/./FILE.DAT` to fail closed as one physical target instead of staging duplicate transaction entries.
+- Preserved the existing case-insensitive and leading-`[]` alias equivalence while deliberately leaving unsafe `..` forms rejected by the existing path-validity/project-root rules; distinct paths continue to stage independently.
+- Added direct production transaction regression coverage for leading, repeated, and nested redundant-dot aliases, alias rejection through `edit_txn_add()`, distinct-target controls, and existing unsafe-path refusal.
+- During canonical integration acceptance, corrected the OpenVMS `/STANDARD=C99` `fgetname()` declaration to the native pointer-returning compatible form and made the M140 validation include declare `llm_set_approval()` explicitly, preserving the no-implicit-functions source rule without changing M311 transaction semantics.
+- `OVMS_AGENT.HLP` is intentionally unchanged because M311 modifies internal transaction identity/fail-closed behavior rather than user-visible command syntax or SETTINGS behavior.
+- Exact accepted candidate `0f37b47256f23a7ad15c7efad96cbb26db6fdb3c` (tree `c54162cdcb1600c9503fac9eaf19724c25a9660e`) passed focused M311 regression, full canonical OpenVMS `@BUILD`, and focused rerun with `%X00000001`.
+- Promotion PR #258 produced main `5f1ef4d8e29984b7279a92a7e80288ac9d971d71` with the exact same tree; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance before M311 was declared complete.
+- Closed defect #232 plus milestone tracker #257. Permanent tag `m311` resolves directly to the exact promoted native-green merge commit.
 
 ## M310 — Saved-plan lifecycle and execution hardening
 
@@ -193,7 +206,7 @@ Tag: `m295`
 - Kept non-tool Qwen traffic, other Qwen models, and non-Groq Qwen endpoints on the existing streaming decision.
 - Added deterministic selector coverage for the exact Qwen model, non-tool requests, another Qwen model, and a non-Groq endpoint.
 - Native exact source head `909a3c86b6028c16f1c489d3e2def208845449a1` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
-- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second write materialized.
+- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second RMS write materialized.
 - #124 remains separate reasoning/output-budget work; #123 remains separate OpenRouter/free compatibility work.
 
 ## M294 — Groq GPT-OSS tool transport compatibility
