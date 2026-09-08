@@ -6,7 +6,20 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M311 below.
+No additional user-visible product changes are currently recorded beyond M312 below.
+
+## M312 — Tool-loop and search reporting hardening
+
+Tag: `m312`
+
+- Made tool-turn-limit final synthesis receive authoritative host execution facts, including `limit_reached=yes`, exact model/tool turn count, and exact tool-call count, so the final response does not have to infer boundary state from visible history.
+- Reworked the live `search_file` dispatch path to continue scanning after its display buffer fills, preserving the true total match count independently from the subset of formatted matches returned to the model.
+- Added deterministic search summaries with `total`, `returned`, and `truncated` fields, including explicit `total=0` / `returned=0` behavior for no-match searches, while preserving existing safe-path and sensitive-path refusal checks.
+- Kept configured turn/write limits, stop conditions, provider-neutral behavior, and the ordinary non-limit final-answer path unchanged; `OVMS_AGENT.HLP` is intentionally unchanged because no command or SETTINGS syntax changed.
+- Added focused M312 regression coverage for authoritative 32-call boundary facts and high-match-count search truncation/counting. Canonical integration initially exposed only helper-include wiring diagnostics; those were corrected with two one-line direct include changes without changing M312 reporting semantics.
+- Exact accepted candidate `0288e1233a20039841b15e24a2c5cf2899175083` (tree `5eddd25cb3bb4ef8c929d3fe43cdf1bec2ad4461`) passed full canonical OpenVMS `@BUILD` plus focused M312 rerun with `%X00000001`.
+- Promotion PR #260 produced main `6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2` with the exact same tree; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance before M312 was declared complete.
+- Closed defects #228, #229, and #231 plus milestone tracker #259. Permanent tag `m312` resolves directly to the exact promoted native-green merge commit.
 
 ## M311 — Transaction path canonicalization hardening
 
