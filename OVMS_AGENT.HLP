@@ -1530,3 +1530,20 @@
  Saved-plan execution interprets structured operation grammar only from the
  canonical [plan] region.  Reserved-looking text in [goal] or other saved
  metadata does not become executable syntax.
+
+ M309 requires a complete AGENT/PLAN result before persistence.  Progress-only
+ text, missing required planner headings, or other incomplete planner output is
+ refused and does not replace a previously valid saved plan.
+
+ When the current provider response explicitly reports that max_output_tokens
+ was exhausted, AGENT/PLAN refuses the response before downstream structured
+ marker validation and reports bounded retry guidance.
+
+ An intentional non-executable no-change plan uses the explicit line
+ Plan mode: advisory-only and still includes all required planner headings.
+ Arbitrary zero-operation progress prose is not a valid saved plan.
+
+ Literal Markdown fence lines are representable inside OLD and NEW payloads.
+ The planner adds two framing backslashes immediately before the fence syntax;
+ the executor removes exactly those two framing backslashes so indentation,
+ fence text, and any real source-leading backslashes round-trip exactly.
