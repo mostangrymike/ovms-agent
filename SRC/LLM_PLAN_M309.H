@@ -154,42 +154,116 @@ static int llm_m309_plan_complete(const char *plan_text)
     return saw_count || saw_advisory;
 }
 
-static int llm_m309_response_state(const char *plan_text)
+static char *llm_m309_read_response(void)
+{
+    FILE *file;
+    long length;
+    size_t count;
+    char *text;
+
+    file = fopen(LLM_RESPONSE_FILE, "r");
+    if (file == NULL) {
+        return NULL;
+    }
+
+    if (fseek(file, 0L, SEEK_END) != 0) {
+        (void)fclose(file);
+        return NULL;
+    }
+
+    length = ftell(file);
+    if (length < 0L ||
+        length > 262144L ||
+        fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return NULL;
+    }
+
+    text = (char *)malloc((size_t)length + 1U);
+    if (text == NULL) {
+        (void)fclose(file);
+        return NULL;
+    }
+
+    count = fread(text, 1U, (size_t)length, file);
+    if (fclose(file) != 0 || count != (size_t)length) {
+        free(text);
+        return NULL;
+    }
+
+    text[count] = '\0';
+    return text;
+}
+
+static long llm_m309_json_long(
+    const char *json,
+    const char *name)
+{
+    const char *position;
+    char pattern[64];
+    char *end;
+    long value;
+    int count;
+
+    if (json == NULL || name == NULL) {
+        return 0L;
+    }
+
+    count = snprintf(
+        pattern,
+        sizeof(pattern),
+        "\"%s\":",
+        name);
+    if (count <= 0 || (size_t)count >= sizeof(pattern)) {
+        return 0L;
+    }
+
+    position = strstr(json, pattern);
+    if (position == NULL) {
+        return 0L;
+    }
+
+    position += strlen(pattern);
+    while (*position == ' ' || *position == '\t') {
+        ++position;
+    }
+
+    value = strtol(position, &end, 10);
+    if (end == position || value < 0L) {
+        return 0L;
+    }
+
+    return value;
+}
+
+static int llm_m309_response_state(void)
 {
     char *json;
-    char *response_text;
     long output_tokens;
     long reasoning_tokens;
-    int exhausted;
-    int state;
+    int incomplete;
+    int completed;
 
-    json = read_entire_file(LLM_RESPONSE_FILE, NULL);
+    json = llm_m309_read_response();
     if (json == NULL) {
         return 0;
     }
 
-    response_text = extract_output_text_from_json(json);
-    if (response_text == NULL ||
-        plan_text == NULL ||
-        strcmp(response_text, plan_text) != 0) {
-        free(response_text);
+    incomplete =
+        strstr(json, "\"status\":\"incomplete\"") != NULL &&
+        strstr(json, "\"incomplete_details\"") != NULL &&
+        strstr(json, "\"reason\":\"max_output_tokens\"") != NULL;
+    completed =
+        strstr(json, "\"status\":\"completed\"") != NULL;
+
+    if (!incomplete) {
         free(json);
-        return 0;
+        return completed ? 1 : 0;
     }
-    free(response_text);
 
-    output_tokens = 0L;
-    reasoning_tokens = 0L;
-    exhausted = llm_response_token_exhausted(
-        json,
-        &output_tokens,
-        &reasoning_tokens);
+    output_tokens = llm_m309_json_long(json, "output_tokens");
+    reasoning_tokens = llm_m309_json_long(json, "reasoning_tokens");
     free(json);
-
-    state = exhausted ? -1 : 1;
-    if (state > 0) {
-        return state;
-    }
 
     (void)puts(
         "Implementation plan was not saved because the provider response "
@@ -201,7 +275,7 @@ static int llm_m309_response_state(const char *plan_text)
             output_tokens,
             reasoning_tokens);
     }
-    return state;
+    return -1;
 }
 
 static int llm_m309_plan_save(
@@ -211,7 +285,7 @@ static int llm_m309_plan_save(
     int response_state;
 
     if (llm_last_workflow == LLM_WORKFLOW_PLAN) {
-        response_state = llm_m309_response_state(plan_text);
+        response_state = llm_m309_response_state();
         if (response_state < 0) {
             return 0;
         }
