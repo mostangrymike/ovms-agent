@@ -260,7 +260,6 @@ static char *llm_read_text_file(const char *path)
 }
 
 #include "LLM_EXECUTE_M310_CHAIN.INC"
-#undef execute_stage_operations_chained
 
 void llm_log_event(const char *workflow, const char *event, int status);
 void llm_plan_recovery_sync(const char *path);
@@ -280,6 +279,7 @@ int edit_txn_commit(edit_txn *transaction);
 void llm_state_save(void);
 
 #include "LLM_EXECUTE_M310_POLICY.INC"
+#undef execute_stage_operations_chained
 #undef llm_plan_execute
 
 static int execute_plan_recover(void) { return 1; }
