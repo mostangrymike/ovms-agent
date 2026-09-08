@@ -57,7 +57,7 @@ int command_dcl_exec(agent_state *state,
                "%SYSTEM-F-ABORT, abort\n";
     } else if (strncmp(command, "PYTHON ", 7U) == 0) {
         *status_out = 0x1035A00AUL;
-        text = "  File \"/SYS$SYSDEVICE/MIKE/OVMS_AGENT/M316_BAD.PY\", line 2\n"
+        text = "  File \"/SYS$SYSDEVICE/MIKE/OVMS_AGENT/BUILD/M316_BAD.PY\", line 2\n"
                "    value =\n"
                "           ^\n"
                "SyntaxError: invalid syntax\n";
@@ -225,7 +225,7 @@ static int test_python_failure(agent_state *state)
          status == 0x1035A00AUL &&
          m316_has(result, "Run status: %X1035A00A (failure)") &&
          m316_has(result, "language=PYTHON phase=run severity=E facility=PYTHON id=SYNTAX") &&
-         m316_has(result, "file=/SYS$SYSDEVICE/MIKE/OVMS_AGENT/M316_BAD.PY line=2 column=0 message=invalid syntax");
+         m316_has(result, "file=/SYS$SYSDEVICE/MIKE/OVMS_AGENT/BUILD/M316_BAD.PY line=2 column=0 message=invalid syntax");
     if (!ok) {
         (void)printf("M316 failed: Python normalization.\n%s\n",
                      result != NULL ? result : "<null>");
