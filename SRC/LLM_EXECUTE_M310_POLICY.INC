@@ -1,3 +1,4 @@
+int llm_set_approval(const char *arguments);
 static int execute_plan_recover(void);
 static int execute_mark_consumed_safe(void);
 void llm_m310_execute_legacy(agent_state *state);
