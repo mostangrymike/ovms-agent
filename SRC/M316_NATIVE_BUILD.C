@@ -292,6 +292,7 @@ static int m316_embedded_location(char *message, m316_diag *diag)
     const char *column_colon;
     const char *line_colon;
     const char *message_start;
+    size_t message_length;
     unsigned int index;
     unsigned int line_value;
     unsigned int column_value;
@@ -326,9 +327,12 @@ static int m316_embedded_location(char *message, m316_diag *diag)
     diag->line = line_value;
     diag->column = column_value;
     message_start = marker + strlen(markers[index]);
-    (void)strncpy(diag->message, message_start,
-                  sizeof(diag->message) - 1U);
-    diag->message[sizeof(diag->message) - 1U] = '\0';
+    message_length = strlen(message_start);
+    if (message_length >= sizeof(diag->message)) {
+        message_length = sizeof(diag->message) - 1U;
+    }
+    (void)memmove(diag->message, message_start, message_length);
+    diag->message[message_length] = '\0';
     return 1;
 }
 
