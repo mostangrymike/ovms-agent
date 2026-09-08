@@ -44,6 +44,23 @@ int command_dcl_exec(agent_state *state,
         *status_out = 0x1035A00AUL;
         text = "%F90-E-ERROR, Syntax error\n"
                "at line number 3 in file SYS$SYSDEVICE:[MIKE.OVMS_AGENT]M316_BAD.F90;1\n";
+    } else if (strncmp(command, "JAVAC ", 6U) == 0) {
+        *status_out = 0x1035A00AUL;
+        text = "./M316Bad.java:3: error: illegal start of expression\n"
+               "    int value = ;\n"
+               "                ^\n"
+               "1 error\n";
+    } else if (strncmp(command, "PERL ", 5U) == 0) {
+        *status_out = 0x0000002CUL;
+        text = "syntax error at M316_BAD.PL line 2, near \"= ;\"\n"
+               "Execution of M316_BAD.PL aborted due to compilation errors.\n"
+               "%SYSTEM-F-ABORT, abort\n";
+    } else if (strncmp(command, "PYTHON ", 7U) == 0) {
+        *status_out = 0x1035A00AUL;
+        text = "  File \"/SYS$SYSDEVICE/MIKE/OVMS_AGENT/M316_BAD.PY\", line 2\n"
+               "    value =\n"
+               "           ^\n"
+               "SyntaxError: invalid syntax\n";
     } else if (strncmp(command, "LINK ", 5U) == 0) {
         *status_out = 0x10000001UL;
         text = "LINK output\n";
@@ -151,6 +168,72 @@ static int test_posix_failure(agent_state *state)
     return ok;
 }
 
+static int test_java_failure(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    m316_test_calls = 0U;
+    status = 0UL;
+    result = m289_build_source(state, "M316Bad.java", &status);
+    ok = result != NULL && m316_test_calls == 1U &&
+         status == 0x1035A00AUL &&
+         m316_has(result, "Compile status: %X1035A00A (failure)") &&
+         m316_has(result, "language=JAVA phase=compile severity=E facility=JAVAC id=ERROR") &&
+         m316_has(result, "file=./M316Bad.java line=3 column=0 message=illegal start of expression");
+    if (!ok) {
+        (void)printf("M316 failed: Java normalization.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_perl_failure(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    m316_test_calls = 0U;
+    status = 0UL;
+    result = m289_build_source(state, "M316_BAD.PL", &status);
+    ok = result != NULL && m316_test_calls == 1U &&
+         status == 0x0000002CUL &&
+         m316_has(result, "Run status: %X0000002C (failure)") &&
+         m316_has(result, "language=PERL phase=run severity=E facility=PERL id=SYNTAX") &&
+         m316_has(result, "file=M316_BAD.PL line=2 column=0 message=syntax error at M316_BAD.PL line 2, near \"= ;\"");
+    if (!ok) {
+        (void)printf("M316 failed: Perl normalization.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
+static int test_python_failure(agent_state *state)
+{
+    char *result;
+    unsigned long status;
+    int ok;
+
+    m316_test_calls = 0U;
+    status = 0UL;
+    result = m289_build_source(state, "M316_BAD.PY", &status);
+    ok = result != NULL && m316_test_calls == 1U &&
+         status == 0x1035A00AUL &&
+         m316_has(result, "Run status: %X1035A00A (failure)") &&
+         m316_has(result, "language=PYTHON phase=run severity=E facility=PYTHON id=SYNTAX") &&
+         m316_has(result, "file=/SYS$SYSDEVICE/MIKE/OVMS_AGENT/M316_BAD.PY line=2 column=0 message=invalid syntax");
+    if (!ok) {
+        (void)printf("M316 failed: Python normalization.\n%s\n",
+                     result != NULL ? result : "<null>");
+    }
+    free(result);
+    return ok;
+}
+
 static int test_dcl_failure(agent_state *state)
 {
     char *result;
@@ -185,6 +268,9 @@ int main(void)
         !test_c_failure(&state) ||
         !test_cxx_embedded(&state) ||
         !test_posix_failure(&state) ||
+        !test_java_failure(&state) ||
+        !test_perl_failure(&state) ||
+        !test_python_failure(&state) ||
         !test_dcl_failure(&state)) {
         return 2;
     }
