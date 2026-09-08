@@ -69,7 +69,6 @@ static void m316_capture_store(const char *output, unsigned long status)
     if (m316_raw_count >= M316_PHASE_MAX) {
         return;
     }
-
     index = m316_raw_count++;
     m316_raw_status[index] = status;
     if (output != NULL) {
@@ -310,7 +309,6 @@ static int m316_embedded_location(char *message, m316_diag *diag)
     if (marker == NULL) {
         return 0;
     }
-
     column_colon = m316_prev_colon(message, marker);
     if (column_colon == NULL ||
         !m316_digits(column_colon + 1, marker, &column_value)) {
@@ -331,6 +329,124 @@ static int m316_embedded_location(char *message, m316_diag *diag)
     (void)strncpy(diag->message, message_start,
                   sizeof(diag->message) - 1U);
     diag->message[sizeof(diag->message) - 1U] = '\0';
+    return 1;
+}
+
+static void m316_plain_init(m316_diag *diag,
+                            const char *facility,
+                            const char *severity,
+                            const char *ident,
+                            const char *raw)
+{
+    if (diag == NULL) {
+        return;
+    }
+    (void)memset(diag, 0, sizeof(*diag));
+    (void)strncpy(diag->facility, facility, sizeof(diag->facility) - 1U);
+    (void)strncpy(diag->severity, severity, sizeof(diag->severity) - 1U);
+    (void)strncpy(diag->ident, ident, sizeof(diag->ident) - 1U);
+    if (raw != NULL) {
+        (void)strncpy(diag->raw, raw, sizeof(diag->raw) - 1U);
+    }
+    diag->valid = 1;
+}
+
+static int m316_parse_java(const char *line, m316_diag *diag)
+{
+    const char *marker;
+    const char *line_colon;
+    unsigned int line_value;
+
+    if (line == NULL || diag == NULL) {
+        return 0;
+    }
+    marker = strstr(line, ": error: ");
+    if (marker == NULL) {
+        return 0;
+    }
+    line_colon = m316_prev_colon(line, marker);
+    if (line_colon == NULL ||
+        !m316_digits(line_colon + 1, marker, &line_value)) {
+        return 0;
+    }
+    m316_plain_init(diag, "JAVAC", "E", "ERROR", line);
+    if (!m316_copy_range(diag->file, sizeof(diag->file), line, line_colon)) {
+        return 0;
+    }
+    diag->line = line_value;
+    (void)strncpy(diag->message, marker + strlen(": error: "),
+                  sizeof(diag->message) - 1U);
+    diag->message[sizeof(diag->message) - 1U] = '\0';
+    return 1;
+}
+
+static int m316_parse_perl(const char *line, m316_diag *diag)
+{
+    const char *prefix;
+    const char *line_marker;
+    const char *comma;
+    unsigned int line_value;
+
+    if (line == NULL || diag == NULL) {
+        return 0;
+    }
+    prefix = "syntax error at ";
+    if (strncmp(line, prefix, strlen(prefix)) != 0) {
+        return 0;
+    }
+    line_marker = strstr(line + strlen(prefix), " line ");
+    if (line_marker == NULL) {
+        return 0;
+    }
+    comma = strchr(line_marker + strlen(" line "), ',');
+    if (comma == NULL ||
+        !m316_digits(line_marker + strlen(" line "), comma, &line_value)) {
+        return 0;
+    }
+    m316_plain_init(diag, "PERL", "E", "SYNTAX", line);
+    if (!m316_copy_range(diag->file, sizeof(diag->file),
+                         line + strlen(prefix), line_marker)) {
+        return 0;
+    }
+    diag->line = line_value;
+    (void)strncpy(diag->message, line, sizeof(diag->message) - 1U);
+    diag->message[sizeof(diag->message) - 1U] = '\0';
+    return 1;
+}
+
+static int m316_parse_py_file(const char *line, m316_diag *diag)
+{
+    const char *prefix;
+    const char *quote;
+    const char *line_marker;
+    const char *end;
+    unsigned int line_value;
+
+    if (line == NULL || diag == NULL) {
+        return 0;
+    }
+    prefix = "File \"";
+    if (strncmp(line, prefix, strlen(prefix)) != 0) {
+        return 0;
+    }
+    quote = strchr(line + strlen(prefix), '"');
+    if (quote == NULL) {
+        return 0;
+    }
+    line_marker = strstr(quote, ", line ");
+    if (line_marker == NULL) {
+        return 0;
+    }
+    end = line_marker + strlen(", line ");
+    if (!m316_digits(end, line + strlen(line), &line_value)) {
+        return 0;
+    }
+    m316_plain_init(diag, "PYTHON", "E", "SYNTAX", line);
+    if (!m316_copy_range(diag->file, sizeof(diag->file),
+                         line + strlen(prefix), quote)) {
+        return 0;
+    }
+    diag->line = line_value;
     return 1;
 }
 
@@ -360,7 +476,6 @@ static int m316_parse_facility(const char *line, m316_diag *diag)
                          second + 1, comma)) {
         return 0;
     }
-
     (void)strncpy(message, comma + 1, sizeof(message) - 1U);
     message[sizeof(message) - 1U] = '\0';
     trimmed = m316_trim(message);
@@ -372,7 +487,6 @@ static int m316_parse_facility(const char *line, m316_diag *diag)
     diag->line = 0U;
     diag->column = 0U;
     diag->valid = 1;
-
     (void)m316_embedded_location(diag->message, diag);
     return 1;
 }
@@ -459,7 +573,6 @@ static void m316_normalize_output(char *result,
         source == NULL || output == NULL || *output == '\0') {
         return;
     }
-
     (void)memset(&pending, 0, sizeof(pending));
     cursor = output;
     while (*cursor != '\0') {
@@ -471,6 +584,45 @@ static void m316_normalize_output(char *result,
         (void)memcpy(line, cursor, length);
         line[length] = '\0';
         text = m316_trim(line);
+
+        if (m289_equal_ci(language, "JAVA")) {
+            m316_diag plain;
+            if (m316_parse_java(text, &plain)) {
+                if (pending.valid) {
+                    (void)m316_append_diag(result, language, phase,
+                                           source, &pending);
+                    (void)memset(&pending, 0, sizeof(pending));
+                }
+                (void)m316_append_diag(result, language, phase, source, &plain);
+            }
+        } else if (m289_equal_ci(language, "PERL")) {
+            m316_diag plain;
+            if (m316_parse_perl(text, &plain)) {
+                if (pending.valid) {
+                    (void)m316_append_diag(result, language, phase,
+                                           source, &pending);
+                    (void)memset(&pending, 0, sizeof(pending));
+                }
+                (void)m316_append_diag(result, language, phase, source, &plain);
+            }
+        } else if (m289_equal_ci(language, "PYTHON")) {
+            m316_diag plain;
+            if (m316_parse_py_file(text, &plain)) {
+                if (pending.valid) {
+                    (void)m316_append_diag(result, language, phase,
+                                           source, &pending);
+                }
+                pending = plain;
+            } else if (pending.valid &&
+                       strncmp(text, "SyntaxError: ", 13U) == 0) {
+                (void)strncpy(pending.message, text + 13,
+                              sizeof(pending.message) - 1U);
+                pending.message[sizeof(pending.message) - 1U] = '\0';
+                (void)m316_append_diag(result, language, phase,
+                                       source, &pending);
+                (void)memset(&pending, 0, sizeof(pending));
+            }
+        }
 
         if (*text == '%') {
             m316_diag current;
@@ -501,7 +653,6 @@ static void m316_normalize_output(char *result,
         }
         cursor = next + 1;
     }
-
     if (pending.valid) {
         (void)m316_append_diag(result, language, phase, source, &pending);
     }
@@ -540,7 +691,6 @@ static void m316_patch_legacy(char *result,
     if (result == NULL || status_out == NULL || m316_raw_count == 0U) {
         return;
     }
-
     if (strstr(result, "Compile status: ") != NULL) {
         m316_patch_status(result, "Compile status: ", m316_raw_status[0]);
         m316_normalize_output(result, language, "compile", source,
@@ -605,7 +755,6 @@ static char *m316_build_c(agent_state *state,
         return m289_make_error("M316 native C build refused",
                                "resolved command failed execution guard");
     }
-
     result = (char *)malloc(M289_NATIVE_RESULT_MAX);
     if (result == NULL) {
         return NULL;
@@ -618,7 +767,6 @@ static char *m316_build_c(agent_state *state,
         free(result);
         return NULL;
     }
-
     compile_output[0] = '\0';
     compile_status = 0UL;
     executed = command_dcl_exec(state, compile_command,
@@ -633,7 +781,6 @@ static char *m316_build_c(agent_state *state,
         *status_out = compile_status;
         return result;
     }
-
     (void)m316_append_raw_status(result, "Compile status: ", compile_status);
     if (compile_output[0] != '\0') {
         (void)m289_append(result, M289_NATIVE_RESULT_MAX, "Compile output:\n");
@@ -643,7 +790,6 @@ static char *m316_build_c(agent_state *state,
         }
     }
     m316_normalize_output(result, "C", "compile", source, compile_output);
-
     if (!ovms_status_success(compile_status)) {
         (void)m289_append(result, M289_NATIVE_RESULT_MAX,
                           "Link: not run because compile failed.\n");
@@ -652,7 +798,6 @@ static char *m316_build_c(agent_state *state,
         *status_out = compile_status;
         return result;
     }
-
     if (!m289_append(result, M289_NATIVE_RESULT_MAX, "Link command: ") ||
         !m289_append(result, M289_NATIVE_RESULT_MAX, link_command) ||
         !m289_append(result, M289_NATIVE_RESULT_MAX, "\n")) {
@@ -673,7 +818,6 @@ static char *m316_build_c(agent_state *state,
         *status_out = link_status;
         return result;
     }
-
     (void)m316_append_raw_status(result, "Link status: ", link_status);
     if (link_output[0] != '\0') {
         (void)m289_append(result, M289_NATIVE_RESULT_MAX, "Link output:\n");
@@ -707,13 +851,11 @@ char *m289_build_source(agent_state *state,
         }
         return m316_build_c(state, source, status_out);
     }
-
     m316_capture_reset();
     result = m316_build_legacy(state, source, status_out);
     if (result == NULL || source == NULL || status_out == NULL) {
         return result;
     }
-
     language[0] = '\0';
     marker = strstr(result, "Language: ");
     if (marker != NULL) {
