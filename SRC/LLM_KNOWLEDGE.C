@@ -80,6 +80,39 @@ static int llm_know_has_word(const char *text, const char *word)
     return 0;
 }
 
+static int llm_know_ext_end(char ch)
+{
+    return ch == '\0' || isspace((unsigned char)ch) ||
+           ch == '"' || ch == '\'' || ch == ')' || ch == ']' ||
+           ch == '}' || ch == ',' || ch == ';' || ch == ':';
+}
+
+static int llm_know_has_ext(const char *text, const char *extension)
+{
+    const char *scan;
+    const char *match;
+    const char *want;
+
+    if (text == NULL || extension == NULL || *extension == '\0') {
+        return 0;
+    }
+
+    for (scan = text; *scan != '\0'; ++scan) {
+        match = scan;
+        want = extension;
+        while (*match != '\0' && *want != '\0' &&
+               llm_know_char_eq(*match, *want)) {
+            ++match;
+            ++want;
+        }
+        if (*want == '\0' && llm_know_ext_end(*match)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 unsigned int llm_knowledge_detect(const char *prompt)
 {
     unsigned int mask;
@@ -113,6 +146,7 @@ unsigned int llm_knowledge_detect(const char *prompt)
     }
 
     if (llm_know_has_word(prompt, "DCL") ||
+        llm_know_has_ext(prompt, ".COM") ||
         llm_know_has_text(prompt, "$STATUS") ||
         llm_know_has_text(prompt, "F$") ||
         llm_know_has_text(prompt, "command procedure") ||
