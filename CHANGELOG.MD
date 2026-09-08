@@ -245,7 +245,7 @@ Tag: `m295`
 - Kept non-tool Qwen traffic, other Qwen models, and non-Groq Qwen endpoints on the existing streaming decision.
 - Added deterministic selector coverage for the exact Qwen model, non-tool requests, another Qwen model, and a non-Groq endpoint.
 - Native exact source head `909a3c86b6028c16f1c489d3e2def208845449a1` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
-- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second RMS write materialized.
+- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second write materialized.
 - #124 remains separate reasoning/output-budget work; #123 remains separate OpenRouter/free compatibility work.
 
 ## M294 — Groq GPT-OSS tool transport compatibility
