@@ -1,18 +1,18 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T16:41:30-05:00",
+  "updated_at": "2026-09-08T16:59:56-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "68aae8f58fe6f538bfe58513e31bde8f95ee337f",
-    "tree": "97f05c4c61e6c71d54b0894cb17f81efc0d025ce",
-    "latest_milestone": "M314",
+    "main": "aa011c1b72d8c80810672201ba12e969df65249b",
+    "tree": "b0b6791e369fe8806bb7d53fd5b0b9f680c2faf2",
+    "latest_milestone": "M315",
     "latest_code_milestone": "M314",
     "latest_code_milestone_main": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
-    "open_issues": 1,
+    "open_issues": 0,
     "open_prs": 0
   },
   "m301": {
@@ -164,7 +164,7 @@
     "result": "Final synthesis now receives authoritative host tool-turn-limit facts and exact current turn/tool-call counters, while live search_file continues scanning after display truncation and reports deterministic total/returned/truncated summaries. The initial focused-green candidate exposed only production helper-include wiring diagnostics during full integration; two one-line direct includes corrected that without changing reporting semantics. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed."
   },
   "m313": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 261,
     "branch": "m313-native-dcl-generation-repair",
     "baseline_main": "3b07119c93000d9b948724f3de3f5ed87cbd3135",
@@ -191,11 +191,26 @@
     "closed_defects": [179],
     "result": "M314 fixes optional SSE post-response false failures by compiling the live OpenVMS streaming transport with _VMS_WAIT so pclose returns a native child completion code for the existing status decoder. Genuine child failures still fail without blocking retry, streaming remains opt-in, and tool-bearing requests remain blocking. Exact candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance plus live streaming=ON ASK gates. HELP remained unchanged because no command or SETTINGS surface changed. A subsequent CHANGELOG-only synchronization advanced main without changing product/build/runtime inputs."
   },
+  "m315": {
+    "status": "COMPLETED_PROMOTED_NATIVE_REVALIDATED_TAGGED_RETAINED",
+    "issue": 265,
+    "branch": "m315-openvms-git-guide",
+    "baseline_main": "68aae8f58fe6f538bfe58513e31bde8f95ee337f",
+    "accepted_candidate": "258a1e9dc347aa2e95b6e8e47ccd6cf93bfd3ce1",
+    "accepted_tree": "7fcbdf1795f6ad1edd97975d2298c135e4c74af3",
+    "promoted_main": "0dca7a34829658e673b82a0bb7fe568638cac281",
+    "post_milestone_docs_main": "aa011c1b72d8c80810672201ba12e969df65249b",
+    "post_milestone_docs_tree": "b0b6791e369fe8806bb7d53fd5b0b9f680c2faf2",
+    "tag": "m315",
+    "pr": 266,
+    "closed_defects": [192],
+    "result": "M315 revalidated the RMS-visible literal .git syntax on canonical OpenVMS. TYPE [.^.GIT]HEAD. succeeded with %SYSTEM-S-NORMAL, while TYPE [^.GIT]HEAD. failed with RMS-E-DNF and the physical directory entry was []^.GIT.DIR. The existing current [.^.GIT] guidance is therefore correct; the historical M301 failure remains historical evidence but does not override controlled revalidation. Only the living Git operating guide changed before promotion, followed by a CHANGELOG-only synchronization. No product/build/runtime/HELP inputs changed."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m313-native-dcl-generation-repair", "m314-stream-completion-status"],
+    "retained_completed_target": ["m314-stream-completion-status", "m315-openvms-git-guide"],
     "open_prs": 0,
-    "open_issues": 1,
+    "open_issues": 0,
     "pending_ref_operations": [],
     "pruned_completed_branches": [
       "m300-blocking-default-streaming-opt-in",
@@ -210,7 +225,8 @@
       "m309-saved-plan-completion-markdown",
       "m310-saved-plan-lifecycle-execution",
       "m311-transaction-path-canonicalization",
-      "m312-tool-loop-search-reporting"
+      "m312-tool-loop-search-reporting",
+      "m313-native-dcl-generation-repair"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -228,16 +244,15 @@
       "m311": "5f1ef4d8e29984b7279a92a7e80288ac9d971d71",
       "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
       "m313": "85ea038458596e6dd9435a209a11535e1cc99620",
-      "m314": "cd29bb93fbd4ed09224631570b992183e1fe03b5"
+      "m314": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
+      "m315": "0dca7a34829658e673b82a0bb7fe568638cac281"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "M315 OpenVMS Git operating-guide correctness",
-    "candidate_clusters": [
-      "OpenVMS Git documentation/RMS filespec correctness: #192"
-    ],
-    "note": "M314 closes the final product/runtime defect in the current backlog. The only remaining open issue is documentation/operating-guide defect #192. Determine the correct RMS-visible .git control-file syntax on the canonical OpenVMS host from native evidence before editing DOC/OPENVMS_GIT_QUIRKS.MD or durable rules."
+    "suggested": "ROADMAP_SELECTION_REQUIRED",
+    "candidate_clusters": [],
+    "note": "M315 closes the final tracked backlog item. There are zero open issues and zero open pull requests. Do not invent M316 from a nonexistent defect backlog; choose the next roadmap objective deliberately before opening another milestone."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
