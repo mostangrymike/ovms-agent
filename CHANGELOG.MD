@@ -6,7 +6,18 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M314 below.
+No additional user-visible product changes are currently recorded beyond M315 below.
+
+## M315 — OpenVMS Git operating-guide correctness
+
+Tag: `m315`
+
+- Revalidated the RMS-visible literal `.git` filespec on the canonical OpenVMS V9.2-3 x86-64 host instead of guessing a replacement for the historical M301 report.
+- Proved from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT]` that `TYPE [.^.GIT]HEAD.` succeeds with `%SYSTEM-S-NORMAL`, while the tempting `TYPE [^.GIT]HEAD.` form fails with `%RMS-E-DNF`; the physical directory entry is visible as `[]^.GIT.DIR`.
+- Preserved the existing principle that Git-native/GitHub identity, RMS-visible Git metadata, and materialized working files are distinct evidence when independent proof is required.
+- Updated only the living `DOC/OPENVMS_GIT_QUIRKS.MD` guide to record the controlled revalidation and warn against replacing the proven `[.^.GIT]` form. Existing current examples in RULES, BUILD, CONTRIBUTING, and platform knowledge remain unchanged because native evidence confirms them.
+- Preserved the frozen M301 historical record of the earlier `%DCL-W-DIRECT` observation while clarifying that it is not reproducible on the current canonical host and must not override later controlled evidence.
+- Exact documentation candidate `258a1e9dc347aa2e95b6e8e47ccd6cf93bfd3ce1` (tree `7fcbdf1795f6ad1edd97975d2298c135e4c74af3`) was promoted by PR #266 as main `0dca7a34829658e673b82a0bb7fe568638cac281` with the exact same tree. Closed defect #192 and tracker #265; permanent tag `m315` resolves directly to the promoted merge commit.
 
 ## M314 — Optional streaming completion-status hardening
 
