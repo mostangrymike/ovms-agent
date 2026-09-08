@@ -4,8 +4,11 @@ static int m308_payload_escape(
     const char *end_marker)
 {
     const char *content;
+    const char *fence;
     size_t content_length;
+    size_t fence_length;
     size_t marker_length;
+    size_t slash_count;
 
     if (line == NULL ||
         line_length < 2U ||
@@ -15,11 +18,13 @@ static int m308_payload_escape(
 
     content = line + 1;
     content_length = line_length - 1U;
+    slash_count = 1U;
 
     while (content_length > 0U &&
            content[0] == '\\') {
         ++content;
         --content_length;
+        ++slash_count;
     }
 
     if (end_marker != NULL) {
@@ -43,6 +48,22 @@ static int m308_payload_escape(
         (content_length >= 16U &&
          memcmp(content, "operation_count=", 16U) == 0)) {
         return 1;
+    }
+
+    fence = content;
+    fence_length = content_length;
+    while (fence_length > 0U &&
+           (*fence == ' ' || *fence == '\t')) {
+        ++fence;
+        --fence_length;
+    }
+
+    if (slash_count >= 2U &&
+        fence_length >= 3U &&
+        fence[0] == '`' &&
+        fence[1] == '`' &&
+        fence[2] == '`') {
+        return 2;
     }
 
     return 0;
@@ -73,6 +94,8 @@ static int execute_read_text_block(
     marker_length = strlen(end_marker);
 
     while (fgets(block_line, sizeof(block_line), file) != NULL) {
+        int escape_count;
+
         line_length = strlen(block_line);
 
         while (line_length > 0U &&
@@ -92,13 +115,14 @@ static int execute_read_text_block(
         }
 
         content = block_line;
+        escape_count = m308_payload_escape(
+            block_line,
+            line_length,
+            end_marker);
 
-        if (m308_payload_escape(
-                block_line,
-                line_length,
-                end_marker)) {
-            content = block_line + 1;
-            --line_length;
+        if (escape_count > 0) {
+            content = block_line + escape_count;
+            line_length -= (size_t)escape_count;
         }
 
         if (used + line_length + 1U >= destination_size) {
