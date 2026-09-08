@@ -73,7 +73,7 @@
  the current process.
 
  Saved settings normally come from SYS$LOGIN:OVMS_AGENT_SETTINGS.DAT.  A
- defined legacy logical takes precedence for settings that have one.  SETTINGS
+ defined legacy logical takes precedence for settings that has one.  SETTINGS
  shows the effective source and warns when a saved value is changed while a
  legacy logical still overrides it.  streaming has no enable logical; defining
  OVMS_AGENT_NOSTREAM only forces blocking transport and does not become the
@@ -1547,3 +1547,25 @@
  The planner adds two framing backslashes immediately before the fence syntax;
  the executor removes exactly those two framing backslashes so indentation,
  fence text, and any real source-leading backslashes round-trip exactly.
+
+ M310 preserves a previously valid saved plan when a replacement plan is
+ rejected, but any session approval for that prior plan is invalidated.  A
+ stale target discovered by currentness validation likewise clears execution
+ authority; approval never resurrects merely because the files later match
+ again.
+
+ Ordered saved-plan operations may create a path and then modify that same path
+ later in the plan.  Execution stages the chain in order and commits the final
+ content once for that path.  A second create of the same path remains invalid.
+
+ New executable plans may include build=required or build=skip before
+ operation_count=.  Missing build= remains backward-compatible and means
+ required.  build=skip bypasses the DCL/build gate only for the post-write build;
+ guarded writes, approval policy, plan approval, currentness, transaction, and
+ consumption checks still apply.  Invalid or duplicate build= fields fail
+ closed.
+
+ Before a logging-triggered persistent-state save can write process-default
+ workflow values over an existing state file, M310 loads and validates that
+ prior state.  An unreadable or invalid existing state is not replaced by
+ defaults; intentional current non-default workflow state remains authoritative.
