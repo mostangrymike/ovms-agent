@@ -6,7 +6,21 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M312 below.
+No additional user-visible product changes are currently recorded beyond M313 below.
+
+## M313 — Native DCL generation and repair hardening
+
+Tag: `m313`
+
+- Made `.COM` prompts select the OpenVMS DCL platform knowledge pack so DCL operating guidance is available even when a request does not explicitly mention DCL or `$STATUS`.
+- Added provider-neutral DCL guidance requiring explicit failure handling such as `SET NOON` before commands whose failure status is intentionally captured or handled, with immediate `$STATUS` capture before unrelated commands can overwrite it.
+- Clarified native DCL channel lifetime: `READ/END_OF_FILE=label` transfers control without closing the channel, and normal EOF cleanup must close each open channel exactly once.
+- Clarified `DEFINE/USER` / `DEFINE/USER_MODE` next-image lifetime for `SYS$OUTPUT`; after the image the user-mode definition has expired, so repair logic must not add a speculative `DEASSIGN/USER SYS$OUTPUT` that can introduce `NOLOGNAM`.
+- Added repair guidance to trace the actual `OPEN`/`READ`/EOF/`CLOSE` and `DEFINE`/image/`DEASSIGN` sequence from live native evidence before changing cleanup behavior.
+- Added focused provider-free DCL knowledge regression plus a native `SET NOON` command-procedure regression proving that a deliberately failing image still reaches custom post-status handling. `OVMS_AGENT.HLP` remains unchanged because no command or SETTINGS syntax/behavior changed.
+- Exact accepted candidate `766e0fac5a8909bae9c613967ca5040e1720e47d` (tree `e07e748e49651064672250d749f86c2f838b7edd`) passed focused M313 regression, full canonical OpenVMS `@BUILD`, and focused rerun with `%X00000001`.
+- Promotion PR #262 produced main `85ea038458596e6dd9435a209a11535e1cc99620` with the exact same tree; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance before M313 was declared complete.
+- Closed defects #197, #198, and #199 plus milestone tracker #261. Permanent tag `m313` resolves directly to the exact promoted native-green merge commit.
 
 ## M312 — Tool-loop and search reporting hardening
 
