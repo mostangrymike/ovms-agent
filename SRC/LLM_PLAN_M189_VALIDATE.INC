@@ -61,3 +61,5 @@ int llm_m189_explicit_scope(void)
            strcmp(files[1].path, "M189_NEVER/NEW.MD") == 0 &&
            files[1].expect_missing == 1;
 }
+
+#include "LLM_PLAN_M310_SCOPE.INC"

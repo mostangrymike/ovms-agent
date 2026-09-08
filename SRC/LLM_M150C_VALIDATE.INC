@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "LLM_PROMPT_M310.INC"
+
 int llm_m150c_has_create(void)
 {
     return
@@ -37,4 +39,26 @@ int llm_m150c_blocks_legacy(void)
         strstr(
             prompt_plan,
             "Do not generate legacy type=replace_text") != NULL;
+}
+
+int llm_m310_prompt_create_chain(void)
+{
+    return
+        strstr(
+            prompt_plan,
+            "create_file path may be reused by one or more later "
+            "type=replace_block") != NULL &&
+        strstr(
+            prompt_plan,
+            "never place a replace_block before its create_file") != NULL;
+}
+
+int llm_m310_prompt_build_policy(void)
+{
+    return
+        strstr(prompt_plan, "build=required") != NULL &&
+        strstr(prompt_plan, "build=skip") != NULL &&
+        strstr(
+            prompt_plan,
+            "missing build= line is legacy-compatible") != NULL;
 }
