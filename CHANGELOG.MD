@@ -6,7 +6,19 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M313 below.
+No additional user-visible product changes are currently recorded beyond M314 below.
+
+## M314 — Optional streaming completion-status hardening
+
+Tag: `m314`
+
+- Corrected the optional SSE streaming child-completion contract on OpenVMS by compiling the live transport wrapper with `_VMS_WAIT`, so `pclose()` returns the child image's OpenVMS completion code instead of an unqualified wait-style status.
+- Preserved M290 no-duplicate-retry safety: a genuinely failed streaming child still remains a failed request and is not retried through blocking transport.
+- Preserved M300 transport policy: streaming remains opt-in through the existing `streaming` setting, and tool-bearing requests remain on bounded blocking transport.
+- Added a focused native regression that launches one successful and one failing child and proves the production OpenVMS status decoder classifies both correctly. `OVMS_AGENT.HLP` remains unchanged because no command or SETTINGS syntax/behavior changed.
+- Exact accepted candidate `66e573f15223cd16c7032412f8d7993b7fdae99b` (tree `cfdaa4d3f1dcd3fb0b3801fbf6e8f80a82077e14`) passed focused M314 regression, full canonical OpenVMS `@BUILD`, focused rerun, and live `streaming=ON` ASK acceptance with no false post-response transport failure.
+- Promotion PR #264 produced main `cd29bb93fbd4ed09224631570b992183e1fe03b5` with the exact same tree; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance plus the same live streaming gate before M314 was declared complete.
+- Closed defect #179 plus milestone tracker #263. Permanent tag `m314` resolves directly to the exact promoted native-green merge commit.
 
 ## M313 — Native DCL generation and repair hardening
 
@@ -233,7 +245,7 @@ Tag: `m295`
 - Kept non-tool Qwen traffic, other Qwen models, and non-Groq Qwen endpoints on the existing streaming decision.
 - Added deterministic selector coverage for the exact Qwen model, non-tool requests, another Qwen model, and a non-Groq endpoint.
 - Native exact source head `909a3c86b6028c16f1c489d3e2def208845449a1` passed full `@BUILD`, all regressions, automatic read-only tool execution, and a guarded disposable `AGENT/WRITE` create workflow without defining `OVMS_AGENT_NOSTREAM`.
-- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second write materialized.
+- The guarded write probe created exactly one RMS version with the requested content; Qwen subsequently requested an unnecessary `replace_text`, but no second RMS write materialized.
 - #124 remains separate reasoning/output-budget work; #123 remains separate OpenRouter/free compatibility work.
 
 ## M294 — Groq GPT-OSS tool transport compatibility
