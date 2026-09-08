@@ -1,3 +1,5 @@
+int llm_set_approval(const char *arguments);
+
 static int llm_m140_write_plan(
     const char *path,
     const char *status)
