@@ -4,7 +4,7 @@
 
 #include "LLM_KNOWLEDGE.C"
 
-#define M313_DCL_PACK "KNOWLEDGE/OPENVMS_DCL.MD"
+#define M313_DCL_PACK "[.KNOWLEDGE]OPENVMS_DCL.MD"
 
 static char *read_pack(void)
 {
