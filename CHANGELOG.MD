@@ -6,7 +6,30 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M307 below.
+No additional user-visible product changes are currently recorded beyond M309 below.
+
+## M309 — Saved-plan completion and Markdown payload hardening
+
+Tag: `m309`
+
+- Classified provider responses reported incomplete at the output-token limit before downstream saved-plan marker validation, preserved fail-closed persistence, and emitted bounded retry guidance instead of misreporting truncation as malformed operation framing.
+- Required completed planner output to satisfy the saved-plan narrative contract and either contain deterministic operations or explicitly declare `Plan mode: advisory-only`; progress-only and arbitrary zero-operation prose no longer replace a prior valid plan.
+- Added reversible two-backslash framing for literal Markdown fence lines inside OLD/NEW payloads while preserving real source-leading backslashes and retaining the existing one-backslash reserved-control-line framing.
+- Kept the M308 32-operation and 4094-byte decoded payload limits, canonical `[plan]` grammar boundary, scope/currentness/checksum, approval, rollback, and provider-neutral behavior unchanged.
+- Exact accepted candidate `686aed3932f4c2e09d023e0b2b2af641f1b972b5` (tree `fa245c997cd226526b9e034c87f4a6b028b808d5`) passed focused M309 regression, full canonical OpenVMS `@BUILD`, focused rerun, and HELP verification with `%X00000001`.
+- Promotion PR #254 produced main `cabfc6ec1ff4155d5946815f698d30e058cae744`; that exact promoted merge SHA was independently rematerialized and passed focused/full/focused canonical OpenVMS acceptance before M309 was declared complete.
+- Closed defects #195, #196, and #209. Permanent tag `m309` resolves to the exact promoted merge commit.
+
+## M308 — Saved-plan framing and capacity hardening
+
+Tag: `m308`
+
+- Restricted executable saved-plan grammar to the canonical `[plan]` region so reserved-looking text in goal/metadata cannot become executable operations.
+- Added explicit capacity diagnostics for plans above 32 executable operations and OLD/NEW decoded payloads above 4094 bytes while preserving the prior valid saved plan on rejection.
+- Added reversible framing for literal reserved structured-plan control lines inside OLD/NEW payloads without weakening marker validation.
+- Added deterministic M308 coverage for canonical-region parsing, count/payload capacity, escaped reserved lines, prior-plan preservation, and operation-only parser compatibility, and synchronized `OVMS_AGENT.HLP`.
+- Exact accepted candidate `57a741f8db45e5f64d24cbcff60e9d736ac9d4ab` (tree `c7a901e89257ff3f5a277e2142d8d1ba36837908`) and promoted main `3294e2004d1f3429ae7f348fb5970528170318e8` both passed focused and full canonical OpenVMS acceptance with `%X00000001`.
+- Closed defects #204, #205, #234, and #236. Permanent tag `m308` resolves to the exact promoted merge commit.
 
 ## M307 — Repair pipeline portability and serialization
 
