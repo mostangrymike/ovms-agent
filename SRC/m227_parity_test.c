@@ -32,7 +32,7 @@ int main(void)
     remove_all(TEST_SETTINGS);
 
     (void)memset(&state, 0, sizeof(state));
-    state.project_root = "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]";
+    state.project_root = "SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]";
     state.api_key_defined = 1;
     state.write_enabled = 1;
     state.dcl_enabled = 0;
@@ -93,7 +93,7 @@ int main(void)
     }
 
     if (!llm_context_text(&state, output, sizeof(output)) ||
-        strstr(output, "SYS$SYSDEVICE:[MIKE.OVMS_AGENT]") == NULL ||
+        strstr(output, "SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]") == NULL ||
         strstr(output, "Write gate:        enabled") == NULL ||
         strstr(output, "DCL gate:          disabled") == NULL ||
         strstr(output, "Approval policy:   workspace") == NULL ||
