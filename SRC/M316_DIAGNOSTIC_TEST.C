@@ -35,15 +35,15 @@ int command_dcl_exec(agent_state *state,
     if (strncmp(command, "CC ", 3U) == 0) {
         *status_out = 0x10B91262UL;
         text = "%CC-E-BADEXPR, Invalid expression.\n"
-               "at line number 3 in file SYS$SYSDEVICE:[MIKE.OVMS_AGENT]M316_BAD.C;1\n";
+               "at line number 3 in file SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]M316_BAD.C;1\n";
     } else if (strncmp(command, "CXX ", 4U) == 0) {
         *status_out = 0x15F61262UL;
-        text = "%CXX-E-ERROR, SYS$SYSDEVICE:[MIKE.OVMS_AGENT]M316_BAD.CXX;1:3:17: error: expected expression\n"
+        text = "%CXX-E-ERROR, SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]M316_BAD.CXX;1:3:17: error: expected expression\n"
                "%CXX-E-ENDDIAG, 1 error generated.\n";
     } else if (strncmp(command, "FORTRAN ", 8U) == 0) {
         *status_out = 0x1035A00AUL;
         text = "%F90-E-ERROR, Syntax error\n"
-               "at line number 3 in file SYS$SYSDEVICE:[MIKE.OVMS_AGENT]M316_BAD.F90;1\n";
+               "at line number 3 in file SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]M316_BAD.F90;1\n";
     } else if (strncmp(command, "JAVAC ", 6U) == 0) {
         *status_out = 0x1035A00AUL;
         text = "./M316Bad.java:3: error: illegal start of expression\n"
@@ -57,7 +57,7 @@ int command_dcl_exec(agent_state *state,
                "%SYSTEM-F-ABORT, abort\n";
     } else if (strncmp(command, "PYTHON ", 7U) == 0) {
         *status_out = 0x1035A00AUL;
-        text = "  File \"/SYS$SYSDEVICE/MIKE/OVMS_AGENT/BUILD/M316_BAD.PY\", line 2\n"
+        text = "  File \"/SYS$SYSDEVICE/TESTUSER/OVMS_AGENT/BUILD/M316_BAD.PY\", line 2\n"
                "    value =\n"
                "           ^\n"
                "SyntaxError: invalid syntax\n";
@@ -136,7 +136,7 @@ static int test_cxx_embedded(agent_state *state)
          status == 0x15F61262UL &&
          m316_has(result, "Compile status: %X15F61262 (failure)") &&
          m316_has(result, "language=CXX phase=compile severity=E facility=CXX id=ERROR") &&
-         m316_has(result, "file=SYS$SYSDEVICE:[MIKE.OVMS_AGENT]M316_BAD.CXX;1 line=3 column=17 message=expected expression");
+         m316_has(result, "file=SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]M316_BAD.CXX;1 line=3 column=17 message=expected expression");
     if (!ok) {
         (void)printf("M316 failed: CXX embedded location.\n%s\n",
                      result != NULL ? result : "<null>");
@@ -225,7 +225,7 @@ static int test_python_failure(agent_state *state)
          status == 0x1035A00AUL &&
          m316_has(result, "Run status: %X1035A00A (failure)") &&
          m316_has(result, "language=PYTHON phase=run severity=E facility=PYTHON id=SYNTAX") &&
-         m316_has(result, "file=/SYS$SYSDEVICE/MIKE/OVMS_AGENT/BUILD/M316_BAD.PY line=2 column=0 message=invalid syntax");
+         m316_has(result, "file=/SYS$SYSDEVICE/TESTUSER/OVMS_AGENT/BUILD/M316_BAD.PY line=2 column=0 message=invalid syntax");
     if (!ok) {
         (void)printf("M316 failed: Python normalization.\n%s\n",
                      result != NULL ? result : "<null>");
