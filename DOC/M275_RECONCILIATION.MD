@@ -53,7 +53,7 @@ The M275 investigation isolated several OpenVMS-specific behaviors on the VAX Gi
 
 The accepted implementation keeps the local RMS filename separate, builds the combined repository candidate from the current prefix plus local path, validates the candidate, and resolves it through a top-level case-insensitive `ls-files` pathspec. It requires one non-empty safe returned path and then uses Git's exact stored spelling for `cat-file` while writing the original local RMS path.
 
-Live production-path acceptance ran from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT.TEST]`:
+Live production-path acceptance ran from `SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT.TEST]`:
 
 `@[-]GIT_RESTORE "GAP008_RMS.TXT"`
 

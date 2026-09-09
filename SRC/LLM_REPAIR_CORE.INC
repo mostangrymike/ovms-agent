@@ -79,7 +79,7 @@ void llm_repair_plan(agent_state *state)
         return;
     }
 
-    /* Convert filespec like "[MIKE.OVMS_AGENT.SRC]NAME.C;version" to "src/name.c" */
+    /* Convert filespec like "[TESTUSER.OVMS_AGENT.SRC]NAME.C;version" to "src/name.c" */
     char projpath[512] = {0};
     char *br_open = strchr(filespec, '[');
     char *br_close = strchr(filespec, ']');

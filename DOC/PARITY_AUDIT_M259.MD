@@ -151,7 +151,7 @@ The real production agent was then invoked as:
 
 ```text
 OVMS-AGENT> AGENT/IMAGE M259_LIVE.PNG What is the dominant color of this image? Answer with the color and one short sentence.
-Project root: SYS$SYSDEVICE:[MIKE.OVMS_AGENT]
+Project root: SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]
 Starting read-only agent...
 Red.
 The image is filled almost entirely with a solid, bright red color.

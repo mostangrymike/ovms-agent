@@ -46,8 +46,8 @@ Recorded environment:
 - validation time: `15-AUG-2026 14:03:04.32`;
 - OpenVMS version: `V9.2-3`;
 - architecture: `x86_64`;
-- node: `X86923`;
-- test operator: `MIKE`;
+- node: `TESTNODE`;
+- test operator: `TESTUSER`;
 - configured model: `gpt-5.1`;
 - compiler: `VSI C x86-64 V7.7-003 (GEM 50Z9T) on OpenVMS x86_64 V9.2-3`.
 
@@ -77,8 +77,8 @@ Recorded environment:
 - validation time: `15-AUG-2026 14:06:57.25`;
 - OpenVMS version: `V9.2-3`;
 - architecture: `x86_64`;
-- node: `X86923`;
-- test operator: `MIKE`;
+- node: `TESTNODE`;
+- test operator: `TESTUSER`;
 - configured model: `gpt-5.1`;
 - compiler: `VSI C x86-64 V7.7-003 (GEM 50Z9T) on OpenVMS x86_64 V9.2-3`.
 

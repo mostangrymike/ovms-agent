@@ -13,7 +13,7 @@ No additional user-visible product changes are currently recorded beyond M315 be
 Tag: `m315`
 
 - Revalidated the RMS-visible literal `.git` filespec on the canonical OpenVMS V9.2-3 x86-64 host instead of guessing a replacement for the historical M301 report.
-- Proved from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT]` that `TYPE [.^.GIT]HEAD.` succeeds with `%SYSTEM-S-NORMAL`, while the tempting `TYPE [^.GIT]HEAD.` form fails with `%RMS-E-DNF`; the physical directory entry is visible as `[]^.GIT.DIR`.
+- Proved from `SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]` that `TYPE [.^.GIT]HEAD.` succeeds with `%SYSTEM-S-NORMAL`, while the tempting `TYPE [^.GIT]HEAD.` form fails with `%RMS-E-DNF`; the physical directory entry is visible as `[]^.GIT.DIR`.
 - Preserved the existing principle that Git-native/GitHub identity, RMS-visible Git metadata, and materialized working files are distinct evidence when independent proof is required.
 - Updated only the living `DOC/OPENVMS_GIT_QUIRKS.MD` guide to record the controlled revalidation and warn against replacing the proven `[.^.GIT]` form. Existing current examples in RULES, BUILD, CONTRIBUTING, and platform knowledge remain unchanged because native evidence confirms them.
 - Preserved the frozen M301 historical record of the earlier `%DCL-W-DIRECT` observation while clarifying that it is not reproducible on the current canonical host and must not override later controlled evidence.
@@ -397,7 +397,6 @@ Tag: `m281`
 - Established defaults of 12 turns / 3 writes and supported ranges of 1-32 / 1-8.
 
 ## M280 — Interactive SETTINGS
-
 Tag: `m280`
 
 - Added persistent interactive SETTINGS for guarded writes, DCL execution, provider/model, output-token limit, approval policy, network policy, and related noninteractive forms.

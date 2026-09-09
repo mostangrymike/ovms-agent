@@ -60,4 +60,4 @@ Issue #192 recorded a separate operating-guide concern after an M301 acceptance 
 
 ## Later revalidation
 
-M315 re-ran the `.git` filespec probe from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT]` on the canonical OpenVMS V9.2-3 x86-64 host. `TYPE [.^.GIT]HEAD.` succeeded with `%SYSTEM-S-NORMAL`, the physical directory entry was visible as `[]^.GIT.DIR`, and the tempting `TYPE [^.GIT]HEAD.` form failed with `%RMS-E-DNF`. The current living guide therefore retains `[.^.GIT]...` as the validated syntax while preserving the original M301 observation as historical evidence.
+M315 re-ran the `.git` filespec probe from `SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]` on the canonical OpenVMS V9.2-3 x86-64 host. `TYPE [.^.GIT]HEAD.` succeeded with `%SYSTEM-S-NORMAL`, the physical directory entry was visible as `[]^.GIT.DIR`, and the tempting `TYPE [^.GIT]HEAD.` form failed with `%RMS-E-DNF`. The current living guide therefore retains `[.^.GIT]...` as the validated syntax while preserving the original M301 observation as historical evidence.

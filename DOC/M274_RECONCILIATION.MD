@@ -56,7 +56,7 @@ The DCL execution gate was not enabled merely for breadth. Where DCL/VAX executi
 
 ## Phase 1 — an empty nested project immediately exposed self-hosting assumptions
 
-The first meaningful result occurred before the target existed. Running OVMS Agent from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT.M274_NETCFG]` exposed #50: raw Git correctly resolved the containing repository, but the agent's Git-context capture wrote its temporary status file relative to the repository top level while the wrapper tried to read it relative to the nested project directory. `AGENT/WRITE` therefore failed with `Unable to compose Git context.`
+The first meaningful result occurred before the target existed. Running OVMS Agent from `SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT.M274_NETCFG]` exposed #50: raw Git correctly resolved the containing repository, but the agent's Git-context capture wrote its temporary status file relative to the repository top level while the wrapper tried to read it relative to the nested project directory. `AGENT/WRITE` therefore failed with `Unable to compose Git context.`
 
 This was exactly the kind of failure M274 was intended to find: the feature had regressions around Git context, but those tests had not represented a real project root inside a larger repository on OpenVMS. #50 was repaired through the self-hosting flow and closed with nested-directory regression coverage before target generation continued.
 
