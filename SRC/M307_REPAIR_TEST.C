@@ -71,13 +71,13 @@ int main(void)
     char new_text[32768];
     int line_number;
 
-    root = "SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX]";
+    root = "SYS$SYSDEVICE:[TESTUSER.VMS-COBOL-SANDBOX]";
     cleanup();
 
     if (!write_text(
             "M307_COBOL.TXT",
             "%COBOL-F-SYN17, Invalid syntax\n"
-            "at line number 7 in file SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX]WC.COB;4\n") ||
+            "at line number 7 in file SYS$SYSDEVICE:[TESTUSER.VMS-COBOL-SANDBOX]WC.COB;4\n") ||
         !require_true(
             llm_m307_diag_file(
                 "M307_COBOL.TXT", root,
@@ -95,7 +95,7 @@ int main(void)
     if (!write_text(
             "M307_CC.TXT",
             "%CC-E-UNDECLARED, identifier X is undefined\n"
-            "at line number 42 in file SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX.SRC]MAIN.C;2\n") ||
+            "at line number 42 in file SYS$SYSDEVICE:[TESTUSER.VMS-COBOL-SANDBOX.SRC]MAIN.C;2\n") ||
         !require_true(
             llm_m307_diag_file(
                 "M307_CC.TXT", root,
@@ -113,7 +113,7 @@ int main(void)
     if (!write_text(
             "M307_FORTRAN.TXT",
             "%FORTRAN-E-SYNTAX, syntax error\n"
-            "at line number 3 in file SYS$SYSDEVICE:[MIKE.VMS-COBOL-SANDBOX.LIB]CALC.F90;1\n") ||
+            "at line number 3 in file SYS$SYSDEVICE:[TESTUSER.VMS-COBOL-SANDBOX.LIB]CALC.F90;1\n") ||
         !require_true(
             llm_m307_diag_file(
                 "M307_FORTRAN.TXT", root,
@@ -131,7 +131,7 @@ int main(void)
     if (!write_text(
             "M307_OUTSIDE.TXT",
             "%COBOL-F-SYN17, Invalid syntax\n"
-            "at line number 1 in file SYS$SYSDEVICE:[MIKE.OUTSIDE]BAD.COB;1\n") ||
+            "at line number 1 in file SYS$SYSDEVICE:[TESTUSER.OUTSIDE]BAD.COB;1\n") ||
         !require_true(
             !llm_m307_diag_file(
                 "M307_OUTSIDE.TXT", root,
