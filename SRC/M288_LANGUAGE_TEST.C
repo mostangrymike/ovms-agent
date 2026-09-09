@@ -38,13 +38,13 @@ int main(void)
                      "COBOL", "COB extension detection") ||
         !expect_lang("Create a Pascal program", "SYS$DISK:[TMP]",
                      "PASCAL", "Pascal prompt detection") ||
-        !expect_lang("Fix the program", "SYS$DISK:[MIKE.VMS-FORTRAN-SANDBOX]",
+        !expect_lang("Fix the program", "SYS$DISK:[TESTUSER.VMS-FORTRAN-SANDBOX]",
                      "FORTRAN", "sandbox-name detection") ||
         !expect_lang("Compile HELLO.CPP", "SYS$DISK:[TMP]",
                      "CXX", "C++ extension detection") ||
         !expect_lang("Do a basic review of MAIN.C", "SYS$DISK:[TMP]",
                      "C", "extension outranks ordinary adjective") ||
-        !expect_lang("Create the program", "SYS$DISK:[MIKE.VMS-BASIC-SANDBOX]",
+        !expect_lang("Create the program", "SYS$DISK:[TESTUSER.VMS-BASIC-SANDBOX]",
                      "BASIC", "BASIC sandbox detection") ||
         !expect_none("Do a basic review", "SYS$DISK:[TMP]",
                      "ordinary basic adjective") ||
