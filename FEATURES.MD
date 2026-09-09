@@ -1,6 +1,6 @@
 # OVMS Agent Features
 
-This file is a plain-language catalog of capabilities present in the current promoted product through **M315**. M315 itself is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs.
+This file is a plain-language catalog of capabilities present in the current promoted product through **M316**. M316 is the latest native-green code milestone and adds native C build-profile support plus compiler/interpreter diagnostic normalization and OpenVMS/POSIX-aware build-stage status handling.
 
 ## Project inspection and context
 
@@ -125,6 +125,7 @@ M289 adds the agent `build_source` tool for one source file. It loads `LANGUAGE/
 
 Shipped profiles cover:
 
+- C;
 - MACRO32;
 - Fortran;
 - COBOL;
@@ -137,6 +138,8 @@ Shipped profiles cover:
 - DCL procedure execution.
 
 Compiled profiles compile/link, compile-only profiles compile once, interpreted profiles invoke the configured interpreter, and DCL profiles execute one validated project-relative command procedure. Native status and captured output are returned to the agent.
+
+M316 routes native build stage gating through the centralized OpenVMS/POSIX-aware status semantics while preserving the exact raw status values and raw command output. It also appends provider-neutral normalized diagnostics for observed OpenVMS facility diagnostics plus C++, Java, Perl, Python, and DCL forms. Recognized records include language, phase, severity, facility/id, file, line, column, and message when available; diagnostics without locations are retained, and unknown output remains verbatim.
 
 ## Language knowledge packs
 

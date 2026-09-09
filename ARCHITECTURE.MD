@@ -4,7 +4,7 @@ OVMS Agent is a native OpenVMS agentic programming assistant. Its architecture i
 
 The current canonical native acceptance host is **OpenVMS V9.2-3 x86-64**. Historical DEC C/VAX compatibility remains an explicit source/linker constraint where applicable.
 
-Current documentation is synchronized through **M315**. M315 is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs and passed exact promoted-SHA native acceptance.
+Current documentation is synchronized through **M316**. M316 is the latest native-green code milestone and adds native C build-profile support plus normalized compiler/interpreter diagnostics and centralized OpenVMS/POSIX-aware build-stage status semantics.
 
 ## High-level structure
 
@@ -140,7 +140,9 @@ Credential-bearing state stays outside the source checkout. Supported legacy log
 
 Agent workflows assemble bounded project/context state and use the selected provider. Tool-capable flows can inspect files/Git/symbols, make guarded changes, build, operate on sessions/plans/results, and use guarded external/GitHub paths when policy allows.
 
-M289 added guarded `build_source` execution for one native source file using `LANGUAGE/<LANGUAGE>.BUILD` profiles. It requires full approval, guarded writes, and DCL execution. Profiles can represent compiled/link, compile-only, interpreted, and project-relative DCL procedure execution. Shipped profiles cover MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL.
+M289 added guarded `build_source` execution for one native source file using `LANGUAGE/<LANGUAGE>.BUILD` profiles. It requires full approval, guarded writes, and DCL execution. Profiles can represent compiled/link, compile-only, interpreted, and project-relative DCL procedure execution. Shipped profiles cover C, MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL.
+
+M316 wraps the established M289 native build executor so execution-stage decisions use the centralized OpenVMS/POSIX-aware status decoder without discarding exact raw completion statuses or command output. After execution it appends provider-neutral normalized diagnostics for recognized OpenVMS facility diagnostics and observed C++, Java, Perl, Python, and DCL forms. Unknown diagnostic text remains verbatim, and diagnostics without a location are retained rather than dropped.
 
 `build_source` supplements rather than replaces a project's authoritative build procedure.
 
@@ -236,6 +238,7 @@ See `SECURITY.MD` for the security contract.
 ## Documentation ownership
 
 - `README.MD` — overview/navigation;
+- `GETTING_STARTED.MD` — practical first-session workflow after installation;
 - `INSTALL.MD` — setup/first run;
 - `BUILD.MD` — product build/acceptance;
 - `CONTRIBUTING.MD` — engineering workflow;

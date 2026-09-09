@@ -2,17 +2,19 @@
 
 OVMS Agent is a native agentic programming assistant for OpenVMS. It brings modern AI-assisted software-development workflows to OpenVMS while respecting DCL, RMS file semantics, native compiler/linker behavior, explicit approval boundaries, and OpenVMS Git quirks.
 
+New to the project? Start with [`GETTING_STARTED.MD`](GETTING_STARTED.MD) after installation for a practical first-session walkthrough covering Git/GitHub, LLM provider setup, `AGENT`, and analyzing an existing repository.
+
 ## Release and acceptance status
 
 - **Current public release:** `1.0.0`
-- **Latest promoted milestone:** `M315`
-- **Latest native-green code milestone:** `M314`
+- **Latest promoted milestone:** `M316`
+- **Latest native-green code milestone:** `M316`
 - **Canonical native acceptance host:** OpenVMS V9.2-3 x86-64
 - **Primary build procedure:** `BUILD.COM`
 - **Native command reference:** `OVMS_AGENT.HLP`
 - **License:** MIT
 
-M315 is documentation-only; M314 remains the latest milestone that changed product/build/runtime inputs and passed exact promoted-SHA native acceptance.
+M316 adds native C build-profile support plus provider-neutral normalization of compiler/interpreter diagnostics and correct OpenVMS/POSIX-aware build-stage status handling. The exact promoted M316 merge passed focused/full/focused canonical OpenVMS acceptance.
 
 Historical VAX/DEC C compatibility remains an intentional source constraint where it affects external identifiers, C89-era syntax, or linker behavior; it is not the current canonical acceptance host.
 
@@ -20,6 +22,7 @@ Historical VAX/DEC C compatibility remains an intentional source constraint wher
 
 | File | Purpose |
 | --- | --- |
+| [`GETTING_STARTED.MD`](GETTING_STARTED.MD) | Practical first-session guide for Git/GitHub, LLM setup, AGENT workflows, and analyzing downloaded projects. |
 | [`INSTALL.MD`](INSTALL.MD) | Prerequisites, installation, first run, provider setup, and authenticated Git setup. |
 | [`BUILD.MD`](BUILD.MD) | Authoritative product build, regressions, diagnostics, and native acceptance workflow. |
 | [`CONTRIBUTING.MD`](CONTRIBUTING.MD) | GitHub-first development, RMS-aware OpenVMS acceptance, compatibility rules, and milestone hygiene. |
@@ -46,6 +49,7 @@ OVMS Agent currently provides:
 - hardened saved-plan framing, currentness, approval, lifecycle, and create-then-modify execution;
 - project builds and captured build diagnostics;
 - guarded native `build_source` execution using language-specific toolchain profiles;
+- normalized native compiler/interpreter diagnostics with preserved raw output and OpenVMS/POSIX-aware status semantics;
 - Git-aware project context and RMS-safe status/diff handling;
 - guarded GitHub operations and prompt-free authenticated raw Git through `GITAUTH`;
 - persistent provider, GitHub, and ordinary SETTINGS configuration;
@@ -57,7 +61,7 @@ OVMS Agent currently provides:
 - image input and external/MCP tool integration under approval controls; and
 - native-validated language and platform guidance.
 
-The shared language knowledge layer ships curated COBOL and Fortran `.MD` packs under `LANGUAGE/`. The M298 platform layer separately ships validated OpenVMS Git, RMS, and DCL guidance under `KNOWLEDGE/`, loaded only when strong prompt-topic evidence is present and always subordinate to live evidence and safety policy. Separately, guarded `build_source` toolchain profiles are shipped for MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
+The shared language knowledge layer ships curated COBOL and Fortran `.MD` packs under `LANGUAGE/`. The M298 platform layer separately ships validated OpenVMS Git, RMS, and DCL guidance under `KNOWLEDGE/`, loaded only when strong prompt-topic evidence is present and always subordinate to live evidence and safety policy. Separately, guarded `build_source` toolchain profiles are shipped for C, MACRO32, Fortran, COBOL, Pascal, C++, BASIC, Java, Python, Perl, and DCL. A project's own build procedure remains authoritative when one exists.
 
 ## Requirements
 
@@ -188,6 +192,8 @@ For cross-file transactional changes, use the change-set/transaction machinery r
 ## Native source build profiles
 
 The guarded `build_source` agent tool can compile/interpret one source file using `LANGUAGE/<LANGUAGE>.BUILD` profiles. It requires full approval, guarded writes, and DCL execution. Profiles cover compiled, compile-only, interpreted, and DCL-procedure execution modes; native status and captured command output are returned to the agent.
+
+M316 adds the native C profile and wraps the established native build executor so execution-stage decisions use the centralized OpenVMS/POSIX-aware status decoder while still preserving the exact raw status values and command output. After execution, provider-neutral normalized diagnostics are appended for recognized OpenVMS facility diagnostics and observed C++, Java, Perl, Python, and DCL forms; unknown diagnostic text remains verbatim.
 
 This tool supplements rather than replaces a project's normal `BUILD.COM` or equivalent build procedure.
 
