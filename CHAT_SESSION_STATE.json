@@ -1,15 +1,15 @@
 {
   "schema": "ovms-agent-chat-state-v1",
-  "updated_at": "2026-09-08T16:59:56-05:00",
+  "updated_at": "2026-09-08T18:55:00-05:00",
   "repository": "mostangrymike/ovms-agent",
   "persistence_branch": "chat-session-state",
   "rules_file": "RULES.MD on main",
   "current": {
-    "main": "aa011c1b72d8c80810672201ba12e969df65249b",
-    "tree": "b0b6791e369fe8806bb7d53fd5b0b9f680c2faf2",
-    "latest_milestone": "M315",
-    "latest_code_milestone": "M314",
-    "latest_code_milestone_main": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
+    "main": "364e06ac85ce659ae4a71d3fbdb9302abdfaca9c",
+    "tree": "d6a9c13761ba35d03338a7c9f6ca29a75ff70dc9",
+    "latest_milestone": "M316",
+    "latest_code_milestone": "M316",
+    "latest_code_milestone_main": "364e06ac85ce659ae4a71d3fbdb9302abdfaca9c",
     "canonical_host": "OpenVMS V9.2-3 x86-64",
     "public_release": "1.0.0",
     "open_issues": 0,
@@ -178,7 +178,7 @@
     "result": "M313 makes .COM prompts reliably select OpenVMS DCL platform knowledge and strengthens provider-neutral DCL generation/repair guidance for explicit SET NOON status handling, READ/END_OF_FILE channel lifetime, DEFINE/USER next-image SYS$OUTPUT lifetime, and evidence-backed cleanup tracing. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP remained unchanged because no user command or SETTINGS surface changed. A subsequent CHANGELOG-only commit advanced main without changing product/build/runtime inputs."
   },
   "m314": {
-    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_PRUNED",
     "issue": 263,
     "branch": "m314-stream-completion-status",
     "baseline_main": "e2fc4fe6e228dff7c91e451b5a08a77adab7620f",
@@ -206,9 +206,22 @@
     "closed_defects": [192],
     "result": "M315 revalidated the RMS-visible literal .git syntax on canonical OpenVMS. TYPE [.^.GIT]HEAD. succeeded with %SYSTEM-S-NORMAL, while TYPE [^.GIT]HEAD. failed with RMS-E-DNF and the physical directory entry was []^.GIT.DIR. The existing current [.^.GIT] guidance is therefore correct; the historical M301 failure remains historical evidence but does not override controlled revalidation. Only the living Git operating guide changed before promotion, followed by a CHANGELOG-only synchronization. No product/build/runtime/HELP inputs changed."
   },
+  "m316": {
+    "status": "COMPLETED_PROMOTED_NATIVE_VALIDATED_TAGGED_RETAINED",
+    "issue": 268,
+    "branch": "m316-compiler-diagnostic-normalization",
+    "baseline_main": "54b3ed7bfeb28cadbf1c043788bafe3f8bac1e18",
+    "accepted_candidate": "1a9f04c760b1178d490a5f29d2ce86484483f02d",
+    "accepted_tree": "d6a9c13761ba35d03338a7c9f6ca29a75ff70dc9",
+    "promoted_main": "364e06ac85ce659ae4a71d3fbdb9302abdfaca9c",
+    "tag": "m316",
+    "pr": 270,
+    "closed_defects": [],
+    "result": "M316 adds native C build-profile support, routes M289 native build stage gating through centralized OpenVMS/POSIX-aware status semantics while preserving exact raw statuses and output, and appends provider-neutral normalized diagnostics for observed OpenVMS facility, C++, Java, Perl, Python, and DCL forms. Unknown diagnostics remain verbatim. Exact final candidate and exact promoted merge SHA both passed focused/full/focused canonical OpenVMS acceptance. HELP and SETTINGS remained unchanged."
+  },
   "github_hygiene": {
     "permanent": ["main", "chat-session-state"],
-    "retained_completed_target": ["m314-stream-completion-status", "m315-openvms-git-guide"],
+    "retained_completed_target": ["m315-openvms-git-guide", "m316-compiler-diagnostic-normalization"],
     "open_prs": 0,
     "open_issues": 0,
     "pending_ref_operations": [],
@@ -226,7 +239,8 @@
       "m310-saved-plan-lifecycle-execution",
       "m311-transaction-path-canonicalization",
       "m312-tool-loop-search-reporting",
-      "m313-native-dcl-generation-repair"
+      "m313-native-dcl-generation-repair",
+      "m314-stream-completion-status"
     ],
     "tags": {
       "v1.0.0": "de5837a121860b7cf3167d97df67099d771a3bef",
@@ -245,14 +259,15 @@
       "m312": "6e38ebd3385b7d5943d94f9f755eeb187e5ef7e2",
       "m313": "85ea038458596e6dd9435a209a11535e1cc99620",
       "m314": "cd29bb93fbd4ed09224631570b992183e1fe03b5",
-      "m315": "0dca7a34829658e673b82a0bb7fe568638cac281"
+      "m315": "0dca7a34829658e673b82a0bb7fe568638cac281",
+      "m316": "364e06ac85ce659ae4a71d3fbdb9302abdfaca9c"
     },
     "explicit_no_tag_milestones": ["m302"]
   },
   "next_milestone_direction": {
-    "suggested": "ROADMAP_SELECTION_REQUIRED",
-    "candidate_clusters": [],
-    "note": "M315 closes the final tracked backlog item. There are zero open issues and zero open pull requests. Do not invent M316 from a nonexistent defect backlog; choose the next roadmap objective deliberately before opening another milestone."
+    "suggested": "TOOLCHAIN_INITIALIZATION_DISCOVERY",
+    "candidate_clusters": ["portable Java/Perl/Python toolchain initialization and discovery", "native language-profile toolchain readiness diagnostics"],
+    "note": "M316 normalizes native compiler/interpreter diagnostics and status semantics. A remaining known gap is portable initialization/discovery for toolchains whose vendor setup or foreign-command symbols are not active in the agent process; do not hard-code version-specific physical installation paths."
   },
   "standing_rules": [
     "At chat/resume start read RULES.MD on main and CHAT_SESSION_STATE.json on chat-session-state, then verify live refs/issues.",
