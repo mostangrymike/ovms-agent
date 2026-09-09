@@ -80,7 +80,7 @@ $ TYPE [.^.GIT]FETCH_HEAD.
 
 On ODS-5 DCL, the literal `.git` directory is escaped as `[.^.GIT]`; extensionless control files need a trailing period.
 
-Canonical-host M315 revalidation from `SYS$SYSDEVICE:[MIKE.OVMS_AGENT]` proved this exact form is valid: `TYPE [.^.GIT]HEAD.` returned `ref: refs/heads/main` with `%SYSTEM-S-NORMAL`, while the tempting form `TYPE [^.GIT]HEAD.` failed with `%RMS-E-DNF`. The physical directory entry was visible as `[]^.GIT.DIR`. Therefore do not remove the dot before the caret or rewrite the examples to `[^.GIT]`.
+Canonical-host M315 revalidation from `SYS$SYSDEVICE:[TESTUSER.OVMS_AGENT]` proved this exact form is valid: `TYPE [.^.GIT]HEAD.` returned `ref: refs/heads/main` with `%SYSTEM-S-NORMAL`, while the tempting form `TYPE [^.GIT]HEAD.` failed with `%RMS-E-DNF`. The physical directory entry was visible as `[]^.GIT.DIR`. Therefore do not remove the dot before the caret or rewrite the examples to `[^.GIT]`.
 
 A historical M301 acceptance session recorded `%DCL-W-DIRECT` while using a visually similar `[.^.GIT]...` example. That observation is preserved as historical evidence, but it is not reproducible on the current canonical host and must not override the later controlled revalidation above. If this syntax appears to fail again, first record `SHOW DEFAULT`, `DIRECTORY/FULL []^.GIT.DIR`, the exact command text, and `$STATUS` before changing the guide.
 
