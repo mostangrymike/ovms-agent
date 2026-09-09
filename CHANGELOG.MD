@@ -6,7 +6,19 @@ The changelog is maintained from M278 forward. Earlier history remains available
 
 ## Unreleased
 
-No additional user-visible product changes are currently recorded beyond M315 below.
+No additional user-visible product changes are currently recorded beyond M316 below.
+
+## M316 — Native compiler diagnostic normalization
+
+Tag: `m316`
+
+- Added a native C `LANGUAGE/C.BUILD` profile so guarded `build_source` supports C alongside the existing shipped language profiles.
+- Routed native build-stage success/failure decisions through the centralized OpenVMS/POSIX-aware status semantics while preserving exact raw completion statuses and command output.
+- Added provider-neutral normalized diagnostics for observed OpenVMS facility diagnostics and C++, Java, Perl, Python, and DCL forms, including file/line/column information when available; actionable diagnostics without locations remain visible and unknown output remains verbatim.
+- Preserved the accepted M289 native build executor through a wrapper rather than rewriting the mature implementation, and kept HELP/SETTINGS/user command grammar unchanged.
+- Exact accepted candidate `1a9f04c760b1178d490a5f29d2ce86484483f02d` (tree `d6a9c13761ba35d03338a7c9f6ca29a75ff70dc9`) passed focused/full/focused canonical OpenVMS acceptance.
+- Promotion PR #270 produced exact native-green main `364e06ac85ce659ae4a71d3fbdb9302abdfaca9c` with the same tree; that promoted merge independently passed focused/full/focused canonical OpenVMS acceptance. Permanent tag `m316` resolves directly to that promoted commit.
+- Subsequent documentation/privacy-only commits may advance `main` without changing M316 product/build/runtime inputs.
 
 ## M315 — OpenVMS Git operating-guide correctness
 
@@ -397,6 +409,7 @@ Tag: `m281`
 - Established defaults of 12 turns / 3 writes and supported ranges of 1-32 / 1-8.
 
 ## M280 — Interactive SETTINGS
+
 Tag: `m280`
 
 - Added persistent interactive SETTINGS for guarded writes, DCL execution, provider/model, output-token limit, approval policy, network policy, and related noninteractive forms.
